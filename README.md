@@ -48,3 +48,54 @@ This project implements a hierarchical navigation system (Tree View) for managin
 cd frontend
 npm install
 npm run dev
+```
+By default, the frontend runs at: http://localhost:5173
+
+### Backend (Nest.js)
+```bash
+cd backend
+npm install
+npm run start:dev
+```
+By default, the API runs at: http://localhost:3000
+
+### Database (MongoDB)
+By default, MongoDB runs through Docker Compose:
+```bash
+docker-compose up -d
+```
+Connection string:
+mongodb://localhost:27017/catalog
+
+## 🧑‍💻 Team Workflow
+
+Main branch: main – protected.
+
+No direct pushes allowed, only approved PRs.
+
+### Daily workflow
+git checkout -b feature/<feature-name>
+# work on your feature
+git commit -m "feat: short description"
+git push origin feature/<feature-name>
+
+Open a Pull Request.
+
+Code Review: at least one team member must approve before merging.
+Commit convention: Conventional Commits
+feat: new login page
+fix: bug in search filter
+docs: update README
+
+## 📦 Docker Compose
+
+The docker-compose.yml will run:
+frontend (React + Vite)
+backend (Nest.js)
+mongodb (Database)
+
+## 📑 Documentation
+
+Swagger available at: http://localhost:3000/api
+Jira – tasks, bugs, and sprint management.
+Storybook (future) – UI components catalog.
