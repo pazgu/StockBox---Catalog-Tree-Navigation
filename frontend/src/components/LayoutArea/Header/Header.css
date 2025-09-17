@@ -1,5 +1,5 @@
 .Header {
-    height: 150px;
+    height: 140px;
     background-color: #0D305B;
     position: fixed;
     width: 100%;
@@ -10,7 +10,7 @@
 
 }
 .logo {
-  width: 320px;   
+  width: 300px;   
   height: auto;
   margin-right: 25px;
 }
@@ -48,6 +48,7 @@
   border-radius: 25px;
   overflow: hidden;     
   border: 1px solid #ccc; 
+  margin-left: 150px;
 }
 
 .search-bar input {
