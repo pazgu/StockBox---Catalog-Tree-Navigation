@@ -3,17 +3,15 @@ import { Routes, Route, Link } from 'react-router-dom';
 import './Layout.css';
 import About from '../../Pages/HomeArea/About/About';
 import Login from '../../Pages/AuthArea/Login/Login';
+import Header from '../Header/Header';
 
 
 interface LayoutProps {}
 
 const Layout: FC<LayoutProps> = () => (
   <div className="Layout">
-    <header>
-      <nav>
-        <Link to="/">עלינו</Link> | <Link to="/login">התחברות</Link>
-      </nav>
-    </header>
+    <Header></Header>
+   
 
     <main>
       <Routes>
