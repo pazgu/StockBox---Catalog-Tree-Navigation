@@ -41,13 +41,18 @@ const Categories: FC<CategoriesProps> = () => (
           <img src={camera} alt="camera" className="category-image" />
         </div>
         <span className="category-label">צילום</span>
-        <div className="selection-arrow"></div>
+   
       </div>
     </div>
     
-    <div className="add-category">
-      <div className="add-icon">+</div>
-    </div>
+
+<div className="add-icon">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="12" y1="5" x2="12" y2="19"/>
+    <line x1="5" y1="12" x2="19" y2="12"/>
+  </svg>
+</div>
+  
   </div>
 );
 
