@@ -18,7 +18,6 @@ const Layout: FC<LayoutProps> = () => (
       <Routes>
         <Route path="/" element={<About></About>} />
         <Route path="/login" element={<Login></Login>} />
-        <Route path="/about" element={<About></About>} />
         <Route path="/categories" element={<Categories></Categories>} />
         <Route path="*" element={<div>404 - לא נמצא</div>} />
       </Routes>
