@@ -6,12 +6,22 @@ interface HeaderProps {}
 
 const Header: FC<HeaderProps> = () => (
   <div className="Header">
-     <nav className="nav">
-      <Link to="/">בית</Link> |
-      <Link to="/login">התחברות</Link>
-    </nav>
+      <div className="nav-container">
+      <nav className="nav">
+        <Link to="/login">התחברות</Link>
+        <span>|</span>
+        <Link to="/">דף הבית</Link>
+        <span>|</span>
+        <Link to="/categories">תכולות ואמצעים</Link>
+      </nav>
 
-      <img src={logo} className="logo"/>
+      <div className="search-bar">
+        <button>חפש</button>
+        <input type="text" placeholder=" חפש מוצר..." />
+      </div>
+    </div>
+
+    <img src={logo} className="logo" alt="logo" />
   </div>
 );
 
