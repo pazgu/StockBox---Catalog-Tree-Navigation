@@ -1,14 +1,13 @@
 .AllUsers {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #F0E4D0;
     color: #0D305B;
-    direction: rtl;
     min-height: 100vh;
 }
 
 /* Main Content */
 .AllUsers .main-content {
-    padding: 180px 40px 30px 40px; /* Top padding adjusted for fixed header */
+    padding: 180px 40px 30px 40px; 
+    direction: rtl;
 }
 
 .AllUsers .header-section {
