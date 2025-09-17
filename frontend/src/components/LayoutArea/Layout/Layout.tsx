@@ -11,7 +11,7 @@ const Layout: FC<LayoutProps> = () => (
   <div className="Layout">
     <header>
       <nav>
-        <Link to="/">בית</Link> | <Link to="/login">התחברות</Link>
+        <Link to="/">עלינו</Link> | <Link to="/login">התחברות</Link>
       </nav>
     </header>
 
