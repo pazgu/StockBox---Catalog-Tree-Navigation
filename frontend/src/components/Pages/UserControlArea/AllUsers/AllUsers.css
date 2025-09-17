@@ -1,1 +1,251 @@
-.AllUsers {}
+.AllUsers {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #F0E4D0;
+    color: #0D305B;
+    direction: rtl;
+    min-height: 100vh;
+}
+
+/* Main Content */
+.AllUsers .main-content {
+    padding: 180px 40px 30px 40px; /* Top padding adjusted for fixed header */
+}
+
+.AllUsers .header-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.AllUsers .title-section {
+    text-align: right;
+}
+
+.AllUsers .page-title {
+    font-size: 30px;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #0D305B;
+}
+
+.AllUsers .subtitle {
+    color: #000000;
+    font-size: 20px;
+    text-decoration: underline;
+}
+
+.AllUsers .add-button {
+    background-color: #0D305B;
+    border: none;
+    color: #F0E4D0;
+    font-size: 24px;
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 300;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(13, 48, 91, 0.15);
+}
+
+.AllUsers .add-button:hover {
+    background-color: #0a2447;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(13, 48, 91, 0.25);
+}
+
+/* Contact Grid - Updated for more cards and better responsiveness */
+.AllUsers .contact-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 18px;
+    margin-bottom: 40px;
+}
+
+.AllUsers .contact-card {
+    background-color: white;
+    border-radius: 16px;
+    padding: 16px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    position: relative;
+    min-height: 110px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.AllUsers .contact-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.AllUsers .contact-actions {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    display: flex;
+    gap: 8px;
+}
+
+.AllUsers .action-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    opacity: 0.6;
+    padding: 2x;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.AllUsers .action-btn:hover {
+    opacity: 1;
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.AllUsers .contact-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #f5f5f5;
+    margin: 0 auto 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e8e8e8;
+}
+
+.AllUsers .contact-info {
+    text-align: center;
+}
+
+.AllUsers .contact-label {
+    font-size: 15px;
+    color: #666;
+    margin-bottom: 2px;
+    font-weight: normal;
+}
+
+.AllUsers .contact-name {
+    font-size: 17.5px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: #0D305B;
+}
+
+.AllUsers .contact-email {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 0;
+}
+
+/* Pagination */
+.AllUsers .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    margin-top: 30px;
+}
+
+.AllUsers .pagination-btn {
+    padding: 6px 10px;
+    background-color: transparent;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #666;
+    transition: all 0.2s ease;
+    min-width: 32px;
+    text-align: center;
+}
+
+.AllUsers .pagination-btn:hover {
+    background-color: #0D305B;
+    color: #F0E4D0;
+    border-color: #0D305B;
+}
+
+.AllUsers .pagination-btn.active {
+    background-color: #0D305B;
+    color: #F0E4D0;
+    border-color: #0D305B;
+}
+
+.AllUsers .pagination-ellipsis {
+    padding: 6px 4px;
+    color: #666;
+    font-size: 13px;
+}
+
+.AllUsers .pagination-nav {
+    padding: 6px 12px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #666;
+    font-size: 13px;
+}
+
+.AllUsers .pagination-nav:hover {
+    color: #0D305B;
+}
+
+/* Avatar icon */
+.AllUsers .avatar-icon {
+    width: 20px;
+    height: 20px;
+    opacity: 0.4;
+}
+
+/* Responsive design */
+@media (max-width: 1024px) {
+    .AllUsers .contact-grid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .AllUsers .contact-grid {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 15px;
+    }
+    
+    .AllUsers .main-content {
+        padding: 180px 20px 30px 20px;
+    }
+    
+    .AllUsers .contact-card {
+        min-height: 100px;
+        padding: 14px;
+    }
+    
+    .AllUsers .add-button {
+        width: 45px;
+        height: 45px;
+        font-size: 22px;
+    }
+}
+
+@media (max-width: 480px) {
+    .AllUsers .contact-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+    
+    .AllUsers .contact-card {
+        min-height: 95px;
+        padding: 12px;
+    }
+    
+    .AllUsers .add-button {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+    }
+}

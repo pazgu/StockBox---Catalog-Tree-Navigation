@@ -5,6 +5,7 @@ import About from '../../Pages/HomeArea/About/About';
 import Login from '../../Pages/AuthArea/Login/Login';
 import Header from '../Header/Header';
 import Categories from '../../Pages/CatArea/Categories/Categories';
+import AllUsers from '../../Pages/UserControlArea/AllUsers/AllUsers';
 import SingleProd from '../../Pages/ProductArea/SingleProd/SingleProd';
 
 
@@ -22,6 +23,7 @@ const Layout: FC<LayoutProps> = () => (
         <Route path="/categories" element={<Categories></Categories>} />
         <Route path="/product-details" element={<SingleProd></SingleProd>} />
         <Route path="*" element={<div>404 - לא נמצא</div>} />
+        <Route path="/allUsers" element={<AllUsers></AllUsers>} />
 
       </Routes>
     </main>
