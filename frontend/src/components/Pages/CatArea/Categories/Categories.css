@@ -1,1 +1,128 @@
-.Categories {}
+.Categories {
+  padding: 60px 40px;
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+  direction: rtl;
+  text-align: right;
+}
+
+.categories-header {
+    margin-top: 150px;
+  margin-bottom: 50px;
+  text-align: right;
+}
+
+.categories-title {
+  font-size: 48px;
+  font-weight: 300;
+  color: #2c3e50;
+  margin: 0 0 10px 0;
+  letter-spacing: -0.5px;
+}
+
+.categories-subtitle {
+  font-size: 16px;
+  color: #6c757d;
+  margin: 0;
+  font-weight: 400;
+}
+
+.categories-grid {
+  display: flex;
+  justify-content: flex-start;
+  gap: 40px;
+  margin-bottom: 60px;
+  flex-wrap: wrap;
+}
+
+.category-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  position: relative;
+}
+
+.category-item:hover {
+  transform: translateY(-2px);
+}
+
+
+.dark-blue {
+  background: #1e3a5f;
+}
+
+.category-label {
+  font-size: 16px;
+  color: #2c3e50;
+  font-weight: 500;
+  margin-top: 8px;
+}
+
+.category-image {
+ width: 120px;
+height: 120px;
+  object-fit: contain;
+}
+
+.selection-arrow {
+  position: absolute;
+  bottom: -25px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-bottom: 15px solid #2c3e50;
+}
+
+.add-category {
+  position: absolute;
+  bottom: 40px;
+  right: 40px;
+}
+
+.add-icon {
+  width: 60px;
+  height: 60px;
+  background: #2c3e50;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 300;
+}
+
+.add-icon:hover {
+  transform: scale(1.05);
+  background: #34495e;
+  
+}
+
+
+@media (max-width: 768px) {
+  .Categories {
+    padding: 40px 20px;
+  }
+  
+  .categories-grid {
+    justify-content: center;
+    gap: 30px;
+  }
+  
+  .categories-title {
+    font-size: 36px;
+  }
+
+  
+  .add-category {
+    bottom: 20px;
+    right: 20px;
+  }
+}
