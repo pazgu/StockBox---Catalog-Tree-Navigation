@@ -3,5 +3,34 @@
     background-color: #0D305B;
     position: fixed;
     width: 100%;
+    display: flex;
+    justify-content: space-between; 
+    align-items: center;            
+    z-index: 100;            
 
+}
+.logo {
+  width: 320px;   
+  height: auto;
+  margin-right: 25px;
+}
+.nav {
+  align-self: flex-start;
+  margin-top: 20px;       
+  margin-left: 200px;   
+  display: flex;
+  gap: 15px;  
+  color:#FFFAF1;         
+}
+
+.nav a {
+  color: white;      
+  text-decoration: none; 
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.nav a:hover {
+  text-decoration: underline; 
+  color: #BA9F71;
 }
