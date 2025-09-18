@@ -28,6 +28,7 @@ const Header: FC<HeaderProps> = () => (
   >
     תכולות ואמצעים
   </NavLink>
+
       </nav>
 
       <div className="search-bar">
