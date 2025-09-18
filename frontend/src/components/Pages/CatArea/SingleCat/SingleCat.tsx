@@ -69,14 +69,14 @@ const SingleCat: FC = () => {
         <div className="filters-and-controls">
           <div className="filter-group">
             <span className="filter-label">סך הכל פריטים: {mockCameraData.length}</span>
-            <div className="filter-input-row">
+            {/* <div className="filter-input-row">
               <label htmlFor="filter1" className="filter-label">סינון לפי:</label>
               <input id="filter1" type="text" className="filter-input" placeholder="לדוגמא: עדשה" />
             </div>
             <div className="filter-input-row">
               <label htmlFor="filter2" className="filter-label">סינון לפי:</label>
               <input id="filter2" type="text" className="filter-input" placeholder="לדוגמא: צבע" />
-            </div>
+            </div> */}
           </div>
         </div>
       </header>
