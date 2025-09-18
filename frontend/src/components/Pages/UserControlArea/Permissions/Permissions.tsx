@@ -2,13 +2,14 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
+import { Switch } from '../../../ui/switch';
+import { Button } from '../../../ui/button';
+import { Card, CardContent } from '../../../ui/card';
+import { Label } from '../../../ui/label';
+import { Input } from '../../../ui/input';
+
 import './Permissions.css';
-import camera from '../../../assets/camera.png';
+import camera from '../../../../assets/camera.png'
 
 interface PermissionItem {
   id: string;

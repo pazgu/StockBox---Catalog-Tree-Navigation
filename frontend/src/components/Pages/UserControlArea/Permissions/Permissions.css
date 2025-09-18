@@ -1,8 +1,9 @@
 .permissions-container {
   direction: rtl;
-  padding: 20px;
+  padding: 149px 20px 40px 20px; 
   max-width: 600px;
   margin: 0 auto;
+  min-height: 100vh;
 }
 
 .permissions-card {
@@ -16,7 +17,6 @@
   padding: 24px;
 }
 
-/* Header Section */
 .permissions-header {
   display: flex;
   align-items: flex-start;
@@ -69,7 +69,6 @@
   margin-left: 0;
 }
 
-/* Input Section */
 .input-section {
   margin-bottom: 16px;
 }
@@ -98,7 +97,6 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-/* Expand Section */
 .expand-section {
   margin-bottom: 16px;
 }
@@ -129,7 +127,6 @@
   transition: transform 0.2s ease;
 }
 
-/* Registered Section */
 .registered-section {
   display: flex;
   align-items: center;
@@ -151,7 +148,6 @@
   margin-left: 0;
 }
 
-/* Permissions List */
 .permissions-list-container {
   overflow: hidden;
   margin-bottom: 16px;
@@ -205,7 +201,6 @@
   color: #3b82f6;
 }
 
-/* Action Buttons */
 .action-buttons {
   display: flex;
   gap: 12px;
@@ -244,7 +239,26 @@
   background: #059669;
 }
 
-/* Responsive Design */
+.permissions-container * {
+  font-family: 'Noto Sans Hebrew', sans-serif !important;
+}
+
+.permissions-container h1,
+.permissions-container h2,
+.permissions-container h3,
+.permissions-container p,
+.permissions-container span,
+.permissions-container label {
+  margin: revert !important; 
+}
+
+.permissions-container .permissions-title {
+  margin: 0 0 16px 0 !important; 
+}
+
+.permissions-container .input-label {
+  margin-bottom: 8px !important; 
+}
 @media (max-width: 768px) {
   .permissions-container {
     padding: 16px;
@@ -279,11 +293,36 @@
   }
 }
 
-/* Switch Customizations for Shadcn/UI */
-[data-state="checked"] {
-  background-color: #10b981 !important;
+.permissions-container .access-switch,
+.permissions-container .registered-switch,
+.permissions-container .permission-switch {
+  direction: ltr !important; 
+  margin: 0 !important; 
 }
 
-[data-state="unchecked"] {
+.permissions-container [role="switch"] {
+  direction: ltr !important;
+  margin: 0 !important;
+  transition: all 0.2s ease !important;
+}
+
+.permissions-container [role="switch"][data-state="checked"] {
+  background-color: #10b981 !important;
+  border-color: #10b981 !important;
+}
+
+.permissions-container [role="switch"][data-state="unchecked"] {
   background-color: #d1d5db !important;
+  border-color: #d1d5db !important;
+}
+
+.permissions-container [role="switch"] > span {
+  transition: transform 0.2s ease !important;
+  background-color: white !important;
+  margin: 0 !important;
+}
+
+.permissions-container button[role="switch"] {
+  font-family: 'Noto Sans Hebrew', sans-serif !important;
+  font-size: 0 !important; 
 }
