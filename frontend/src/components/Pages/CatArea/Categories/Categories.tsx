@@ -11,7 +11,7 @@ const Categories: FC<CategoriesProps> = () => (
   <div className="Categories">
     <div className="categories-header">
       <h2 className="categories-title">קטגוריות</h2>
-      <p className="categories-subtitle">הפעלה קטגוריות חדשה +</p>
+      <p className="categories-subtitle"> + קטגוריות חדשה </p>
     </div>
     
     <div className="categories-grid">
