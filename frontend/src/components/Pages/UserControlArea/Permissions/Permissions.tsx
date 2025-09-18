@@ -10,6 +10,7 @@ import { Input } from '../../../ui/input';
 
 import './Permissions.css';
 import camera from '../../../../assets/camera.png'
+import AddCat from '../../CatArea/AddCat/AddCat';
 
 interface PermissionItem {
   id: string;
@@ -36,6 +37,7 @@ const Permissions: React.FC = () => {
       { id: 'security', label: 'אבטחה', enabled: true }
     ]
   });
+  const [isOpen, setIsOpen] = useState(false);
 
   const handlePermissionToggle = (permissionId: string) => {
     setUserPermissions(prev => ({
@@ -172,10 +174,16 @@ const Permissions: React.FC = () => {
                   ))}
                 </div>
                
-                {/* Additional Options */}
                 <div className="additional-options">
-                  <span className="options-text">ללחץ ליצירת קבוצה</span>
-                </div>
+                   <button
+                    className="px-2 py-1 bg-blue-700 text-white rounded"
+                    onClick={() => setIsOpen(true)}
+                  >
+                    לחץ להוסיף קבוצה
+                  </button>
+
+                  {isOpen && <AddCat onClose={() => setIsOpen(false)} />}
+                            </div>
               </motion.div>
             )}
           </AnimatePresence>

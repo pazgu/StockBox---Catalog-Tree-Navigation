@@ -9,6 +9,7 @@ import AllUsers from '../../Pages/UserControlArea/AllUsers/AllUsers';
 import SingleProd from '../../Pages/ProductArea/SingleProd/SingleProd';
 import SingleCat from '../../Pages/CatArea/SingleCat/SingleCat';
 import Permissions from '../../Pages/UserControlArea/Permissions/Permissions';
+import AddCat from '../../Pages/CatArea/AddCat/AddCat';
 
 
 interface LayoutProps {}
