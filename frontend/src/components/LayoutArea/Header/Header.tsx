@@ -1,11 +1,14 @@
 import React, { FC } from 'react';
 import './Header.css';
-import { Link, NavLink } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import logo from '../../../assets/logo.png'
 interface HeaderProps {}
 
 const Header: FC<HeaderProps> = () => (
+  
   <div className="Header">
+        <img src={logo} className="logo" alt="logo" />
+
       <div className="nav-container">
       <nav className="nav">
         <NavLink
@@ -28,15 +31,16 @@ const Header: FC<HeaderProps> = () => (
   >
     תכולות ואמצעים
   </NavLink>
+
       </nav>
 
       <div className="search-bar">
-        <button>חפש</button>
+       
         <input type="text" placeholder=" חפש מוצר..." />
+         <button>חפש</button>
       </div>
     </div>
 
-    <img src={logo} className="logo" alt="logo" />
   </div>
 );
 
