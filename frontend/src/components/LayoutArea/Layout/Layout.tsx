@@ -6,6 +6,7 @@ import Login from '../../Pages/AuthArea/Login/Login';
 import Header from '../Header/Header';
 import Categories from '../../Pages/CatArea/Categories/Categories';
 import AllUsers from '../../Pages/UserControlArea/AllUsers/AllUsers';
+import SingleCat from '../../Pages/CatArea/SingleCat/SingleCat';
 
 
 interface LayoutProps {}
@@ -20,6 +21,7 @@ const Layout: FC<LayoutProps> = () => (
         <Route path="/" element={<About></About>} />
         <Route path="/login" element={<Login></Login>} />
         <Route path="/categories" element={<Categories></Categories>} />
+        <Route path="/single-cat" element={<SingleCat></SingleCat>} />
         <Route path="*" element={<div>404 - לא נמצא</div>} />
         <Route path="/allUsers" element={<AllUsers></AllUsers>} />
       </Routes>
