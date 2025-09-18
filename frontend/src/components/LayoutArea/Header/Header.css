@@ -1,5 +1,5 @@
 .Header {
-    height: 150px;
+    height: 140px;
     background-color: #0D305B;
     position: fixed;
     width: 100%;
@@ -10,10 +10,11 @@
 
 }
 .logo {
-  width: 320px;   
+  width: 300px;   
   height: auto;
-  margin-right: 25px;
+  margin-left: 245px;
 }
+
 .nav-container {
   display: flex;
   flex-direction: column; /* stack nav and search */
@@ -21,17 +22,20 @@
   align-self: flex-start;
   margin-top: 20px;
   margin-left: 60px;
+
 }
 
 .nav {
   display: flex;
   gap: 10px;
+  direction: rtl;          
 }
 
 .nav a {
   color: white;
   text-decoration: none;
   font-size: 16px;
+margin-right: 7px;
 }
 
 .nav span {
@@ -41,10 +45,12 @@
 .search-bar {
   display: flex;
   align-items: stretch;   
-  width: 280px;
+  width: 300px;
   border-radius: 25px;
   overflow: hidden;     
   border: 1px solid #ccc; 
+  margin-left: 150px;
+
 }
 
 .search-bar input {
@@ -62,14 +68,15 @@
   border: none;
   padding: 0 20px;         
   font-size: 16px;
-  border-radius: 25px 0 0 25px;
+  border-radius: 0 0 0 0px;
   cursor: pointer;
-   display: flex;
+  display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.nav a:hover {
-  text-decoration: underline; 
+.nav a:hover,
+.nav a.active {
+  text-decoration: none;
   color: #BA9F71;
 }
