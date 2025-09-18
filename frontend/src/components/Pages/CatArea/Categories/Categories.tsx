@@ -73,7 +73,6 @@ const Categories: FC<CategoriesProps> = () => {
     setNewCatName("");
     setNewCatImage(null);
   };
-
   const handleDelete = (category: Category) => {
     setCategoryToDelete(category);
     setShowDeleteModal(true);
@@ -103,6 +102,7 @@ const handleEditSave = () => {
   setShowEditModal(false);
   setCategoryToEdit(null);
 };
+
 
   const closeAllModals = () => {
     setShowAddCatModal(false);
@@ -179,6 +179,7 @@ const handleEditSave = () => {
             />
 
             <input
+
               type="file"
               accept="image/*"
               onChange={handleImageUpload}
@@ -208,8 +209,7 @@ const handleEditSave = () => {
           >
             <h4>מחיקת קטגוריה</h4>
             <p>האם אתה בטוח שברצונך למחוק את הקטגוריה "{categoryToDelete.name}"?</p>
-            <p>פעולה זו לא ניתנת לביטול.</p>
-
+            <small>לא יהיה ניתן לבטל פעולה זו</small>
             <div className="modal-actions">
               <button onClick={confirmDelete} className="delete-confirm-btn">מחק</button>
               <button onClick={closeAllModals}>ביטול</button>
@@ -226,7 +226,7 @@ const handleEditSave = () => {
           >
             <h4>עריכת קטגוריה</h4>
 
-            <input
+            <input className="edit-image-name"
               type="text"
               placeholder="שם קטגוריה"
               value={categoryToEdit.name}
@@ -237,6 +237,7 @@ const handleEditSave = () => {
             />
 
             <input
+            className="edit-image-upload"
               type="file"
               accept="image/*"
               onChange={handleEditImageUpload}
