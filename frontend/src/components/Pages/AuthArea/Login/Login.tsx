@@ -11,13 +11,8 @@ const Login: FC<LoginProps> = () => {
   
   return (
     <div className="Login">
-      <div className="login-image-section">
-        <img src={loginImg} alt="תמונת התחברות" className="login-image" />
-      </div>
-      {/* אזור הטופס */}
       <div className="login-form-section">
         <div className="login-container">
-          {/* כותרת */}
           <h1 className="login-title">התחברות</h1>
  
           <form className="login-form">
@@ -59,6 +54,9 @@ const Login: FC<LoginProps> = () => {
             </button>
           </form>
         </div>
+      </div>
+      <div className="login-image-section">
+        <img src={loginImg} alt="תמונת התחברות" className="login-image" />
       </div>
     </div>
   );

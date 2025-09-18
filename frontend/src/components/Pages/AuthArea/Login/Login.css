@@ -3,7 +3,7 @@
   background-color: #f3f4f6;
   display: flex;
   padding: 0;
-  padding-top: 120px;
+  padding-top: 112px;
   overflow: hidden; 
   box-sizing: border-box;
 }
@@ -44,12 +44,12 @@
 }
 
 .login-title {
-  font-size: 1.875rem;
+  font-size: 2rem;
   font-weight: 700;
   text-align: right;
   color: #1f2937;
-  margin-bottom: 2rem;
-  margin-top: 0;
+  margin-bottom: 1.5rem;
+  margin-top: -0.75rem;
 }
 
 .login-form {
