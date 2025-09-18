@@ -1,1 +1,41 @@
-.AddCat {}
+
+.container{
+    display: flex;
+    position: fixed;
+    top:210px;
+    right:400px;
+    flex-direction: row;
+    gap:25px;
+    align-items: center;
+}
+.dd-card{
+    width: 500px;
+    height: 200px;
+    border: none;
+    background-color: white;
+    box-shadow: 
+    0 5px 5px -5px rgba(0, 0, 0, 0.5); 
+    position: relative;
+    display: flex;
+    justify-content: flex-start;
+}
+.users-card{
+    width: 180px;
+    height: auto;
+    max-height: 600px;
+    min-height: 300px;
+    border: none;
+    border-radius: 20px;
+    background-color: white;
+box-shadow: 
+    -5px 0 5px -5px rgba(0, 0, 0, 0.5),  
+    0 5px 5px -5px rgba(0, 0, 0, 0.5); 
+
+}
+.small-x{
+    position: absolute;
+    top:2px;
+    left: 10px;
+    font-weight: 800;
+    font-size: large;
+}
