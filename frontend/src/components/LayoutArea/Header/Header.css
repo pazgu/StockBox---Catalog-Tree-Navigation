@@ -12,8 +12,9 @@
 .logo {
   width: 300px;   
   height: auto;
-  margin-right: 25px;
+  margin-left: 245px;
 }
+
 .nav-container {
   display: flex;
   flex-direction: column; /* stack nav and search */
@@ -34,7 +35,7 @@
   color: white;
   text-decoration: none;
   font-size: 16px;
-
+margin-right: 7px;
 }
 
 .nav span {
@@ -44,11 +45,12 @@
 .search-bar {
   display: flex;
   align-items: stretch;   
-  width: 280px;
+  width: 300px;
   border-radius: 25px;
   overflow: hidden;     
   border: 1px solid #ccc; 
   margin-left: 150px;
+
 }
 
 .search-bar input {
@@ -66,9 +68,9 @@
   border: none;
   padding: 0 20px;         
   font-size: 16px;
-  border-radius: 25px 0 0 25px;
+  border-radius: 0 0 0 0px;
   cursor: pointer;
-   display: flex;
+  display: flex;
   align-items: center;
   justify-content: center;
 }
