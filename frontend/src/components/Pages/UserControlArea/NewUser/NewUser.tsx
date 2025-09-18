@@ -219,7 +219,7 @@ const NewUser: React.FC = () => {
               id="companyName"
             >
               <option value="">בחר קבוצה</option>
-              <option value="company1">/קבוצה 1</option>
+              <option value="company1">קבוצה 1</option>
               <option value="company2">קבוצה 2</option>
               <option value="company3">קבוצה 3</option>
             </select>
