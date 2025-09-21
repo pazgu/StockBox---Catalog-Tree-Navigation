@@ -1,4 +1,4 @@
-import React, { FC } from 'react';
+import React, { FC, useState } from 'react';
 import './SingleCat.css';
 
 import canoneos2000d from '../../../../assets/canon-eos2000d.png';
@@ -7,6 +7,7 @@ import canoneos250d from '../../../../assets/canon-eos250d.png';
 import canoneosr10 from '../../../../assets/canon-eosr10.png';
 import canoneosr50 from '../../../../assets/canon-eosr50.png';
 import canoneosr100 from '../../../../assets/canon-eosr100.png';
+import { Pen, Trash } from 'lucide-react';
 
 interface CameraProduct {
   id: number;
@@ -16,7 +17,7 @@ interface CameraProduct {
   imageUrl: string;
 }
 
-const mockCameraData: CameraProduct[] = [
+const initialCameraData: CameraProduct[] = [
   {
     id: 1,
     name: 'מצלמה דיגיטלית Canon EOS 250D DSLR',
@@ -62,28 +63,47 @@ const mockCameraData: CameraProduct[] = [
 ];
 
 const SingleCat: FC = () => {
+  const [cameras, setCameras] = useState<CameraProduct[]>(initialCameraData);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<CameraProduct | null>(null);
+
+  const handleDelete = (product: CameraProduct) => {
+    setProductToDelete(product);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = () => {
+    if (productToDelete) {
+      setCameras(cameras.filter(camera => camera.id !== productToDelete.id));
+    }
+    setShowDeleteModal(false);
+    setProductToDelete(null);
+  };
+
+
+
+  const closeAllModals = () => {
+    setShowDeleteModal(false);
+    setProductToDelete(null);
+  };
+
   return (
     <div className="product-page-container">
       <header className="page-header">
         <h1 className="category-title">קטגוריה: צילום</h1>
         <div className="filters-and-controls">
-          <div className="filter-group">
-            <span className="filter-label">סך הכל פריטים: {mockCameraData.length}</span>
-            {/* <div className="filter-input-row">
-              <label htmlFor="filter1" className="filter-label">סינון לפי:</label>
-              <input id="filter1" type="text" className="filter-input" placeholder="לדוגמא: עדשה" />
-            </div>
-            <div className="filter-input-row">
-              <label htmlFor="filter2" className="filter-label">סינון לפי:</label>
-              <input id="filter2" type="text" className="filter-input" placeholder="לדוגמא: צבע" />
-            </div> */}
-          </div>
+          <span className="filter-label">סך הכל פריטים: {cameras.length}</span>
         </div>
       </header>
 
       <main className="product-grid">
-        {mockCameraData.map((camera) => (
+        {cameras.map((camera) => (
           <div key={camera.id} className="product-card">
+            <div className="overlay">
+              <button className="delete-btn" onClick={() => handleDelete(camera)}>
+                <Trash size={25} />
+              </button>
+            </div>
             <div className="product-image-wrapper">
               <img src={camera.imageUrl} alt={camera.name} className="product-image" />
             </div>
@@ -99,6 +119,25 @@ const SingleCat: FC = () => {
           </div>
         ))}
       </main>
+
+      {showDeleteModal && productToDelete && (
+        <div className="modal" onClick={closeAllModals}>
+          <div
+            className="modal-content delete-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h4>מחיקת מוצר</h4>
+            <p>האם אתה בטוח שברצונך למחוק את המוצר "{productToDelete.name}"?</p>
+            <small>לא יהיה ניתן לבטל פעולה זו</small>
+            <div className="modal-actions">
+              <button onClick={confirmDelete} className="delete-confirm-btn">מחק</button>
+              <button onClick={closeAllModals}>ביטול</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
     </div>
   );
 };
