@@ -37,10 +37,8 @@ const About: FC<AboutProps> = () => {
   return (
     <div className="About">
       <div className="about-container">
-        {/* שמאל – תוכן */}
         <div className="content-section">
           <h1 className="main-title">אודות StockBox</h1>
-
           <div className="intro-card">
             <p className="description lead-intro">
               <strong>StockBox</strong> היא מערכת וובי מרכזית שמאחדת את כל הידע של הצוות למקום אחד.
@@ -69,7 +67,6 @@ const About: FC<AboutProps> = () => {
 
           <h2 className="section-title vision-title">החזון שלנו</h2>
 
-          {/* רשימת נקודות בסגנון ההשראה */}
           <ul className="vision-list">
             {visionPoints.map((point, i) => (
               <li key={i} className="vision-item">
@@ -82,7 +79,6 @@ const About: FC<AboutProps> = () => {
           </ul>
         </div>
 
-        {/* ימין – גלריית תמונות / תצוגה */}
         <div className="image-section">
           <div className="image-container">
             <img
