@@ -39,7 +39,6 @@ const About: FC<AboutProps> = () => {
       <div className="about-container">
         <div className="content-section">
           <h1 className="main-title">אודות StockBox</h1>
-
           <div className="intro-card">
             <p className="description lead-intro">
               <strong>StockBox</strong> היא מערכת וובי מרכזית שמאחדת את כל הידע של הצוות למקום אחד.
