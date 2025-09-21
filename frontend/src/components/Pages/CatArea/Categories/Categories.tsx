@@ -251,6 +251,7 @@ const handleEditSave = () => {
               alt="preview"
               style={{ maxWidth: "100%", marginTop: "10px", borderRadius: "8px" }}
             />
+            <a href="/permissions"><small id="permissions-link">לניהול הרשאות</small></a>
 
             <div className="modal-actions">
               <button onClick={handleEditSave}>שמור</button>

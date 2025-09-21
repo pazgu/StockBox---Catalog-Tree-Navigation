@@ -382,3 +382,11 @@ display: flex;
 small {
   color: #6c757d;
 }
+
+#permissions-link {
+  text-decoration: underline;
+  cursor: pointer;
+  color: #2c3e50;
+  margin-top: 10px;
+  display: inline-block;
+}
