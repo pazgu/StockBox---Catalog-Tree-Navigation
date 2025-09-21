@@ -1,9 +1,10 @@
 .permissions-container {
   direction: rtl;
   padding: 149px 20px 40px 20px; 
-  max-width: 600px;
+  max-width: 1000px;
   margin: 0 auto;
   min-height: 100vh;
+  
 }
 
 .permissions-card {
@@ -63,6 +64,7 @@
   font-size: 14px;
   font-weight: 500;
   color: #374151;
+  margin-top: 10px;
 }
 
 .access-switch {
@@ -142,6 +144,7 @@
   font-size: 14px;
   font-weight: 500;
   color: #374151;
+  margin-bottom: 5px;
 }
 
 .registered-switch {
@@ -158,6 +161,7 @@
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   padding: 8px 0;
+  margin-top: 5px;
 }
 
 .permission-item {
@@ -183,11 +187,10 @@
 }
 
 .additional-options {
-  padding: 12px 16px;
+  height: 40px;
   text-align: center;
-  border-top: 1px solid #e5e7eb;
   background: white;
-  border-radius: 0 0 8px 8px;
+  border-radius:8px;
   font-size: small;
 }
 
