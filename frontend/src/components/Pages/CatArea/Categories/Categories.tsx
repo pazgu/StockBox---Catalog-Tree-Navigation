@@ -121,9 +121,10 @@ const handleEditSave = () => {
         <h2 className="categories-title">קטגוריות</h2>
       </div>
 
-      <div className="categories-grid">
+      <div  className="categories-grid">
         {categories.map((category) => (
           <div key={category.id} className={`category-item ${category.isActive ? 'active' : ''}`}>
+            <a href="/single-cat">
             <div className="overlay">
               <button 
                 className="delete-btn" 
@@ -140,9 +141,11 @@ const handleEditSave = () => {
                 </button>
               </span>
             </div>
+           
             <div className="category-icon">
               <img src={category.image} alt={category.name} className="category-image" />
             </div>
+             </a>
             <span className="category-label">{category.name}</span>
           </div>
         ))}
