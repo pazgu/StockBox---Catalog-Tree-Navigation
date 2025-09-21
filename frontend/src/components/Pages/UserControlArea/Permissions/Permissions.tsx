@@ -11,6 +11,11 @@ import { Input } from '../../../ui/input';
 import './Permissions.css';
 import camera from '../../../../assets/camera.png'
 import AddCat from '../../CatArea/AddCat/AddCat';
+interface Group {
+  name: string;
+  members: string[];
+}
+
 
 interface PermissionItem {
   id: string;
@@ -27,6 +32,8 @@ interface UserPermissions {
 
 const Permissions: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(false);
+    const [groups, setGroups] = useState<Group[]>([]);
+
   const [userPermissions, setUserPermissions] = useState<UserPermissions>({
     generalAccess: true,
     specificUsers: '',
@@ -38,7 +45,9 @@ const Permissions: React.FC = () => {
     ]
   });
   const [isOpen, setIsOpen] = useState(false);
-
+ const handleSaveGroup = (group: Group) => {
+    setGroups((prev) => [...prev, group]); // add new group
+  };
   const handlePermissionToggle = (permissionId: string) => {
     setUserPermissions(prev => ({
       ...prev,
@@ -137,14 +146,9 @@ const Permissions: React.FC = () => {
             <Label htmlFor="only-registered" className="registered-label">
               רק למשתמשי הקבוצות:
             </Label>
-            <Switch
-              id="only-registered"
-              checked={userPermissions.onlyRegistered}
-              onCheckedChange={handleOnlyRegisteredToggle}
-              className="registered-switch"
-            />
+            
           </div>
-
+        
           {/* Expandable Permissions */}
           <AnimatePresence>
             {isExpanded && (
@@ -172,6 +176,20 @@ const Permissions: React.FC = () => {
                       />
                     </div>
                   ))}
+                    {/* Render dynamic groups */}
+                    {groups.map((group, index) => (
+                      <div key={index} className="permission-item">
+                        <Label htmlFor={`group-${index}`} className="permission-label">
+                          {group.name}
+                        </Label>
+                        <Switch
+                          id={`group-${index}`}
+                          checked={userPermissions.onlyRegistered} // <-- or a per-group toggle if you want
+                          onCheckedChange={handleOnlyRegisteredToggle}
+                          className="permission-switch"
+                        />
+                      </div>
+                    ))}
                 </div>
                
                 <div className="additional-options">
@@ -182,8 +200,17 @@ const Permissions: React.FC = () => {
                     לחץ להוסיף קבוצה
                   </button>
 
-                  {isOpen && <AddCat onClose={() => setIsOpen(false)} />}
-                            </div>
+                 {isOpen && (
+                      <AddCat 
+                        onClose={() => setIsOpen(false)} 
+                        onSave={(newGroup: Group) => {
+                          setGroups(prev => [...prev, newGroup]);
+                          setIsOpen(false);
+                        }} 
+                      />
+                    )}
+
+            </div>
               </motion.div>
             )}
           </AnimatePresence>
