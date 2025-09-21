@@ -218,10 +218,10 @@ const NewUser: React.FC = () => {
               {...register('companyName')}
               id="companyName"
             >
-              <option value="">בחר חברה</option>
-              <option value="company1">חברה 1</option>
-              <option value="company2">חברה 2</option>
-              <option value="company3">חברה 3</option>
+              <option value="">בחר קבוצה</option>
+              <option value="company1">קבוצה 1</option>
+              <option value="company2">קבוצה 2</option>
+              <option value="company3">קבוצה 3</option>
             </select>
           </div>
 
