@@ -217,9 +217,10 @@ const Permissions: React.FC = () => {
 
           {/* Action Buttons */}
           <div className="action-buttons">
+            <a href='/categories'>
             <Button variant="outline" className="cancel-button">
               ביטול
-            </Button>
+            </Button></a>
             <Button className="save-button">
               שמירה
             </Button>
