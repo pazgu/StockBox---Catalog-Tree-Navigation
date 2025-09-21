@@ -1,44 +1,99 @@
-import React, { FC } from 'react';
-import './SingleProd.css';
-import { Accordion,AccordionItem, AccordionTrigger, AccordionContent } from '../../../ui/accordion'
-import {Button} from '../../../ui/button'
-import { Switch } from '../../../ui/switch';
-import { Label } from '../../../ui/label';
+import React, { FC } from "react"
+import "./SingleProd.css"
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "../../../ui/accordion"
+import { Heart, Share2 } from "lucide-react"
+import cam from '../../../../assets/cam.png';
+
+
+
 
 interface SingleProdProps {}
 
-const SingleProd: FC<SingleProdProps> = () => (
-  <div className='accordion-container'>
-        <Button variant="destructive">Destructive</Button>
- <div className="flex items-center space-x-2">
-      <Switch id="airplane-mode" />
-      <Label htmlFor="airplane-mode">Airplane Mode</Label>
-    </div>
-       <div className="SingleProd p-4 max-w-md mx-auto" >
-    <Accordion type="single" collapsible>
-      <AccordionItem value="item-1">
-        <AccordionTrigger>Product Details</AccordionTrigger>
-        <AccordionContent>
-          Here are all the details about the product.
-        </AccordionContent>
-      </AccordionItem>
-      <AccordionItem value="item-2">
-        <AccordionTrigger>Shipping Info</AccordionTrigger>
-        <AccordionContent>
-          Shipping takes 3–5 business days.
-        </AccordionContent>
-      </AccordionItem>
-      <AccordionItem value="item-3">
-        <AccordionTrigger>Return Policy</AccordionTrigger>
-        <AccordionContent>
-          You can return the product within 30 days.
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
-    <div className="flex flex-wrap items-center gap-2 md:flex-row">
-      <Button variant="outline">Button</Button>
-    </div>
-  </div></div>
-);
+const SingleProd: FC<SingleProdProps> = () => {
+  return (
+    <div className="SingleProd">
+      <div className="page-container">
+        {/* כותרת ראשית */}
+        <div className="main-title">מצלמת DSLR קלאסית עם עדשה אדומה</div>
 
-export default SingleProd;
+        {/* תיאור משני */}
+        <div className="sub-description">
+          פתרון מקצועי לצילום איכותי עם עיצוב רטרו ועמידות גבוהה.
+        </div>
+
+        {/* תוכן הדף */}
+        <div className="page-content">
+          {/* אזור התמונה והכפתור */}
+          <div className="image-and-button-section">
+            <div className="share-icons">
+  <button className="share-btn">
+    <Heart size={20} strokeWidth={2} />
+  </button>
+  <button className="share-btn">
+    <Share2 size={20} strokeWidth={2} />
+  </button>
+</div>
+
+           <div className="product-image">
+  <img
+    src={cam}
+    alt="מצלמת DSLR קלאסית עם עדשה אדומה"
+  />
+</div>
+
+            <button className="contact-button">פנייה לחבר צוות</button>
+          </div>
+
+          {/* אזור המידע */}
+          <div className="info-section-container">
+            <Accordion type="single" collapsible className="w-full">
+              {/* תיאור המוצר */}
+              <AccordionItem value="description">
+                <AccordionTrigger>תיאור המוצר</AccordionTrigger>
+                <AccordionContent>
+                  מצלמת DSLR מקצועית עם עדשה איכותית ועיצוב קלאסי רטרו. המצלמה
+                  מציעה איכות תמונה מעולה עם חיישן מתקדם ובקרה מלאה על כל
+                  הגדרות הצילום.
+                </AccordionContent>
+              </AccordionItem>
+
+              {/* מפרט טכני */}
+              <AccordionItem value="specifications">
+                <AccordionTrigger>מפרט טכני</AccordionTrigger>
+                <AccordionContent>
+                  רזולוציה 24MP, חיישן APS-C, עדשה 18-55mm, מסך LCD 3 אינץ',
+                  חיבור Wi-Fi
+                </AccordionContent>
+              </AccordionItem>
+
+              {/* מאפיינים עיקריים */}
+              <AccordionItem value="features">
+                <AccordionTrigger>מאפיינים עיקריים</AccordionTrigger>
+                <AccordionContent>
+                  <div className="features-list">
+                    <div className="feature-item">• איכות תמונה חדה במיוחד</div>
+                    <div className="feature-item">
+                      • עיצוב רטרו יוקרתי עם טבעות אדומות
+                    </div>
+                    <div className="feature-item">• צילום ווידאו 4K מקצועי</div>
+                    <div className="feature-item">
+                      • עדשה מהירה לצילום בתאורה חלשה
+                    </div>
+                    <div className="feature-item">• נוחות אחיזה ובקרה</div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default SingleProd
