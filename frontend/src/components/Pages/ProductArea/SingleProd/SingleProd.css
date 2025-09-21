@@ -3,9 +3,9 @@
     top: 150px;
     right:20px
 }
+
 .SingleProd {
   padding: 160px 20px 40px 20px;
-  background-color: #FFFAF1; /* רקע אחיד */
   min-height: 50vh;
   font-family: 'Noto Sans Hebrew', Arial, sans-serif;
   direction: rtl;
@@ -13,56 +13,93 @@
 
 /* קונטיינר הדף הראשי */
 .page-container {
-height: 300px;
+  height: 300px;
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
+  position: relative;
+  
 }
 
 /* כותרת ראשית */
 .main-title {
   position: absolute;
-   width: 424px; 
-   height: 33px; 
-   right: 5px; 
-   font-family: 'Noto Sans Hebrew'; 
-   font-style: normal; 
-    font-weight: 700;
-    font-size: 24px; 
-    line-height: 33px; /* identical to box height */ 
-    text-align: center; 
-    color: #0D305B;
-
-    
+  width: 424px; 
+  height: 33px; 
+  right: 5px; 
+  top: 20px;
+  font-family: 'Noto Sans Hebrew'; 
+  font-style: normal; 
+  font-weight: 700;
+  font-size: 24px; 
+  line-height: 33px;
+  text-align: right; 
+  color: #0D305B;
 }
 
 /* תיאור משני */
 .sub-description {
-    width: 50%; 
-    font-family: 'Noto Sans Hebrew';
-    font-style: normal; 
-    font-weight: 800;
-    font-size: 20px;
-    line-height: 140px; 
-    color: #0D305B;
-    margin-top: 40px;
+  position: absolute;
+  width: 50%; 
+  right: 5px;
+  top: 65px;
+  font-family: 'Noto Sans Hebrew';
+  font-style: normal; 
+  font-weight: 800;
+  font-size: 20px;
+  line-height: 27px; 
+  color: #0D305B;
+  text-align: right;
 }
+
+
 
 /* תמונה בצד שמאל */
 .image-and-button-section {
   float: left;
-  width: 250px;
+  width: 200px;
   text-align: center;
-  margin-top: -200px;
+  margin-top: -140px;       /* Makes it higher */
+  margin-left: -60px;      /* Makes it more to the left */
+}
+
+.share-icons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 15px;
+}
+
+.share-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 50%;
+  transition: background-color 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.share-btn:hover {
+  background-color: rgba(13, 48, 91, 0.1);
+}
+
+.product-image {
+  margin-bottom: 30px;
+  margin-left: 50px;
 }
 
 .product-image img {
-  width: 200px;
+  width: 250px;
   height: 150px;
   object-fit: cover;
   border-radius: 10px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   margin-bottom: 15px;
+  
 }
 
 .contact-button {
@@ -76,11 +113,8 @@ height: 300px;
   cursor: pointer;
   white-space: nowrap;
   margin-bottom: 10px;
-}
-
-
-.contact-button {
-  transition: all 0.3s ease-in-out; /* smooth hover animation */
+  margin-left: 40px;
+  transition: all 0.3s ease-in-out;
 }
 
 .contact-button:hover {
@@ -88,31 +122,12 @@ height: 300px;
   transform: translateY(-2px);
 }
 
-
-.share-icons {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-}
-
-.share-btn {
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 50%;
-  transition: background-color 0.3s ease;
-}
-
-.share-btn:hover {
-  background-color: rgba(13, 48, 91, 0.1);
-}
-
 /* אזור המידע */
 .info-section-container {
   flex: 1;
+  width: 800px;
   overflow: hidden;
+  margin-top: 50px;
 }
 
 /* שורות מידע */
@@ -120,11 +135,12 @@ height: 300px;
   width: 70%;
   border-bottom: 1px solid #e0e0e0;
 }
+
 .info-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px 0;
+  padding: 20px 0;
   cursor: pointer;
   transition: background-color 0.3s ease, 
               padding 0.3s ease, 
@@ -133,10 +149,9 @@ height: 300px;
 
 .info-content:hover {
   background-color: rgba(186, 159, 113, 0.1);
-  padding: 15px; /* expands smoothly now */
+  padding: 20px;
   border-radius: 5px;
 }
-
 
 .info-label {
   font-weight: 600;
@@ -152,23 +167,24 @@ height: 300px;
   transition: transform 0.3s ease;
   user-select: none;
 }
+
 .arrow-button:hover {
   transform: scale(1.1);
 }
 
 /* תוכן מורחב */
 .expanded-content {
-  padding: 10px 0 20px 0;
+  padding: 15px 0 25px 0;
   animation: slideDown 0.3s ease-out;
   width: 100%;
 }
 
 .expanded-content p {
   font-size: 16px;
-  line-height: 22px;
+  line-height: 1.6;
   color: #0D305B;
   margin: 0;
-  padding: 10px;
+  padding: 15px;
   background-color: transparent;
   border: none;
 }
@@ -177,14 +193,15 @@ height: 300px;
 .features-list {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 10px;
+  padding: 10px 0;
 }
 
 .feature-item {
   font-size: 16px;
-  line-height: 20px;
+  line-height: 1.5;
   color: #0D305B;
-  padding: 5px 10px;
+  padding: 8px 15px;
   background-color: transparent;
   border: none;
 }
@@ -197,7 +214,7 @@ height: 300px;
   }
   to {
     opacity: 1;
-    max-height: 300px;
+    max-height: 400px;
     transform: translateY(0);
   }
 }
@@ -205,23 +222,32 @@ height: 300px;
 /* רספונסיביות */
 @media (max-width: 768px) {
   .SingleProd {
-    padding: 160px 10px 20px 10px;
+    padding: 160px 15px 40px 15px;
   }
   
- .image-and-button-section {
-    margin-right: 0;
-    margin-bottom: 20px;
+  .page-content {
+    flex-direction: column;
+    gap: 30px;
+    align-items: center;
+  }
+  
+  .image-and-button-section {
+    flex: none;
+    width: 100%;
+    max-width: 300px;
+  }
+
+  .info-section-container {
+    width: 100%;
   }
 
   .main-title {
     font-size: 20px;
+    margin-bottom: 20px;
   }
 
   .sub-description {
     font-size: 16px;
+    margin-bottom: 30px;
   }
 }
-.page-container {
-    flex-direction: column;
-    align-items: center;
-  }
