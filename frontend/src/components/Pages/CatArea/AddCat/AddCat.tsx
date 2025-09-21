@@ -4,6 +4,7 @@ import './AddCat.css';
 interface Group {
   name: string;
   members: string[];
+  enabled:boolean
 }
 
 interface AddCatProps {
@@ -36,7 +37,7 @@ const AddCat: FC<AddCatProps> = ({ onClose, onSave }) => {
 
  const handleSave = () => {
   if (!groupName.trim()) return; // prevent empty name
-  onSave({ name: groupName, members: users });
+  onSave({ name: groupName, members: users , enabled:true });
 };
 
   return (

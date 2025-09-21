@@ -14,6 +14,13 @@ import AddCat from '../../CatArea/AddCat/AddCat';
 interface Group {
   name: string;
   members: string[];
+  enabled: boolean;
+
+}
+
+interface User {
+  name: string;
+  enabled: boolean
 }
 
 
@@ -31,9 +38,17 @@ interface UserPermissions {
 }
 
 const Permissions: React.FC = () => {
-  const [isExpanded, setIsExpanded] = useState(false);
-    const [groups, setGroups] = useState<Group[]>([]);
+  const [isExpandedUsers, setIsExpandedUsers] = useState(false);
+    const [isExpandedGroups, setIsExpandedGroups] = useState(false);
+const [userSearch, setUserSearch] = useState('');
 
+    const [groups, setGroups] = useState<Group[]>([]);
+const [users, setUsers] = useState<User[]>([
+  { name: "Alice",enabled:true },
+  { name: "Bob" ,enabled:true },
+  { name: "Charlie" ,enabled:true },
+  { name: "Dana" ,enabled:true },
+]);
   const [userPermissions, setUserPermissions] = useState<UserPermissions>({
     generalAccess: true,
     specificUsers: '',
@@ -45,9 +60,10 @@ const Permissions: React.FC = () => {
     ]
   });
   const [isOpen, setIsOpen] = useState(false);
- const handleSaveGroup = (group: Group) => {
-    setGroups((prev) => [...prev, group]); // add new group
-  };
+const filteredUsers = users.filter(user =>
+  user.name.toLowerCase().includes(userSearch.toLowerCase())
+);
+
   const handlePermissionToggle = (permissionId: string) => {
     setUserPermissions(prev => ({
       ...prev,
@@ -58,13 +74,38 @@ const Permissions: React.FC = () => {
       )
     }));
   };
+   const handleUserToggle = (name: string) => {
+  setUsers(prev =>
+    prev.map(user =>
+      user.name === name ? { ...user, enabled: !user.enabled } : user
+    )
+  );
+};
 
   const handleGeneralAccessToggle = () => {
-    setUserPermissions(prev => ({
-      ...prev,
-      generalAccess: !prev.generalAccess
-    }));
-  };
+  setUserPermissions(prev => {
+    const newGeneralAccess = !prev.generalAccess;
+
+    // // Disable all users if generalAccess is turned off
+    // setUsers(prevUsers =>
+    //   prevUsers.map(user => ({
+    //     ...user,
+    //     enabled: newGeneralAccess ? user.enabled : false,
+    //   }))
+    // );
+
+    // // Disable all groups if generalAccess is turned off
+    // setGroups(prevGroups =>
+    //   prevGroups?.map(group => ({
+    //     ...group,
+    //     enabled: newGeneralAccess ? group.enabled : false, // make sure group has an enabled property
+    //   }))
+    // );
+
+    return { ...prev, generalAccess: newGeneralAccess };
+  });
+};
+
 
   const handleOnlyRegisteredToggle = () => {
     setUserPermissions(prev => ({
@@ -97,7 +138,12 @@ const Permissions: React.FC = () => {
               <h2 className="permissions-title">ניהול הרשאות עבור: קטגורית שמע</h2>
              
               {/* General Access Toggle */}
+             <Label className="mb-20 text-base font-bold text-gray-800">
+          מוסתרת מ:
+        </Label>
+
               <div className="access-control">
+                 
                 <Label htmlFor="general-access" className="access-label">
                   כל המשתמשים
                 </Label>
@@ -111,47 +157,94 @@ const Permissions: React.FC = () => {
             </div>
           </div>
 
-          {/* Specific Users Input */}
-          <div className="input-section">
-            <Label htmlFor="specific-users" className="input-label">
-              המלקה מוסתרת מ:
-            </Label>
-            <Input
-              id="specific-users"
-              value={userPermissions.specificUsers}
-              onChange={(e) => handleSpecificUsersChange(e.target.value)}
-              className="users-input"
-              placeholder="הכנס שמות משתמשים..."
-            />
-          </div>
+         
 
           {/* Expand/Collapse Button */}
           <div className="expand-section">
             <Button
               variant="ghost"
-              onClick={() => setIsExpanded(!isExpanded)}
+              onClick={() => setIsExpandedUsers(!isExpandedUsers)}
               className="expand-button"
             >
               <span>משתמשים ספציפיים:</span>
-              {isExpanded ? (
+              {isExpandedUsers ? (
+                <ChevronUp className="expand-icon" />
+              ) : (
+                <ChevronDown className="expand-icon" />
+              )}
+            </Button>
+          
+            
+          </div>
+          <AnimatePresence>
+  {isExpandedUsers && (
+    <motion.div
+      initial={{ height: 0, opacity: 0 }}
+      animate={{ height: 'auto', opacity: 1 }}
+      exit={{ height: 0, opacity: 0 }}
+      transition={{ duration: 0.3, ease: 'easeInOut' }}
+      className="permissions-list-container"
+    >
+      <Label htmlFor="user-search" className="registered-label mb-5">
+        חפש משתמש:
+      </Label>
+      <input
+        id="user-search"
+        type="text"
+        placeholder="הקלד שם..."
+        value={userSearch}
+        onChange={(e) => setUserSearch(e.target.value)}
+        className="mb-3 mt-3 p-2 border border-gray-300 rounded w-full text-sm"
+      />
+
+      <Label htmlFor="only-registered" className="registered-label mb-2">
+        מוסתרת מהמשתמשים:
+      </Label>
+
+      <div className="permissions-list">
+        {filteredUsers.map((user) => (
+          <div key={user.name} className="permission-item">
+            <Label htmlFor={user.name} className="permission-label">
+              {user.name}
+            </Label>
+            <Switch
+              id={user.name}
+              checked={user.enabled}
+              onCheckedChange={() => handleUserToggle(user.name)}
+              disabled={!userPermissions.generalAccess}
+              className="permission-switch"
+            />
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  )}
+</AnimatePresence>
+
+
+          {/* Only Registered Toggle */}
+          
+            <div className="expand-section">
+            <Button
+              variant="ghost"
+              onClick={() => setIsExpandedGroups(!isExpandedGroups)}
+              className="expand-button"
+            >
+              <span>קבוצות ספציפיות:</span>
+              {isExpandedGroups ? (
                 <ChevronUp className="expand-icon" />
               ) : (
                 <ChevronDown className="expand-icon" />
               )}
             </Button>
           </div>
-
-          {/* Only Registered Toggle */}
-          <div className="registered-section">
-            <Label htmlFor="only-registered" className="registered-label">
-              רק למשתמשי הקבוצות:
-            </Label>
-            
-          </div>
-        
           {/* Expandable Permissions */}
+        
           <AnimatePresence>
-            {isExpanded && (
+            {isExpandedGroups
+            
+            &&(
+              
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
@@ -159,6 +252,10 @@ const Permissions: React.FC = () => {
                 transition={{ duration: 0.3, ease: 'easeInOut' }}
                 className="permissions-list-container"
               >
+                  <Label htmlFor="only-registered" className="registered-label">
+                    מוסתרת מהקבוצות:
+            </Label>
+            
                 <div className="permissions-list">
                   {userPermissions.permissions.map((permission) => (
                     <div key={permission.id} className="permission-item">
@@ -172,6 +269,8 @@ const Permissions: React.FC = () => {
                         id={permission.id}
                         checked={permission.enabled}
                         onCheckedChange={() => handlePermissionToggle(permission.id)}
+                          disabled={!userPermissions.generalAccess}
+
                         className="permission-switch"
                       />
                     </div>
@@ -186,20 +285,22 @@ const Permissions: React.FC = () => {
                           id={`group-${index}`}
                           checked={userPermissions.onlyRegistered} // <-- or a per-group toggle if you want
                           onCheckedChange={handleOnlyRegisteredToggle}
+                            disabled={!userPermissions.generalAccess}
                           className="permission-switch"
                         />
                       </div>
                     ))}
                 </div>
                
-                <div className="additional-options">
-                   <button
-                    className="px-2 py-1 bg-blue-700 text-white rounded"
-                    onClick={() => setIsOpen(true)}
-                  >
-                    לחץ להוסיף קבוצה
-                  </button>
-
+                <div>
+                  <div className="flex items-center justify-center mt-5">
+                        <button
+                          className="px-1 py-1 bg-blue-600 text-white text-sm rounded-sm"
+                          onClick={() => setIsOpen(true)}
+                        >
+                          לחץ להוסיף קבוצה
+                        </button>
+                      </div>
                  {isOpen && (
                       <AddCat 
                         onClose={() => setIsOpen(false)} 
