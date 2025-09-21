@@ -45,7 +45,6 @@ const Categories: FC<CategoriesProps> = () => {
     }
   };
 
-  // handle file upload for edit modal
   const handleEditImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -65,7 +64,7 @@ const Categories: FC<CategoriesProps> = () => {
   const handleSave = () => {
     if (newCatName && newCatImage) {
       const newCategory: Category = {
-        id: Date.now(), // Simple ID generation
+        id: Date.now(), 
         name: newCatName,
         image: newCatImage
       };
