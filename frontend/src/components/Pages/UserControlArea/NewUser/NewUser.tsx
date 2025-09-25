@@ -80,16 +80,18 @@ const NewUser: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="avatar-section">
-          <div className="avatar-placeholder">
-            <svg width="24" height="24" viewBox="0 0 40 40" fill="none">
-              <circle cx="20" cy="16" r="6" fill="#6B7280"/>
-              <path d="M8 32c0-6.627 5.373-12 12-12s12 5.373 12 12" fill="#6B7280"/>
-            </svg>
-          </div>
-        </div>
+        <div className="form-header">
+  <div className="avatar-section">
+    <div className="avatar-placeholder">
+      <svg width="24" height="24" viewBox="0 0 40 40" fill="none">
+        <circle cx="20" cy="16" r="6" fill="#6B7280"/>
+        <path d="M8 32c0-6.627 5.373-12 12-12s12 5.373 12 12" fill="#6B7280"/>
+      </svg>
+    </div>
+  </div>
+  <h2 className="form-title">הוספת משתמש חדש</h2>
+</div>
 
-        <h2 className="form-title">הוספת משתמש חדש</h2>
 
         <form onSubmit={handleSubmit(onSubmit)} className="user-form">
           <div className="form-group">

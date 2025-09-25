@@ -6,6 +6,7 @@ import camera from "../../../../assets/camera.png";
 import video from "../../../../assets/video.png";
 import { Pen } from "lucide-react";
 import { Trash } from "lucide-react";
+// import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 
 interface CategoriesProps {}
 
@@ -32,6 +33,7 @@ const Categories: FC<CategoriesProps> = () => {
     { id: 4, name: "צילום", image: camera }
   ]);
 
+
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -43,7 +45,6 @@ const Categories: FC<CategoriesProps> = () => {
     }
   };
 
-  // handle file upload for edit modal
   const handleEditImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -63,7 +64,7 @@ const Categories: FC<CategoriesProps> = () => {
   const handleSave = () => {
     if (newCatName && newCatImage) {
       const newCategory: Category = {
-        id: Date.now(), // Simple ID generation
+        id: Date.now(), 
         name: newCatName,
         image: newCatImage
       };
@@ -120,9 +121,10 @@ const handleEditSave = () => {
         <h2 className="categories-title">קטגוריות</h2>
       </div>
 
-      <div className="categories-grid">
+      <div  className="categories-grid">
         {categories.map((category) => (
           <div key={category.id} className={`category-item ${category.isActive ? 'active' : ''}`}>
+           
             <div className="overlay">
               <button 
                 className="delete-btn" 
@@ -139,9 +141,11 @@ const handleEditSave = () => {
                 </button>
               </span>
             </div>
+            <a href="/single-cat">
             <div className="category-icon">
               <img src={category.image} alt={category.name} className="category-image" />
             </div>
+             </a>
             <span className="category-label">{category.name}</span>
           </div>
         ))}
@@ -249,6 +253,7 @@ const handleEditSave = () => {
               alt="preview"
               style={{ maxWidth: "100%", marginTop: "10px", borderRadius: "8px" }}
             />
+            <a href="/permissions"><small id="permissions-link">לניהול הרשאות</small></a>
 
             <div className="modal-actions">
               <button onClick={handleEditSave}>שמור</button>

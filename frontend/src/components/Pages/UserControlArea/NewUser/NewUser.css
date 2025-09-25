@@ -1,49 +1,59 @@
+
 .NewUser {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding-top: 180px;
+  padding-top: 120px;
   width: 100%;
   box-sizing: border-box;
+  position: fixed;
+  top:40px;
 }
 
 .form-wrapper {
   background-color: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  padding: 15px 25px; 
-  width: 400px;
+  transform: scale(0.5);  
+  transform-origin: top center; 
+  border-radius: 8px;
+  border: 1px solid #E5E7EB;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  padding: 16px 24px;     
+  height: 400px; 
+  width: 90%;   
   display: flex;
   flex-direction: column;
   position: relative;
+  max-width: 85vw; 
+
 }
 
 .avatar-section {
-  position: absolute;
-  top: 15px;
-  left: 20px;
+  position: static;
+  top: 16px;
+  right: 32px;
 }
 
 .avatar-placeholder {
-  width: 50px;
-  height: 50px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  background-color: #E5E7EB;
+  background-color: #F3F4F6;
   display: flex;
   justify-content: center;
   align-items: center;
+  border: 1px solid #E5E7EB;
 }
 
 .avatar-placeholder svg {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
 }
 
 .form-title {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
   color: #0a2340;
-  margin: 0 0 15px 0;
+  margin: 8px 0 20px 0;
   text-align: center;
   direction: rtl;
 }
@@ -51,21 +61,28 @@
 .user-form {
   width: 100%;
   display: flex;
-  flex-direction: column;
+  flex-direction:row;
   direction: rtl;
   text-align: right;
+  flex-wrap: wrap;
+  justify-items: center;
+  gap: 20px;
+  justify-content: center;
+
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  margin-bottom: 8px; 
+  margin-bottom: 12px; 
+  min-width: 300px;
+  max-width: 350px;
 }
 
 .form-group label {
-  margin-bottom: 3px;
-  font-size: 12px;
-  font-weight: 500;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
   color: #374151;
   direction: rtl;
   text-align: right;
@@ -73,28 +90,30 @@
 
 .form-group input,
 .form-group select {
-  padding: 8px 10px; 
+  padding: 12px 16px; 
   border: 1px solid #D1D5DB;
-  border-radius: 5px;
-  font-size: 12px;
+  border-radius: 8px;
+  font-size: 16px;
   outline: none;
-  transition: border-color 0.2s;
+  transition: all 0.2s ease;
   direction: rtl;
   text-align: right;
   background-color: #fff;
-  min-height: 14px;
+  min-height: 24px;
+  line-height: 1.5;
 }
 
 .form-group input:focus,
 .form-group select:focus {
   border-color: #0D305B;
-  box-shadow: 0 0 0 1px rgba(13, 48, 91, 0.1);
+  box-shadow: 0 0 0 3px rgba(13, 48, 91, 0.1);
 }
 
 .form-group input::placeholder {
   color: #9CA3AF;
   direction: rtl;
   text-align: right;
+  font-size: 16px;
 }
 
 .password-wrapper {
@@ -105,94 +124,124 @@
 
 .password-wrapper input {
   width: 100%;
-  padding-left: 30px; 
+  padding-left: 48px; 
 }
 
 .password-toggle {
   position: absolute;
-  left: 8px;
+  left: 12px;
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 12px;
   color: #6B7280;
-  padding: 0;
-  height: 100%;
+  padding: 4px;
+  height: auto;
   display: flex;
   align-items: center;
+  transition: color 0.2s ease;
 }
 
 .password-toggle:hover {
   color: #374151;
 }
 
+.password-toggle svg {
+  width: 20px;
+  height: 20px;
+}
+
 .form-group select {
   cursor: pointer;
-  background-image: url('data:image/svg+xml;utf8,<svg fill="%23374151" height="16" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+  background-image: url('data:image/svg+xml;utf8,<svg fill="%23374151" height="20" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
   background-repeat: no-repeat;
-  background-position: left 8px center;
-  background-size: 16px;
-  padding-left: 30px;
+  background-position: left 12px center;
+  background-size: 20px;
+  padding-left: 40px;
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
 }
 
 .submit-btn {
-  margin-top: 10px;
+  margin-top: 16px;
   background-color: #0D305B;
   color: #fff;
-  padding: 10px 20px;  
-  font-size: 13px;
+  padding: 14px 32px;  
+  font-size: 16px;
   font-weight: 600;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.2s;
-  align-self: flex-end;  
-  width: auto;           
+  transition: all 0.2s ease;
+  align-self: center;  
+  width: auto;
+  min-width: 140px;
+  position: absolute;
+  justify-self: center;
+  bottom: 20px;
+  right: 42%;
+  
 }
 
 .submit-btn:hover {
   background-color: #0a2340;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(13, 48, 91, 0.3);
 }
-
 
 .form-group:last-of-type {
   margin-bottom: 0;
 }
 
-
-
 /* Error styles */
 .form-group input.error,
 .form-group select.error {
   border-color: #ef4444 !important;
-  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.1);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
 }
 
 .error-message {
   color: #ef4444;
-  font-size: 11px;
-  margin-top: 2px;
+  font-size: 13px;
+  margin-top: 6px;
   display: block;
   text-align: right;
   direction: rtl;
+  font-weight: 500;
 }
-
 
 .submit-btn.loading {
   opacity: 0.7;
   cursor: not-allowed;
+  transform: none;
 }
 
 .submit-btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+  transform: none;
 }
-
 
 .error-message {
   transition: opacity 0.2s ease-in-out;
 }
 
+.form-header {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* keeps them centered as a block */
+  gap: 12px;
+  margin-bottom: 20px;
+  direction: rtl; /* Hebrew direction */
+}
+
+.avatar-section {
+  order: 2;  /* ensures avatar shows on the left in RTL */
+}
+
+.form-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #0a2340;
+}

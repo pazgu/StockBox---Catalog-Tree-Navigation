@@ -1,19 +1,6 @@
-/* General Styling & Professional Palette */
-:root {
-  --primary-color: #0D305B;
-  --secondary-color: #3498db;
-  --text-color: #333;
-  --light-text-color: #555;
-  --background-color: #f4f7f6;
-  --card-background: #ffffff;
-  --border-color: #e0e0e0;
-  --shadow-color: rgba(0, 0, 0, 0.05);
-}
-
 body {
   font-family: 'Segoe UI', Arial, sans-serif;
   direction: rtl;
-  background-color: var(--background-color);
   margin: 0;
   padding: 0;
 }
@@ -30,62 +17,25 @@ body {
   flex-direction: column;
   align-items: flex-start;
   margin-bottom: 40px;
-  margin-top: 200px;
+  margin-top: 150px;
 }
 
 .category-title {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: var(--primary-color);
-  border-bottom: 3px solid var(--secondary-color);
+  font-size: 48px;
+  font-family: 'Alef', sans-serif;
+  font-weight: 300;
+  color: #0D305B;
+  border-bottom: 3px solid #67778a;
   padding-bottom: 5px;
   margin-bottom: 20px;
-}
-
-.filters-and-controls {
-  width: 100%;
-}
-
-.filter-group {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 20px;
-}
-
-.filter-label {
-  font-size: 1rem;
-  color: var(--light-text-color);
-  white-space: nowrap;
-}
-
-.filter-input-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.filter-input {
-  padding: 8px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  font-size: 1rem;
-  color: var(--text-color);
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
-  width: 150px;
-}
-
-.filter-input:focus {
-  outline: none;
-  border-color: var(--secondary-color);
-  box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+  letter-spacing: -0.5px;
 }
 
 /* Product Grid */
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 30px;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 60px;
 }
 
 /* Product Card */
@@ -100,7 +50,8 @@ body {
   text-align: center;
   transition: transform 0.3s ease;
   overflow: hidden;
-  border-bottom: 2px solid var(--border-color);
+  border-bottom: 2px solid #e0e0e0;
+  position: relative; /* This is crucial for positioning the overlay */
 }
 
 .product-card:hover {
@@ -108,7 +59,7 @@ body {
 }
 
 .product-image-wrapper {
-  height: 200px;
+  height: 140px;
   width: 100%;
   display: flex;
   justify-content: center;
@@ -131,43 +82,93 @@ body {
   width: 100%;
   text-align: center;
   padding-top: 15px;
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid #e0e0e0;
 }
 
 .product-name {
   font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--primary-color);
+  color: #0D305B;
   margin: 0 0 10px 0;
 }
 
 .product-info {
   font-size: 0.9rem;
-  color: var(--light-text-color);
+  color: #555;
   margin: 5px 0;
 }
 
 .product-info strong {
-  color: var(--text-color);
+  color: #333;
 }
+
+/* Overlay and Buttons */
+.overlay {
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120px;
+  height: 120px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.overlay .delete-btn {
+  position: absolute;
+  top: 3px;
+  right: 90px;
+  opacity: 0;
+  transform: translateX(15px) scale(0.8);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: auto;
+}
+
+
+.product-card:hover .overlay .delete-btn {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+}
+
+
+.overlay button {
+  height: 33px;
+  width: 33px;
+  border-radius: 100%;
+  border: none;
+  background-color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  box-shadow: 0 2px 4px rgba(0.1, 0.3, 0.3, 0.29);
+  color: #2c3e50;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.overlay button:hover {
+  background: #1e3a5f;
+  color: white;
+  transform: scale(1.1);
+}
+
+.delete-btn:hover {
+  background: #dc35467c !important;
+  border-color: #dc3545 !important;
+}
+
+
 
 /* Responsive Design */
 @media (max-width: 768px) {
   .product-page-container {
     padding: 10px;
   }
+
   .page-header {
     margin-bottom: 20px;
   }
+
   .category-title {
     font-size: 2rem;
-  }
-  .filter-group {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 15px;
-  }
-  .filter-input {
-    width: 100%;
   }
 }
