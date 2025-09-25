@@ -1,10 +1,16 @@
 import React, { FC } from 'react';
 import Header from '../../../LayoutArea/Header/Header';
 import './AllUsers.css';
+import { useNavigate } from 'react-router-dom';
 
 interface AllUsersProps {}
 
 const AllUsers: FC<AllUsersProps> = () => {
+  const navigate = useNavigate();
+
+const handleAddClick = () => {
+  navigate('/new-user'); // Navigate to NewUser component on click
+};
   return (
     <div className="AllUsers">
       <Header />
@@ -14,8 +20,8 @@ const AllUsers: FC<AllUsersProps> = () => {
             <h1 className="page-title">כל המשתמשים</h1>
             <p className="subtitle">הצג סינון</p>
           </div>
-          <div className="add-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <div className="add-icon" onClick={handleAddClick}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="12" y1="5" x2="12" y2="19"/>
               <line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
