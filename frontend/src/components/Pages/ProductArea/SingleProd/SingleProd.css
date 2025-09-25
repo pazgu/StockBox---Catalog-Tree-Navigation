@@ -18,7 +18,6 @@
   margin: 0 auto;
   width: 100%;
   position: relative;
-  
 }
 
 /* כותרת ראשית */
@@ -45,178 +44,185 @@
   top: 65px;
   font-family: 'Noto Sans Hebrew';
   font-style: normal; 
-  font-weight: 800;
-  font-size: 20px;
+  font-weight: 400;
+  font-size: 18px;
   line-height: 27px; 
-  color: #0D305B;
+  color: #666;
   text-align: right;
 }
-
-
 
 /* תמונה בצד שמאל */
 .image-and-button-section {
   float: left;
-  width: 200px;
+  width: 280px; /* Increased width slightly */
   text-align: center;
-  margin-top: -140px;       /* Makes it higher */
-  margin-left: -60px;      /* Makes it more to the left */
+  margin-top: -80px;
+  margin-left: 50px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  border: 1px solid #f0f0f0;
+  transition: all 0.3s ease;
 }
 
-.share-icons {
+.image-and-button-section:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Container for buttons side by side */
+.buttons-container {
   display: flex;
-  gap: 10px;
+  align-items: center;
+  gap: 12px;
   justify-content: center;
-  margin-bottom: 15px;
+  width: 100%;
+  padding-top: 8px; /* Add some separation from image */
 }
 
-.share-btn {
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  padding: 10px;
-  border-radius: 50%;
-  transition: background-color 0.3s ease;
+.heart-btn {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #0D305B;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); /* Lighter since it's inside the card */
+  flex-shrink: 0;
 }
 
-.share-btn:hover {
-  background-color: rgba(13, 48, 91, 0.1);
+.heart-btn:hover {
+  background-color: #f0f4ff;
+  border-color: #0D305B;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(13, 48, 91, 0.15);
 }
 
 .product-image {
-  margin-bottom: 30px;
-  margin-left: 50px;
+  margin-bottom: 20px; /* Reduced margin */
+  transition: all 0.3s ease;
+  background: transparent; /* Keep background transparent */
+  padding: 0; /* Remove padding around image */
 }
 
 .product-image img {
-  width: 250px;
-  height: 150px;
-  object-fit: cover;
-  border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  margin-bottom: 15px;
-  
+  width: 100%;
+  height: 180px;
+  object-fit: contain;
+  margin-bottom: 0;
+  transition: all 0.3s ease;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  /* Restore the original drop shadow */
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.25));
+}
+
+.product-image:hover img {
+  transform: scale(1.04); /* Restore original stronger zoom */
+  filter: drop-shadow(0 6px 18px rgba(0,0,0,0.45)); /* Restore stronger + darker shadow */
 }
 
 .contact-button {
   background-color: #0D305B;
   color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
+  border: 1px solid #0D305B;
+  padding: 12px 24px;
+  border-radius: 6px;
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
-  white-space: nowrap;
-  margin-bottom: 10px;
-  margin-left: 40px;
-  transition: all 0.3s ease-in-out;
+  transition: all 0.3s ease;
+  flex: 1;
+  max-width: 180px;
+  box-shadow: 0 2px 8px rgba(13, 48, 91, 0.08); /* Lighter since it's inside the card */
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .contact-button:hover {
-  background-color: #BA9F71;
-  transform: translateY(-2px);
+  background-color: #1a4971;
+  border-color: #1a4971;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(13, 48, 91, 0.15);
 }
 
 /* אזור המידע */
 .info-section-container {
   flex: 1;
-  width: 800px;
+  width: 700px;
   overflow: hidden;
   margin-top: 50px;
 }
 
-/* שורות מידע */
-.info-row {
-  width: 70%;
+/* Accordion styles */
+.accordion-item {
   border-bottom: 1px solid #e0e0e0;
 }
 
-.info-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 0;
-  cursor: pointer;
-  transition: background-color 0.3s ease, 
-              padding 0.3s ease, 
-              border-radius 0.3s ease;
-}
-
-.info-content:hover {
-  background-color: rgba(186, 159, 113, 0.1);
-  padding: 20px;
-  border-radius: 5px;
-}
-
-.info-label {
-  font-weight: 600;
-  font-size: 18px;
-  color: #0D305B;
-}
-
-.arrow-button {
-  font-size: 18px;
-  color: #0D305B;
-  cursor: pointer;
-  padding: 5px;
-  transition: transform 0.3s ease;
-  user-select: none;
-}
-
-.arrow-button:hover {
-  transform: scale(1.1);
-}
-
-/* תוכן מורחב */
-.expanded-content {
-  padding: 15px 0 25px 0;
-  animation: slideDown 0.3s ease-out;
+.accordion-trigger {
   width: 100%;
+  padding: 20px 0;
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  color: #0D305B;
+  text-align: right;
+  transition: all 0.2s ease;
 }
 
-.expanded-content p {
-  font-size: 16px;
-  line-height: 1.6;
+.accordion-trigger:hover {
+  background-color: rgba(240, 244, 255, 0.5);
+  padding: 20px 15px;
+  border-radius: 4px;
+}
+
+.accordion-trigger[data-state="open"] {
   color: #0D305B;
-  margin: 0;
-  padding: 15px;
-  background-color: transparent;
-  border: none;
+}
+
+.accordion-trigger svg {
+  transition: transform 200ms;
+}
+
+.accordion-trigger[data-state="open"] svg {
+  transform: rotate(180deg);
+}
+
+.accordion-content {
+  padding: 0 0 20px 0;
+  font-size: 15px;
+  color: #555;
+  line-height: 1.6;
 }
 
 /* רשימת מאפיינים */
 .features-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   padding: 10px 0;
 }
 
 .feature-item {
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1.5;
   color: #0D305B;
-  padding: 8px 15px;
-  background-color: transparent;
-  border: none;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    max-height: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    max-height: 400px;
-    transform: translateY(0);
-  }
+  padding: 6px 0;
+  text-align: right;
 }
 
 /* רספונסיביות */
@@ -235,6 +241,8 @@
     flex: none;
     width: 100%;
     max-width: 300px;
+    margin-top: 0;
+    margin-left: 0;
   }
 
   .info-section-container {
@@ -249,5 +257,23 @@
   .sub-description {
     font-size: 16px;
     margin-bottom: 30px;
+  }
+
+  /* Mobile responsive adjustments for buttons */
+  .buttons-container {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .contact-button {
+    max-width: 240px;
+    width: 100%;
+  }
+
+  .image-and-button-section {
+    width: 90%;
+    max-width: 320px;
+    margin-left: 0;
+    padding: 15px;
   }
 }
