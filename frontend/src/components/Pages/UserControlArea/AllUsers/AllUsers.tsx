@@ -9,7 +9,7 @@ const AllUsers: FC<AllUsersProps> = () => {
   const navigate = useNavigate();
 
 const handleAddClick = () => {
-  navigate('/new-user'); 
+  navigate('/new-user'); // Navigate to NewUser component on click
 };
   return (
     <div className="AllUsers">
