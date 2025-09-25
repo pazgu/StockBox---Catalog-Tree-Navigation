@@ -6,8 +6,8 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "../../../ui/accordion"
-import { Heart, Share2 } from "lucide-react"
-import cam from '../../../../assets/cam.png';
+import { Heart } from "lucide-react"
+import cam from '../../../../assets/red-lens-camera.png';
 
 
 
@@ -30,23 +30,19 @@ const SingleProd: FC<SingleProdProps> = () => {
         <div className="page-content">
           {/* אזור התמונה והכפתור */}
           <div className="image-and-button-section">
-            <div className="share-icons">
-  <button className="share-btn">
-    <Heart size={20} strokeWidth={2} />
-  </button>
-  <button className="share-btn">
-    <Share2 size={20} strokeWidth={2} />
-  </button>
-</div>
-
-           <div className="product-image">
-  <img
-    src={cam}
-    alt="מצלמת DSLR קלאסית עם עדשה אדומה"
-  />
-</div>
-
-            <button className="contact-button">פנייה לחבר צוות</button>
+            <div className="product-image">
+              <img
+                src={cam}
+                alt="מצלמת DSLR קלאסית עם עדשה אדומה"
+              />
+            </div>
+            {/* Container for buttons side by side */}
+            <div className="buttons-container">
+              <button className="heart-btn">
+                <Heart size={20} strokeWidth={2} />
+              </button>
+              <button className="contact-button">פנייה לחבר צוות</button>
+            </div>
           </div>
 
           {/* אזור המידע */}
