@@ -8,7 +8,6 @@ import {
 import cam from "../../../../assets/red-lens-camera.png"
 import { Heart, PencilLine, Upload } from "lucide-react"
 
-
 interface SingleProdProps {}
 
 const SingleProd: FC<SingleProdProps> = () => {
@@ -30,27 +29,21 @@ const SingleProd: FC<SingleProdProps> = () => {
     "עיצוב רטרו יוקרתי עם טבעות אדומות",
     "צילום ווידאו 4K מקצועי",
     "עדשה מהירה לצילום בתאורה חלשה",
-    "נוחות אחיזה ובקרה"
+    "נוחות אחיזה ובקרה",
   ])
+
   const [productImage, setProductImage] = useState(cam)
-  const [originalImage] = useState(cam) // Store original image for reset
-  const [hasImageChanged, setHasImageChanged] = useState(false) // Track if image was changed
+  const [originalImage] = useState(cam)
+  const [hasImageChanged, setHasImageChanged] = useState(false)
 
   const handleFeatureChange = (index: number, value: string) => {
     const newFeatures = [...features]
     newFeatures[index] = value
     setFeatures(newFeatures)
   }
-
-  const addFeature = () => {
-    setFeatures([...features, "תכונה חדשה"])
-  }
-
-  const removeFeature = (index: number) => {
-    const newFeatures = features.filter((_, i) => i !== index)
-    setFeatures(newFeatures)
-  }
-
+  const addFeature = () => setFeatures([...features, "תכונה חדשה"])
+  const removeFeature = (index: number) =>
+    setFeatures(features.filter((_, i) => i !== index))
   const resetImage = () => {
     setProductImage(originalImage)
     setHasImageChanged(false)
@@ -59,33 +52,31 @@ const SingleProd: FC<SingleProdProps> = () => {
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
-      // Validate file type
-      if (file.type.startsWith('image/')) {
+      if (file.type.startsWith("image/")) {
         const reader = new FileReader()
         reader.onload = (e) => {
           const result = e.target?.result
-          if (result && typeof result === 'string') {
+          if (result && typeof result === "string") {
             setProductImage(result)
-            setHasImageChanged(true) // Mark that image has been changed
+            setHasImageChanged(true)
           }
         }
         reader.onerror = () => {
-          console.error('Error reading file')
-          alert('שגיאה בקריאת הקובץ')
+          console.error("Error reading file")
+          alert("שגיאה בקריאת הקובץ")
         }
         reader.readAsDataURL(file)
       } else {
-        alert('אנא בחר קובץ תמונה תקין')
+        alert("אנא בחר קובץ תמונה תקין")
       }
     }
-    // Reset the input value so the same file can be selected again
-    event.target.value = ''
+    event.target.value = ""
   }
 
   return (
     <div className="pt-40 px-6 pb-10 font-['Noto_Sans_Hebrew']" dir="rtl">
       <div className="max-w-6xl mx-auto">
-        {/* כותרת ראשית עם כפתור עריכה */}
+        {/* Header: title + aligned edit button */}
         <div className="text-right mb-4 flex items-center justify-between">
           <div className="flex-1">
             {isEditing ? (
@@ -101,24 +92,19 @@ const SingleProd: FC<SingleProdProps> = () => {
               </h1>
             )}
           </div>
-         
-          {/* כפתור עריכה מיושר עם הכותרת */}
+
           <button
-            className="bg-stockblue hover:bg-stockblue/90 text-white
-                       px-5 py-2.5 rounded-full font-semibold shadow-lg
-                       hover:shadow-xl ring-2 ring-stockblue/30 hover:ring-stockblue/40
-                       transition-all duration-300 flex items-center gap-2 mr-4"
+            className="bg-stockblue hover:bg-stockblue/90 text-white px-5 py-2.5 rounded-full font-semibold shadow-lg hover:shadow-xl ring-2 ring-stockblue/30 hover:ring-stockblue/40 transition-all duration-300 flex items-center gap-2 mr-4"
             onClick={() => setIsEditing(!isEditing)}
-            aria-label={isEditing ? 'סיום עריכה' : 'עריכת דף'}
+            aria-label={isEditing ? "סיום עריכה" : "עריכת דף"}
           >
             <PencilLine size={18} />
-            {isEditing ? 'סיום עריכה' : 'עריכת דף'}
+            {isEditing ? "סיום עריכה" : "עריכת דף"}
           </button>
         </div>
 
         {/* תיאור משני */}
         <div className="text-right mb-12">
-        <div className="sub-description">
           {isEditing ? (
             <textarea
               value={description}
@@ -133,23 +119,23 @@ const SingleProd: FC<SingleProdProps> = () => {
 
         {/* תוכן הדף */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
-          {/* אזור התמונה והכפתור */}
+          {/* Left column: image + CTA card */}
           <div className="lg:col-span-1 order-2 lg:order-1">
             <div className="group relative bg-white rounded-2xl p-6 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2 overflow-hidden">
-              {/* Animated background effect */}
+              {/* Hover background */}
               <div className="absolute inset-0 bg-gradient-to-r from-stockblue/5 to-stockblue/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               {/* Top accent line */}
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-stockblue to-stockblue"></div>
 
               {/* Image Area */}
-              <div className="relative bg-gray-50 rounded-xl p-6 mb-4 overflow-hidden group/image">
+              <div className="relative bg-gray-50 rounded-xl p-6 mb-4 overflow-hidden">
                 <img
                   src={productImage}
                   alt="מצלמת DSLR קלאסית עם עדשה אדומה"
                   className="w-full h-40 object-contain relative z-10 transition-all duration-300 group-hover:scale-105 drop-shadow-md"
                 />
-               
-                {/* Image upload overlay when editing - Always visible when editing */}
+
+                {/* Image upload overlay (editing) */}
                 {isEditing && (
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent rounded-xl flex items-end justify-center pb-3 transition-all duration-300 z-20">
                     <div className="flex gap-2">
@@ -160,8 +146,7 @@ const SingleProd: FC<SingleProdProps> = () => {
                         <Upload size={14} />
                         <span>החלף</span>
                       </label>
-                     
-                      {/* Reset button - only show if image has been changed */}
+
                       {hasImageChanged && (
                         <button
                           onClick={resetImage}
@@ -172,6 +157,7 @@ const SingleProd: FC<SingleProdProps> = () => {
                         </button>
                       )}
                     </div>
+
                     <input
                       id="image-upload"
                       type="file"
@@ -181,8 +167,8 @@ const SingleProd: FC<SingleProdProps> = () => {
                     />
                   </div>
                 )}
-               
-                {/* Edit indicator when not hovering */}
+
+                {/* Edit indicator */}
                 {isEditing && (
                   <div className="absolute top-2 right-2 bg-stockblue/90 text-white px-2 py-1 rounded-full text-xs font-medium backdrop-blur-sm">
                     עריכה
@@ -213,33 +199,13 @@ const SingleProd: FC<SingleProdProps> = () => {
                 </div>
               ) : null}
             </div>
-        <div className="page-content">
-          <div className="image-and-button-section">
-            <div className="product-image">
-              <img src={cam} alt="מצלמת DSLR קלאסית עם עדשה אדומה" />
-            </div>
-
-            {/* Container for buttons */}
-            {role === "user" ? (
-              <div className="buttons-container">
-                <button className="heart-btn">
-                  <Heart size={20} strokeWidth={2} />
-                </button>
-                <button className="contact-button">פנייה לחבר צוות</button>
-              </div>
-            ) : role === "admin" ? (
-              <div className="buttons-container">
-                <a href="/permissions" className="prem-button">
-                  נהל הרשאות
-                </a>
-              </div>
-            ) : null}
           </div>
 
-          {/* אזור המידע — accordion blends with page */}
+          {/* Right column: accordion (blends with page) */}
           <div className="lg:col-span-2 order-1 lg:order-2">
             <div className="bg-transparent rounded-2xl p-0 border-0 shadow-none">
               <Accordion type="single" collapsible className="w-full space-y-2">
+                {/* Description */}
                 <AccordionItem value="description" className="border-b border-gray-200/70">
                   <AccordionTrigger className="text-stockblue text-lg font-semibold py-4 hover:no-underline text-right w-full [&>svg]:text-stockblue rounded-lg hover:bg-stockblue/5 px-2 -mx-2 transition-colors">
                     תיאור המוצר
@@ -258,24 +224,8 @@ const SingleProd: FC<SingleProdProps> = () => {
                     )}
                   </AccordionContent>
                 </AccordionItem>
-          <div className="info-section-container">
-            <Accordion type="single" collapsible className="w-full">
-              <AccordionItem value="description">
-                <AccordionTrigger>תיאור המוצר</AccordionTrigger>
-                <AccordionContent>
-                  {isEditing ? (
-                    <textarea
-                      value={
-                        "מצלמת DSLR מקצועית עם עדשה איכותית ועיצוב קלאסי רטרו. המצלמה מציעה איכות תמונה מעולה עם חיישן מתקדם ובקרה מלאה על כל הגדרות הצילום."
-                      }
-                      onChange={() => {}}
-                    />
-                  ) : (
-                    "מצלמת DSLR מקצועית עם עדשה איכותית ועיצוב קלאסי רטרו. המצלמה מציעה איכות תמונה מעולה עם חיישן מתקדם ובקרה מלאה על כל הגדרות הצילום."
-                  )}
-                </AccordionContent>
-              </AccordionItem>
 
+                {/* Specifications */}
                 <AccordionItem value="specifications" className="border-b border-gray-200/70">
                   <AccordionTrigger className="text-stockblue text-lg font-semibold py-4 hover:no-underline text-right w-full [&>svg]:text-stockblue rounded-lg hover:bg-stockblue/5 px-2 -mx-2 transition-colors">
                     מפרט טכני
@@ -295,6 +245,7 @@ const SingleProd: FC<SingleProdProps> = () => {
                   </AccordionContent>
                 </AccordionItem>
 
+                {/* Features */}
                 <AccordionItem value="features" className="border-b border-gray-200/70">
                   <AccordionTrigger className="text-stockblue text-lg font-semibold py-4 hover:no-underline text-right w-full [&>svg]:text-stockblue rounded-lg hover:bg-stockblue/5 px-2 -mx-2 transition-colors">
                     מאפיינים עיקריים
@@ -342,7 +293,9 @@ const SingleProd: FC<SingleProdProps> = () => {
             </div>
           </div>
         </div>
+        {/* /grid */}
       </div>
+      {/* /container */}
     </div>
   )
 }

@@ -110,7 +110,8 @@ const SingleCat: FC = () => {
         name: newProductName,
         lens: newProductLens,
         color: newProductColor,
-        imageUrl: newProductImage
+        imageUrl: newProductImage,
+        favorite: false,
       };
       setCameras([...cameras, newProduct]);
     }
