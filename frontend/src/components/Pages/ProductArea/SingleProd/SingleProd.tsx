@@ -1,4 +1,4 @@
-import React, { FC } from "react"
+import React, { FC, useState } from "react"
 import "./SingleProd.css"
 import {
   Accordion,
@@ -15,15 +15,42 @@ import cam from '../../../../assets/red-lens-camera.png';
 interface SingleProdProps {}
 
 const SingleProd: FC<SingleProdProps> = () => {
+  const [role] = useState<string | null>(() => localStorage.getItem("role"));
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Editable fields
+  const [title, setTitle] = useState("מצלמת DSLR קלאסית עם עדשה אדומה");
+  const [description, setDescription] = useState(
+    "פתרון מקצועי לצילום איכותי עם עיצוב רטרו ועמידות גבוהה."
+  );
+
   return (
     <div className="SingleProd">
       <div className="page-container">
         {/* כותרת ראשית */}
-        <div className="main-title">מצלמת DSLR קלאסית עם עדשה אדומה</div>
+        <div className="main-title">
+          {isEditing ? (
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          ) : (
+            title
+          )}
+        </div>
 
         {/* תיאור משני */}
         <div className="sub-description">
-          פתרון מקצועי לצילום איכותי עם עיצוב רטרו ועמידות גבוהה.
+          {isEditing ? (
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={2}
+            />
+          ) : (
+            description
+          )}
         </div>
 
         {/* תוכן הדף */}
@@ -31,34 +58,45 @@ const SingleProd: FC<SingleProdProps> = () => {
           {/* אזור התמונה והכפתור */}
           <div className="image-and-button-section">
             <div className="product-image">
-              <img
-                src={cam}
-                alt="מצלמת DSLR קלאסית עם עדשה אדומה"
-              />
+              <img src={cam} alt="מצלמת DSLR קלאסית עם עדשה אדומה" />
             </div>
-            {/* Container for buttons side by side */}
-            <div className="buttons-container">
-              <button className="heart-btn">
-                <Heart size={20} strokeWidth={2} />
-              </button>
-              <button className="contact-button">פנייה לחבר צוות</button>
-            </div>
+
+            {/* Container for buttons */}
+            {role === "user" ? (
+              <div className="buttons-container">
+                <button className="heart-btn">
+                  <Heart size={20} strokeWidth={2} />
+                </button>
+                <button className="contact-button">פנייה לחבר צוות</button>
+              </div>
+            ) : role === "admin" ? (
+              <div className="buttons-container">
+                <a href="/permissions" className="prem-button">
+                  נהל הרשאות
+                </a>
+              </div>
+            ) : null}
           </div>
 
           {/* אזור המידע */}
           <div className="info-section-container">
             <Accordion type="single" collapsible className="w-full">
-              {/* תיאור המוצר */}
               <AccordionItem value="description">
                 <AccordionTrigger>תיאור המוצר</AccordionTrigger>
                 <AccordionContent>
-                  מצלמת DSLR מקצועית עם עדשה איכותית ועיצוב קלאסי רטרו. המצלמה
-                  מציעה איכות תמונה מעולה עם חיישן מתקדם ובקרה מלאה על כל
-                  הגדרות הצילום.
+                  {isEditing ? (
+                    <textarea
+                      value={
+                        "מצלמת DSLR מקצועית עם עדשה איכותית ועיצוב קלאסי רטרו. המצלמה מציעה איכות תמונה מעולה עם חיישן מתקדם ובקרה מלאה על כל הגדרות הצילום."
+                      }
+                      onChange={() => {}}
+                    />
+                  ) : (
+                    "מצלמת DSLR מקצועית עם עדשה איכותית ועיצוב קלאסי רטרו. המצלמה מציעה איכות תמונה מעולה עם חיישן מתקדם ובקרה מלאה על כל הגדרות הצילום."
+                  )}
                 </AccordionContent>
               </AccordionItem>
 
-              {/* מפרט טכני */}
               <AccordionItem value="specifications">
                 <AccordionTrigger>מפרט טכני</AccordionTrigger>
                 <AccordionContent>
@@ -67,7 +105,6 @@ const SingleProd: FC<SingleProdProps> = () => {
                 </AccordionContent>
               </AccordionItem>
 
-              {/* מאפיינים עיקריים */}
               <AccordionItem value="features">
                 <AccordionTrigger>מאפיינים עיקריים</AccordionTrigger>
                 <AccordionContent>
@@ -88,6 +125,12 @@ const SingleProd: FC<SingleProdProps> = () => {
           </div>
         </div>
       </div>
+      <button
+        className="prem-button"
+        onClick={() => setIsEditing(!isEditing)}
+      >
+        {isEditing ? "סיום עריכה" : "עריכת דף"}
+      </button>
     </div>
   )
 }

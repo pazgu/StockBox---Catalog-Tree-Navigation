@@ -7,6 +7,7 @@ import { Button } from '../../../ui/button';
 import { Card, CardContent } from '../../../ui/card';
 import { Label } from '../../../ui/label';
 import { Input } from '../../../ui/input';
+import { useNavigate } from "react-router-dom";
 
 import './Permissions.css';
 import camera from '../../../../assets/camera.png'
@@ -38,6 +39,7 @@ interface UserPermissions {
 }
 
 const Permissions: React.FC = () => {
+  const navigate = useNavigate();
   const [isExpandedUsers, setIsExpandedUsers] = useState(false);
     const [isExpandedGroups, setIsExpandedGroups] = useState(false);
 const [userSearch, setUserSearch] = useState('');
@@ -318,10 +320,12 @@ const filteredUsers = users.filter(user =>
 
           {/* Action Buttons */}
           <div className="action-buttons">
-            <a href='/categories'>
-            <Button variant="outline" className="cancel-button">
+            <Button
+              variant="outline"
+              className="cancel-button"
+              onClick={() => navigate(-1)}>
               ביטול
-            </Button></a>
+            </Button>
             <Button className="save-button">
               שמירה
             </Button>
