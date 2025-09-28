@@ -1,5 +1,5 @@
-import React, { FC, useState } from "react";
-import "./SingleCat.css";
+import React, { FC, useState, ChangeEvent } from 'react';
+import './SingleCat.css';
 
 import canoneos2000d from "../../../../assets/canon-eos2000d.png";
 import canoneos4000d from "../../../../assets/canon-eos4000d.png";
@@ -70,8 +70,24 @@ export const initialCameraData: CameraProduct[] = [
 ];
 
 const SingleCat: FC = () => {
+  const [showAddCatModal, setShowAddCatModal] = useState(false);
   const [cameras, setCameras] = useState<CameraProduct[]>(initialCameraData);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [newProductName, setNewProductName] = useState("");
+  const [newProductLens, setNewProductLens] = useState("");
+  const [newProductColor, setNewProductColor] = useState("");
+  const [newProductImage, setNewProductImage] = useState<string | null>(null);
+
+  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setNewProductImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
   const [productToDelete, setProductToDelete] = useState<CameraProduct | null>(
     null
   );
@@ -97,6 +113,25 @@ const SingleCat: FC = () => {
     setShowDeleteModal(false);
     setProductToDelete(null);
   };
+
+  const handleSave = () => {
+    if (newProductName && newProductImage) {
+      const newProduct: CameraProduct = {
+        id: Date.now(),
+        name: newProductName,
+        lens: newProductLens,
+        color: newProductColor,
+        imageUrl: newProductImage,
+        favorite: false,
+      };
+      setCameras([...cameras, newProduct]);
+    }
+    setShowAddCatModal(false);
+    setNewProductName("");
+    setNewProductImage(null);
+  };
+
+
 
   const closeAllModals = () => {
     setShowDeleteModal(false);
@@ -160,6 +195,74 @@ const SingleCat: FC = () => {
           </div>
         ))}
       </main>
+
+      <div className="add-icon" onClick={() => setShowAddCatModal(true)}>
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="white"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+      </div>
+
+      {showAddCatModal && (
+        <div className="modal" onClick={closeAllModals}>
+          <div
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h4>הוסף קטגוריה חדשה</h4>
+
+            <input
+              type="text"
+              placeholder="שם מוצר"
+              value={newProductName}
+              onChange={(e) => setNewProductName(e.target.value)}
+            />
+            
+            <input
+              type="text"
+              placeholder="עדשת מוצר"
+              value={newProductLens}
+              onChange={(e) => setNewProductLens(e.target.value)}
+            />
+            
+            <input
+              type="text"
+              placeholder="צבע מוצר"
+              value={newProductColor}
+              onChange={(e) => setNewProductColor(e.target.value)}
+            />
+
+            <input
+
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+            />
+
+            {newProductImage && (
+              <img
+                src={newProductImage}
+                alt="preview"
+                style={{ maxWidth: "100%", marginTop: "10px", borderRadius: "8px" }}
+              />
+            )}
+
+            <div className="modal-actions">
+              <button onClick={handleSave}>שמור</button>
+              <button onClick={closeAllModals}>ביטול</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showDeleteModal && productToDelete && (
         <div className="modal" onClick={closeAllModals}>
