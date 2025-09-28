@@ -40,7 +40,6 @@ const SingleProd: FC<SingleProdProps> = () => {
           )}
         </div>
 
-        {/* תיאור משני */}
         <div className="sub-description">
           {isEditing ? (
             <textarea
@@ -53,9 +52,7 @@ const SingleProd: FC<SingleProdProps> = () => {
           )}
         </div>
 
-        {/* תוכן הדף */}
         <div className="page-content">
-          {/* אזור התמונה והכפתור */}
           <div className="image-and-button-section">
             <div className="product-image">
               <img src={cam} alt="מצלמת DSLR קלאסית עם עדשה אדומה" />
@@ -78,7 +75,6 @@ const SingleProd: FC<SingleProdProps> = () => {
             ) : null}
           </div>
 
-          {/* אזור המידע */}
           <div className="info-section-container">
             <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="description">
