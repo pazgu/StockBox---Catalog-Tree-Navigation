@@ -23,16 +23,17 @@ const Categories: FC<CategoriesProps> = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [newCatName, setNewCatName] = useState("");
   const [newCatImage, setNewCatImage] = useState<string | null>(null);
-  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(
+    null
+  );
   const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
 
   const [categories, setCategories] = useState<Category[]>([
     { id: 1, name: "שמיעה", image: headphones },
     { id: 2, name: "הקלטה", image: audio },
     { id: 3, name: "וידיאו", image: video },
-    { id: 4, name: "צילום", image: camera }
+    { id: 4, name: "צילום", image: camera },
   ]);
-
 
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -53,7 +54,7 @@ const Categories: FC<CategoriesProps> = () => {
         if (categoryToEdit) {
           setCategoryToEdit({
             ...categoryToEdit,
-            image: reader.result as string
+            image: reader.result as string,
           });
         }
       };
@@ -64,9 +65,9 @@ const Categories: FC<CategoriesProps> = () => {
   const handleSave = () => {
     if (newCatName && newCatImage) {
       const newCategory: Category = {
-        id: Date.now(), 
+        id: Date.now(),
         name: newCatName,
-        image: newCatImage
+        image: newCatImage,
       };
       setCategories([...categories, newCategory]);
     }
@@ -81,7 +82,7 @@ const Categories: FC<CategoriesProps> = () => {
 
   const confirmDelete = () => {
     if (categoryToDelete) {
-      setCategories(categories.filter(cat => cat.id !== categoryToDelete.id));
+      setCategories(categories.filter((cat) => cat.id !== categoryToDelete.id));
     }
     setShowDeleteModal(false);
     setCategoryToDelete(null);
@@ -92,18 +93,17 @@ const Categories: FC<CategoriesProps> = () => {
     setShowEditModal(true);
   };
 
-const handleEditSave = () => {
-  if (categoryToEdit) {
-    setCategories(
-      categories.map((cat) =>
-        cat.id === categoryToEdit.id ? categoryToEdit : cat
-      )
-    );
-  }
-  setShowEditModal(false);
-  setCategoryToEdit(null);
-};
-
+  const handleEditSave = () => {
+    if (categoryToEdit) {
+      setCategories(
+        categories.map((cat) =>
+          cat.id === categoryToEdit.id ? categoryToEdit : cat
+        )
+      );
+    }
+    setShowEditModal(false);
+    setCategoryToEdit(null);
+  };
 
   const closeAllModals = () => {
     setShowAddCatModal(false);
@@ -121,20 +121,22 @@ const handleEditSave = () => {
         <h2 className="categories-title">קטגוריות</h2>
       </div>
 
-      <div  className="categories-grid">
+      <div className="categories-grid">
         {categories.map((category) => (
-          <div key={category.id} className={`category-item ${category.isActive ? 'active' : ''}`}>
-           
+          <div
+            key={category.id}
+            className={`category-item ${category.isActive ? "active" : ""}`}
+          >
             <div className="overlay">
-              <button 
-                className="delete-btn" 
+              <button
+                className="delete-btn"
                 onClick={() => handleDelete(category)}
               >
                 <Trash size={25} />
               </button>
               <span className="category-label">
-                <button 
-                  className="edit-btn" 
+                <button
+                  className="edit-btn"
                   onClick={() => handleEdit(category)}
                 >
                   <Pen size={25} />
@@ -142,10 +144,14 @@ const handleEditSave = () => {
               </span>
             </div>
             <a href="/single-cat">
-            <div className="category-icon">
-              <img src={category.image} alt={category.name} className="category-image" />
-            </div>
-             </a>
+              <div className="category-icon">
+                <img
+                  src={category.image}
+                  alt={category.name}
+                  className="category-image"
+                />
+              </div>
+            </a>
             <span className="category-label">{category.name}</span>
           </div>
         ))}
@@ -169,10 +175,7 @@ const handleEditSave = () => {
 
       {showAddCatModal && (
         <div className="modal" onClick={closeAllModals}>
-          <div
-            className="modal-content"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h4>הוסף קטגוריה חדשה</h4>
 
             <input
@@ -182,18 +185,17 @@ const handleEditSave = () => {
               onChange={(e) => setNewCatName(e.target.value)}
             />
 
-            <input
-
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-            />
+            <input type="file" accept="image/*" onChange={handleImageUpload} />
 
             {newCatImage && (
               <img
                 src={newCatImage}
                 alt="preview"
-                style={{ maxWidth: "100%", marginTop: "10px", borderRadius: "8px" }}
+                style={{
+                  maxWidth: "100%",
+                  marginTop: "10px",
+                  borderRadius: "8px",
+                }}
               />
             )}
 
@@ -212,10 +214,14 @@ const handleEditSave = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <h4>מחיקת קטגוריה</h4>
-            <p>האם אתה בטוח שברצונך למחוק את הקטגוריה "{categoryToDelete.name}"?</p>
+            <p>
+              האם אתה בטוח שברצונך למחוק את הקטגוריה "{categoryToDelete.name}"?
+            </p>
             <small>לא יהיה ניתן לבטל פעולה זו</small>
             <div className="modal-actions">
-              <button onClick={confirmDelete} className="delete-confirm-btn">מחק</button>
+              <button onClick={confirmDelete} className="delete-confirm-btn">
+                מחק
+              </button>
               <button onClick={closeAllModals}>ביטול</button>
             </div>
           </div>
@@ -224,24 +230,24 @@ const handleEditSave = () => {
 
       {showEditModal && categoryToEdit && (
         <div className="modal-edit" onClick={closeAllModals}>
-          <div
-            className="modal-content-2"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="modal-content-2" onClick={(e) => e.stopPropagation()}>
             <h4>עריכת קטגוריה</h4>
 
-            <input className="edit-image-name"
+            <input
+              className="edit-image-name"
               type="text"
               placeholder="שם קטגוריה"
               value={categoryToEdit.name}
-              onChange={(e) => setCategoryToEdit({
-                ...categoryToEdit,
-                name: e.target.value
-              })}
+              onChange={(e) =>
+                setCategoryToEdit({
+                  ...categoryToEdit,
+                  name: e.target.value,
+                })
+              }
             />
 
             <input
-            className="edit-image-upload"
+              className="edit-image-upload"
               type="file"
               accept="image/*"
               onChange={handleEditImageUpload}
@@ -251,9 +257,15 @@ const handleEditSave = () => {
               className="edit-image"
               src={categoryToEdit.image}
               alt="preview"
-              style={{ maxWidth: "100%", marginTop: "10px", borderRadius: "8px" }}
+              style={{
+                maxWidth: "100%",
+                marginTop: "10px",
+                borderRadius: "8px",
+              }}
             />
-            <a href="/permissions"><small id="permissions-link">לניהול הרשאות</small></a>
+            <a href="/permissions">
+              <small id="permissions-link">לניהול הרשאות</small>
+            </a>
 
             <div className="modal-actions">
               <button onClick={handleEditSave}>שמור</button>
