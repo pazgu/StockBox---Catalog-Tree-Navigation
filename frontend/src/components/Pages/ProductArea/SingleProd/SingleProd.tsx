@@ -18,17 +18,13 @@ const SingleProd: FC<SingleProdProps> = () => {
   return (
     <div className="SingleProd">
       <div className="page-container">
-        {/* כותרת ראשית */}
         <div className="main-title">מצלמת DSLR קלאסית עם עדשה אדומה</div>
 
-        {/* תיאור משני */}
         <div className="sub-description">
           פתרון מקצועי לצילום איכותי עם עיצוב רטרו ועמידות גבוהה.
         </div>
 
-        {/* תוכן הדף */}
         <div className="page-content">
-          {/* אזור התמונה והכפתור */}
           <div className="image-and-button-section">
             <div className="product-image">
               <img
@@ -36,7 +32,6 @@ const SingleProd: FC<SingleProdProps> = () => {
                 alt="מצלמת DSLR קלאסית עם עדשה אדומה"
               />
             </div>
-            {/* Container for buttons side by side */}
             <div className="buttons-container">
               <button className="heart-btn">
                 <Heart size={20} strokeWidth={2} />
@@ -45,10 +40,8 @@ const SingleProd: FC<SingleProdProps> = () => {
             </div>
           </div>
 
-          {/* אזור המידע */}
           <div className="info-section-container">
             <Accordion type="single" collapsible className="w-full">
-              {/* תיאור המוצר */}
               <AccordionItem value="description">
                 <AccordionTrigger>תיאור המוצר</AccordionTrigger>
                 <AccordionContent>
@@ -58,7 +51,6 @@ const SingleProd: FC<SingleProdProps> = () => {
                 </AccordionContent>
               </AccordionItem>
 
-              {/* מפרט טכני */}
               <AccordionItem value="specifications">
                 <AccordionTrigger>מפרט טכני</AccordionTrigger>
                 <AccordionContent>
@@ -67,7 +59,6 @@ const SingleProd: FC<SingleProdProps> = () => {
                 </AccordionContent>
               </AccordionItem>
 
-              {/* מאפיינים עיקריים */}
               <AccordionItem value="features">
                 <AccordionTrigger>מאפיינים עיקריים</AccordionTrigger>
                 <AccordionContent>
