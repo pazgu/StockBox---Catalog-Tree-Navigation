@@ -1,7 +1,9 @@
 import React, { FC } from 'react';
 import './Header.css';
 import { NavLink } from 'react-router-dom';
-import logo from '../../../assets/logo.png'
+import logo from '../../../assets/logo.png';
+import { Heart } from "lucide-react"
+
 interface HeaderProps {}
 
 const Header: FC<HeaderProps> = () => (
@@ -40,6 +42,10 @@ const Header: FC<HeaderProps> = () => (
          <button>חפש</button>
       </div>
     </div>
+
+      <a href='/favorites' className="heart-btn">
+                    <Heart size={20} strokeWidth={2}/>
+                  </a>
 
   </div>
 );

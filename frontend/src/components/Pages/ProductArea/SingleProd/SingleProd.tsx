@@ -118,6 +118,7 @@ const SingleProd: FC<SingleProdProps> = () => {
 
         {/* תיאור משני */}
         <div className="text-right mb-12">
+        <div className="sub-description">
           {isEditing ? (
             <textarea
               value={description}
@@ -212,6 +213,27 @@ const SingleProd: FC<SingleProdProps> = () => {
                 </div>
               ) : null}
             </div>
+        <div className="page-content">
+          <div className="image-and-button-section">
+            <div className="product-image">
+              <img src={cam} alt="מצלמת DSLR קלאסית עם עדשה אדומה" />
+            </div>
+
+            {/* Container for buttons */}
+            {role === "user" ? (
+              <div className="buttons-container">
+                <button className="heart-btn">
+                  <Heart size={20} strokeWidth={2} />
+                </button>
+                <button className="contact-button">פנייה לחבר צוות</button>
+              </div>
+            ) : role === "admin" ? (
+              <div className="buttons-container">
+                <a href="/permissions" className="prem-button">
+                  נהל הרשאות
+                </a>
+              </div>
+            ) : null}
           </div>
 
           {/* אזור המידע — accordion blends with page */}
@@ -236,6 +258,23 @@ const SingleProd: FC<SingleProdProps> = () => {
                     )}
                   </AccordionContent>
                 </AccordionItem>
+          <div className="info-section-container">
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="description">
+                <AccordionTrigger>תיאור המוצר</AccordionTrigger>
+                <AccordionContent>
+                  {isEditing ? (
+                    <textarea
+                      value={
+                        "מצלמת DSLR מקצועית עם עדשה איכותית ועיצוב קלאסי רטרו. המצלמה מציעה איכות תמונה מעולה עם חיישן מתקדם ובקרה מלאה על כל הגדרות הצילום."
+                      }
+                      onChange={() => {}}
+                    />
+                  ) : (
+                    "מצלמת DSLR מקצועית עם עדשה איכותית ועיצוב קלאסי רטרו. המצלמה מציעה איכות תמונה מעולה עם חיישן מתקדם ובקרה מלאה על כל הגדרות הצילום."
+                  )}
+                </AccordionContent>
+              </AccordionItem>
 
                 <AccordionItem value="specifications" className="border-b border-gray-200/70">
                   <AccordionTrigger className="text-stockblue text-lg font-semibold py-4 hover:no-underline text-right w-full [&>svg]:text-stockblue rounded-lg hover:bg-stockblue/5 px-2 -mx-2 transition-colors">

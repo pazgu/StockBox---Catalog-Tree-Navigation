@@ -9,21 +9,23 @@ import canoneosr50 from '../../../../assets/canon-eosr50.png';
 import canoneosr100 from '../../../../assets/canon-eosr100.png';
 import { Pen, Trash } from 'lucide-react';
 
-interface CameraProduct {
+export interface CameraProduct {
   id: number;
   name: string;
   lens: string;
   color: string;
   imageUrl: string;
+  favorite: boolean;
 }
 
-const initialCameraData: CameraProduct[] = [
+export const initialCameraData: CameraProduct[] = [
   {
     id: 1,
     name: 'מצלמה דיגיטלית Canon EOS 250D DSLR',
     lens: 'EF-S 18-55mm f/4-5.6 IS',
     color: 'צבע שחור',
     imageUrl: canoneos2000d,
+    favorite: true
   },
   {
     id: 2,
@@ -31,6 +33,7 @@ const initialCameraData: CameraProduct[] = [
     lens: 'EF-S 18-55mm f/3.5-5.6 III',
     color: 'צבע שחור',
     imageUrl: canoneos4000d,
+    favorite: true
   },
   {
     id: 3,
@@ -38,6 +41,7 @@ const initialCameraData: CameraProduct[] = [
     lens: 'EF-S 18-55mm f/3.5-5.6 III',
     color: 'צבע שחור',
     imageUrl: canoneos250d,
+    favorite: false
   },
   {
     id: 4,
@@ -45,6 +49,7 @@ const initialCameraData: CameraProduct[] = [
     lens: 'RF-S 18-45mm F4.5-6.3 IS',
     color: 'צבע שחור',
     imageUrl: canoneosr100,
+    favorite: true
   },
   {
     id: 5,
@@ -52,6 +57,7 @@ const initialCameraData: CameraProduct[] = [
     lens: 'RF-S 18-45mm F4.5-6.3 IS',
     color: 'צבע שחור',
     imageUrl: canoneosr10,
+    favorite: false
   },
   {
     id: 6,
@@ -59,6 +65,7 @@ const initialCameraData: CameraProduct[] = [
     lens: 'RF-S 18-45mm F4.5-6.3 IS',
     color: 'צבע שחור',
     imageUrl: canoneosr50,
+    favorite: true
   },
 ];
 
@@ -95,7 +102,7 @@ const SingleCat: FC = () => {
     setShowDeleteModal(false);
     setProductToDelete(null);
   };
-
+  
   const handleSave = () => {
     if (newProductName && newProductImage) {
       const newProduct: CameraProduct = {
@@ -111,8 +118,6 @@ const SingleCat: FC = () => {
     setNewProductName("");
     setNewProductImage(null);
   };
-
-
 
   const closeAllModals = () => {
     setShowDeleteModal(false);
