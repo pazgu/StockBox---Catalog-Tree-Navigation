@@ -6,7 +6,6 @@ import camera from "../../../../assets/camera.png";
 import video from "../../../../assets/video.png";
 import { Pen } from "lucide-react";
 import { Trash } from "lucide-react";
-// import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 
 interface CategoriesProps {}
 
