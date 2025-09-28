@@ -82,6 +82,10 @@
 
 .input-container {
   position: relative;
+  display: flex;
+  flex-direction: row;
+  width:447px;
+  overflow: hidden;
 }
 
 .form-input {
@@ -97,6 +101,7 @@
   background-color: #f9fafb;
   min-height: 3rem ;
   height: 3rem ;
+  overflow: hidden;
 }
 
 .form-input:focus {
