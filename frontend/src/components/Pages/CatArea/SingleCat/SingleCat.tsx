@@ -103,6 +103,7 @@ const SingleCat: FC = () => {
 
       <main className="product-grid">
         {cameras.map((camera) => (
+          <a href='/product'>
           <div key={camera.id} className="product-card">
             <div className="overlay">
               <button className="delete-btn" onClick={() => handleDelete(camera)}>
@@ -122,6 +123,7 @@ const SingleCat: FC = () => {
               </p>
             </div>
           </div>
+          </a>
         ))}
       </main>
 
