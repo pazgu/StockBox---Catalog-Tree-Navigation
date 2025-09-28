@@ -1,5 +1,5 @@
-import React, { FC, useState, ChangeEvent } from 'react';
-import './SingleCat.css';
+import React, { FC, useState, ChangeEvent } from "react";
+import "./SingleCat.css";
 
 import canoneos2000d from "../../../../assets/canon-eos2000d.png";
 import canoneos4000d from "../../../../assets/canon-eos4000d.png";
@@ -131,8 +131,6 @@ const SingleCat: FC = () => {
     setNewProductImage(null);
   };
 
-
-
   const closeAllModals = () => {
     setShowDeleteModal(false);
     setProductToDelete(null);
@@ -169,9 +167,7 @@ const SingleCat: FC = () => {
                 size={22}
                 strokeWidth={2}
                 className={
-                  camera.favorite
-                    ? "fill-red-500 text-red-500"
-                    : "text-white"
+                  camera.favorite ? "fill-red-500 text-red-500" : "text-white"
                 }
               />
             </button>
@@ -214,10 +210,7 @@ const SingleCat: FC = () => {
 
       {showAddCatModal && (
         <div className="modal" onClick={closeAllModals}>
-          <div
-            className="modal-content"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h4>הוסף קטגוריה חדשה</h4>
 
             <input
@@ -226,14 +219,14 @@ const SingleCat: FC = () => {
               value={newProductName}
               onChange={(e) => setNewProductName(e.target.value)}
             />
-            
+
             <input
               type="text"
               placeholder="עדשת מוצר"
               value={newProductLens}
               onChange={(e) => setNewProductLens(e.target.value)}
             />
-            
+
             <input
               type="text"
               placeholder="צבע מוצר"
@@ -241,18 +234,17 @@ const SingleCat: FC = () => {
               onChange={(e) => setNewProductColor(e.target.value)}
             />
 
-            <input
-
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-            />
+            <input type="file" accept="image/*" onChange={handleImageUpload} />
 
             {newProductImage && (
               <img
                 src={newProductImage}
                 alt="preview"
-                style={{ maxWidth: "100%", marginTop: "10px", borderRadius: "8px" }}
+                style={{
+                  maxWidth: "100%",
+                  marginTop: "10px",
+                  borderRadius: "8px",
+                }}
               />
             )}
 
@@ -271,9 +263,7 @@ const SingleCat: FC = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <h4>מחיקת מוצר</h4>
-            <p>
-              האם אתה בטוח שברצונך למחוק את המוצר "{productToDelete.name}"?
-            </p>
+            <p>האם אתה בטוח שברצונך למחוק את המוצר "{productToDelete.name}"?</p>
             <small>לא יהיה ניתן לבטל פעולה זו</small>
             <div className="modal-actions">
               <button onClick={confirmDelete} className="delete-confirm-btn">

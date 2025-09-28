@@ -32,10 +32,10 @@ export const Favorites: React.FC = () => {
             </span>
             <small className="block text-sm text-gray-500">{camera.lens}</small>
             <br/>
-              
-              
-              <small className="block text-sm text-gray-500">
+            <small className="block text-sm text-gray-500">
               {camera.color}
+
+              
             </small>
           </div>
         ))}
