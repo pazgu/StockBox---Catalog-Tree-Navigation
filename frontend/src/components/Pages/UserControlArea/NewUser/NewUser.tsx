@@ -215,7 +215,7 @@ const NewUser: React.FC = () => {
 
 
           <div className="form-group">
-            <label htmlFor="companyName">שייך לחברה (אופציונלי)</label>
+            <label htmlFor="companyName">שייך לקבוצה (אופציונלי)</label>
             <select 
               {...register('companyName')}
               id="companyName"
