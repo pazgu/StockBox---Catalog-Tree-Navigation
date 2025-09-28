@@ -57,7 +57,7 @@ export const initialCameraData: CameraProduct[] = [
     lens: 'RF-S 18-45mm F4.5-6.3 IS',
     color: 'צבע שחור',
     imageUrl: canoneosr10,
-    favorite: false
+    favorite: true
   },
   {
     id: 6,
