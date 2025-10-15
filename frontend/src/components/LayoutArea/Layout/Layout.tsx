@@ -5,7 +5,6 @@ import Login from '../../Pages/AuthArea/Login/Login';
 import Header from '../Header/Header';
 import Categories from '../../Pages/CatArea/Categories/Categories';
 import AllUsers from '../../Pages/UserControlArea/AllUsers/AllUsers';
-
 import SingleCat from '../../Pages/CatArea/SingleCat/SingleCat';
 import Permissions from '../../Pages/UserControlArea/Permissions/Permissions';
 import NewUser from '../../Pages/UserControlArea/NewUser/NewUser';
