@@ -1,5 +1,4 @@
 import React, { FC, useState } from 'react';
-import './AddCat.css';
 
 interface Group {
   name: string;
