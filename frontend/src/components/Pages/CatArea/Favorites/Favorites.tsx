@@ -12,11 +12,11 @@ export const Favorites: React.FC = () => {
 
   return (
     <div className="pt-40">
-      <h1 className="mr-4 w-full text-right text-3xl font-bold mb-6 text-blue-950">
+      <h1 className="mr-4 w-95% text-right text-3xl font-bold mb-6 text-blue-950">
         מועדפים
       </h1>
 
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-8 m-8">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(273px,1fr))] gap-8 m-8">
         {favoriteCameras.map((camera: CameraProduct) => (
           <div
             key={camera.id}
