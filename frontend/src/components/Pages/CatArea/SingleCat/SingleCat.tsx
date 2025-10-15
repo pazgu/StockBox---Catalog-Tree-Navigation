@@ -33,7 +33,7 @@ export const initialCameraData: CameraProduct[] = [
     lens: "EF-S 18-55mm f/3.5-5.6 III",
     color: "צבע שחור",
     imageUrl: canoneos4000d,
-    favorite: false,
+    favorite: true,
   },
   {
     id: 3,
@@ -41,7 +41,7 @@ export const initialCameraData: CameraProduct[] = [
     lens: "EF-S 18-55mm f/3.5-5.6 III",
     color: "צבע שחור",
     imageUrl: canoneos250d,
-    favorite: false,
+    favorite: true,
   },
   {
     id: 4,
@@ -65,7 +65,7 @@ export const initialCameraData: CameraProduct[] = [
     lens: "RF-S 18-45mm F4.5-6.3 IS",
     color: "צבע שחור",
     imageUrl: canoneosr50,
-    favorite: false,
+    favorite: true,
   },
 ];
 

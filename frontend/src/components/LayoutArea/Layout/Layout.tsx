@@ -1,6 +1,5 @@
 import React, { FC } from 'react';
 import { Routes, Route, Link } from 'react-router-dom';
-import './Layout.css';
 import About from '../../Pages/HomeArea/About/About';
 import Login from '../../Pages/AuthArea/Login/Login';
 import Header from '../Header/Header';
