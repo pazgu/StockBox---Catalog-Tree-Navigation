@@ -28,7 +28,10 @@ const AllUsers: FC<AllUsersProps> = () => {
   const [users, setUsers] = useState(usersData);
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteUserIndex, setDeleteUserIndex] = useState<number | null>(null);
-  
+
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [userToEdit, setUserToEdit] = useState<User | null>(null);
+
   const usersPerPage = 8;
   const totalPages = Math.ceil(users.length / usersPerPage);
 
@@ -63,10 +66,35 @@ const AllUsers: FC<AllUsersProps> = () => {
 
   const cancelDelete = () => setDeleteUserIndex(null);
 
+  const handleEditClick = (user: User) => {
+    setUserToEdit(user);
+    setShowEditModal(true);
+  };
+
+  const handleEditChange = (field: keyof User, value: string) => {
+    if (userToEdit) {
+      setUserToEdit({ ...userToEdit, [field]: value });
+    }
+  };
+
+  const handleSaveEdit = () => {
+    if (userToEdit) {
+      setUsers(users.map((u) => (u.email === userToEdit.email ? userToEdit : u)));
+      setShowEditModal(false);
+      setUserToEdit(null);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setShowEditModal(false);
+    setUserToEdit(null);
+  };
+
   return (
     <div className="min-h-screen font-sans text-[#0D305B] rtl bg-gray-50">
       <Header />
-      <main className="px-10 py-44 md:px-5 relative">
+      <main className="px-10 pt-7 md:px-5 relative">
+        {/* Header Section */}
         <div className="flex justify-between items-center mb-8">
           <div className="text-right">
             <h1 className="text-3xl font-bold mb-1">כל המשתמשים</h1>
@@ -98,7 +126,11 @@ const AllUsers: FC<AllUsersProps> = () => {
               className="bg-white rounded-xl p-4 text-center shadow-sm relative min-h-[110px] transition-transform hover:-translate-y-1 hover:shadow-md"
             >
               <div className="absolute top-2 right-2 flex gap-2">
-                <button className="p-1 w-6 h-6 rounded hover:bg-gray-100 opacity-60 hover:opacity-100 transition">
+                <button
+                  className="p-1 w-6 h-6 rounded hover:bg-gray-100 opacity-60 hover:opacity-100 transition"
+                  onClick={() => handleEditClick(user)}
+                >
+                  {/* Edit Icon */}
                   <svg
                     width="14"
                     height="14"
@@ -229,6 +261,46 @@ const AllUsers: FC<AllUsersProps> = () => {
                   onClick={confirmDelete}
                 >
                   מחק
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Modal */}
+        {showEditModal && userToEdit && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl p-6 w-96 text-right shadow-lg">
+              <h2 className="text-xl font-semibold mb-4">עריכת משתמש</h2>
+
+              <label className="block text-sm mb-1">שם:</label>
+              <input
+                type="text"
+                value={userToEdit.name}
+                onChange={(e) => handleEditChange("name", e.target.value)}
+                className="w-full border rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-[#0D305B]"
+              />
+
+              <label className="block text-sm mb-1">אימייל:</label>
+              <input
+                type="email"
+                value={userToEdit.email}
+                onChange={(e) => handleEditChange("email", e.target.value)}
+                className="w-full border rounded px-3 py-2 mb-6 focus:outline-none focus:ring-2 focus:ring-[#0D305B]"
+              />
+
+              <div className="flex justify-end gap-3">
+                <button
+                  className="px-4 py-2 rounded border border-gray-300 hover:bg-gray-100"
+                  onClick={handleCancelEdit}
+                >
+                  ביטול
+                </button>
+                <button
+                  className="px-4 py-2 rounded bg-[#0D305B] text-white hover:bg-[#15457a]"
+                  onClick={handleSaveEdit}
+                >
+                  שמור שינויים
                 </button>
               </div>
             </div>

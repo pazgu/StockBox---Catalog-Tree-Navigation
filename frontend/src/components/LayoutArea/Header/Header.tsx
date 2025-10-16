@@ -1,65 +1,291 @@
-import React, { FC } from 'react';
-import { NavLink } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
+import { Heart, Search, User, Menu, X, ShoppingCart, Bell } from 'lucide-react';
 import logo from '../../../assets/logo.png';
-import { Heart } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-interface HeaderProps {}
+interface HeaderProps {
+  logoSrc?: string;
+  cartItemCount?: number;
+  favoriteCount?: number;
+  notificationCount?: number;
+  onSearch?: (query: string) => void;
+}
 
-const Header: FC<HeaderProps> = () => (
-  <div className="fixed top-0 w-full h-[140px] bg-[#0D305B] flex justify-between items-center shadow-md z-50">
-    
-    <img src={logo} alt="logo" className="w-[300px] h-auto ml-[245px]" />
+const Header: React.FC<HeaderProps> = ({
+  logoSrc = logo,
+  cartItemCount = 0,
+  favoriteCount = 0,
+  notificationCount = 0,
+  onSearch
+}) => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const location = useLocation();
+  const navigate = useNavigate();
 
-    <div className="flex flex-col gap-5 mt-5 ml-16">
-      
-      <nav className="flex gap-2.5 rtl">
-        <NavLink
-          to="/login"
-          className={({ isActive }) =>
-            `text-white text-[16px] mr-2 ${isActive ? 'text-[#BA9F71]' : ''}`
-          }
+  // Close mobile menu on route change
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location]);
+
+  // Handle scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Close mobile menu on escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsMobileMenuOpen(false);
+        setIsSearchFocused(false);
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, []);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim() && onSearch) {
+      onSearch(searchQuery.trim());
+    }
+  };
+
+  const navLinkClass = ({ isActive }: { isActive: boolean }) =>
+    `relative text-white text-base hover:text-[#BA9F71] transition-all duration-300 ${
+      isActive ? 'text-[#BA9F71] font-semibold' : ''
+    } after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-[#BA9F71] after:transition-all after:duration-300 hover:after:w-full ${
+      isActive ? 'after:w-full' : ''
+    }`;
+
+  const Badge: React.FC<{ count: number }> = ({ count }) => {
+    if (count === 0) return null;
+    return (
+      <span className="absolute -top-1 -right-1 bg-gradient-to-r from-[#BA9F71] to-[#E8DFD2] text-[#0D305B] text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1 animate-pulse">
+        {count > 99 ? '99+' : count}
+      </span>
+    );
+  };
+
+  return (
+    <>
+      {/* Main Header */}
+     <header
+        className={`fixed top-0 w-full transition-all duration-300 z-50 flex items-center justify-between px-6 ${
+          isScrolled
+            ? 'bg-[#0D305B]/95 backdrop-blur-md shadow-xl h-32' // taller on scroll
+            : 'bg-[#0D305B] shadow-lg h-40' // taller when at top
+        }`}
+      >
+
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-20">
+            {/* Logo */}
+            <div className="flex-shrink-0 transform transition-transform duration-300 hover:scale-105">
+              <img 
+                src={logoSrc}
+                alt="StockBox Logo" 
+                className="h-20 w-auto"
+              />
+            </div>
+
+            {/* Desktop Navigation */}
+            <div className="hidden lg:flex items-center flex-1 justify-center max-w-3xl mx-8">
+              <nav className="flex items-center gap-6" dir="rtl">
+                <NavLink to="/categories" className={navLinkClass}>
+                  תכולות ואמצעים
+                </NavLink>
+                <span className="text-white/30 animate-pulse">|</span>
+                <NavLink to="/" className={navLinkClass}>
+                  דף הבית
+                </NavLink>
+                <span className="text-white/30 animate-pulse">|</span>
+                <NavLink to="/login" className={navLinkClass}>
+                  התחברות
+                </NavLink>
+              </nav>
+            </div>
+
+            {/* Search Bar - Desktop */}
+            <form 
+              onSubmit={handleSearch}
+              className={`hidden md:flex items-center backdrop-blur-sm rounded-full px-1 py-1 mr-4 transition-all duration-300 ${
+                isSearchFocused 
+                  ? 'bg-white/20 shadow-lg' 
+                  : 'bg-white/10 hover:bg-white/15'
+              }`}
+            >
+              <input
+                ref={searchRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setIsSearchFocused(true)}
+                onBlur={() => setIsSearchFocused(false)}
+                placeholder="חפש מוצר..."
+                className="bg-transparent text-white placeholder-white/70 px-4 py-2 outline-none w-48 lg:w-64 text-right"
+                dir="rtl"
+              />
+              <button 
+                type="submit"
+                className="bg-gradient-to-r from-[#edd7b8] to-[#beaa88] text-[#0D305B] px-4 py-2 rounded-full transition-all duration-300 flex items-center gap-2 transform active:scale-95"
+              >
+                <Search size={18} />
+                <span className="font-medium">חפש</span>
+              </button>
+            </form>
+
+            {/* Action Icons */}
+            <div className="flex items-center gap-3">
+              {/* Favorites */}
+              <button
+                aria-label="Favorites"
+                className="relative p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 hover:scale-110"
+                onClick={() => navigate("/Favorites")}
+              >
+                <Heart size={22} className="hover:fill-current" />
+                <Badge count={favoriteCount} />
+              </button>
+              
+              {/* All Users */}
+              <button
+                aria-label="User Profile"
+                className="relative p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 hover:scale-110 group"
+                onClick={() => navigate("/AllUsers")}
+              >
+              <img
+                src="https://img.icons8.com/?size=100&id=cykh8BZMTKkb&format=png&color=FFFFFF"
+                alt="User Avatar"
+                className="w-6 h-6 rounded-full"
+              />
+              <span className="absolute top-0 right-0 w-2 h-2 rounded-full border-2 border-[#0D305B]"></span>
+            </button>
+
+
+              {/* Mobile Menu Toggle */}
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="lg:hidden p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 active:scale-95"
+                aria-label="Toggle menu"
+                aria-expanded={isMobileMenuOpen}
+              >
+                <div className="relative w-6 h-6">
+                  <Menu 
+                    size={24} 
+                    className={`absolute transition-all duration-300 ${
+                      isMobileMenuOpen ? 'opacity-0 rotate-180' : 'opacity-100 rotate-0'
+                    }`}
+                  />
+                  <X 
+                    size={24} 
+                    className={`absolute transition-all duration-300 ${
+                      isMobileMenuOpen ? 'opacity-100 rotate-0' : 'opacity-0 -rotate-180'
+                    }`}
+                  />
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Menu */}
+        <div 
+          className={`lg:hidden transition-all duration-500 ease-in-out ${
+            isMobileMenuOpen 
+              ? 'max-h-[600px] opacity-100' 
+              : 'max-h-0 opacity-0 overflow-hidden'
+          }`}
         >
-          התחברות
-        </NavLink>
-        <span className="text-white">|</span>
-        <NavLink
-          to="/"
-          className={({ isActive }) =>
-            `text-white text-[16px] mr-2 ${isActive ? 'text-[#BA9F71]' : ''}`
-          }
-        >
-          דף הבית
-        </NavLink>
-        <span className="text-white">|</span>
-        <NavLink
-          to="/categories"
-          className={({ isActive }) =>
-            `text-white text-[16px] mr-2 ${isActive ? 'text-[#BA9F71]' : ''}`
-          }
-        >
-          תכולות ואמצעים
-        </NavLink>
-      </nav>
+          <div className="container mx-auto px-4 py-4 bg-gradient-to-b from-[#0a2644] to-[#0D305B]">
+            {/* Mobile Search */}
+            <form 
+              onSubmit={handleSearch}
+              className="flex items-center bg-white/10 backdrop-blur-sm rounded-full px-1 py-1 mb-6"
+            >
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="חפש מוצר..."
+                className="bg-transparent text-white placeholder-white/70 px-4 py-2 outline-none flex-1 text-right"
+                dir="rtl"
+              />
+              <button 
+                type="submit"
+                className="bg-gradient-to-r from-[#E8DFD2] to-[#BA9F71] text-[#0D305B] px-4 py-2 rounded-full transition-all duration-300 active:scale-95"
+              >
+                <Search size={18} />
+              </button>
+            </form>
 
-      <div className="flex items-stretch w-[300px] border border-gray-300 rounded-full overflow-hidden ml-[150px]">
-        <input
-          type="text"
-          placeholder=" חפש מוצר..."
-          className="flex-1 border-none outline-none px-3 py-2 text-[16px] rtl"
-        />
-        <button className="bg-[#E8DFD2] px-5 text-[16px] cursor-pointer flex items-center justify-center">
-          חפש
-        </button>
-      </div>
-    </div>
+            {/* Mobile Navigation */}
+            <nav className="flex flex-col gap-4" dir="rtl">
+              <NavLink 
+                to="/" 
+                className={navLinkClass}
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                דף הבית
+              </NavLink>
+              <NavLink 
+                to="/categories" 
+                className={navLinkClass}
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                תכולות ואמצעים
+              </NavLink>
+              <NavLink 
+                to="/about" 
+                className={navLinkClass}
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                אודות
+              </NavLink>
+              <NavLink 
+                to="/login" 
+                className={navLinkClass}
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                התחברות
+              </NavLink>
+            </nav>
 
-    <a title="מועדפים"
-      href="/favorites"
-      className="ml-8 inline-flex items-center justify-center p-2 rounded-full text-white hover:text-gray-800 hover:bg-gray-100 transition-colors duration-200"
-    >
-      <Heart size={25} strokeWidth={2} />
-    </a>
-  </div>
-);
+            {/* Mobile Quick Actions */}
+            <div className="flex justify-around mt-6 pt-6 border-t border-white/20">
+              <button className="flex flex-col items-center gap-1 text-white/80 hover:text-white transition-colors">
+                <Bell size={20} />
+                <span className="text-xs">התראות</span>
+              </button>
+              <button className="flex flex-col items-center gap-1 text-white/80 hover:text-white transition-colors">
+                <ShoppingCart size={20} />
+                <span className="text-xs">עגלה</span>
+              </button>
+              <button className="flex flex-col items-center gap-1 text-white/80 hover:text-white transition-colors">
+                <Heart size={20} />
+                <span className="text-xs">מועדפים</span>
+              </button>
+              <button className="flex flex-col items-center gap-1 text-white/80 hover:text-white transition-colors">
+                <User size={20} />
+                <span className="text-xs">פרופיל</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Spacer to prevent content from going under fixed header */}
+      <div className="h-20" />
+    </>
+  );
+};
 
 export default Header;
