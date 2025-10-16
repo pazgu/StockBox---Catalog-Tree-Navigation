@@ -262,7 +262,6 @@ const Categories: FC<CategoriesProps> = () => {
             />
 
             <input
-            className="edit-image-upload"
               type="file"
               accept="image/*"
               onChange={handleEditImageUpload}
