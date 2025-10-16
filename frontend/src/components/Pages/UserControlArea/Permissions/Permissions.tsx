@@ -7,7 +7,7 @@ import { Card, CardContent } from '../../../ui/card';
 import { Label } from '../../../ui/label';
 import { useNavigate } from "react-router-dom";
 import camera from '../../../../assets/camera.png'
-import AddCat from '../../CatArea/AddCat/AddCat';
+import AddGroup from '../AddGroup/AddGroup/AddGroup';
 
 interface Group {
   name: string;
@@ -234,7 +234,7 @@ const Permissions: React.FC = () => {
                       לחץ להוסיף קבוצה
                     </button>
                     {isOpen && (
-                      <AddCat
+                    <AddGroup
                         onClose={() => setIsOpen(false)}
                         onSave={(newGroup: Group) => {
                           setGroups(prev => [...prev, newGroup]);
