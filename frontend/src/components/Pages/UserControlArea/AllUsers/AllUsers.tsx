@@ -30,6 +30,9 @@ const AllUsers: FC<AllUsersProps> = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [deleteUserIndex, setDeleteUserIndex] = useState<number | null>(null);
 
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [userToEdit, setUserToEdit] = useState<User | null>(null);
+
   const usersPerPage = 8;
 
 
@@ -61,7 +64,6 @@ const currentUsers = filteredUsers.slice(startIndex, startIndex + usersPerPage);
       newUsers.splice(globalIndex, 1);
       setUsers(newUsers);
 
-      // Adjust current page if last page became empty
       if (currentPage > Math.ceil(newUsers.length / usersPerPage) && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }
@@ -77,10 +79,34 @@ const currentUsers = filteredUsers.slice(startIndex, startIndex + usersPerPage);
   setCurrentPage(1); // Reset to page 1 when searching
 };
 
+  const handleEditClick = (user: User) => {
+    setUserToEdit(user);
+    setShowEditModal(true);
+  };
+
+  const handleEditChange = (field: keyof User, value: string) => {
+    if (userToEdit) {
+      setUserToEdit({ ...userToEdit, [field]: value });
+    }
+  };
+
+  const handleSaveEdit = () => {
+    if (userToEdit) {
+      setUsers(users.map((u) => (u.email === userToEdit.email ? userToEdit : u)));
+      setShowEditModal(false);
+      setUserToEdit(null);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setShowEditModal(false);
+    setUserToEdit(null);
+  };
+
   return (
     <div className="min-h-screen font-sans text-[#0D305B] rtl bg-gray-50">
       <Header />
-      <main className="px-10 py-44 md:px-5 relative">
+      <main className="px-10 pt-7 md:px-5 relative">
         {/* Header Section */}
         <div className="flex justify-between items-center mb-8">
           <div className="text-right flex-1">
@@ -137,16 +163,25 @@ const currentUsers = filteredUsers.slice(startIndex, startIndex + usersPerPage);
     </div>
   )}
 
-        {/* Users Grid */}
+          {/* Results count */}
+          
+  {searchTerm && (
+    <div className="text-right mb-4 text-gray-600">
+      נמצאו {filteredUsers.length} תוצאות
+    </div>
+  )}
+
         <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {currentUsers.map((user, index) => (
             <div
               key={index}
               className="bg-white rounded-xl p-4 text-center shadow-sm relative min-h-[110px] transition-transform hover:-translate-y-1 hover:shadow-md"
             >
-              {/* Actions */}
               <div className="absolute top-2 right-2 flex gap-2">
-                <button className="p-1 w-6 h-6 rounded hover:bg-gray-100 opacity-60 hover:opacity-100 transition">
+                <button
+                  className="p-1 w-6 h-6 rounded hover:bg-gray-100 opacity-60 hover:opacity-100 transition"
+                  onClick={() => handleEditClick(user)}
+                >
                   {/* Edit Icon */}
                   <svg
                     width="14"
@@ -168,7 +203,6 @@ const currentUsers = filteredUsers.slice(startIndex, startIndex + usersPerPage);
                   className="p-1 w-6 h-6 rounded hover:bg-red-500 hover:text-white opacity-60 hover:opacity-100 transition"
                   onClick={() => handleDeleteClick(index)}
                 >
-                  {/* Delete Icon */}
                   <svg
                     width="14"
                     height="14"
@@ -187,7 +221,6 @@ const currentUsers = filteredUsers.slice(startIndex, startIndex + usersPerPage);
                 </button>
               </div>
 
-              {/* Avatar */}
               <div className="w-10 h-10 rounded-full bg-gray-100 border border-gray-200 mx-auto flex items-center justify-center mb-2">
                 <svg
                   className="w-5 h-5 text-gray-400"
@@ -214,7 +247,6 @@ const currentUsers = filteredUsers.slice(startIndex, startIndex + usersPerPage);
                 </svg>
               </div>
 
-              {/* User Info */}
               <div>
                 <div className="text-sm text-gray-600">שם:</div>
                 <div className="font-semibold text-[#0D305B]">{user.name}</div>
@@ -224,17 +256,19 @@ const currentUsers = filteredUsers.slice(startIndex, startIndex + usersPerPage);
           ))}
         </div>
 
-        {/* Pagination */}
         <div className="flex justify-center items-center gap-2 mt-8">
+          {currentPage > 1 && (
           <button
             className="px-3 py-1 text-gray-600 hover:text-[#0D305B]"
             onClick={() => goToPage(currentPage - 1)}
             disabled={currentPage === 1}
           >
             הקודם
-          </button>
+          </button>)}
 
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            
+            
             <button
               key={page}
               className={`px-3 py-1 border rounded ${
@@ -248,16 +282,16 @@ const currentUsers = filteredUsers.slice(startIndex, startIndex + usersPerPage);
             </button>
           ))}
 
+{currentPage < totalPages && (
           <button
             className="px-3 py-1 text-gray-600 hover:text-[#0D305B]"
             onClick={() => goToPage(currentPage + 1)}
             disabled={currentPage === totalPages}
           >
             הבא
-          </button>
+          </button>)}
         </div>
 
-        {/* Confirmation Modal */}
         {deleteUserIndex !== null && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-xl p-6 w-80 text-right shadow-lg">
@@ -279,6 +313,46 @@ const currentUsers = filteredUsers.slice(startIndex, startIndex + usersPerPage);
                   onClick={confirmDelete}
                 >
                   מחק
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Modal */}
+        {showEditModal && userToEdit && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl p-6 w-96 text-right shadow-lg">
+              <h2 className="text-xl font-semibold mb-4">עריכת משתמש</h2>
+
+              <label className="block text-sm mb-1">שם:</label>
+              <input
+                type="text"
+                value={userToEdit.name}
+                onChange={(e) => handleEditChange("name", e.target.value)}
+                className="w-full border rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-[#0D305B]"
+              />
+
+              <label className="block text-sm mb-1">אימייל:</label>
+              <input
+                type="email"
+                value={userToEdit.email}
+                onChange={(e) => handleEditChange("email", e.target.value)}
+                className="w-full border rounded px-3 py-2 mb-6 focus:outline-none focus:ring-2 focus:ring-[#0D305B]"
+              />
+
+              <div className="flex justify-end gap-3">
+                <button
+                  className="px-4 py-2 rounded border border-gray-300 hover:bg-gray-100"
+                  onClick={handleCancelEdit}
+                >
+                  ביטול
+                </button>
+                <button
+                  className="px-4 py-2 rounded bg-[#0D305B] text-white hover:bg-[#15457a]"
+                  onClick={handleSaveEdit}
+                >
+                  שמור שינויים
                 </button>
               </div>
             </div>

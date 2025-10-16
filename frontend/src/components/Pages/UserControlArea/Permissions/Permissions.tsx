@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronUp } from 'lucide-react';
-import { Switch } from '../../../ui/switch';
-import { Button } from '../../../ui/button';
-import { Card, CardContent } from '../../../ui/card';
-import { Label } from '../../../ui/label';
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { Switch } from "../../../ui/switch";
+import { Button } from "../../../ui/button";
+import { Card, CardContent } from "../../../ui/card";
+import { Label } from "../../../ui/label";
 import { useNavigate } from "react-router-dom";
+
 import camera from '../../../../assets/camera.png'
-import AddCat from '../../CatArea/AddCat/AddCat';
+import AddGroup from '../AddGroup/AddGroup/AddGroup';
+
 
 interface Group {
   name: string;
@@ -37,7 +39,7 @@ const Permissions: React.FC = () => {
   const navigate = useNavigate();
   const [isExpandedUsers, setIsExpandedUsers] = useState(false);
   const [isExpandedGroups, setIsExpandedGroups] = useState(false);
-  const [userSearch, setUserSearch] = useState('');
+  const [userSearch, setUserSearch] = useState("");
   const [groups, setGroups] = useState<Group[]>([]);
   const [users, setUsers] = useState<User[]>([
     { name: "Alice", enabled: true },
@@ -47,51 +49,62 @@ const Permissions: React.FC = () => {
   ]);
   const [userPermissions, setUserPermissions] = useState<UserPermissions>({
     generalAccess: true,
-    specificUsers: '',
+    specificUsers: "",
     onlyRegistered: true,
     permissions: [
-      { id: 'finance', label: 'פיננסים', enabled: true },
-      { id: 'hr', label: 'משאבי אנוש', enabled: true },
-      { id: 'security', label: 'אבטחה', enabled: true }
-    ]
+      { id: "finance", label: "פיננסים", enabled: true },
+      { id: "hr", label: "משאבי אנוש", enabled: true },
+      { id: "security", label: "אבטחה", enabled: true },
+    ],
   });
   const [isOpen, setIsOpen] = useState(false);
 
-  const filteredUsers = users.filter(user =>
+  const filteredUsers = users.filter((user) =>
     user.name.toLowerCase().includes(userSearch.toLowerCase())
   );
 
   const handlePermissionToggle = (permissionId: string) => {
-    setUserPermissions(prev => ({
+    setUserPermissions((prev) => ({
       ...prev,
-      permissions: prev.permissions.map(permission =>
+      permissions: prev.permissions.map((permission) =>
         permission.id === permissionId
           ? { ...permission, enabled: !permission.enabled }
           : permission
-      )
+      ),
     }));
   };
 
   const handleUserToggle = (name: string) => {
-    setUsers(prev =>
-      prev.map(user =>
+    setUsers((prev) =>
+      prev.map((user) =>
         user.name === name ? { ...user, enabled: !user.enabled } : user
       )
     );
   };
 
+  const handleGroupToggle = (groupName: string) => {
+    setGroups((prev) =>
+      prev.map((group) =>
+        group.name === groupName ? { ...group, enabled: !group.enabled } : group
+      )
+    );
+  };
+
   const handleGeneralAccessToggle = () => {
-    setUserPermissions(prev => ({
+    setUserPermissions((prev) => ({
       ...prev,
-      generalAccess: !prev.generalAccess
+      generalAccess: !prev.generalAccess,
     }));
+    setIsExpandedUsers(false);
+    setIsExpandedGroups(false);
   };
 
   const handleOnlyRegisteredToggle = () => {
-    setUserPermissions(prev => ({
+    setUserPermissions((prev) => ({
       ...prev,
-      onlyRegistered: !prev.onlyRegistered
+      onlyRegistered: !prev.onlyRegistered,
     }));
+
   };
 
   return (
@@ -116,7 +129,10 @@ const Permissions: React.FC = () => {
                 מוסתרת מ:
               </Label>
               <div className="flex justify-between items-center p-3 bg-white border border-gray-200 rounded-lg">
-                <Label htmlFor="general-access" className="text-sm font-medium text-gray-700">
+                <Label
+                  htmlFor="general-access"
+                  className="text-sm font-medium text-gray-700"
+                >
                   כל המשתמשים
                 </Label>
                 <Switch
@@ -129,6 +145,8 @@ const Permissions: React.FC = () => {
             </div>
           </div>
 
+          {!userPermissions.generalAccess && (
+            <>
           {/* Expand Users */}
           <div className="mb-4">
             <Button
@@ -137,18 +155,25 @@ const Permissions: React.FC = () => {
               className="flex justify-between items-center w-full p-3 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
               <span>משתמשים ספציפיים:</span>
-              {isExpandedUsers ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              {isExpandedUsers ? (
+                <ChevronUp className="w-4 h-4" />
+              ) : (
+                <ChevronDown className="w-4 h-4" />
+              )}
             </Button>
             <AnimatePresence>
               {isExpandedUsers && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
+                  animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.3 }}
                   className="overflow-hidden mt-2"
                 >
-                  <Label htmlFor="user-search" className="block mb-2 text-sm font-medium text-gray-700">
+                  <Label
+                    htmlFor="user-search"
+                    className="block mb-2 text-sm font-medium text-gray-700"
+                  >
                     חפש משתמש:
                   </Label>
                   <input
@@ -159,18 +184,28 @@ const Permissions: React.FC = () => {
                     onChange={(e) => setUserSearch(e.target.value)}
                     className="w-full p-2 mb-3 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                   />
-                  <Label htmlFor="only-registered" className="block mb-2 text-sm font-medium text-gray-700">
+                  <Label
+                    htmlFor="only-registered"
+                    className="block mb-2 text-sm font-medium text-gray-700"
+                  >
                     מוסתרת מהמשתמשים:
                   </Label>
                   <div className="bg-white border border-gray-200 rounded-lg">
-                    {filteredUsers.map(user => (
-                      <div key={user.name} className="flex justify-between items-center px-4 py-3 border-b last:border-b-0">
-                        <Label htmlFor={user.name} className="text-sm font-medium text-gray-700">{user.name}</Label>
+                    {filteredUsers.map((user) => (
+                      <div
+                        key={user.name}
+                        className="flex justify-between items-center px-4 py-3 border-b last:border-b-0"
+                      >
+                        <Label
+                          htmlFor={user.name}
+                          className="text-sm font-medium text-gray-700"
+                        >
+                          {user.name}
+                        </Label>
                         <Switch
                           id={user.name}
                           checked={user.enabled}
                           onCheckedChange={() => handleUserToggle(user.name)}
-                          disabled={!userPermissions.generalAccess}
                         />
                       </div>
                     ))}
@@ -188,37 +223,60 @@ const Permissions: React.FC = () => {
               className="flex justify-between items-center w-full p-3 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
               <span>קבוצות ספציפיות:</span>
-              {isExpandedGroups ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              {isExpandedGroups ? (
+                <ChevronUp className="w-4 h-4" />
+              ) : (
+                <ChevronDown className="w-4 h-4" />
+              )}
             </Button>
             <AnimatePresence>
               {isExpandedGroups && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
+                  animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.3 }}
                   className="overflow-hidden mt-2"
                 >
-                  <Label className="block mb-2 text-sm font-medium text-gray-700">מוסתרת מהקבוצות:</Label>
+                  <Label className="block mb-2 text-sm font-medium text-gray-700">
+                    מוסתרת מהקבוצות:
+                  </Label>
                   <div className="bg-white border border-gray-200 rounded-lg">
-                    {userPermissions.permissions.map(permission => (
-                      <div key={permission.id} className="flex justify-between items-center px-4 py-3 border-b last:border-b-0">
-                        <Label htmlFor={permission.id} className="text-sm font-medium text-gray-700">{permission.label}</Label>
+                    {userPermissions.permissions.map((permission) => (
+                      <div
+                        key={permission.id}
+                        className="flex justify-between items-center px-4 py-3 border-b last:border-b-0"
+                      >
+                        <Label
+                          htmlFor={permission.id}
+                          className="text-sm font-medium text-gray-700"
+                        >
+                          {permission.label}
+                        </Label>
                         <Switch
                           id={permission.id}
                           checked={permission.enabled}
-                          onCheckedChange={() => handlePermissionToggle(permission.id)}
-                          disabled={!userPermissions.generalAccess}
+                          onCheckedChange={() =>
+                            handlePermissionToggle(permission.id)
+                          }
                         />
                       </div>
                     ))}
                     {groups.map((group, index) => (
-                      <div key={index} className="flex justify-between items-center px-4 py-3 border-b last:border-b-0">
-                        <Label htmlFor={`group-${index}`} className="text-sm font-medium text-gray-700">{group.name}</Label>
+                      <div
+                        key={index}
+                        className="flex justify-between items-center px-4 py-3 border-b last:border-b-0"
+                      >
+                        <Label
+                          htmlFor={`group-${index}`}
+                          className="text-sm font-medium text-gray-700"
+                        >
+                          {group.name}
+                        </Label>
                         <Switch
                           id={`group-${index}`}
-                          checked={userPermissions.onlyRegistered}
-                          onCheckedChange={handleOnlyRegisteredToggle}
+                          checked={group.enabled}
+                          onCheckedChange={() => handleGroupToggle(group.name)} // Use the new group-specific handler
                           disabled={!userPermissions.generalAccess}
                         />
                       </div>
@@ -234,10 +292,10 @@ const Permissions: React.FC = () => {
                       לחץ להוסיף קבוצה
                     </button>
                     {isOpen && (
-                      <AddCat
+                    <AddGroup
                         onClose={() => setIsOpen(false)}
                         onSave={(newGroup: Group) => {
-                          setGroups(prev => [...prev, newGroup]);
+                          setGroups(prev => [...prev, { ...newGroup, enabled: true }]); 
                           setIsOpen(false);
                         }}
                       />
@@ -247,6 +305,8 @@ const Permissions: React.FC = () => {
               )}
             </AnimatePresence>
           </div>
+          </>
+          )}
 
           {/* Action Buttons */}
           <div className="flex flex-col md:flex-row md:justify-end gap-3 mt-6">
