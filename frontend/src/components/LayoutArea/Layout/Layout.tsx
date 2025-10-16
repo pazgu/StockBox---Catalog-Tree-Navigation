@@ -1,18 +1,16 @@
 import React, { FC } from 'react';
 import { Routes, Route, Link } from 'react-router-dom';
-import './Layout.css';
 import About from '../../Pages/HomeArea/About/About';
 import Login from '../../Pages/AuthArea/Login/Login';
 import Header from '../Header/Header';
 import Categories from '../../Pages/CatArea/Categories/Categories';
 import AllUsers from '../../Pages/UserControlArea/AllUsers/AllUsers';
-
 import SingleCat from '../../Pages/CatArea/SingleCat/SingleCat';
 import Permissions from '../../Pages/UserControlArea/Permissions/Permissions';
 import NewUser from '../../Pages/UserControlArea/NewUser/NewUser';
 import SingleProd from '../../Pages/ProductArea/SingleProd/SingleProd';
 import Page404 from '../../Pages/Page404/Page404';
-
+import Favorites from '../../Pages/CatArea/Favorites/Favorites';
 interface LayoutProps {}
 
 const Layout: FC<LayoutProps> = () => (
@@ -29,10 +27,9 @@ const Layout: FC<LayoutProps> = () => (
         <Route path="/single-cat" element={<SingleCat></SingleCat>} />
         <Route path="/new-user" element={<NewUser></NewUser>} />
         <Route path="/product-details" element={<SingleProd></SingleProd>} />
-        {/* <Route path="*" element={<div>404 - לא נמצא</div>} /> */}
         <Route path="/allUsers" element={<AllUsers></AllUsers>} />
         <Route path="/Permissions" element={<Permissions></Permissions>} />
-
+        <Route path="/Favorites" element={<Favorites></Favorites>} />
         <Route path="*" element={<Page404/>} />
 
       </Routes>

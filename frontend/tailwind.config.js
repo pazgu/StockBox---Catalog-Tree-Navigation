@@ -38,6 +38,9 @@ module.exports = {
         "sidebar-accent-foreground": "var(--sidebar-accent-foreground)",
         "sidebar-border": "var(--sidebar-border)",
         "sidebar-ring": "var(--sidebar-ring)",
+
+       stockblue: "#0D305B",
+
       },
         borderRadius: {
         DEFAULT: "var(--radius)",
