@@ -1,21 +1,11 @@
 import React, { FC, useState, ChangeEvent } from 'react';
-// import './SingleCat.css';
-
 import canoneos2000d from '../../../../assets/canon-eos2000d.png';
 import canoneos4000d from '../../../../assets/canon-eos4000d.png';
 import canoneos250d from '../../../../assets/canon-eos250d.png';
 import canoneosr10 from '../../../../assets/canon-eosr10.png';
 import canoneosr50 from '../../../../assets/canon-eosr50.png';
 import canoneosr100 from '../../../../assets/canon-eosr100.png';
-import { Pen, Trash } from 'lucide-react';
-import React, { FC, useState, ChangeEvent } from "react";
-import canoneos2000d from "../../../../assets/canon-eos2000d.png";
-import canoneos4000d from "../../../../assets/canon-eos4000d.png";
-import canoneos250d from "../../../../assets/canon-eos250d.png";
-import canoneosr10 from "../../../../assets/canon-eosr10.png";
-import canoneosr50 from "../../../../assets/canon-eosr50.png";
-import canoneosr100 from "../../../../assets/canon-eosr100.png";
-import { Trash, Heart } from "lucide-react";
+import { Heart, Pen, Trash } from 'lucide-react';
 
 export interface CameraProduct {
   id: number;
