@@ -1,5 +1,4 @@
 import React, { FC } from 'react';
-import './EditUser.css';
 
 interface EditUserProps {}
 
