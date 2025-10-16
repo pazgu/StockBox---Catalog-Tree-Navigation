@@ -93,7 +93,7 @@ const AllUsers: FC<AllUsersProps> = () => {
   return (
     <div className="min-h-screen font-sans text-[#0D305B] rtl bg-gray-50">
       <Header />
-      <main className="px-10 py-44 md:px-5 relative">
+      <main className="px-10 pt-7 md:px-5 relative">
         {/* Header Section */}
         <div className="flex justify-between items-center mb-8">
           <div className="text-right">
