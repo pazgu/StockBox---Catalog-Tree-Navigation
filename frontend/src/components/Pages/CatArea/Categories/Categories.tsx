@@ -312,7 +312,7 @@ const Categories: FC<CategoriesProps> = () => {
             <img
               src={categoryToEdit.image}
               alt="preview"
-              className="w-32 h-36 object-cover rounded-lg mt-2.5 mb-5"
+              className="w-42 h-44 object-cover rounded-lg mt-2.5 mb-5"
             />
             <a href="/permissions">
               <small className="text-gray-500 underline cursor-pointer text-slate-700 mt-2.5 inline-block">

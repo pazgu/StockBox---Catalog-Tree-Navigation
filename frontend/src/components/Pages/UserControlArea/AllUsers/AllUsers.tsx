@@ -28,7 +28,7 @@ const AllUsers: FC<AllUsersProps> = () => {
   const [users, setUsers] = useState(usersData);
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteUserIndex, setDeleteUserIndex] = useState<number | null>(null);
-
+  
   const usersPerPage = 8;
   const totalPages = Math.ceil(users.length / usersPerPage);
 
@@ -53,7 +53,6 @@ const AllUsers: FC<AllUsersProps> = () => {
       newUsers.splice(globalIndex, 1);
       setUsers(newUsers);
 
-      // Adjust current page if last page became empty
       if (currentPage > Math.ceil(newUsers.length / usersPerPage) && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }
@@ -68,11 +67,9 @@ const AllUsers: FC<AllUsersProps> = () => {
     <div className="min-h-screen font-sans text-[#0D305B] rtl bg-gray-50">
       <Header />
       <main className="px-10 py-44 md:px-5 relative">
-        {/* Header Section */}
         <div className="flex justify-between items-center mb-8">
           <div className="text-right">
             <h1 className="text-3xl font-bold mb-1">כל המשתמשים</h1>
-            <p className="text-xl underline text-black">הצג סינון</p>
           </div>
           <div
             className="w-15 h-15 bg-[#2c3e50] rounded-full flex items-center justify-center text-white text-3xl font-light cursor-pointer transition-transform hover:scale-105 hover:bg-[#34495e]"
@@ -94,17 +91,14 @@ const AllUsers: FC<AllUsersProps> = () => {
           </div>
         </div>
 
-        {/* Users Grid */}
         <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {currentUsers.map((user, index) => (
             <div
               key={index}
               className="bg-white rounded-xl p-4 text-center shadow-sm relative min-h-[110px] transition-transform hover:-translate-y-1 hover:shadow-md"
             >
-              {/* Actions */}
               <div className="absolute top-2 right-2 flex gap-2">
                 <button className="p-1 w-6 h-6 rounded hover:bg-gray-100 opacity-60 hover:opacity-100 transition">
-                  {/* Edit Icon */}
                   <svg
                     width="14"
                     height="14"
@@ -125,7 +119,6 @@ const AllUsers: FC<AllUsersProps> = () => {
                   className="p-1 w-6 h-6 rounded hover:bg-red-500 hover:text-white opacity-60 hover:opacity-100 transition"
                   onClick={() => handleDeleteClick(index)}
                 >
-                  {/* Delete Icon */}
                   <svg
                     width="14"
                     height="14"
@@ -144,7 +137,6 @@ const AllUsers: FC<AllUsersProps> = () => {
                 </button>
               </div>
 
-              {/* Avatar */}
               <div className="w-10 h-10 rounded-full bg-gray-100 border border-gray-200 mx-auto flex items-center justify-center mb-2">
                 <svg
                   className="w-5 h-5 text-gray-400"
@@ -171,7 +163,6 @@ const AllUsers: FC<AllUsersProps> = () => {
                 </svg>
               </div>
 
-              {/* User Info */}
               <div>
                 <div className="text-sm text-gray-600">שם:</div>
                 <div className="font-semibold text-[#0D305B]">{user.name}</div>
@@ -181,17 +172,19 @@ const AllUsers: FC<AllUsersProps> = () => {
           ))}
         </div>
 
-        {/* Pagination */}
         <div className="flex justify-center items-center gap-2 mt-8">
+          {currentPage > 1 && (
           <button
             className="px-3 py-1 text-gray-600 hover:text-[#0D305B]"
             onClick={() => goToPage(currentPage - 1)}
             disabled={currentPage === 1}
           >
             הקודם
-          </button>
+          </button>)}
 
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            
+            
             <button
               key={page}
               className={`px-3 py-1 border rounded ${
@@ -205,16 +198,16 @@ const AllUsers: FC<AllUsersProps> = () => {
             </button>
           ))}
 
+{currentPage < totalPages && (
           <button
             className="px-3 py-1 text-gray-600 hover:text-[#0D305B]"
             onClick={() => goToPage(currentPage + 1)}
             disabled={currentPage === totalPages}
           >
             הבא
-          </button>
+          </button>)}
         </div>
 
-        {/* Confirmation Modal */}
         {deleteUserIndex !== null && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-xl p-6 w-80 text-right shadow-lg">
