@@ -9,7 +9,6 @@ import { useNavigate } from "react-router-dom";
 
 import camera from '../../../../assets/camera.png'
 import AddGroup from '../AddGroup/AddGroup/AddGroup';
-import AddCat from "../../CatArea/AddCat/AddCat";
 
 
 interface Group {
