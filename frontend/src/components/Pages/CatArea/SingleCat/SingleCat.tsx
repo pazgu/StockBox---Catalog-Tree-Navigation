@@ -1,5 +1,5 @@
 import React, { FC, useState, ChangeEvent } from 'react';
-import './SingleCat.css';
+// import './SingleCat.css';
 
 import canoneos2000d from '../../../../assets/canon-eos2000d.png';
 import canoneos4000d from '../../../../assets/canon-eos4000d.png';
