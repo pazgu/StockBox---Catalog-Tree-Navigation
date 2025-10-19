@@ -153,7 +153,6 @@ const SingleCat: FC = () => {
       <main className="grid grid-cols-[repeat(auto-fill,minmax(290px,1fr))] gap-14">
         {cameras.map((camera) => (
           <div
-          onClick={()=>handleClick()}
             key={camera.id}
             className="flex flex-col items-center p-5 text-center border-b-2 border-gray-200 relative transition-transform duration-300 hover:-translate-y-1"
           >
@@ -180,7 +179,8 @@ const SingleCat: FC = () => {
             </button>
 
             {/* Product image */}
-            <div className="h-[140px] w-full flex justify-center items-center p-5">
+            <div className="h-[140px] w-full flex justify-center items-center p-5" onClick={()=>handleClick()}
+>
               <img
                 src={camera.imageUrl}
                 alt={camera.name}
@@ -189,7 +189,8 @@ const SingleCat: FC = () => {
             </div>
 
             {/* Product details */}
-            <div className="w-full text-center pt-4 border-t border-gray-200">
+            <div className="w-full text-center pt-4 border-t border-gray-200"onClick={()=>handleClick()}
+>
               <h2 className="text-[1.1rem] text-[#0D305B] mb-2">{camera.name}</h2>
               <p className="text-sm text-gray-600 mb-1">
                 <strong className="text-gray-800">עדשה:</strong> {camera.lens}
