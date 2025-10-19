@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React, { FC, useState, ChangeEvent } from "react";
 
 import canoneos2000d from "../../../../assets/canon-eos2000d.png";
@@ -7,6 +8,17 @@ import canoneosr10 from "../../../../assets/canon-eosr10.png";
 import canoneosr50 from "../../../../assets/canon-eosr50.png";
 import canoneosr100 from "../../../../assets/canon-eosr100.png";
 import { Heart, Pen, Trash } from "lucide-react";
+=======
+import React, { FC, useState, ChangeEvent } from 'react';
+import canoneos2000d from '../../../../assets/canon-eos2000d.png';
+import canoneos4000d from '../../../../assets/canon-eos4000d.png';
+import canoneos250d from '../../../../assets/canon-eos250d.png';
+import canoneosr10 from '../../../../assets/canon-eosr10.png';
+import canoneosr50 from '../../../../assets/canon-eosr50.png';
+import canoneosr100 from '../../../../assets/canon-eosr100.png';
+import { Heart, Pen, Trash } from 'lucide-react';
+import { Navigate, useNavigate } from 'react-router-dom';
+>>>>>>> 1dde9a51178e241b285ee54c09337e2246ba2338
 
 export interface CameraProduct {
   id: number;
@@ -80,9 +92,17 @@ const SingleCat: FC = () => {
     null
   );
 
+<<<<<<< HEAD
   // Get user role from localStorage
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const isAdmin = user?.role === "admin";
+=======
+   const navigate = useNavigate();
+
+  const handleClick = () => {
+    navigate(`/product`);
+  };
+>>>>>>> 1dde9a51178e241b285ee54c09337e2246ba2338
 
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -132,6 +152,7 @@ const SingleCat: FC = () => {
   const closeAllModals = () => {
     setShowDeleteModal(false);
     setProductToDelete(null);
+    setShowAddCatModal(false);
   };
 
   const handleManagePermissions = () => {
@@ -154,6 +175,7 @@ const SingleCat: FC = () => {
       <main className="grid grid-cols-[repeat(auto-fill,minmax(290px,1fr))] gap-14">
         {cameras.map((camera) => (
           <div
+          onClick={()=>handleClick()}
             key={camera.id}
             className="flex flex-col items-center p-5 text-center border-b-2 border-gray-200 relative transition-transform duration-300 hover:-translate-y-1"
           >
@@ -249,7 +271,7 @@ const SingleCat: FC = () => {
             className="bg-white p-6 rounded-lg w-full max-w-md"
             onClick={(e) => e.stopPropagation()}
           >
-            <h4 className="text-lg font-semibold mb-4">הוסף קטגוריה חדשה</h4>
+            <h4 className="text-lg font-semibold mb-4">הוסף מוצר חדשה</h4>
             <input
               type="text"
               placeholder="שם מוצר"
