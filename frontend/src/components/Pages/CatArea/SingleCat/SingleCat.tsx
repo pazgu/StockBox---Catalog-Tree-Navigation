@@ -1,6 +1,4 @@
-<<<<<<< HEAD
-import React, { FC, useState, ChangeEvent } from "react";
-
+import React, { FC, useState, ChangeEvent, useEffect } from "react";
 import canoneos2000d from "../../../../assets/canon-eos2000d.png";
 import canoneos4000d from "../../../../assets/canon-eos4000d.png";
 import canoneos250d from "../../../../assets/canon-eos250d.png";
@@ -8,17 +6,7 @@ import canoneosr10 from "../../../../assets/canon-eosr10.png";
 import canoneosr50 from "../../../../assets/canon-eosr50.png";
 import canoneosr100 from "../../../../assets/canon-eosr100.png";
 import { Heart, Pen, Trash } from "lucide-react";
-=======
-import React, { FC, useState, ChangeEvent } from 'react';
-import canoneos2000d from '../../../../assets/canon-eos2000d.png';
-import canoneos4000d from '../../../../assets/canon-eos4000d.png';
-import canoneos250d from '../../../../assets/canon-eos250d.png';
-import canoneosr10 from '../../../../assets/canon-eosr10.png';
-import canoneosr50 from '../../../../assets/canon-eosr50.png';
-import canoneosr100 from '../../../../assets/canon-eosr100.png';
-import { Heart, Pen, Trash } from 'lucide-react';
 import { Navigate, useNavigate } from 'react-router-dom';
->>>>>>> 1dde9a51178e241b285ee54c09337e2246ba2338
 
 export interface CameraProduct {
   id: number;
@@ -92,17 +80,28 @@ const SingleCat: FC = () => {
     null
   );
 
-<<<<<<< HEAD
   // Get user role from localStorage
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const isAdmin = user?.role === "admin";
-=======
-   const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (typeof window !== "undefined") {
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+          const user = JSON.parse(storedUser);
+          setIsAdmin(user?.role === "admin");
+        }
+      }
+    } catch (error) {
+      console.error("שגיאה בקריאת localStorage:", error);
+    }
+  }, []);
+
+  const navigate = useNavigate();
 
   const handleClick = () => {
     navigate(`/product`);
   };
->>>>>>> 1dde9a51178e241b285ee54c09337e2246ba2338
 
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

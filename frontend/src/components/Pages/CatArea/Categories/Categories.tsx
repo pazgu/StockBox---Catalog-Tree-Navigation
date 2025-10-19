@@ -137,9 +137,9 @@ const Categories: FC<CategoriesProps> = () => {
                   alt={category.name}
                   className="w-44 h-44 object-cover rounded-full shadow-md mt-2"
                 />
-                <div className="w-60 absolute inset-0 flex items-top mr-16 gap-3 mb-4">
+                <div className="w-60 absolute inset-0 flex  mr-16 gap-3 mb-4">
                   <button
-                    className="-mt-2 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-center shadow-lg text-slate-700 hover:bg-grey-600 hover:text-white hover:shadow-2xl "
+                    className="-mt-2 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl "
                     onClick={(e) => {
                       e.preventDefault();
                       handleDelete(category);
@@ -149,7 +149,7 @@ const Categories: FC<CategoriesProps> = () => {
                   </button>
 
                   <button
-                    className="opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-center shadow-lg text-slate-700 hover:bg-grey-600 hover:text-white hover:shadow-2xl mt-2 m2-1"
+                    className="opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl mt-2 "
                     onClick={(e) => {
                       e.preventDefault();
                       handleEdit(category);
@@ -158,14 +158,13 @@ const Categories: FC<CategoriesProps> = () => {
                     <Pen size={18} />
                   </button>
 
-                  <a
-                    href="/permissions"
-                    className="mt-8 -mr-2.5 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm flex items-center justify-center shadow-lg text-slate-700 hover:bg-grey-600 hover:text-white hover:shadow-2xl "
+                  <button
+                    className="mt-8 -mr-2.5 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl "
                     onClick={(e) => e.stopPropagation()}
                     title="ניהול הרשאות"
                   >
                     <Lock size={18} />
-                  </a>
+                  </button>
                 </div>
                 
               </div>
