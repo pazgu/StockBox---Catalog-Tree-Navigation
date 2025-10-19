@@ -33,7 +33,7 @@ const About: FC<AboutProps> = () => {
   ];
 
   return (
-    <div className="pt-[100px] min-h-screen font-['Arial'] direction-rtl" dir="rtl">
+<div className="pt-[60px] min-h-screen font-['Arial'] direction-rtl" dir="rtl">
       <div className="max-w-6xl mx-auto flex items-start gap-15 py-10 flex-wrap lg:flex-nowrap">
        
         {/* Content Section */}
@@ -92,14 +92,34 @@ const About: FC<AboutProps> = () => {
           </ul>
         </div>
 
-        {/* Image Section */}
+        {/* Image Section — replaced with the “shape” from the first code */}
         <div className="flex-[0_0_320px] flex justify-center items-start lg:fixed lg:top-[164px] lg:left-5 z-10 order-1 lg:order-2">
-          <div className="relative w-[300px] h-[400px] rounded-[28px] overflow-hidden opacity-60 bg-gradient-to-br from-white/90 via-blue-50/95 to-blue-100/90 backdrop-blur-[10px] border border-white/20 shadow-[0_12px_40px_rgba(0,0,0,0.08),0_4px_12px_rgba(0,0,0,0.05),0_1px_3px_rgba(0,0,0,0.03),inset_0_1px_0_rgba(255,255,255,0.15)] transition-all duration-500 ease-out transform-gpu will-change-transform hover:transform hover:-translate-y-3 hover:scale-[1.03] hover:rotate-x-[2deg] hover:shadow-[0_32px_80px_rgba(0,0,0,0.12),0_12px_32px_rgba(0,0,0,0.08),0_4px_12px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.25)] hover:brightness-[1.02] hover:saturate-[1.05] hover:opacity-100 before:content-[''] before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/20 before:via-white/10 before:via-30% before:via-white/5 before:via-60% before:to-black/3 before:opacity-0 before:transition-opacity before:duration-500 before:ease-out before:pointer-events-none before:z-[2] hover:before:opacity-100 after:content-[''] after:absolute after:-top-1/2 after:-left-1/2 after:w-[200%] after:h-[200%] after:bg-gradient-to-br after:from-transparent after:from-30% after:via-white/10 after:via-50% after:to-transparent after:to-70% after:rotate-[-45deg] after:translate-x-[-100%] after:translate-y-[-100%] after:transition-transform after:duration-800 after:ease-out after:pointer-events-none after:z-[3] hover:after:translate-x-full hover:after:translate-y-full lg:w-[300px] lg:h-[400px] md:w-[280px] md:h-[395px]">
-            <img
-              src={images[currentImageIndex]}
-              alt="StockBox preview"
-              className="w-full h-full object-cover transition-all duration-[1.4s] ease-out transform scale-100 brightness-[0.98] contrast-[1.03] saturate-[1.08] hue-rotate-[2deg] z-[1] hover:scale-[1.08] hover:brightness-[1.04] hover:contrast-[1.06] hover:saturate-[1.12] hover:hue-rotate-[-1deg]"
-            />
+          <div className="relative w-[300px] h-[400px]">
+            {/* Decorative background blob (from first code) */}
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-400/20 via-blue-500/20 to-purple-500/20 rounded-full scale-110 blur-3xl"></div>
+
+            {/* Main image container with organic shape (from first code) */}
+            <div className="relative w-full h-full rounded-[3rem] overflow-hidden bg-gradient-to-br from-white via-blue-50 to-blue-100/70 shadow-2xl transition-all duration-700 ease-out hover:shadow-[0_30px_80px_rgba(59,130,246,0.3)] hover:scale-105 hover:-translate-y-2 hover:rotate-2 border-4 border-white/60 backdrop-blur-sm">
+              {/* Gradient overlay for depth */}
+              <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-blue-600/10 z-10 pointer-events-none"></div>
+
+              {/* Shimmer effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent -translate-x-full hover:translate-x-full transition-transform duration-1000 z-20 pointer-events-none skew-x-12"></div>
+
+              {/* Image */}
+              <img
+                src={images[currentImageIndex]}
+                alt="StockBox preview"
+                className="w-full h-full object-cover transition-all duration-1000 ease-out scale-105 hover:scale-110"
+              />
+
+              {/* Bottom fade */}
+              <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-blue-900/30 to-transparent z-10 pointer-events-none"></div>
+            </div>
+
+            {/* Decorative dots (from first code) */}
+            <div className="absolute -top-6 -right-6 w-24 h-24 bg-gradient-to-br from-blue-400/40 to-purple-400/30 rounded-full blur-2xl animate-pulse"></div>
+            <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-gradient-to-tr from-purple-500/20 to-blue-500/30 rounded-full blur-3xl animate-pulse"></div>
           </div>
         </div>
       </div>
