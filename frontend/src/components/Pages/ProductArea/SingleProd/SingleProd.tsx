@@ -306,7 +306,7 @@ const SingleProd: FC<SingleProdProps> = () => {
                 <button
   className="w-full py-3 px-4 rounded-lg font-semibold text-white bg-stockblue shadow-md transition-all duration-300 transform hover:scale-105 hover:bg-stockboxblue/90 active:scale-95"
   onClick={() => {
-    const email = "support@company.com";
+    const email = "Superstockbox@outlook.com";
     const subject = encodeURIComponent(`${title}`);
     const body = encodeURIComponent(`שלום,\nאשמח לקבל מידע נוסף לגבי...\n\nתודה`);
     window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
