@@ -4,12 +4,12 @@ import page404 from '../../../assets/page404.png';
 interface Page404Props {}
 
 const Page404: FC<Page404Props> = () => (
-  <div className="min-h-screen flex justify-center items-start bg-[#FFFAF1] pt-16 px-8 pb-10 rtl text-center font-sans">
+  <div className="min-h-80 flex justify-center items-start bg-[#FFFAF1] pt-12 px-8 rtl text-center font-sans">
     <div className="max-w-md flex flex-col items-center gap-5">
       <img
         src={page404}
         alt="404"
-        className="w-[280px] h-auto object-contain mt-12"
+        className="w-[270px] h-auto object-contain "
       />
       <h1 className="-mt-28 text-3xl font-bold text-gray-700">
         העמוד שחיפשת לא נמצא
