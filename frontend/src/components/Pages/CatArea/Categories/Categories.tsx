@@ -116,7 +116,7 @@ const Categories: FC<CategoriesProps> = () => {
 
   return (
     <div
-      className="p-16 font-system direction-rtl text-right"
+      className="p-4 font-system direction-rtl text-right"
       style={{ direction: "rtl" }}
     >
       <div className="mt-28 text-right">

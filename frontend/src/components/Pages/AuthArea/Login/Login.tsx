@@ -1,4 +1,4 @@
-import React, { FC, useState } from 'react';
+import React, { FC, useEffect, useState } from 'react';
 import loginImg from '../../../../assets/login.png';
 
 interface LoginProps {}
@@ -6,11 +6,11 @@ interface LoginProps {}
 const Login: FC<LoginProps> = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  
+
   return (
-    <div className="h-screen bg-gray-100 flex p-0 pt-[125px] overflow-hidden box-border">
-      <div className="flex-1 flex justify-center items-center p-8 h-[calc(100vh-112px)]">
-        <div className="max-w-lg w-full bg-white rounded-2xl shadow-2xl p-12 border border-slate-100 animate-fadeInUp">
+    <div className="h-240 pt-14 bg-gray-100 flex p-0 overflow-hidden box-border w-full">
+      <div className="flex-1 flex justify-center items-center ">
+        <div className="max-w-lg w-full bg-white rounded-2xl shadow-2xl p-8 mt-6 border border-slate-100 animate-fadeInUp">
           <h1 className="text-3xl font-bold text-right text-gray-800 mb-6 -mt-3">התחברות</h1>
  
           <div className="mb-0">
@@ -59,8 +59,8 @@ const Login: FC<LoginProps> = () => {
           </div>
         </div>
       </div>
-      <div className="flex-1 h-[calc(100vh-112px)] flex items-center justify-center p-0">
-        <img src={loginImg} alt="תמונת התחברות" className="w-full h-full object-cover" />
+      <div className=" sticky flex-1 flex items-center justify-center p-0">
+        <img src={loginImg} alt="תמונת התחברות" className="w-full h-auto object-cover" />
       </div>
       
       <style>{`
