@@ -19,7 +19,8 @@ interface AccordionData {
 interface SingleProdProps {}
 
 // Helper function to generate a unique ID (simple timestamp for this example)
-const generateUniqueId = () => `accordion-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+const generateUniqueId = () =>
+  `accordion-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
 const SingleProd: FC<SingleProdProps> = () => {
   const [role] = useState<string | null>(() => localStorage.getItem("role"));
@@ -71,8 +72,8 @@ const SingleProd: FC<SingleProdProps> = () => {
 
   // Handle accordion content change
   const handleAccordionContentChange = (id: string, newContent: string) => {
-    setAccordionData(prevData =>
-      prevData.map(item =>
+    setAccordionData((prevData) =>
+      prevData.map((item) =>
         item.id === id ? { ...item, content: newContent } : item
       )
     );
@@ -80,8 +81,8 @@ const SingleProd: FC<SingleProdProps> = () => {
 
   // Handle accordion title change
   const handleAccordionTitleChange = (id: string, newTitle: string) => {
-    setAccordionData(prevData =>
-      prevData.map(item =>
+    setAccordionData((prevData) =>
+      prevData.map((item) =>
         item.id === id ? { ...item, title: newTitle } : item
       )
     );
@@ -89,7 +90,7 @@ const SingleProd: FC<SingleProdProps> = () => {
 
   // Add a new custom accordion
   const addCustomAccordion = () => {
-    setAccordionData(prevData => [
+    setAccordionData((prevData) => [
       ...prevData,
       {
         id: generateUniqueId(),
@@ -102,7 +103,7 @@ const SingleProd: FC<SingleProdProps> = () => {
 
   // Remove a custom accordion
   const removeAccordion = (id: string) => {
-    setAccordionData(prevData => prevData.filter(item => item.id !== id));
+    setAccordionData((prevData) => prevData.filter((item) => item.id !== id));
   };
 
   // Handle drag start
@@ -119,10 +120,14 @@ const SingleProd: FC<SingleProdProps> = () => {
   const handleDrop = (targetItem: AccordionData) => {
     if (!draggedItem || draggedItem.id === targetItem.id) return;
 
-    setAccordionData(prevData => {
+    setAccordionData((prevData) => {
       const newItems = [...prevData];
-      const draggedIndex = newItems.findIndex(item => item.id === draggedItem.id);
-      const targetIndex = newItems.findIndex(item => item.id === targetItem.id);
+      const draggedIndex = newItems.findIndex(
+        (item) => item.id === draggedItem.id
+      );
+      const targetIndex = newItems.findIndex(
+        (item) => item.id === targetItem.id
+      );
 
       if (draggedIndex === -1 || targetIndex === -1) return prevData;
 
@@ -141,7 +146,9 @@ const SingleProd: FC<SingleProdProps> = () => {
   // Memoize the features array for easier manipulation
   const features = useMemo(() => {
     try {
-      const data = accordionData.find(item => item.id === 'features')?.content;
+      const data = accordionData.find(
+        (item) => item.id === "features"
+      )?.content;
       return data ? JSON.parse(data) : [];
     } catch {
       return []; // Handle potential JSON parsing error
@@ -149,7 +156,7 @@ const SingleProd: FC<SingleProdProps> = () => {
   }, [accordionData]);
 
   const setFeatures = useCallback((newFeatures: string[]) => {
-    handleAccordionContentChange('features', JSON.stringify(newFeatures));
+    handleAccordionContentChange("features", JSON.stringify(newFeatures));
   }, []);
 
   const handleFeatureChange = (index: number, value: string) => {
@@ -160,7 +167,7 @@ const SingleProd: FC<SingleProdProps> = () => {
 
   const addFeature = () => setFeatures([...features, "תכונה חדשה"]);
   const removeFeature = (index: number) =>
-setFeatures(features.filter((_: string, i: number) => i !== index));
+    setFeatures(features.filter((_: string, i: number) => i !== index));
   // --- Image Handlers (kept from original) ---
 
   const resetImage = () => {
@@ -214,16 +221,16 @@ setFeatures(features.filter((_: string, i: number) => i !== index));
             )}
           </div>
 
-                  {role === "admin" && (
-          <button
-            className="flex items-center gap-2 px-5 py-2.5 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300"
-            onClick={() => setIsEditing(!isEditing)}
-            aria-label={isEditing ? "סיום עריכה" : "עריכת דף"}
-          >
-            <PencilLine size={18} />
-            {isEditing ? "סיום עריכה" : "עריכת דף"}
-          </button>
-        )}
+          {role === "admin" && (
+            <button
+              className="flex items-center gap-2 px-5 py-2.5 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300"
+              onClick={() => setIsEditing(!isEditing)}
+              aria-label={isEditing ? "סיום עריכה" : "עריכת דף"}
+            >
+              <PencilLine size={18} />
+              {isEditing ? "סיום עריכה" : "עריכת דף"}
+            </button>
+          )}
         </div>
 
         {/* Secondary Description */}
@@ -296,9 +303,19 @@ setFeatures(features.filter((_: string, i: number) => i !== index));
               {/* Buttons */}
               {role === "user" ? (
                 <div className="space-y-2 relative z-10">
-                  <button className="w-full py-3 px-4 rounded-lg font-semibold text-white bg-stockblue shadow-md transition-all duration-300 transform hover:scale-105 hover:bg-stockblue/90">
-                    פנייה לחבר צוות
-                  </button>
+                <button
+  className="w-full py-3 px-4 rounded-lg font-semibold text-white bg-stockblue shadow-md transition-all duration-300 transform hover:scale-105 hover:bg-stockboxblue/90 active:scale-95"
+  onClick={() => {
+    const email = "Superstockbox@outlook.com";
+    const subject = encodeURIComponent(`${title}`);
+    const body = encodeURIComponent(`שלום,\nאשמח לקבל מידע נוסף לגבי...\n\nתודה`);
+    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+  }}
+  dir="rtl"
+  style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
+>
+  צור קשר עם הצוות שלנו
+</button>
 
                   <button className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg border border-gray-300 text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all duration-300 hover:scale-105">
                     <Heart size={16} />
@@ -325,36 +342,44 @@ setFeatures(features.filter((_: string, i: number) => i !== index));
                 <AccordionItem
                   key={item.id}
                   value={item.id}
-                  className={`border-b border-gray-200/70 ${isEditing && 'p-2 border border-dashed border-gray-300 rounded-lg'}`}
+                  className={`border-b border-gray-200/70 ${
+                    isEditing &&
+                    "p-2 border border-dashed border-gray-300 rounded-lg"
+                  }`}
                   draggable={isEditing}
                   onDragStart={() => handleDragStart(item)}
                   onDragOver={handleDragOver}
                   onDrop={() => handleDrop(item)}
                   onDragEnd={() => setDraggedItem(null)} // Reset dragged item on drag end
-                  style={{ opacity: draggedItem && draggedItem.id === item.id ? 0.4 : 1 }}
+                  style={{
+                    opacity:
+                      draggedItem && draggedItem.id === item.id ? 0.4 : 1,
+                  }}
                 >
                   <AccordionTrigger className="w-full text-right text-lg font-semibold text-stockblue py-4 px-2 rounded-lg hover:bg-stockblue/5 transition-colors [&>svg]:text-stockblue">
-                                  {isEditing && (
-                <div className="flex items-center gap-2 ml-3 text-gray-500 cursor-grab">
-                  <GripVertical size={18} className="cursor-grab" />
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      removeAccordion(item.id);
-                    }}
-                    className="text-black hover:text-gray-700 transition-colors font-bold"
-                    title="הסר אקורדיון"
-                  >
-                    ✕
-                  </button>
-                </div>
-              )}
+                    {isEditing && (
+                      <div className="flex items-center gap-2 ml-3 text-gray-500 cursor-grab">
+                        <GripVertical size={18} className="cursor-grab" />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            removeAccordion(item.id);
+                          }}
+                          className="text-black hover:text-gray-700 transition-colors font-bold"
+                          title="הסר אקורדיון"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
                     {isEditing ? (
                       <input
                         type="text"
                         value={item.title}
-                        onChange={(e) => handleAccordionTitleChange(item.id, e.target.value)}
+                        onChange={(e) =>
+                          handleAccordionTitleChange(item.id, e.target.value)
+                        }
                         onClick={(e) => e.stopPropagation()} // Prevent accordion toggle when editing title
                         className="bg-transparent text-lg font-semibold text-stockblue border-b border-gray-400 w-full text-right outline-none"
                       />
@@ -372,7 +397,7 @@ setFeatures(features.filter((_: string, i: number) => i !== index));
                             <div key={idx} className="flex items-center gap-2">
                               <button
                                 onClick={() => removeFeature(idx)}
-                                // Note: The feature remove button is still red for clarity of removal, 
+                                // Note: The feature remove button is still red for clarity of removal,
                                 // but the main accordion remove 'X' is navy.
                                 className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full p-1 transition-colors duration-200 text-sm"
                                 title="הסר תכונה"
@@ -382,7 +407,9 @@ setFeatures(features.filter((_: string, i: number) => i !== index));
                               <input
                                 type="text"
                                 value={feature}
-                                onChange={(e) => handleFeatureChange(idx, e.target.value)}
+                                onChange={(e) =>
+                                  handleFeatureChange(idx, e.target.value)
+                                }
                                 className="flex-1 px-3 py-2 text-sm text-gray-700 bg-white/50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-stockblue/50 focus:border-stockblue transition-all duration-300"
                                 placeholder="תכונה..."
                               />
@@ -404,18 +431,23 @@ setFeatures(features.filter((_: string, i: number) => i !== index));
                           ))}
                         </div>
                       )
+                    ) : // General content rendering
+                    isEditing ? (
+                      <textarea
+                        value={item.content}
+                        onChange={(e) =>
+                          handleAccordionContentChange(item.id, e.target.value)
+                        }
+                        rows={
+                          item.id === "description" ||
+                          item.id === "specifications"
+                            ? 4
+                            : 3
+                        }
+                        className="w-full p-4 text-gray-700 text-sm bg-white/50 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-stockblue/50 focus:border-stockblue transition-all duration-300"
+                      />
                     ) : (
-                      // General content rendering
-                      isEditing ? (
-                        <textarea
-                          value={item.content}
-                          onChange={(e) => handleAccordionContentChange(item.id, e.target.value)}
-                          rows={item.id === 'description' || item.id === 'specifications' ? 4 : 3}
-                          className="w-full p-4 text-gray-700 text-sm bg-white/50 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-stockblue/50 focus:border-stockblue transition-all duration-300"
-                        />
-                      ) : (
-                        item.content
-                      )
+                      item.content
                     )}
                   </AccordionContent>
                 </AccordionItem>
