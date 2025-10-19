@@ -1,4 +1,4 @@
-import React, { FC, useState } from 'react';
+import React, { FC, useEffect, useState } from 'react';
 import loginImg from '../../../../assets/login.png';
 
 interface LoginProps {}
@@ -6,6 +6,12 @@ interface LoginProps {}
 const Login: FC<LoginProps> = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  useEffect(() => {
+    window.scrollTo({
+      top: document.body.scrollHeight,
+      behavior: "smooth", 
+    });
+  }, []); 
   
   return (
     <div className="h-screen bg-gray-100 flex p-0 pt-[125px] overflow-hidden box-border">
