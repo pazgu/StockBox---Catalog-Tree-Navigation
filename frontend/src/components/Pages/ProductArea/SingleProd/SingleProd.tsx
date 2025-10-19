@@ -1,4 +1,4 @@
-import React, { FC, useState } from "react";
+import React, { FC, useState, useCallback, useMemo } from "react";
 import {
   Accordion,
   AccordionItem,
@@ -6,9 +6,20 @@ import {
   AccordionContent,
 } from "../../../ui/accordion";
 import cam from "../../../../assets/red-lens-camera.png";
-import { Heart, PencilLine, Upload } from "lucide-react";
+import { Heart, PencilLine, Upload, Plus, GripVertical } from "lucide-react";
+
+// Define the structure for an accordion item
+interface AccordionData {
+  id: string; // Unique ID for key and manipulation
+  title: string;
+  content: string;
+  isEditable: boolean; // Flag to indicate if content is editable (like the default ones)
+}
 
 interface SingleProdProps {}
+
+// Helper function to generate a unique ID (simple timestamp for this example)
+const generateUniqueId = () => `accordion-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
 const SingleProd: FC<SingleProdProps> = () => {
   const [role] = useState<string | null>(() => localStorage.getItem("role"));
@@ -18,32 +29,140 @@ const SingleProd: FC<SingleProdProps> = () => {
   const [description, setDescription] = useState(
     "פתרון מקצועי לצילום איכותי עם עיצוב רטרו ועמידות גבוהה."
   );
-  const [productDescription, setProductDescription] = useState(
-    "מצלמת DSLR מקצועית עם עדשה איכותית ועיצוב קלאסי רטרו. המצלמה מציעה איכות תמונה מעולה עם חיישן מתקדם ובקרה מלאה על כל הגדרות הצילום."
-  );
-  const [specifications, setSpecifications] = useState(
-    "רזולוציה 24MP, חיישן APS-C, עדשה 18-55mm, מסך LCD 3 אינץ', חיבור Wi-Fi"
-  );
-  const [features, setFeatures] = useState([
-    "איכות תמונה חדה במיוחד",
-    "עיצוב רטרו יוקרתי עם טבעות אדומות",
-    "צילום ווידאו 4K מקצועי",
-    "עדשה מהירה לצילום בתאורה חלשה",
-    "נוחות אחיזה ובקרה",
+
+  // Consolidated state for product data that was previously separate states
+  const [accordionData, setAccordionData] = useState<AccordionData[]>([
+    {
+      id: "description",
+      title: "תיאור המוצר",
+      content:
+        "מצלמת DSLR מקצועית עם עדשה איכותית ועיצוב קלאסי רטרו. המצלמה מציעה איכות תמונה מעולה עם חיישן מתקדם ובקרה מלאה על כל הגדרות הצילום.",
+      isEditable: true,
+    },
+    {
+      id: "specifications",
+      title: "מפרט טכני",
+      content:
+        "רזולוציה 24MP, חיישן APS-C, עדשה 18-55mm, מסך LCD 3 אינץ', חיבור Wi-Fi",
+      isEditable: true,
+    },
+    {
+      id: "features",
+      title: "מאפיינים עיקריים",
+      content: JSON.stringify([
+        "איכות תמונה חדה במיוחד",
+        "עיצוב רטרו יוקרתי עם טבעות אדומות",
+        "צילום ווידאו 4K מקצועי",
+        "עדשה מהירה לצילום בתאורה חלשה",
+        "נוחות אחיזה ובקרה",
+      ]), // Storing features as JSON string to keep original logic contained
+      isEditable: true,
+    },
   ]);
 
   const [productImage, setProductImage] = useState(cam);
   const [originalImage] = useState(cam);
   const [hasImageChanged, setHasImageChanged] = useState(false);
 
+  // State to manage the item being dragged (for reordering)
+  const [draggedItem, setDraggedItem] = useState<AccordionData | null>(null);
+
+  // --- Accordion Manipulation Handlers ---
+
+  // Handle accordion content change
+  const handleAccordionContentChange = (id: string, newContent: string) => {
+    setAccordionData(prevData =>
+      prevData.map(item =>
+        item.id === id ? { ...item, content: newContent } : item
+      )
+    );
+  };
+
+  // Handle accordion title change
+  const handleAccordionTitleChange = (id: string, newTitle: string) => {
+    setAccordionData(prevData =>
+      prevData.map(item =>
+        item.id === id ? { ...item, title: newTitle } : item
+      )
+    );
+  };
+
+  // Add a new custom accordion
+  const addCustomAccordion = () => {
+    setAccordionData(prevData => [
+      ...prevData,
+      {
+        id: generateUniqueId(),
+        title: "כותרת אקורדיון חדש",
+        content: "תוכן האקורדיון החדש...",
+        isEditable: false, // Custom accordions are initially not treated as the special hardcoded ones
+      },
+    ]);
+  };
+
+  // Remove a custom accordion
+  const removeAccordion = (id: string) => {
+    setAccordionData(prevData => prevData.filter(item => item.id !== id));
+  };
+
+  // Handle drag start
+  const handleDragStart = (item: AccordionData) => {
+    setDraggedItem(item);
+  };
+
+  // Handle drag over
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault(); // Necessary to allow dropping
+  };
+
+  // Handle drop
+  const handleDrop = (targetItem: AccordionData) => {
+    if (!draggedItem || draggedItem.id === targetItem.id) return;
+
+    setAccordionData(prevData => {
+      const newItems = [...prevData];
+      const draggedIndex = newItems.findIndex(item => item.id === draggedItem.id);
+      const targetIndex = newItems.findIndex(item => item.id === targetItem.id);
+
+      if (draggedIndex === -1 || targetIndex === -1) return prevData;
+
+      // Reorder logic
+      const [removed] = newItems.splice(draggedIndex, 1);
+      newItems.splice(targetIndex, 0, removed);
+
+      return newItems;
+    });
+
+    setDraggedItem(null); // Reset dragged item
+  };
+
+  // --- Features Logic (integrated with the 'features' accordion) ---
+
+  // Memoize the features array for easier manipulation
+  const features = useMemo(() => {
+    try {
+      const data = accordionData.find(item => item.id === 'features')?.content;
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return []; // Handle potential JSON parsing error
+    }
+  }, [accordionData]);
+
+  const setFeatures = useCallback((newFeatures: string[]) => {
+    handleAccordionContentChange('features', JSON.stringify(newFeatures));
+  }, []);
+
   const handleFeatureChange = (index: number, value: string) => {
     const newFeatures = [...features];
     newFeatures[index] = value;
     setFeatures(newFeatures);
   };
+
   const addFeature = () => setFeatures([...features, "תכונה חדשה"]);
   const removeFeature = (index: number) =>
-    setFeatures(features.filter((_, i) => i !== index));
+setFeatures(features.filter((_: string, i: number) => i !== index));
+  // --- Image Handlers (kept from original) ---
+
   const resetImage = () => {
     setProductImage(originalImage);
     setHasImageChanged(false);
@@ -72,6 +191,8 @@ const SingleProd: FC<SingleProdProps> = () => {
     }
     event.target.value = "";
   };
+
+  // --- Render Logic ---
 
   return (
     <div className="pt-32 px-6 pb-10 font-sans-['Noto_Sans_Hebrew'] rtl">
@@ -195,89 +316,124 @@ const SingleProd: FC<SingleProdProps> = () => {
             </div>
           </div>
 
-          {/* Right: Accordion */}
+          {/* Right: Accordion List */}
           <div className="lg:col-span-2 order-1 lg:order-2">
             <Accordion type="single" collapsible className="w-full space-y-2">
-              <AccordionItem value="description" className="border-b border-gray-200/70">
-                <AccordionTrigger className="w-full text-right text-lg font-semibold text-stockblue py-4 px-2 rounded-lg hover:bg-stockblue/5 transition-colors [&>svg]:text-stockblue">
-                  תיאור המוצר
-                </AccordionTrigger>
-                <AccordionContent className="text-right text-base text-gray-700 leading-relaxed pb-6">
-                  {isEditing ? (
-                    <textarea
-                      value={productDescription}
-                      onChange={(e) => setProductDescription(e.target.value)}
-                      rows={4}
-                      className="w-full p-4 text-gray-700 text-sm bg-white/50 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-stockblue/50 focus:border-stockblue transition-all duration-300"
-                    />
-                  ) : (
-                    productDescription
-                  )}
-                </AccordionContent>
-              </AccordionItem>
+              {accordionData.map((item, index) => (
+                <AccordionItem
+                  key={item.id}
+                  value={item.id}
+                  className={`border-b border-gray-200/70 ${isEditing && 'p-2 border border-dashed border-gray-300 rounded-lg'}`}
+                  draggable={isEditing}
+                  onDragStart={() => handleDragStart(item)}
+                  onDragOver={handleDragOver}
+                  onDrop={() => handleDrop(item)}
+                  onDragEnd={() => setDraggedItem(null)} // Reset dragged item on drag end
+                  style={{ opacity: draggedItem && draggedItem.id === item.id ? 0.4 : 1 }}
+                >
+                  <AccordionTrigger className="w-full text-right text-lg font-semibold text-stockblue py-4 px-2 rounded-lg hover:bg-stockblue/5 transition-colors [&>svg]:text-stockblue">
+                    {isEditing && (
+                      <div className="flex items-center gap-2 ml-3 text-gray-500 cursor-grab">
+                        <GripVertical size={18} className="cursor-grab" />
+                        {!item.isEditable && ( // Remove button for custom accordions
+                           <button
+                             onClick={(e) => {
+                               e.stopPropagation(); // Prevent accordion toggle
+                               e.preventDefault();
+                               removeAccordion(item.id);
+                             }}
+                             // 1. Changed text-red-500 to text-stockblue for navy color
+                             className="text-stockblue hover:text-stockblue/80 transition-colors"
+                             title="הסר אקורדיון"
+                           >
+                             ✕
+                           </button>
+                        )}
+                      </div>
+                    )}
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={item.title}
+                        onChange={(e) => handleAccordionTitleChange(item.id, e.target.value)}
+                        onClick={(e) => e.stopPropagation()} // Prevent accordion toggle when editing title
+                        className="bg-transparent text-lg font-semibold text-stockblue border-b border-gray-400 w-full text-right outline-none"
+                      />
+                    ) : (
+                      item.title
+                    )}
+                  </AccordionTrigger>
 
-              <AccordionItem value="specifications" className="border-b border-gray-200/70">
-                <AccordionTrigger className="w-full text-right text-lg font-semibold text-stockblue py-4 px-2 rounded-lg hover:bg-stockblue/5 transition-colors [&>svg]:text-stockblue">
-                  מפרט טכני
-                </AccordionTrigger>
-                <AccordionContent className="text-right text-base text-gray-700 leading-relaxed pb-6">
-                  {isEditing ? (
-                    <textarea
-                      value={specifications}
-                      onChange={(e) => setSpecifications(e.target.value)}
-                      rows={3}
-                      className="w-full p-4 text-gray-700 text-sm bg-white/50 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-stockblue/50 focus:border-stockblue transition-all duration-300"
-                    />
-                  ) : (
-                    specifications
-                  )}
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="features" className="border-b border-gray-200/70">
-                <AccordionTrigger className="w-full text-right text-lg font-semibold text-stockblue py-4 px-2 rounded-lg hover:bg-stockblue/5 transition-colors [&>svg]:text-stockblue">
-                  מאפיינים עיקריים
-                </AccordionTrigger>
-                <AccordionContent className="pb-6">
-                  {isEditing ? (
-                    <div className="space-y-3">
-                      {features.map((feature, index) => (
-                        <div key={index} className="flex items-center gap-2">
+                  <AccordionContent className="text-right text-base text-gray-700 leading-relaxed pb-6">
+                    {item.id === "features" ? (
+                      // Special rendering for 'features'
+                      isEditing ? (
+                        <div className="space-y-3">
+                          {features.map((feature: string, idx: number) => (
+                            <div key={idx} className="flex items-center gap-2">
+                              <button
+                                onClick={() => removeFeature(idx)}
+                                // Note: The feature remove button is still red for clarity of removal, 
+                                // but the main accordion remove 'X' is navy.
+                                className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full p-1 transition-colors duration-200 text-sm"
+                                title="הסר תכונה"
+                              >
+                                ✕
+                              </button>
+                              <input
+                                type="text"
+                                value={feature}
+                                onChange={(e) => handleFeatureChange(idx, e.target.value)}
+                                className="flex-1 px-3 py-2 text-sm text-gray-700 bg-white/50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-stockblue/50 focus:border-stockblue transition-all duration-300"
+                                placeholder="תכונה..."
+                              />
+                            </div>
+                          ))}
                           <button
-                            onClick={() => removeFeature(index)}
-                            className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full p-1 transition-colors duration-200 text-sm"
-                            title="הסר תכונה"
+                            onClick={addFeature}
+                            className="flex items-center gap-1 px-4 py-2 font-medium rounded-lg border border-stockblue/30 text-stockblue bg-stockblue/10 hover:bg-stockblue/20 hover:border-stockblue/50 transition-all duration-300"
                           >
-                            ✕
+                            <Plus size={16} /> הוסף תכונה
                           </button>
-                          <input
-                            type="text"
-                            value={feature}
-                            onChange={(e) => handleFeatureChange(index, e.target.value)}
-                            className="flex-1 px-3 py-2 text-sm text-gray-700 bg-white/50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-stockblue/50 focus:border-stockblue transition-all duration-300"
-                            placeholder="תכונה..."
-                          />
                         </div>
-                      ))}
-                      <button
-                        onClick={addFeature}
-                        className="px-4 py-2 font-medium rounded-lg border border-stockblue/30 text-stockblue bg-stockblue/10 hover:bg-stockblue/20 hover:border-stockblue/50 transition-all duration-300"
-                      >
-                        + הוסף תכונה
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-2 text-right">
-                      {features.map((feature, index) => (
-                        <div key={index} className="text-sm text-stockblue">
-                          • {feature}
+                      ) : (
+                        <div className="space-y-2 text-right">
+                          {features.map((feature: string, idx: number) => (
+                            <div key={idx} className="text-sm text-stockblue">
+                              • {feature}
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </AccordionContent>
-              </AccordionItem>
+                      )
+                    ) : (
+                      // General content rendering
+                      isEditing ? (
+                        <textarea
+                          value={item.content}
+                          onChange={(e) => handleAccordionContentChange(item.id, e.target.value)}
+                          rows={item.id === 'description' || item.id === 'specifications' ? 4 : 3}
+                          className="w-full p-4 text-gray-700 text-sm bg-white/50 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-stockblue/50 focus:border-stockblue transition-all duration-300"
+                        />
+                      ) : (
+                        item.content
+                      )
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
             </Accordion>
+
+            {/* Add New Accordion Button */}
+            {isEditing && (
+              <div
+                onClick={addCustomAccordion}
+                // 2. Changed justify-end to justify-start to align with the right in RTL mode
+                className="flex items-center justify-start gap-2 mt-4 p-4 rounded-lg border border-dashed border-gray-300 text-stockblue hover:border-stockblue/50 hover:bg-stockblue/5 transition-all duration-300 cursor-pointer"
+              >
+                <Plus size={18} />
+                <span className="font-medium">הוסף אקורדיון חדש</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
