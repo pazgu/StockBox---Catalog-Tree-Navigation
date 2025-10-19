@@ -106,7 +106,7 @@ const currentUsers = filteredUsers.slice(startIndex, startIndex + usersPerPage);
   return (
     <div className="min-h-screen font-sans text-[#0D305B] rtl bg-gray-50">
       <Header />
-      <main className="px-10 pt-7 md:px-5 relative">
+      <main className="px-10 pt-7 md:px-5 pb-24 relative pb-[max(24px,env(safe-area-inset-bottom))]">
         {/* Header Section */}
         <div className="flex justify-between items-center mb-8">
           <div className="text-right flex-1">
@@ -141,12 +141,12 @@ const currentUsers = filteredUsers.slice(startIndex, startIndex + usersPerPage);
             onClick={handleAddClick}
           >
             <svg
-              width="24"
-              height="24"
+              width="42"
+              height="42"
               viewBox="0 0 24 24"
               fill="none"
               stroke="white"
-              strokeWidth="2"
+              strokeWidth="1.5"
               strokeLinecap="round"
               strokeLinejoin="round"
             >
