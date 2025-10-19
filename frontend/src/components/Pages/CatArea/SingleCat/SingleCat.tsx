@@ -6,6 +6,7 @@ import canoneosr10 from '../../../../assets/canon-eosr10.png';
 import canoneosr50 from '../../../../assets/canon-eosr50.png';
 import canoneosr100 from '../../../../assets/canon-eosr100.png';
 import { Heart, Pen, Trash } from 'lucide-react';
+import { Navigate, useNavigate } from 'react-router-dom';
 
 export interface CameraProduct {
   id: number;
@@ -79,6 +80,12 @@ const SingleCat: FC = () => {
     null
   );
 
+   const navigate = useNavigate();
+
+  const handleClick = () => {
+    navigate(`/product`);
+  };
+
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -146,6 +153,7 @@ const SingleCat: FC = () => {
       <main className="grid grid-cols-[repeat(auto-fill,minmax(290px,1fr))] gap-14">
         {cameras.map((camera) => (
           <div
+          onClick={()=>handleClick()}
             key={camera.id}
             className="flex flex-col items-center p-5 text-center border-b-2 border-gray-200 relative transition-transform duration-300 hover:-translate-y-1"
           >
