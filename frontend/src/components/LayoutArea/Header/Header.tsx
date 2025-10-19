@@ -95,6 +95,7 @@ const Header: React.FC<HeaderProps> = ({
                 src={logoSrc}
                 alt="StockBox Logo" 
                 className="h-20 w-auto"
+                onClick={() => navigate("/")}
               />
             </div>
 
@@ -145,11 +146,11 @@ const Header: React.FC<HeaderProps> = ({
             </form>
 
             {/* Action Icons */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               {/* Favorites */}
               <button
                 aria-label="Favorites"
-                className="relative p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 hover:scale-110"
+                className="relative p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 hover:scale-110 mr-2"
                 onClick={() => navigate("/Favorites")}
               >
                 <Heart size={22} className="hover:fill-current" />
@@ -167,7 +168,6 @@ const Header: React.FC<HeaderProps> = ({
                 alt="User Avatar"
                 className="w-6 h-6 rounded-full"
               />
-              <span className="absolute top-0 right-0 w-2 h-2 rounded-full border-2 border-[#0D305B]"></span>
             </button>
 
 

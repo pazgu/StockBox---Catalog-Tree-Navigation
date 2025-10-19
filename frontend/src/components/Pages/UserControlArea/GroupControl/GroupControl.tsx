@@ -433,7 +433,7 @@ const GroupControl = () => {
                 </div>
             )}
 
-            <div className="mb-8 text-right">
+            <div className="mb-8 text-right mt-10">
                 <h2 className="text-4xl sm:text-5xl font-light text-slate-700 mb-2 tracking-tight">ניהול קבוצות והרשאות</h2>
                 <p className="text-sm text-gray-500">מערכת לקביעת מי יכול לצפות ולאיזה משאבים — ברירת המחדל: כולם רואים. כאן חוסמים גישה.</p>
             </div>

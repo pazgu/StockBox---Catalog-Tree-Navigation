@@ -141,12 +141,12 @@ const currentUsers = filteredUsers.slice(startIndex, startIndex + usersPerPage);
             onClick={handleAddClick}
           >
             <svg
-              width="24"
-              height="24"
+              width="42"
+              height="42"
               viewBox="0 0 24 24"
               fill="none"
               stroke="white"
-              strokeWidth="2"
+              strokeWidth="1.5"
               strokeLinecap="round"
               strokeLinejoin="round"
             >
