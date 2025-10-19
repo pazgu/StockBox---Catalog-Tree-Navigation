@@ -74,7 +74,7 @@ const SingleProd: FC<SingleProdProps> = () => {
   };
 
   return (
-    <div className="pt-40 px-6 pb-10 font-sans-['Noto_Sans_Hebrew'] rtl">
+    <div className="pt-32 px-6 pb-10 font-sans-['Noto_Sans_Hebrew'] rtl">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-4 text-right">
