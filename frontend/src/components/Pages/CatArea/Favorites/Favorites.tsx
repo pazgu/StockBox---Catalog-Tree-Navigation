@@ -24,7 +24,7 @@ export const Favorites: React.FC = () => {
   }
 
   return (
-    <div className="pt-40">
+    <div className="pt-32">
       <h1 className="mr-4 text-right text-3xl font-bold mb-6 text-blue-950">
         מועדפים
       </h1>
