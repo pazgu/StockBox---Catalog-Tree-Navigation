@@ -6,6 +6,7 @@ import camera from "../../../../assets/camera.png";
 import video from "../../../../assets/video.png";
 interface CategoriesProps {}
 
+
 interface Category {
   id: number;
   name: string;
