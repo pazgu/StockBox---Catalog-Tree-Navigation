@@ -174,7 +174,6 @@ const SingleCat: FC = () => {
       <main className="grid grid-cols-[repeat(auto-fill,minmax(290px,1fr))] gap-14">
         {cameras.map((camera) => (
           <div
-          onClick={()=>handleClick()}
             key={camera.id}
             className="flex flex-col items-center p-5 text-center border-b-2 border-gray-200 relative transition-transform duration-300 hover:-translate-y-1"
           >
@@ -203,7 +202,8 @@ const SingleCat: FC = () => {
             </button>
 
             {/* Product image */}
-            <div className="h-[140px] w-full flex justify-center items-center p-5">
+            <div className="h-[140px] w-full flex justify-center items-center p-5" onClick={()=>handleClick()}
+>
               <img
                 src={camera.imageUrl}
                 alt={camera.name}

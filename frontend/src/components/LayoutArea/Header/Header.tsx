@@ -199,7 +199,7 @@ const Header: React.FC<HeaderProps> = ({
 
         {/* Mobile Menu */}
         <div 
-          className={`lg:hidden transition-all duration-500 ease-in-out ${
+          className={`lg:hidden transition-all duration-500 ease-in-out mt-32 ${
             isMobileMenuOpen 
               ? 'max-h-[600px] opacity-100' 
               : 'max-h-0 opacity-0 overflow-hidden'
@@ -228,7 +228,7 @@ const Header: React.FC<HeaderProps> = ({
             </form>
 
             {/* Mobile Navigation */}
-            <nav className="flex flex-col gap-4" dir="rtl">
+            <nav className="flex flex-col gap-4 " dir="rtl">
               <NavLink 
                 to="/" 
                 className={navLinkClass}
@@ -242,13 +242,6 @@ const Header: React.FC<HeaderProps> = ({
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 תכולות ואמצעים
-              </NavLink>
-              <NavLink 
-                to="/about" 
-                className={navLinkClass}
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                אודות
               </NavLink>
               <NavLink 
                 to="/login" 
