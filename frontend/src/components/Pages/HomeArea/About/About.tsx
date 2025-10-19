@@ -33,7 +33,7 @@ const About: FC<AboutProps> = () => {
   ];
 
   return (
-<div className="pt-[60px] min-h-screen font-['Arial'] direction-rtl" dir="rtl">
+    <div className="pt-8 min-h-screen font-['Arial'] direction-rtl" dir="rtl">
       <div className="max-w-6xl mx-auto flex items-start gap-15 py-10 flex-wrap lg:flex-nowrap">
        
         {/* Content Section */}
