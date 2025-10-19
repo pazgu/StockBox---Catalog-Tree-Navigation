@@ -51,12 +51,12 @@ export const Favorites: React.FC = () => {
                 className={camera.favorite ? "fill-red-500 text-red-500" : "text-white"}
               />
             </button>
-
-            <img
+<a href="/product">
+            <img 
               src={camera.imageUrl}
               alt={camera.name}
               className="w-[140px] h-[140px] object-contain rounded-lg mb-3 mx-auto"
-            />
+            /></a>
             <span className="block text-base font-semibold text-slate-800 mb-1">
               {camera.name}
             </span>
