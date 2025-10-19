@@ -11,7 +11,6 @@ import camera from '../../../../assets/camera.png'
 import AddGroup from '../AddGroup/AddGroup/AddGroup';
 
 
-
 interface Group {
   name: string;
   members: string[];

@@ -27,16 +27,24 @@ const AllUsers: FC<AllUsersProps> = () => {
   const navigate = useNavigate();
   const [users, setUsers] = useState(usersData);
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
   const [deleteUserIndex, setDeleteUserIndex] = useState<number | null>(null);
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [userToEdit, setUserToEdit] = useState<User | null>(null);
 
   const usersPerPage = 8;
-  const totalPages = Math.ceil(users.length / usersPerPage);
 
-  const startIndex = (currentPage - 1) * usersPerPage;
-  const currentUsers = users.slice(startIndex, startIndex + usersPerPage);
+
+const filteredUsers = users.filter((user) =>
+  user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  user.email.toLowerCase().includes(searchTerm.toLowerCase())
+);
+
+const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+
+const startIndex = (currentPage - 1) * usersPerPage;
+const currentUsers = filteredUsers.slice(startIndex, startIndex + usersPerPage);
 
   const handleAddClick = () => navigate("/new-user");
 
@@ -65,6 +73,11 @@ const AllUsers: FC<AllUsersProps> = () => {
   };
 
   const cancelDelete = () => setDeleteUserIndex(null);
+  
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  setSearchTerm(e.target.value);
+  setCurrentPage(1); // Reset to page 1 when searching
+};
 
   const handleEditClick = (user: User) => {
     setUserToEdit(user);
@@ -96,9 +109,33 @@ const AllUsers: FC<AllUsersProps> = () => {
       <main className="px-10 pt-7 md:px-5 relative">
         {/* Header Section */}
         <div className="flex justify-between items-center mb-8">
-          <div className="text-right">
-            <h1 className="text-3xl font-bold mb-1">כל המשתמשים</h1>
-          </div>
+          <div className="text-right flex-1">
+  <h1 className="text-3xl font-bold mb-4">כל המשתמשים</h1>
+  
+  
+  <div className="relative max-w-xs">
+    <input
+      type="text"
+      placeholder="חיפוש לפי שם או אימייל..."
+      value={searchTerm}
+      onChange={handleSearchChange}
+      className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent text-right"
+    />
+    <svg
+      className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+      />
+    </svg>
+  </div>
+</div>
           <div
             className="w-15 h-15 bg-[#2c3e50] rounded-full flex items-center justify-center text-white text-3xl font-light cursor-pointer transition-transform hover:scale-105 hover:bg-[#34495e]"
             onClick={handleAddClick}
@@ -118,6 +155,21 @@ const AllUsers: FC<AllUsersProps> = () => {
             </svg>
           </div>
         </div>
+
+          {/* Results count */}
+  {searchTerm && (
+    <div className="text-right mb-4 text-gray-600">
+      נמצאו {filteredUsers.length} תוצאות
+    </div>
+  )}
+
+          {/* Results count */}
+          
+  {searchTerm && (
+    <div className="text-right mb-4 text-gray-600">
+      נמצאו {filteredUsers.length} תוצאות
+    </div>
+  )}
 
         <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {currentUsers.map((user, index) => (
