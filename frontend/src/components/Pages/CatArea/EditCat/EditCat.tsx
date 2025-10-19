@@ -5,7 +5,7 @@ interface EditCatProps {}
 
 const EditCat: FC<EditCatProps> = () => (
   <div className="EditCat">
-    EditCat Component
+          EditCat Component
   </div>
 );
 
