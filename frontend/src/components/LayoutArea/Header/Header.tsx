@@ -116,7 +116,6 @@ const Header: React.FC<HeaderProps> = ({
               </nav>
             </div>
 
-            {/* Search Bar - Desktop */}
             <form 
               onSubmit={handleSearch}
               className={`hidden md:flex items-center backdrop-blur-sm rounded-full px-1 py-1 mr-4 transition-all duration-300 ${
@@ -141,13 +140,14 @@ const Header: React.FC<HeaderProps> = ({
                 className="bg-gradient-to-r from-[#edd7b8] to-[#beaa88] text-[#0D305B] px-4 py-2 rounded-full transition-all duration-300 flex items-center gap-2 transform active:scale-95"
               >
                 <Search size={18} />
-                <span className="font-medium">חפש</span>
+                <span >חפש</span>
               </button>
             </form>
 
             {/* Action Icons */}
             <div className="flex items-center gap-2">
               {/* Favorites */}
+
               <button
                 aria-label="Favorites"
                 className="relative p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 hover:scale-110 mr-2"

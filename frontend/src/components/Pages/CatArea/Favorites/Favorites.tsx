@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { initialCameraData, type CameraProduct } from "../SingleCat/SingleCat";
 import { Heart } from "lucide-react";
 
@@ -6,7 +6,13 @@ export const Favorites: React.FC = () => {
   const [cameras, setCameras] = useState<CameraProduct[]>(initialCameraData);
 
   const favoriteCameras = cameras.filter((camera) => camera.favorite);
-
+  useEffect(() => {
+  window.scrollBy({
+    top: 10, // scroll down 100px
+    behavior: "smooth",
+  });
+}, []);
+  
   const toggleFavorite = (id: number) => {
     setCameras((prev) =>
       prev.map((cam) =>
@@ -24,7 +30,7 @@ export const Favorites: React.FC = () => {
   }
 
   return (
-    <div className="pt-40">
+    <div className="pt-32">
       <h1 className="mr-4 text-right text-3xl font-bold mb-6 text-blue-950">
         מועדפים
       </h1>

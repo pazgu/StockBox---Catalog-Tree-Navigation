@@ -9,6 +9,10 @@
 
 @custom-variant dark (&:is(.dark *));
 
+*{
+  font-family: 'Noto Sans Hebrew', sans-serif;
+
+}
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -121,16 +125,14 @@
 
 
 @layer base {
-  /* Better reset that doesn't break Shadcn components */
   body, html {
     margin: 0;
     padding: 0;
     font-family: 'Noto Sans Hebrew', sans-serif;
     background-color: #FFFAF1;
-    direction: rtl; /* Set RTL globally */
+    direction: rtl; 
   }
   
-  /* Reset specific elements instead of everything */
   h1, h2, h3, h4, h5, h6 {
     margin: 0;
     font-family: 'Noto Sans Hebrew', sans-serif;
@@ -142,19 +144,16 @@
   }
 }
 
-/* RTL-specific fixes for Shadcn components */
 [role="switch"] {
-  direction: ltr !important; /* Switches should always be LTR */
+  direction: ltr !important; 
 }
 
-/* Optional: Add utility class for LTR components in RTL layout */
 .ltr {
   direction: ltr;
 }
 
-/* Page layout utility */
 .page-container {
-  padding-top: 80px; /* Standard navbar height */
+  padding-top: 80px; 
   min-height: 100vh;
 }
 
