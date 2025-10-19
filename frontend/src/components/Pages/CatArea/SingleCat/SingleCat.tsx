@@ -202,7 +202,7 @@ const SingleCat: FC = () => {
                 <strong className="text-gray-800">צבע:</strong> {camera.color}
               </p>
 
-              {/* Manage permissions button - only for ADMIN */}
+              {/* Manage permissions button - only for admin*/}
               {isAdmin && (
                 <div className="mt-2 flex justify-center">
                   <button
