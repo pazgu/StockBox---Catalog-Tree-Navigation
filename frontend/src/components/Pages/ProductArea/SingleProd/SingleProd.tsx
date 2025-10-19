@@ -214,6 +214,7 @@ setFeatures(features.filter((_: string, i: number) => i !== index));
             )}
           </div>
 
+                  {role === "admin" && (
           <button
             className="flex items-center gap-2 px-5 py-2.5 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300"
             onClick={() => setIsEditing(!isEditing)}
@@ -222,6 +223,7 @@ setFeatures(features.filter((_: string, i: number) => i !== index));
             <PencilLine size={18} />
             {isEditing ? "סיום עריכה" : "עריכת דף"}
           </button>
+        )}
         </div>
 
         {/* Secondary Description */}
@@ -332,25 +334,22 @@ setFeatures(features.filter((_: string, i: number) => i !== index));
                   style={{ opacity: draggedItem && draggedItem.id === item.id ? 0.4 : 1 }}
                 >
                   <AccordionTrigger className="w-full text-right text-lg font-semibold text-stockblue py-4 px-2 rounded-lg hover:bg-stockblue/5 transition-colors [&>svg]:text-stockblue">
-                    {isEditing && (
-                      <div className="flex items-center gap-2 ml-3 text-gray-500 cursor-grab">
-                        <GripVertical size={18} className="cursor-grab" />
-                        {!item.isEditable && ( // Remove button for custom accordions
-                           <button
-                             onClick={(e) => {
-                               e.stopPropagation(); // Prevent accordion toggle
-                               e.preventDefault();
-                               removeAccordion(item.id);
-                             }}
-                             // 1. Changed text-red-500 to text-stockblue for navy color
-                             className="text-stockblue hover:text-stockblue/80 transition-colors"
-                             title="הסר אקורדיון"
-                           >
-                             ✕
-                           </button>
-                        )}
-                      </div>
-                    )}
+                                  {isEditing && (
+                <div className="flex items-center gap-2 ml-3 text-gray-500 cursor-grab">
+                  <GripVertical size={18} className="cursor-grab" />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      removeAccordion(item.id);
+                    }}
+                    className="text-black hover:text-gray-700 transition-colors font-bold"
+                    title="הסר אקורדיון"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
                     {isEditing ? (
                       <input
                         type="text"
