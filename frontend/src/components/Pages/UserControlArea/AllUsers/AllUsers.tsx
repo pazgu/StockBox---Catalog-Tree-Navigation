@@ -112,9 +112,9 @@ const currentUsers = filteredUsers.slice(startIndex, startIndex + usersPerPage);
   };
 
   return (
-    <div className="min-h-screen font-sans text-[#0D305B] rtl bg-gray-50">
+    <div className="min-h-80 font-sans text-[#0D305B] rtl bg-gray-50">
       <Header />
-      <main className="px-10 pt-7 md:px-5 pb-24 relative pb-[max(24px,env(safe-area-inset-bottom))]">
+      <main className="px-10 pt-7 md:px-5  relative pb-4">
         {/* Header Section */}
         <div className="flex justify-between items-center mb-8">
           <div className="text-right flex-1">
