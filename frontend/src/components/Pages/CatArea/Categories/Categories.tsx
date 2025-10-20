@@ -4,6 +4,8 @@ import headphones from "../../../../assets/headphones.png";
 import audio from "../../../../assets/audio.png";
 import camera from "../../../../assets/camera.png";
 import video from "../../../../assets/video.png";
+import { Navigate, useNavigate } from "react-router-dom";
+
 interface CategoriesProps {}
 
 interface Category {
@@ -30,6 +32,7 @@ const Categories: FC<CategoriesProps> = () => {
     { id: 3, name: "וידיאו", image: video },
     { id: 4, name: "צילום", image: camera },
   ]);
+  const navigate = useNavigate();
 
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -138,17 +141,17 @@ const Categories: FC<CategoriesProps> = () => {
                 />
                 <div className="w-60 absolute inset-0 flex  mr-16 gap-3 mb-4">
                   <button
-                    className="-mt-2 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl "
+                    className="-mt-1.5 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl "
                     onClick={(e) => {
                       e.preventDefault();
                       handleDelete(category);
                     }}
                   >
-                    <Trash size={18} />
+                    <Trash size={18}/>
                   </button>
 
                   <button
-                    className="opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl mt-2 "
+                    className="opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl mt-2.1 "
                     onClick={(e) => {
                       e.preventDefault();
                       handleEdit(category);
@@ -156,15 +159,18 @@ const Categories: FC<CategoriesProps> = () => {
                   >
                     <Pen size={18} />
                   </button>
-                  <a href="/permissions">
-                    <button
-                      className="mt-8 -mr-2.5 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl "
-                      onClick={(e) => e.stopPropagation()}
-                      title="ניהול הרשאות"
-                    >
-                      <Lock size={18} />
-                    </button>
-                  </a>
+
+                  <button
+                    className="mt-8 -mr-2.5 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      navigate("/permissions");
+                    }}
+                    title="ניהול הרשאות"
+                  >
+                    <Lock size={18} />
+                  </button>
                 </div>
               </div>
             </a>

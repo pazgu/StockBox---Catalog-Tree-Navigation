@@ -63,7 +63,7 @@ export const Favorites: React.FC = () => {
             <span className="block text-base font-semibold text-slate-800 mb-1">
               {camera.name}
             </span>
-            <small className="block yhtext-sm text-gray-500">{camera.lens}</small>
+            <small className="block text-sm text-gray-500">{camera.lens}</small>
             <small className="block text-sm text-gray-500">
               {camera.color}
             </small>
