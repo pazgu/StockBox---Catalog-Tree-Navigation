@@ -67,8 +67,9 @@ const SingleProd: FC<SingleProdProps> = () => {
 
   // State to manage the item being dragged (for reordering)
   const [draggedItem, setDraggedItem] = useState<AccordionData | null>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
 
-  // --- Accordion Manipulation Handlers ---
+  const toggleFavorite = () => setIsFavorite((prev) => !prev);
 
   // Handle accordion content change
   const handleAccordionContentChange = (id: string, newContent: string) => {
@@ -116,7 +117,6 @@ const SingleProd: FC<SingleProdProps> = () => {
     e.preventDefault(); // Necessary to allow dropping
   };
 
-  // Handle drop
   const handleDrop = (targetItem: AccordionData) => {
     if (!draggedItem || draggedItem.id === targetItem.id) return;
 
@@ -309,7 +309,7 @@ const SingleProd: FC<SingleProdProps> = () => {
                       const email = "Superstockbox@outlook.com";
                       const subject = encodeURIComponent(`${title}`);
                       const body = encodeURIComponent(
-                        `שלום,\nאשמח לקבל מידע נוסף לגבי...\n\nתודה`
+                        `שלום,\n...אשמח לקבל מידע נוסף לגבי\n\nתודה`
                       );
                       window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
                     }}
@@ -321,9 +321,21 @@ const SingleProd: FC<SingleProdProps> = () => {
                     צור קשר עם הצוות שלנו
                   </button>
 
-                  <button className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg border border-gray-300 text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all duration-300 hover:scale-105">
-                    <Heart size={16} />
-                    הוסף למועדפים
+                  <button
+                    onClick={toggleFavorite}
+                    className={`w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg border transition-all duration-300 transform hover:scale-105
+        ${
+          isFavorite
+            ? " text-red-600"
+            : "bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200"
+        }`}
+                  >
+                    <Heart
+                      size={16}
+                      fill={isFavorite ? "currentColor" : "none"}
+                      className="transition-all duration-300"
+                    />
+                    {isFavorite ? "הסר מהמועדפים" : "הוסף למועדפים"}
                   </button>
                 </div>
               ) : role === "admin" ? (
