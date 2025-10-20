@@ -7,6 +7,7 @@ import {
 } from "../../../ui/accordion";
 import cam from "../../../../assets/red-lens-camera.png";
 import { Heart, PencilLine, Upload, Plus, GripVertical } from "lucide-react";
+import { useUser } from "../../../../context/UserContext";
 
 // Define the structure for an accordion item
 interface AccordionData {
@@ -23,7 +24,7 @@ const generateUniqueId = () =>
   `accordion-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
 const SingleProd: FC<SingleProdProps> = () => {
-  const [role] = useState<string | null>(() => localStorage.getItem("role"));
+    const {role}=useUser();
   const [isEditing, setIsEditing] = useState(false);
 
   const [title, setTitle] = useState("מצלמת DSLR קלאסית עם עדשה אדומה");

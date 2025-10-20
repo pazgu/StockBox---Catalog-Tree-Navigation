@@ -4,6 +4,7 @@ import headphones from "../../../../assets/headphones.png";
 import audio from "../../../../assets/audio.png";
 import camera from "../../../../assets/camera.png";
 import video from "../../../../assets/video.png";
+import { useUser } from "../../../../context/UserContext";
 import { Navigate, useNavigate } from "react-router-dom";
 
 interface CategoriesProps {}
@@ -32,7 +33,7 @@ const Categories: FC<CategoriesProps> = () => {
     { id: 3, name: "וידיאו", image: video },
     { id: 4, name: "צילום", image: camera },
   ]);
-  const navigate = useNavigate();
+const {role}=useUser();  const navigate = useNavigate();
 
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -139,7 +140,7 @@ const Categories: FC<CategoriesProps> = () => {
                   alt={category.name}
                   className="w-44 h-44 object-cover rounded-full shadow-md mt-2"
                 />
-                <div className="w-60 absolute inset-0 flex  mr-16 gap-3 mb-4">
+                {role==="admin"&& <div className="w-60 absolute inset-0 flex  mr-16 gap-3 mb-4">
                   <button
                     className="-mt-1.5 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl "
                     onClick={(e) => {
@@ -172,6 +173,8 @@ const Categories: FC<CategoriesProps> = () => {
                     <Lock size={18} />
                   </button>
                 </div>
+                }
+               
               </div>
             </a>
             <span className="text-base text-slate-700 font-medium mt-2">
@@ -180,8 +183,7 @@ const Categories: FC<CategoriesProps> = () => {
           </div>
         ))}
       </div>
-
-      <div
+{role=="admin"&&<div
         className="fixed bottom-8 right-8 w-16 h-16 bg-slate-700 rounded-full flex items-center justify-center text-3xl text-white cursor-pointer transition-all duration-200 hover:scale-105 hover:bg-slate-600"
         onClick={() => setShowAddCatModal(true)}
       >
@@ -198,9 +200,9 @@ const Categories: FC<CategoriesProps> = () => {
           <line x1="12" y1="5" x2="12" y2="19" />
           <line x1="5" y1="12" x2="19" y2="12" />
         </svg>
-      </div>
-
-      {showAddCatModal && (
+      </div>}
+      
+{role==="admin"&&<>  {showAddCatModal && (
         <div
           className="fixed inset-0 bg-slate-900 bg-opacity-85 backdrop-blur-xl flex items-center justify-center z-50 transition-all duration-300"
           onClick={closeAllModals}
@@ -339,6 +341,7 @@ const Categories: FC<CategoriesProps> = () => {
               >
                 שמור
               </button>
+
               <button
                 onClick={closeAllModals}
                 className="flex-1 p-3 border-none rounded-lg text-base font-medium cursor-pointer transition-all duration-200 bg-gray-100 text-gray-500 border border-gray-300 hover:bg-gray-300 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"
@@ -348,7 +351,9 @@ const Categories: FC<CategoriesProps> = () => {
             </div>
           </div>
         </div>
-      )}
+      )}</>}
+    
+
     </div>
   );
 };

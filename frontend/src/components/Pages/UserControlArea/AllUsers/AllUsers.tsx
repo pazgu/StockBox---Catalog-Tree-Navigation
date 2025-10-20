@@ -1,6 +1,7 @@
-import React, { FC, useState } from "react";
+import React, { FC, useEffect, useState } from "react";
 import Header from "../../../LayoutArea/Header/Header";
 import { useNavigate } from "react-router-dom";
+import { useUser } from "../../../../context/UserContext";
 
 interface User {
   id: string | number;
@@ -34,7 +35,14 @@ const AllUsers: FC<AllUsersProps> = () => {
   const [userToEdit, setUserToEdit] = useState<User | null>(null);
 
   const usersPerPage = 8;
+  const {role}=useUser();
 
+useEffect(() => {
+
+    if (role !== "admin") {
+      navigate("/");
+    }
+  }, [navigate]);
 
 const filteredUsers = users.filter((user) =>
   user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
