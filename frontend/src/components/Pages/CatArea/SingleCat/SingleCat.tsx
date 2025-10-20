@@ -179,14 +179,15 @@ const SingleCat: FC = () => {
             className="flex flex-col items-center p-5 text-center border-b-2 border-gray-200 relative transition-transform duration-300 hover:-translate-y-1"
           >
             {/* Delete button */}
-            <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120px] h-[120px] pointer-events-none">
+            {isAdmin&&<div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-48 pointer-events-none">
               <button
                 onClick={() => handleDelete(camera)}
-                className="absolute top-1 right-[90px] opacity-0 transform translate-x-3 scale-90 transition-all duration-300 ease-in-out pointer-events-auto h-8 w-8 rounded-full bg-white text-gray-800 flex items-center justify-center shadow-md hover:bg-red-600 hover:text-white hover:scale-110"
+                className="absolute top-1 left-1 opacity-1 transform translate-x-3 scale-90 transition-all duration-300 ease-in-out pointer-events-auto h-8 w-8 rounded-full bg-[#e5e7eb] text-gray-800 flex items-center justify-center shadow-md hover:bg-red-600 hover:text-white hover:scale-110"
               >
                 <Trash size={20} />
               </button>
-            </div>
+            </div>}
+            
 
             {/* Favorite */}
             {!isAdmin&& (<button
@@ -243,7 +244,7 @@ const SingleCat: FC = () => {
       </main>
 
       {/* Add product button */}
-      <div
+      {isAdmin&& <div
         className="fixed bottom-10 right-10 w-12 h-12 bg-[#0D305B] flex items-center justify-center rounded-full cursor-pointer hover:bg-[#1e3a5f] transition-colors"
         onClick={() => setShowAddCatModal(true)}
       >
@@ -260,10 +261,11 @@ const SingleCat: FC = () => {
           <line x1="12" y1="5" x2="12" y2="19" />
           <line x1="5" y1="12" x2="19" y2="12" />
         </svg>
-      </div>
-
+      </div>}
+     
+       
       {/* Add modal */}
-      {showAddCatModal && (
+      {isAdmin&&showAddCatModal && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
           onClick={closeAllModals}
@@ -319,7 +321,7 @@ const SingleCat: FC = () => {
       )}
 
       {/* Delete modal */}
-      {showDeleteModal && productToDelete && (
+      {isAdmin&&showDeleteModal && productToDelete && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
           onClick={closeAllModals}
