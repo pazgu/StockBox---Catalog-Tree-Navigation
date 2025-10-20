@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
 // Zod validation schema
 const userSchema = z.object({
@@ -48,7 +49,15 @@ type UserFormData = z.infer<typeof userSchema>;
 
 const NewUser: React.FC = () => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  
+  const navigate=useNavigate();
+useEffect(() => {
+    const role = localStorage.getItem("role");
+
+    if (role !== "admin") {
+      navigate("/");
+    }
+  }, [navigate]);
+
   const {
     register,
     handleSubmit,
@@ -58,6 +67,8 @@ const NewUser: React.FC = () => {
     resolver: zodResolver(userSchema),
     mode: 'onChange'
   });
+
+
 
   const onSubmit = async (data: UserFormData) => {
     try {

@@ -86,10 +86,11 @@ const SingleCat: FC = () => {
   useEffect(() => {
     try {
       if (typeof window !== "undefined") {
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-          const user = JSON.parse(storedUser);
-          setIsAdmin(user?.role === "admin");
+        const role = localStorage.getItem("role");
+        if (role) {
+          if(role ==="admin"){
+            setIsAdmin(true)
+          }
         }
       }
     } catch (error) {
@@ -155,7 +156,7 @@ const SingleCat: FC = () => {
   };
 
   const handleManagePermissions = () => {
-    console.log("Manage permissions clicked");
+    navigate("/permissions");
   };
 
   return (
@@ -188,7 +189,7 @@ const SingleCat: FC = () => {
             </div>
 
             {/* Favorite */}
-            <button
+            {!isAdmin&& (<button
               onClick={() => toggleFavorite(camera.id)}
               className="absolute top-3 right-3 p-2 rounded-full bg-black/40 hover:bg-black/60 transition-colors"
             >
@@ -199,7 +200,8 @@ const SingleCat: FC = () => {
                   camera.favorite ? "fill-red-500 text-red-500" : "text-white"
                 }
               />
-            </button>
+            </button>)}
+           
 
             {/* Product image */}
             <div className="h-[140px] w-full flex justify-center items-center p-5" onClick={()=>handleClick()}

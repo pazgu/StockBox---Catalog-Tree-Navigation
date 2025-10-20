@@ -1,11 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { initialCameraData, type CameraProduct } from "../SingleCat/SingleCat";
 import { Heart } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export const Favorites: React.FC = () => {
   const [cameras, setCameras] = useState<CameraProduct[]>(initialCameraData);
 
   const favoriteCameras = cameras.filter((camera) => camera.favorite);
+  const navigate=useNavigate();
+  useEffect(() => {
+    const role = localStorage.getItem("role");
+
+    if (role !== "user") {
+      navigate("/");
+    }
+  }, [navigate]);
+
   useEffect(() => {
   window.scrollBy({
     top: 10, // scroll down 100px
@@ -13,6 +23,7 @@ export const Favorites: React.FC = () => {
   });
 }, []);
   
+
   const toggleFavorite = (id: number) => {
     setCameras((prev) =>
       prev.map((cam) =>

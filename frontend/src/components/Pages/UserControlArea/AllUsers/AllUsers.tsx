@@ -1,4 +1,4 @@
-import React, { FC, useState } from "react";
+import React, { FC, useEffect, useState } from "react";
 import Header from "../../../LayoutArea/Header/Header";
 import { useNavigate } from "react-router-dom";
 
@@ -35,6 +35,13 @@ const AllUsers: FC<AllUsersProps> = () => {
 
   const usersPerPage = 8;
 
+useEffect(() => {
+    const role = localStorage.getItem("role");
+
+    if (role !== "admin") {
+      navigate("/");
+    }
+  }, [navigate]);
 
 const filteredUsers = users.filter((user) =>
   user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

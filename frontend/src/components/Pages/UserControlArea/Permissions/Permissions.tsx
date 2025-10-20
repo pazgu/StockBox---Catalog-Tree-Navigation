@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Switch } from "../../../ui/switch";
@@ -58,6 +58,14 @@ const Permissions: React.FC = () => {
     ],
   });
   const [isOpen, setIsOpen] = useState(false);
+
+useEffect(() => {
+    const role = localStorage.getItem("role");
+
+    if (role !== "admin") {
+      navigate("/");
+    }
+  }, [navigate]);
 
   const filteredUsers = users.filter((user) =>
     user.name.toLowerCase().includes(userSearch.toLowerCase())
