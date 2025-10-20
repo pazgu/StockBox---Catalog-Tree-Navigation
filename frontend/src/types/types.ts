@@ -1,13 +1,13 @@
 import React from 'react';
-export type BannedEntityType = 'product' | 'category' | 'subcategory';
 
+export type BannedEntityType = 'product' | 'category' | 'subcategory';
 export interface BannedItem {
     id: number | string;
     name: string;
     type: BannedEntityType;
+    groupId?: string; 
 }
 
-// Mock data for banned items (combining names from your mock data)
 export const mockBannedItems: BannedItem[] = [
     { id: 1, name: "מצלמה דיגיטלית Canon EOS 250D DSLR", type: 'product' },
     { id: 4, name: "מצלמה דיגיטלית ללא מראה Canon EOS R100", type: 'product' },
@@ -29,7 +29,7 @@ export interface Group {
     description: string;
     userCount: number;
     permissions: string[];
-    bannedItems: BannedItem[];
+    bannedItems: BannedItem[]; 
 }
 
 export interface Permission {
