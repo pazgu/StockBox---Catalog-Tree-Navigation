@@ -3,24 +3,24 @@ import Header from "../../../LayoutArea/Header/Header";
 import { useNavigate } from "react-router-dom";
 
 interface User {
+  id: string | number;
   name: string;
   email: string;
 }
 
 interface AllUsersProps {}
-
 const usersData: User[] = [
-  { name: "ליאלי עמנואלי", email: "lali@outlook.com" },
-  { name: "משתמש 2", email: "user2@domain.com" },
-  { name: "משתמש 3", email: "user3@domain.com" },
-  { name: "משתמש 4", email: "user4@domain.com" },
-  { name: "משתמש 5", email: "user5@domain.com" },
-  { name: "משתמש 6", email: "user6@domain.com" },
-  { name: "משתמש 7", email: "user7@domain.com" },
-  { name: "משתמש 8", email: "user8@domain.com" },
-  { name: "משתמש 9", email: "user9@domain.com" },
-  { name: "משתמש 10", email: "user10@domain.com" },
-  { name: "משתמש 11", email: "user11@domain.com" },
+  { id: 1, name: "ליאלי עמנואלי", email: "lali@outlook.com" },
+  { id: 2, name: "משתמש 2", email: "user2@domain.com" },
+  { id: 3, name: "משתמש 3", email: "user3@domain.com" },
+  { id: 4, name: "משתמש 4", email: "user4@domain.com" },
+  { id: 5, name: "משתמש 5", email: "user5@domain.com" },
+  { id: 6, name: "משתמש 6", email: "user6@domain.com" },
+  { id: 7, name: "משתמש 7", email: "user7@domain.com" },
+  { id: 8, name: "משתמש 8", email: "user8@domain.com" },
+  { id: 9, name: "משתמש 9", email: "user9@domain.com" },
+  { id: 10, name: "משתמש 10", email: "user10@domain.com" },
+  { id: 11, name: "משתמש 11", email: "user11@domain.com" },
 ];
 
 const AllUsers: FC<AllUsersProps> = () => {
@@ -92,7 +92,7 @@ const currentUsers = filteredUsers.slice(startIndex, startIndex + usersPerPage);
 
   const handleSaveEdit = () => {
     if (userToEdit) {
-      setUsers(users.map((u) => (u.email === userToEdit.email ? userToEdit : u)));
+      setUsers(users.map((u) => (u.id === userToEdit.id ? userToEdit : u)));
       setShowEditModal(false);
       setUserToEdit(null);
     }

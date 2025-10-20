@@ -1,11 +1,9 @@
 import React, { FC, useState, ChangeEvent } from "react";
+import { Pen, Trash, Lock, Headphones, Mic, Camera, Video } from "lucide-react";
 import headphones from "../../../../assets/headphones.png";
 import audio from "../../../../assets/audio.png";
 import camera from "../../../../assets/camera.png";
 import video from "../../../../assets/video.png";
-import { Pen } from "lucide-react";
-import { Trash } from "lucide-react";
-
 interface CategoriesProps {}
 
 interface Category {
@@ -119,7 +117,7 @@ const Categories: FC<CategoriesProps> = () => {
       className="p-4 font-system direction-rtl text-right"
       style={{ direction: "rtl" }}
     >
-      <div className="mt-28 text-right">
+      <div className="mt-20 text-right">
         <h2 className="text-5xl font-light text-slate-700 mb-2 tracking-tight">
           קטגוריות
         </h2>
@@ -138,27 +136,35 @@ const Categories: FC<CategoriesProps> = () => {
                   alt={category.name}
                   className="w-44 h-44 object-cover rounded-full shadow-md mt-2"
                 />
-                <div className="absolute inset-0 flex items-top mr-24 gap-3 mb-4 ">
+                <div className="w-60 absolute inset-0 flex  mr-16 gap-3 mb-4">
                   <button
-    className="opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-center shadow-lg text-slate-700 hover:bg-red-600 hover:text-white hover:shadow-2xl"
-    onClick={(e) => {
-      e.preventDefault();
-      handleDelete(category);
-    }}
-  >
-    <Trash size={18} />
-  </button>
+                    className="-mt-2 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl "
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleDelete(category);
+                    }}
+                  >
+                    <Trash size={18} />
+                  </button>
 
-  <button
-    className="opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-center shadow-lg text-slate-700 hover:bg-blue-600 hover:text-white hover:shadow-2xl mt-4"
-    onClick={(e) => {
-      e.preventDefault();
-      handleEdit(category);
-    }}
-  >
-    <Pen size={18} />
-  </button>
-      
+                  <button
+                    className="opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl mt-2 "
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleEdit(category);
+                    }}
+                  >
+                    <Pen size={18} />
+                  </button>
+                  <a href="/permissions">
+                    <button
+                      className="mt-8 -mr-2.5 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl "
+                      onClick={(e) => e.stopPropagation()}
+                      title="ניהול הרשאות"
+                    >
+                      <Lock size={18} />
+                    </button>
+                  </a>
                 </div>
               </div>
             </a>
