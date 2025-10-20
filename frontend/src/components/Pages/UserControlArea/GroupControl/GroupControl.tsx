@@ -145,7 +145,7 @@ const GroupControl: React.FC = () => {
 
 
   const handleDeleteGroup = (group: Group) => { 
-
+    
   };
 
   return (

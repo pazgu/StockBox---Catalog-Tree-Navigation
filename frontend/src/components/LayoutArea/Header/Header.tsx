@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
-import { Heart, Search, User, Menu, X, ShoppingCart, Bell } from 'lucide-react';
-import logo from '../../../assets/logo.png';
+import React, { useState, useEffect, useRef } from "react";
+import { NavLink, useLocation } from "react-router-dom";
+import { Heart, Search, User, Menu, X, ShoppingCart, Bell } from "lucide-react";
+import logo from "../../../assets/logo.png";
 import { useNavigate } from "react-router-dom";
-import { useUser } from  '../../../context/UserContext';
+import { useUser } from "../../../context/UserContext";
 
 interface HeaderProps {
   logoSrc?: string;
@@ -18,16 +18,16 @@ const Header: React.FC<HeaderProps> = ({
   cartItemCount = 0,
   favoriteCount = 0,
   notificationCount = 0,
-  onSearch
+  onSearch,
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [isScrolled, setIsScrolled] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
-const {role}=useUser();
+  const { role } = useUser();
   // Close mobile menu on route change
   useEffect(() => {
     setIsMobileMenuOpen(false);
@@ -38,20 +38,20 @@ const {role}=useUser();
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   // Close mobile menu on escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         setIsMobileMenuOpen(false);
         setIsSearchFocused(false);
       }
     };
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
   }, []);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -63,16 +63,16 @@ const {role}=useUser();
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     `relative text-white text-base hover:text-[#BA9F71] transition-all duration-300 ${
-      isActive ? 'text-[#BA9F71] font-semibold' : ''
+      isActive ? "text-[#BA9F71] font-semibold" : ""
     } after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-[#BA9F71] after:transition-all after:duration-300 hover:after:w-full ${
-      isActive ? 'after:w-full' : ''
+      isActive ? "after:w-full" : ""
     }`;
 
   const Badge: React.FC<{ count: number }> = ({ count }) => {
     if (count === 0) return null;
     return (
       <span className="absolute -top-1 -right-1 bg-gradient-to-r from-[#BA9F71] to-[#E8DFD2] text-[#0D305B] text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1 animate-pulse">
-        {count > 99 ? '99+' : count}
+        {count > 99 ? "99+" : count}
       </span>
     );
   };
@@ -80,21 +80,20 @@ const {role}=useUser();
   return (
     <>
       {/* Main Header */}
-     <header
+      <header
         className={`fixed top-0 w-full transition-all duration-300 z-50 flex items-center justify-between px-6 ${
           isScrolled
-            ? 'bg-[#0D305B]/95 backdrop-blur-md shadow-xl h-32' // taller on scroll
-            : 'bg-[#0D305B] shadow-lg h-40' // taller when at top
+            ? "bg-[#0D305B]/95 backdrop-blur-md shadow-xl h-32" // taller on scroll
+            : "bg-[#0D305B] shadow-lg h-40" // taller when at top
         }`}
       >
-
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
             <div className="flex-shrink-0 transform transition-transform duration-300 hover:scale-105">
-              <img 
+              <img
                 src={logoSrc}
-                alt="StockBox Logo" 
+                alt="StockBox Logo"
                 className="h-20 w-auto"
                 onClick={() => navigate("/")}
               />
@@ -117,12 +116,12 @@ const {role}=useUser();
               </nav>
             </div>
 
-            <form 
+            <form
               onSubmit={handleSearch}
               className={`hidden md:flex items-center backdrop-blur-sm rounded-full px-1 py-1 mr-4 transition-all duration-300 ${
-                isSearchFocused 
-                  ? 'bg-white/20 shadow-lg' 
-                  : 'bg-white/10 hover:bg-white/15'
+                isSearchFocused
+                  ? "bg-white/20 shadow-lg"
+                  : "bg-white/10 hover:bg-white/15"
               }`}
             >
               <input
@@ -136,44 +135,60 @@ const {role}=useUser();
                 className="bg-transparent text-white placeholder-white/70 px-4 py-2 outline-none w-48 lg:w-64 text-right"
                 dir="rtl"
               />
-              <button 
+              <button
                 type="submit"
                 className="bg-gradient-to-r from-[#edd7b8] to-[#beaa88] text-[#0D305B] px-4 py-2 rounded-full transition-all duration-300 flex items-center gap-2 transform active:scale-95"
               >
                 <Search size={18} />
-                <span >חפש</span>
+                <span>חפש</span>
               </button>
             </form>
 
             {/* Action Icons */}
             <div className="flex items-center gap-2">
               {/* Favorites */}
-            {role==="user"&& !isMobileMenuOpen &&
+              {role === "user" && !isMobileMenuOpen && (
+                <button
+                  aria-label="Favorites"
+                  className="relative p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 hover:scale-110 mr-2"
+                  onClick={() => navigate("/Favorites")}
+                >
+                  <Heart size={22} className="hover:fill-current" />
+                  <Badge count={favoriteCount} />
+                </button>
+              )}
 
-              <button
-                aria-label="Favorites"
-                className="relative p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 hover:scale-110 mr-2"
-                onClick={() => navigate("/Favorites")}
-              >
-                <Heart size={22} className="hover:fill-current" />
-                <Badge count={favoriteCount} />
-              </button>}
-              
-              
               {/* All Users */}
-              {role==="admin"&&<button
-                aria-label="User Profile"
-                className="relative p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 hover:scale-110 group"
-                onClick={() => navigate("/AllUsers")}
-              >
-              <img
-                src="https://img.icons8.com/?size=100&id=cykh8BZMTKkb&format=png&color=FFFFFF"
-                alt="User Avatar"
-                className="w-6 h-6 rounded-full"
-              />
-            </button>}
-              
+              {role === "admin" && (
+                <div className="relative group">
+                  <button
+                    aria-label="User Profile"
+                    className="relative p-2 rounded-full text-white transition-all duration-300 hover:scale-110"
+                  >
+                    <img
+                      src="https://img.icons8.com/?size=100&id=cykh8BZMTKkb&format=png&color=FFFFFF"
+                      alt="User Avatar"
+                      className="w-10 h-10 rounded-full mr-4  hover:bg-white/10 p-2 "
+                    />
+                  </button>
 
+                  {/* Dropdown on hover */}
+                  <div className="absolute right-0 mt-2 w-40 bg-[#beaa88] rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                    <button
+                      onClick={() => navigate("/AllUsers")}
+                      className="w-full px-4 py-2 text-right text-sm text-white hover:bg-[#e7cc9c] transition-colors rounded-t-lg"
+                    >
+                      כל המשתמשים
+                    </button>
+                    <button
+                      onClick={() => navigate("/GroupControl")}
+                      className="w-full px-4 py-2 text-right text-sm text-white hover:bg-[#e7cc9c] transition-colors border-t border-gray-700 rounded-b-lg"
+                    >
+                      ניהול קבוצות
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Mobile Menu Toggle */}
               <button
@@ -183,16 +198,20 @@ const {role}=useUser();
                 aria-expanded={isMobileMenuOpen}
               >
                 <div className="relative w-6 h-6">
-                  <Menu 
-                    size={24} 
+                  <Menu
+                    size={24}
                     className={`absolute transition-all duration-300 ${
-                      isMobileMenuOpen ? 'opacity-0 rotate-180' : 'opacity-100 rotate-0'
+                      isMobileMenuOpen
+                        ? "opacity-0 rotate-180"
+                        : "opacity-100 rotate-0"
                     }`}
                   />
-                  <X 
-                    size={24} 
+                  <X
+                    size={24}
                     className={`absolute transition-all duration-300 ${
-                      isMobileMenuOpen ? 'opacity-100 rotate-0' : 'opacity-0 -rotate-180'
+                      isMobileMenuOpen
+                        ? "opacity-100 rotate-0"
+                        : "opacity-0 -rotate-180"
                     }`}
                   />
                 </div>
@@ -202,16 +221,16 @@ const {role}=useUser();
         </div>
 
         {/* Mobile Menu */}
-        <div 
+        <div
           className={`lg:hidden transition-all duration-500 ease-in-out mt-32 ${
-            isMobileMenuOpen 
-              ? 'max-h-[600px] opacity-100' 
-              : 'max-h-0 opacity-0 overflow-hidden'
+            isMobileMenuOpen
+              ? "max-h-[600px] opacity-100"
+              : "max-h-0 opacity-0 overflow-hidden"
           }`}
         >
           <div className="container mx-auto px-4 py-4 bg-gradient-to-b from-[#0a2644] to-[#0D305B]">
             {/* Mobile Search */}
-            <form 
+            <form
               onSubmit={handleSearch}
               className="flex items-center bg-white/10 backdrop-blur-sm rounded-full px-1 py-1 mb-6"
             >
@@ -223,7 +242,7 @@ const {role}=useUser();
                 className="bg-transparent text-white placeholder-white/70 px-4 py-2 outline-none flex-1 text-right"
                 dir="rtl"
               />
-              <button 
+              <button
                 type="submit"
                 className="bg-gradient-to-r from-[#E8DFD2] to-[#BA9F71] text-[#0D305B] px-4 py-2 rounded-full transition-all duration-300 active:scale-95"
               >
@@ -233,22 +252,22 @@ const {role}=useUser();
 
             {/* Mobile Navigation */}
             <nav className="flex flex-col gap-4 " dir="rtl">
-              <NavLink 
-                to="/" 
+              <NavLink
+                to="/"
                 className={navLinkClass}
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 דף הבית
               </NavLink>
-              <NavLink 
-                to="/categories" 
+              <NavLink
+                to="/categories"
                 className={navLinkClass}
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 תכולות ואמצעים
               </NavLink>
-              <NavLink 
-                to="/login" 
+              <NavLink
+                to="/login"
                 className={navLinkClass}
                 onClick={() => setIsMobileMenuOpen(false)}
               >
@@ -258,15 +277,18 @@ const {role}=useUser();
 
             {/* Mobile Quick Actions */}
             <div className="flex justify-around mt-6 pt-6 border-t border-white/20">
-            { role==="user"&&<button className="flex flex-col items-center gap-1 text-white/80 hover:text-white transition-colors">
-                <Heart size={20} />
-                <span className="text-xs">מועדפים</span>
-              </button>}
-             {role==="admin"&& <button className="flex flex-col items-center gap-1 text-white/80 hover:text-white transition-colors">
-                <User size={20} />
-                <span className="text-xs">כל המשתמשים</span>
-              </button>}
-             
+              {role === "user" && (
+                <button className="flex flex-col items-center gap-1 text-white/80 hover:text-white transition-colors">
+                  <Heart size={20} />
+                  <span className="text-xs">מועדפים</span>
+                </button>
+              )}
+              {role === "admin" && (
+                <button className="flex flex-col items-center gap-1 text-white/80 hover:text-white transition-colors">
+                  <User size={20} />
+                  <span className="text-xs">כל המשתמשים</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
