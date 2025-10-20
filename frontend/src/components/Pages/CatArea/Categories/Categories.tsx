@@ -164,6 +164,7 @@ const Categories: FC<CategoriesProps> = () => {
                     className="mt-8 -mr-2.5 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl"
                     onClick={(e) => {
                       e.stopPropagation();
+                      e.preventDefault();
                       navigate("/permissions");
                     }}
                     title="ניהול הרשאות"
