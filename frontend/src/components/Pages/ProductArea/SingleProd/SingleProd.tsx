@@ -296,7 +296,9 @@ setFeatures(features.filter((_: string, i: number) => i !== index));
               {/* Buttons */}
               {role === "user" ? (
                 <div className="space-y-2 relative z-10">
-                  <button className="w-full py-3 px-4 rounded-lg font-semibold text-white bg-stockblue shadow-md transition-all duration-300 transform hover:scale-105 hover:bg-stockblue/90">
+                  <button className="w-full py-3 px-4 rounded-lg font-semibold text-white 
+                  
+                  shadow-md transition-all duration-300 transform hover:scale-105 hover:bg-stockblue/90">
                     פנייה לחבר צוות
                   </button>
 
