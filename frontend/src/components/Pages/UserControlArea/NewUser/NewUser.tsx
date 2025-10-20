@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useUser } from '../../../../context/UserContext';
 
 // Zod validation schema
 const userSchema = z.object({
@@ -50,8 +51,9 @@ type UserFormData = z.infer<typeof userSchema>;
 const NewUser: React.FC = () => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const navigate=useNavigate();
+  const {role}=useUser();
+
 useEffect(() => {
-    const role = localStorage.getItem("role");
 
     if (role !== "admin") {
       navigate("/");

@@ -7,6 +7,7 @@ import canoneosr50 from "../../../../assets/canon-eosr50.png";
 import canoneosr100 from "../../../../assets/canon-eosr100.png";
 import { Heart, Pen, Trash } from "lucide-react";
 import { Navigate, useNavigate } from 'react-router-dom';
+import { useUser } from "../../../../context/UserContext";
 
 export interface CameraProduct {
   id: number;
@@ -80,13 +81,12 @@ const SingleCat: FC = () => {
     null
   );
 
-  // Get user role from localStorage
   const [isAdmin, setIsAdmin] = useState(false);
+  const {role}=useUser();
 
   useEffect(() => {
     try {
       if (typeof window !== "undefined") {
-        const role = localStorage.getItem("role");
         if (role) {
           if(role ==="admin"){
             setIsAdmin(true)

@@ -3,6 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { Heart, Search, User, Menu, X, ShoppingCart, Bell } from 'lucide-react';
 import logo from '../../../assets/logo.png';
 import { useNavigate } from "react-router-dom";
+import { useUser } from  '../../../context/UserContext';
 
 interface HeaderProps {
   logoSrc?: string;
@@ -26,8 +27,7 @@ const Header: React.FC<HeaderProps> = ({
   const searchRef = useRef<HTMLInputElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
-  const role = localStorage.getItem("role");
-
+const {role}=useUser();
   // Close mobile menu on route change
   useEffect(() => {
     setIsMobileMenuOpen(false);

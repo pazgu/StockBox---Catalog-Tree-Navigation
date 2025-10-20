@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 
 import camera from '../../../../assets/camera.png'
 import AddGroup from '../AddGroup/AddGroup/AddGroup';
+import { useUser } from "../../../../context/UserContext";
 
 
 interface Group {
@@ -58,9 +59,9 @@ const Permissions: React.FC = () => {
     ],
   });
   const [isOpen, setIsOpen] = useState(false);
+  const {role}=useUser();
 
 useEffect(() => {
-    const role = localStorage.getItem("role");
 
     if (role !== "admin") {
       navigate("/");

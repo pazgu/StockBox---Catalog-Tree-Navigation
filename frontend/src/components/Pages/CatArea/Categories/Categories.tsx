@@ -4,6 +4,7 @@ import headphones from "../../../../assets/headphones.png";
 import audio from "../../../../assets/audio.png";
 import camera from "../../../../assets/camera.png";
 import video from "../../../../assets/video.png";
+import { useUser } from "../../../../context/UserContext";
 interface CategoriesProps {}
 
 interface Category {
@@ -30,7 +31,7 @@ const Categories: FC<CategoriesProps> = () => {
     { id: 3, name: "וידיאו", image: video },
     { id: 4, name: "צילום", image: camera },
   ]);
-const role=localStorage.getItem("role");
+const {role}=useUser();
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {

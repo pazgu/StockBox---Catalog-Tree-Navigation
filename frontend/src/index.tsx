@@ -4,14 +4,19 @@ import './index.css';
 import reportWebVitals from './reportWebVitals';
 import Layout from './components/LayoutArea/Layout/Layout';
 import { BrowserRouter } from 'react-router-dom';
+import { UserProvider } from './context/UserContext';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
 root.render(
   <React.StrictMode>
+
     <BrowserRouter>
-    <Layout></Layout>
+    <UserProvider>
+      <Layout></Layout>
+      </UserProvider>
+    
     </BrowserRouter>
     
   </React.StrictMode>

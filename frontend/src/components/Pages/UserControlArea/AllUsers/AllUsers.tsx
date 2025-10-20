@@ -1,6 +1,7 @@
 import React, { FC, useEffect, useState } from "react";
 import Header from "../../../LayoutArea/Header/Header";
 import { useNavigate } from "react-router-dom";
+import { useUser } from "../../../../context/UserContext";
 
 interface User {
   id: string | number;
@@ -34,9 +35,9 @@ const AllUsers: FC<AllUsersProps> = () => {
   const [userToEdit, setUserToEdit] = useState<User | null>(null);
 
   const usersPerPage = 8;
+  const {role}=useUser();
 
 useEffect(() => {
-    const role = localStorage.getItem("role");
 
     if (role !== "admin") {
       navigate("/");
