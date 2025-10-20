@@ -303,19 +303,23 @@ const SingleProd: FC<SingleProdProps> = () => {
               {/* Buttons */}
               {role === "user" ? (
                 <div className="space-y-2 relative z-10">
-                <button
-  className="w-full py-3 px-4 rounded-lg font-semibold text-white bg-stockblue shadow-md transition-all duration-300 transform hover:scale-105 hover:bg-stockboxblue/90 active:scale-95"
-  onClick={() => {
-    const email = "Superstockbox@outlook.com";
-    const subject = encodeURIComponent(`${title}`);
-    const body = encodeURIComponent(`שלום,\nאשמח לקבל מידע נוסף לגבי...\n\nתודה`);
-    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
-  }}
-  dir="rtl"
-  style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
->
-  צור קשר עם הצוות שלנו
-</button>
+                  <button
+                    className="w-full py-3 px-4 rounded-lg font-semibold text-white bg-stockblue shadow-md transition-all duration-300 transform hover:scale-105 hover:bg-stockboxblue/90 active:scale-95"
+                    onClick={() => {
+                      const email = "Superstockbox@outlook.com";
+                      const subject = encodeURIComponent(`${title}`);
+                      const body = encodeURIComponent(
+                        `שלום,\nאשמח לקבל מידע נוסף לגבי...\n\nתודה`
+                      );
+                      window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+                    }}
+                    dir="rtl"
+                    style={{
+                      fontFamily: "system-ui, -apple-system, sans-serif",
+                    }}
+                  >
+                    צור קשר עם הצוות שלנו
+                  </button>
 
                   <button className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg border border-gray-300 text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all duration-300 hover:scale-105">
                     <Heart size={16} />

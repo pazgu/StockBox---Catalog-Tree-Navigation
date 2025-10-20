@@ -280,16 +280,9 @@ const SingleCat: FC = () => {
             />
             <input
               type="text"
-              placeholder="עדשת מוצר"
+              placeholder="תיאור מוצר"
               value={newProductLens}
               onChange={(e) => setNewProductLens(e.target.value)}
-              className="w-full mb-3 p-2 border rounded"
-            />
-            <input
-              type="text"
-              placeholder="צבע מוצר"
-              value={newProductColor}
-              onChange={(e) => setNewProductColor(e.target.value)}
               className="w-full mb-3 p-2 border rounded"
             />
             <input
@@ -302,7 +295,7 @@ const SingleCat: FC = () => {
               <img
                 src={newProductImage}
                 alt="preview"
-                className="w-full mt-2 rounded"
+                className="w-40 mt-2 rounded mr-28"
               />
             )}
             <div className="flex justify-end gap-3 mt-4">
