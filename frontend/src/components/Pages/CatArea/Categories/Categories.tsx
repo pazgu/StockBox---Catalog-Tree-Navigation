@@ -141,17 +141,17 @@ const Categories: FC<CategoriesProps> = () => {
                 />
                 <div className="w-60 absolute inset-0 flex  mr-16 gap-3 mb-4">
                   <button
-                    className="-mt-2 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl "
+                    className="-mt-1.5 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl "
                     onClick={(e) => {
                       e.preventDefault();
                       handleDelete(category);
                     }}
                   >
-                    <Trash size={18} />
+                    <Trash size={18}/>
                   </button>
 
                   <button
-                    className="opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl mt-2 "
+                    className="opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl mt-2.1 "
                     onClick={(e) => {
                       e.preventDefault();
                       handleEdit(category);
