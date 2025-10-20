@@ -285,12 +285,12 @@ const Permissions: React.FC = () => {
 
                   {/* Add Group Button */}
                   <div className="flex justify-center mt-4">
-                    <button
-                      className="px-2 py-1 bg-blue-600 text-white text-sm rounded-sm"
-                      onClick={() => setIsOpen(true)}
-                    >
-                      לחץ להוסיף קבוצה
-                    </button>
+                  <button
+    className="px-2 py-1 bg-indigo-900 text-white text-sm rounded-sm hover:bg-indigo-800 transition"
+    onClick={() => setIsOpen(true)}
+>
+    לחץ להוסיף קבוצה
+</button>
                     {isOpen && (
                     <AddGroup
                         onClose={() => setIsOpen(false)}
