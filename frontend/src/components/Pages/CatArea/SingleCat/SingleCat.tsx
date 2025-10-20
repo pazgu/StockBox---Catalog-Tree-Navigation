@@ -81,22 +81,9 @@ const SingleCat: FC = () => {
     null
   );
 
-  const [isAdmin, setIsAdmin] = useState(false);
   const {role}=useUser();
 
-  useEffect(() => {
-    try {
-      if (typeof window !== "undefined") {
-        if (role) {
-          if(role ==="admin"){
-            setIsAdmin(true)
-          }
-        }
-      }
-    } catch (error) {
-      console.error("שגיאה בקריאת localStorage:", error);
-    }
-  }, []);
+ 
 
   const navigate = useNavigate();
 
@@ -179,7 +166,7 @@ const SingleCat: FC = () => {
             className="flex flex-col items-center p-5 text-center border-b-2 border-gray-200 relative transition-transform duration-300 hover:-translate-y-1"
           >
             {/* Delete button */}
-            {isAdmin&&<div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-48 pointer-events-none">
+            {role==="admin"&&<div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-48 pointer-events-none">
               <button
                 onClick={() => handleDelete(camera)}
                 className="absolute top-1 left-1 opacity-1 transform translate-x-3 scale-90 transition-all duration-300 ease-in-out pointer-events-auto h-8 w-8 rounded-full bg-[#e5e7eb] text-gray-800 flex items-center justify-center shadow-md hover:bg-red-600 hover:text-white hover:scale-110"
@@ -190,7 +177,7 @@ const SingleCat: FC = () => {
             
 
             {/* Favorite */}
-            {!isAdmin&& (<button
+            {role!="admin"&& (<button
               onClick={() => toggleFavorite(camera.id)}
               className="absolute top-3 right-3 p-2 rounded-full bg-black/40 hover:bg-black/60 transition-colors"
             >
@@ -227,7 +214,7 @@ const SingleCat: FC = () => {
               </p>
 
               {/* Manage permissions button - only for admin*/}
-              {isAdmin && (
+              {role==="admin" && (
                 <div className="mt-2 flex justify-center">
                   <button
                     onClick={handleManagePermissions}
@@ -244,7 +231,7 @@ const SingleCat: FC = () => {
       </main>
 
       {/* Add product button */}
-      {isAdmin&& <div
+      {role==="admin"&& <div
         className="fixed bottom-10 right-10 w-12 h-12 bg-[#0D305B] flex items-center justify-center rounded-full cursor-pointer hover:bg-[#1e3a5f] transition-colors"
         onClick={() => setShowAddCatModal(true)}
       >
@@ -265,7 +252,7 @@ const SingleCat: FC = () => {
      
        
       {/* Add modal */}
-      {isAdmin&&showAddCatModal && (
+      {role==="admin"&&showAddCatModal && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
           onClick={closeAllModals}
@@ -321,7 +308,7 @@ const SingleCat: FC = () => {
       )}
 
       {/* Delete modal */}
-      {isAdmin&&showDeleteModal && productToDelete && (
+      {role==="admin"&&showDeleteModal && productToDelete && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
           onClick={closeAllModals}
