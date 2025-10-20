@@ -59,20 +59,25 @@ export const Favorites: React.FC = () => {
               <Heart
                 size={22}
                 strokeWidth={2}
-                className={camera.favorite ? "fill-red-500 text-red-500" : "text-white"}
+                className={
+                  camera.favorite ? "fill-red-500 text-red-500" : "text-white"
+                }
               />
             </button>
-<a href="/product">
-            <img 
-              src={camera.imageUrl}
-              alt={camera.name}
-              className="w-[140px] h-[140px] object-contain rounded-lg mb-3 mx-auto"
-            /></a>
+            <a href="/product">
+              <img
+                src={camera.imageUrl}
+                alt={camera.name}
+                className="w-[140px] h-[140px] object-contain rounded-lg mb-3 mx-auto"
+              />
+            </a>
             <span className="block text-base font-semibold text-slate-800 mb-1">
               {camera.name}
             </span>
-            <small className="block text-sm text-gray-500">{camera.lens}</small>
-            <small className="block text-sm text-gray-500">{camera.color}</small>
+            <small className="block yhtext-sm text-gray-500">{camera.lens}</small>
+            <small className="block text-sm text-gray-500">
+              {camera.color}
+            </small>
           </div>
         ))}
       </div>
