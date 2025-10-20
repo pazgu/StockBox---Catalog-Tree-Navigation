@@ -26,25 +26,20 @@ const GroupControl: React.FC = () => {
       id: 'group1',
       name: 'קבוצה 1',
       description: 'קבוצת גישה ראשית',
-      userCount: 12,
       permissions: [],
       bannedItems: [mockBannedItems[0], mockBannedItems[2]],
     },
-
     {
       id: 'group2',
       name: 'קבוצה 2',
       description: 'קבוצת גישה משנית',
-      userCount: 28,
       permissions: [],
       bannedItems: [mockBannedItems[1], mockBannedItems[3], mockBannedItems[2]],
     },
-
     {
       id: 'group3',
       name: 'קבוצה 3',
       description: 'קבוצת משתמשים סטנדרטית',
-      userCount: 45,
       permissions: [],
       bannedItems: [],
     },
@@ -59,6 +54,7 @@ const GroupControl: React.FC = () => {
   ]);
 
   const currentGroup = useMemo(() => groups.find((g) => g.id === selectedGroup), [groups, selectedGroup]);
+
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
       const inGroup = user.groups.includes(selectedGroup);

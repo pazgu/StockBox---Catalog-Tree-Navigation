@@ -1,5 +1,3 @@
-import React from 'react';
-
 export type BannedEntityType = 'product' | 'category' | 'subcategory';
 export interface BannedItem {
     id: number | string;
@@ -27,7 +25,6 @@ export interface Group {
     id: string;
     name: string;
     description: string;
-    userCount: number;
     permissions: string[];
     bannedItems: BannedItem[]; 
 }

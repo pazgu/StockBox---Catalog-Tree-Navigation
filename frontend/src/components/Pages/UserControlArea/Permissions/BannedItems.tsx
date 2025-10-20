@@ -1,14 +1,7 @@
 import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Ban, Shield, Database } from 'lucide-react';
-
-type BannedEntityType = 'product' | 'category' | 'subcategory';
-
-interface BannedItem {
-  id: string | number;
-  name: string;
-  type: BannedEntityType;
-}
+import { BannedItem, BannedEntityType } from '../../../../types/types';
 
 interface BannedItemsProps {
   currentGroupName: string;
@@ -62,7 +55,7 @@ const BannedItems: React.FC<BannedItemsProps> = ({ currentGroupName, bannedItems
                   {item.name}
                 </a>
                 <span className="text-gray-500 text-xs mr-2">
-                  ({getTypeDisplayName(item.type as BannedEntityType)})
+                  ({getTypeDisplayName(item.type)})
                 </span>
               </li>
             ))}
