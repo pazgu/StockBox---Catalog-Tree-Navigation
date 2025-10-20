@@ -6,7 +6,6 @@ import camera from "../../../../assets/camera.png";
 import video from "../../../../assets/video.png";
 interface CategoriesProps {}
 
-
 interface Category {
   id: number;
   name: string;
@@ -157,16 +156,16 @@ const Categories: FC<CategoriesProps> = () => {
                   >
                     <Pen size={18} />
                   </button>
-
-                  <button
-                    className="mt-8 -mr-2.5 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl "
-                    onClick={(e) => e.stopPropagation()}
-                    title="ניהול הרשאות"
-                  >
-                    <Lock size={18} />
-                  </button>
+                  <a href="/permissions">
+                    <button
+                      className="mt-8 -mr-2.5 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl "
+                      onClick={(e) => e.stopPropagation()}
+                      title="ניהול הרשאות"
+                    >
+                      <Lock size={18} />
+                    </button>
+                  </a>
                 </div>
-                
               </div>
             </a>
             <span className="text-base text-slate-700 font-medium mt-2">

@@ -26,6 +26,7 @@ const Header: React.FC<HeaderProps> = ({
   const searchRef = useRef<HTMLInputElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
+  const role = localStorage.getItem("role");
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -147,6 +148,7 @@ const Header: React.FC<HeaderProps> = ({
             {/* Action Icons */}
             <div className="flex items-center gap-2">
               {/* Favorites */}
+            {role==="user"&& !isMobileMenuOpen &&
 
               <button
                 aria-label="Favorites"
@@ -155,10 +157,11 @@ const Header: React.FC<HeaderProps> = ({
               >
                 <Heart size={22} className="hover:fill-current" />
                 <Badge count={favoriteCount} />
-              </button>
+              </button>}
+              
               
               {/* All Users */}
-              <button
+              {role==="admin"&&<button
                 aria-label="User Profile"
                 className="relative p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 hover:scale-110 group"
                 onClick={() => navigate("/AllUsers")}
@@ -168,7 +171,8 @@ const Header: React.FC<HeaderProps> = ({
                 alt="User Avatar"
                 className="w-6 h-6 rounded-full"
               />
-            </button>
+            </button>}
+              
 
 
               {/* Mobile Menu Toggle */}
@@ -254,22 +258,15 @@ const Header: React.FC<HeaderProps> = ({
 
             {/* Mobile Quick Actions */}
             <div className="flex justify-around mt-6 pt-6 border-t border-white/20">
-              <button className="flex flex-col items-center gap-1 text-white/80 hover:text-white transition-colors">
-                <Bell size={20} />
-                <span className="text-xs">התראות</span>
-              </button>
-              <button className="flex flex-col items-center gap-1 text-white/80 hover:text-white transition-colors">
-                <ShoppingCart size={20} />
-                <span className="text-xs">עגלה</span>
-              </button>
-              <button className="flex flex-col items-center gap-1 text-white/80 hover:text-white transition-colors">
+            { role==="user"&&<button className="flex flex-col items-center gap-1 text-white/80 hover:text-white transition-colors">
                 <Heart size={20} />
                 <span className="text-xs">מועדפים</span>
-              </button>
-              <button className="flex flex-col items-center gap-1 text-white/80 hover:text-white transition-colors">
+              </button>}
+             {role==="admin"&& <button className="flex flex-col items-center gap-1 text-white/80 hover:text-white transition-colors">
                 <User size={20} />
-                <span className="text-xs">פרופיל</span>
-              </button>
+                <span className="text-xs">כל המשתמשים</span>
+              </button>}
+             
             </div>
           </div>
         </div>
