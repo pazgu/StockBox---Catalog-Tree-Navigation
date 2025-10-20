@@ -78,6 +78,7 @@ useEffect(() => {
       
       reset();
       alert('המשתמש נוסף בהצלחה!');
+      navigate('/users');
     } catch (error) {
       console.error('שגיאה בשליחת הנתונים:', error);
       alert('אירעה שגיאה בעת הוספת המשתמש');
