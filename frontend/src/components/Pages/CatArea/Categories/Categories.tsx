@@ -218,7 +218,7 @@ const Categories: FC<CategoriesProps> = () => {
           </div>
         ))}
       </div>
-      {role == "admin" && (
+      {role === "admin" && (
         <div
           className="fixed bottom-8 right-8 w-16 h-16 bg-slate-700 rounded-full flex items-center justify-center text-3xl text-white cursor-pointer transition-all duration-200 hover:scale-105 hover:bg-slate-600"
           onClick={() => setShowAddCatModal(true)}
@@ -443,7 +443,7 @@ const Categories: FC<CategoriesProps> = () => {
 
                   setCategoryToType(null);
                 }}
-                className="p-3 bg-blue-800 text-white rounded-lg hover:bg-blue-900 transition-all w-64"
+                className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all w-64 shadow-md hover:shadow-lg"
               >
                 תתי-קטגוריות{" "}
               </button>
