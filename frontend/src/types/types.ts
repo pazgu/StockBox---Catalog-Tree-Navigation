@@ -50,4 +50,5 @@ export interface BannedItem {
   id: string | number;
   name: string;
   type: "product" | "category" | "subcategory";
+  image?: string; 
 }
