@@ -8,6 +8,7 @@ import canoneosr100 from "../../../../assets/canon-eosr100.png";
 import { Heart, Pen, Trash } from "lucide-react";
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useUser } from "../../../../context/UserContext";
+import { toast } from "sonner";
 
 export interface CameraProduct {
   id: number;
@@ -99,14 +100,20 @@ const SingleCat: FC = () => {
       reader.readAsDataURL(file);
     }
   };
+const toggleFavorite = (id: number) => {
+  const cam = cameras.find((c) => c.id === id);
+  if (!cam) return;
 
-  const toggleFavorite = (id: number) =>
-    setCameras((prev) =>
-      prev.map((cam) =>
-        cam.id === id ? { ...cam, favorite: !cam.favorite } : cam
-      )
-    );
+  if (cam.favorite) {
+    toast.info(`${cam.name} הוסר מהמועדפים`);
+  } else {
+    toast.success(`${cam.name} נוסף למועדפים`);
+  }
 
+  setCameras((prev) =>
+    prev.map((c) => (c.id === id ? { ...c, favorite: !c.favorite } : c))
+  );
+};
   const handleDelete = (product: CameraProduct) => {
     setProductToDelete(product);
     setShowDeleteModal(true);
@@ -117,6 +124,8 @@ const SingleCat: FC = () => {
       setCameras(cameras.filter((cam) => cam.id !== productToDelete.id));
     setShowDeleteModal(false);
     setProductToDelete(null);
+      toast.success(`המוצר "${productToDelete?.name}" נמחק בהצלחה!`)
+
   };
 
   const handleSave = () => {
@@ -134,6 +143,8 @@ const SingleCat: FC = () => {
     setShowAddCatModal(false);
     setNewProductName("");
     setNewProductImage(null);
+    toast.success(`המוצר "${newProductName}" נוסף בהצלחה!`)
+
   };
 
   const closeAllModals = () => {
