@@ -4,7 +4,7 @@ import GroupList from './GroupList';
 import UsersList from '../AllUsers/UsersList';
 import BannedItems from './BannedItems';
 import AddUsersModal from './AddUsersModal';
-import { Group, User, mockBannedItems } from '../../../../types/types';
+import { BannedItem, Group, User, mockBannedItems } from '../../../../types/types';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../../../context/UserContext';
 
@@ -36,10 +36,31 @@ const GroupControl: React.FC = () => {
   }, [showAddGroupModal]);
 
   const [groups, setGroups] = useState<Group[]>([
-
-    { id: "group1", name: "קבוצה 1", permissions: [], bannedItems: [mockBannedItems[0], mockBannedItems[2]] },
-    { id: "group2", name: "קבוצה 2", permissions: [], bannedItems: [mockBannedItems[1], mockBannedItems[3], mockBannedItems[2]] },
-    { id: "group3", name: "קבוצה 3", permissions: [], bannedItems: [] },
+    {
+      id: "group1",
+      name: "קבוצה 1",
+      permissions: [],
+      bannedItems: [
+        { id: 1, name: "מצלמה דיגיטלית Canon EOS 250D DSLR", type: "product" },
+        { id: "cat_2", name: "הקלטה", type: "category" }
+      ],
+    },
+    {
+      id: "group2",
+      name: "קבוצה 2",
+      permissions: [],
+      bannedItems: [
+        { id: 4, name: "מצלמה דיגיטלית ללא מראה Canon EOS R100", type: "product" },
+        { id: "sub_cat_7", name: "עדשות EF", type: "subcategory" },
+        { id: "cat_2", name: "הקלטה", type: "category" }
+      ],
+    },
+    {
+      id: "group3",
+      name: "קבוצה 3",
+      permissions: [],
+      bannedItems: [],
+    },
   ]);
 
   const [users, setUsers] = useState<User[]>([
@@ -108,7 +129,7 @@ const GroupControl: React.FC = () => {
     setSelectedUsers(new Set());
   };
 
-  const handleAddUsers = (groupId: string, userIds: string[]) => {
+   const handleAddUsers = (groupId: string, userIds: string[]) => {
     setUsers(prevUsers =>
       prevUsers.map(u => {
         if (!userIds.includes(u.id)) return u; // לא השתנה
@@ -117,7 +138,8 @@ const GroupControl: React.FC = () => {
       })
     );
 
-    showMessage(`${userIds.length} משתמשים נוספו בהצלחה לקבוצה`);
+    setSaveMessage("פריטים חסומים עודכנו בהצלחה");
+    setTimeout(() => setSaveMessage(""), 3000);
   };
 
   const handleUpdateBannedItems = (groupId: string, items: BannedItem[]) => {
@@ -133,8 +155,7 @@ const GroupControl: React.FC = () => {
       })
     );
 
-    setSaveMessage("פריטים חסומים עודכנו בהצלחה");
-    setTimeout(() => setSaveMessage(""), 3000);
+  showMessage(`${users.length} משתמשים נוספו בהצלחה לקבוצה`);
   };
 
   const handleSaveChanges = () => {
@@ -252,7 +273,6 @@ const GroupControl: React.FC = () => {
             onAddUsers={() => setShowAddUsersModal(true)}
             onSearchChange={setSearchQuery}
           />
-
           <BannedItems
             currentGroupName={currentGroup?.name || ""}
             bannedItems={currentGroup?.bannedItems || []}
