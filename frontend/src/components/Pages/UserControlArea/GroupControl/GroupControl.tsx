@@ -7,13 +7,13 @@ import AddUsersModal from './AddUsersModal';
 import { BannedItem, Group, User, mockBannedItems } from '../../../../types/types';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../../../context/UserContext';
+import { toast } from 'sonner';
 
 const GroupControl: React.FC = () => {
   const [selectedGroup, setSelectedGroup] = useState("group1");
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddUsersModal, setShowAddUsersModal] = useState(false);
-  const [saveMessage, setSaveMessage] = useState("");
 
   const [groupToDelete, setGroupToDelete] = useState<Group | null>(null);
   const [showAddGroupModal, setShowAddGroupModal] = useState(false);
@@ -72,7 +72,20 @@ const GroupControl: React.FC = () => {
   ]);
 
   const currentGroup = useMemo(() => groups.find((g) => g.id === selectedGroup), [groups, selectedGroup]);
+const openAddGroupModal = () => setShowAddGroupModal(true);
+  const closeAddGroupModal = () => {
+    setShowAddGroupModal(false);
+    setNewGroupName("");
+  };
 
+  const saveNewGroup = () => {
+    const trimmedName = newGroupName.trim();
+    if (!trimmedName) return;
+
+    if (groups.some(g => g.name === trimmedName)) {
+      toast.error(`קבוצה בשם "${trimmedName}" כבר קיימת`)
+      return;
+    }}
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
       const inGroup = user.groups.includes(selectedGroup);
@@ -87,11 +100,7 @@ const GroupControl: React.FC = () => {
   const totalUsers = useMemo(() => users.length, [users]);
 
   // --- Message helper ---
-  const showMessage = (msg: string) => {
-    setSaveMessage(msg);
-    setTimeout(() => setSaveMessage(""), 3000);
-  };
-
+ 
   // --- Group Handlers ---
   const handleSelectGroup = (id: string) => {
     setSelectedGroup(id);
@@ -125,7 +134,7 @@ const GroupControl: React.FC = () => {
       })
     );
 
-    showMessage(`${selectedUsers.size} משתמשים הוסרו מהקבוצה`);
+    toast.info(`${selectedUsers.size} משתמשים הוסרו מהקבוצה`);
     setSelectedUsers(new Set());
   };
 
@@ -138,8 +147,7 @@ const GroupControl: React.FC = () => {
       })
     );
 
-    setSaveMessage("פריטים חסומים עודכנו בהצלחה");
-    setTimeout(() => setSaveMessage(""), 3000);
+    toast.info("פריטים חסומים עודכנו בהצלחה");
   };
 
   const handleUpdateBannedItems = (groupId: string, items: BannedItem[]) => {
@@ -154,40 +162,14 @@ const GroupControl: React.FC = () => {
         return g;
       })
     );
-
-  showMessage(`${users.length} משתמשים נוספו בהצלחה לקבוצה`);
+    toast.success(`${users.length} משתמשים נוספו בהצלחה לקבוצה`);
   };
 
   const handleSaveChanges = () => {
-    showMessage("השינויים נשמרו בהצלחה");
+    toast.success("השינויים נשמרו בהצלחה");
   };
 
-  // --- Add Group Modal ---
-  const openAddGroupModal = () => setShowAddGroupModal(true);
-  const closeAddGroupModal = () => {
-    setShowAddGroupModal(false);
-    setNewGroupName("");
-  };
-
-  const saveNewGroup = () => {
-    const trimmedName = newGroupName.trim();
-    if (!trimmedName) return;
-
-    if (groups.some(g => g.name === trimmedName)) {
-      showMessage(`קבוצה בשם "${trimmedName}" כבר קיימת`);
-      return;
-    }
-
-    const newGroup: Group = { id: `group${Date.now()}`, name: trimmedName, permissions: [], bannedItems: [] };
-    setGroups(prev => {
-      const newGroups = [...prev, newGroup];
-      setSelectedGroup(newGroup.id);
-      return newGroups;
-    });
-
-    showMessage(`הקבוצה "${newGroup.name}" נוספה בהצלחה`);
-    closeAddGroupModal();
-  };
+  const handleAddGroup = () => {};
 
   const handleEditGroup = (group: Group) => {
     // ניתן להוסיף עריכת שם/הרשאות בעתיד
@@ -207,18 +189,16 @@ const GroupControl: React.FC = () => {
 
     setUsers(prev => prev.map(u => ({ ...u, groups: u.groups.filter(gid => gid !== groupToDelete.id) })));
 
-    showMessage(`הקבוצה "${groupToDelete.name}" נמחקה בהצלחה`);
+    toast.info(`הקבוצה "${groupToDelete.name}" נמחקה בהצלחה`);
+
     setGroupToDelete(null);
   };
 
   return (
-    <div dir="rtl" className="min-h-screen bg-gray-100 p-4 sm:p-8 md:p-12 lg:p-16 pt-28 font-sans">
-      {saveMessage && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2 animate-pulse">
-          <CheckCircle2 className="w-5 h-5" />
-          {saveMessage}
-        </div>
-      )}
+    <div
+      dir="rtl"
+      className="min-h-screen bg-gray-100 p-4 sm:p-8 md:p-12 lg:p-16 pt-28 font-sans"
+    >
 
       <div className="mb-8 text-right mt-10">
         <h2 className="text-4xl sm:text-5xl font-light text-slate-700 mb-2 tracking-tight">
