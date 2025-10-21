@@ -64,7 +64,7 @@ const NewUser: React.FC = () => {
       console.log('User data:', data);
       
       reset();
-      alert('המשתמש נוסף בהצלחה!');
+      
     } catch (error) {
       console.error('שגיאה בשליחת הנתונים:', error);
       alert('אירעה שגיאה בעת הוספת המשתמש');
