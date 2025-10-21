@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { useUser } from '../../../../context/UserContext';
 
 // Zod validation schema
 const userSchema = z.object({
@@ -48,7 +50,16 @@ type UserFormData = z.infer<typeof userSchema>;
 
 const NewUser: React.FC = () => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  
+  const navigate=useNavigate();
+  const {role}=useUser();
+
+useEffect(() => {
+
+    if (role !== "admin") {
+      navigate("/");
+    }
+  }, [navigate]);
+
   const {
     register,
     handleSubmit,
@@ -59,12 +70,15 @@ const NewUser: React.FC = () => {
     mode: 'onChange'
   });
 
+
+
   const onSubmit = async (data: UserFormData) => {
     try {
       console.log('User data:', data);
       
       reset();
-      
+      alert('המשתמש נוסף בהצלחה!');
+      navigate('/AllUsers');
     } catch (error) {
       console.error('שגיאה בשליחת הנתונים:', error);
       alert('אירעה שגיאה בעת הוספת המשתמש');

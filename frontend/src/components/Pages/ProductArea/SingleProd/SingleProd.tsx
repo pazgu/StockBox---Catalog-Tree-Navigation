@@ -7,7 +7,8 @@ import {
 } from "../../../ui/accordion";
 import cam from "../../../../assets/red-lens-camera.png";
 import { Heart, PencilLine, Upload, Plus, GripVertical } from "lucide-react";
-
+import { useUser } from "../../../../context/UserContext";
+import { Link } from "react-router-dom";
 // Define the structure for an accordion item
 interface AccordionData {
   id: string; // Unique ID for key and manipulation
@@ -23,7 +24,7 @@ const generateUniqueId = () =>
   `accordion-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
 const SingleProd: FC<SingleProdProps> = () => {
-  const [role] = useState<string | null>(() => localStorage.getItem("role"));
+  const { role } = useUser();
   const [isEditing, setIsEditing] = useState(false);
 
   const [title, setTitle] = useState("מצלמת DSLR קלאסית עם עדשה אדומה");
@@ -340,12 +341,12 @@ const SingleProd: FC<SingleProdProps> = () => {
                 </div>
               ) : role === "admin" ? (
                 <div className="relative z-10">
-                  <a
-                    href="/permissions"
+                  <Link
+                    to="/permissions"
                     className="block w-full text-center py-3 px-4 rounded-lg font-semibold text-white bg-orange-600 hover:bg-orange-700 shadow-md transition-all duration-300 transform hover:scale-105"
                   >
                     נהל הרשאות
-                  </a>
+                  </Link>
                 </div>
               ) : null}
             </div>

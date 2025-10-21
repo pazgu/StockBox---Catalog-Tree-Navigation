@@ -1,6 +1,7 @@
-import React, { FC, useState } from "react";
+import React, { FC, useEffect, useState } from "react";
 import Header from "../../../LayoutArea/Header/Header";
 import { useNavigate } from "react-router-dom";
+import { useUser } from "../../../../context/UserContext";
 
 interface User {
   id: string | number;
@@ -34,7 +35,14 @@ const AllUsers: FC<AllUsersProps> = () => {
   const [userToEdit, setUserToEdit] = useState<User | null>(null);
 
   const usersPerPage = 8;
+  const {role}=useUser();
 
+useEffect(() => {
+
+    if (role !== "admin") {
+      navigate("/");
+    }
+  }, [navigate]);
 
 const filteredUsers = users.filter((user) =>
   user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -104,9 +112,9 @@ const currentUsers = filteredUsers.slice(startIndex, startIndex + usersPerPage);
   };
 
   return (
-    <div className="min-h-screen font-sans text-[#0D305B] rtl bg-gray-50">
+    <div className="min-h-80 font-sans text-[#0D305B] rtl bg-gray-50">
       <Header />
-      <main className="px-10 pt-7 md:px-5 pb-24 relative pb-[max(24px,env(safe-area-inset-bottom))]">
+      <main className="px-10 pt-7 md:px-5  relative pb-4">
         {/* Header Section */}
         <div className="flex justify-between items-center mb-8">
           <div className="text-right flex-1">
@@ -157,14 +165,6 @@ const currentUsers = filteredUsers.slice(startIndex, startIndex + usersPerPage);
         </div>
 
           {/* Results count */}
-  {searchTerm && (
-    <div className="text-right mb-4 text-gray-600">
-      נמצאו {filteredUsers.length} תוצאות
-    </div>
-  )}
-
-          {/* Results count */}
-          
   {searchTerm && (
     <div className="text-right mb-4 text-gray-600">
       נמצאו {filteredUsers.length} תוצאות

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Switch } from "../../../ui/switch";
@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 
 import camera from '../../../../assets/camera.png'
 import AddGroup from '../AddGroup/AddGroup/AddGroup';
+import { useUser } from "../../../../context/UserContext";
 
 
 interface Group {
@@ -58,6 +59,14 @@ const Permissions: React.FC = () => {
     ],
   });
   const [isOpen, setIsOpen] = useState(false);
+  const {role}=useUser();
+
+useEffect(() => {
+
+    if (role !== "admin") {
+      navigate("/");
+    }
+  }, [navigate]);
 
   const filteredUsers = users.filter((user) =>
     user.name.toLowerCase().includes(userSearch.toLowerCase())
@@ -285,12 +294,12 @@ const Permissions: React.FC = () => {
 
                   {/* Add Group Button */}
                   <div className="flex justify-center mt-4">
-                    <button
-                      className="px-2 py-1 bg-blue-600 text-white text-sm rounded-sm"
-                      onClick={() => setIsOpen(true)}
-                    >
-                      לחץ להוסיף קבוצה
-                    </button>
+                  <button
+    className="px-2 py-1 bg-indigo-900 text-white text-sm rounded-sm hover:bg-indigo-800 transition"
+    onClick={() => setIsOpen(true)}
+>
+    לחץ להוסיף קבוצה
+</button>
                     {isOpen && (
                     <AddGroup
                         onClose={() => setIsOpen(false)}

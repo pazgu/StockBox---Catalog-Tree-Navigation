@@ -7,6 +7,7 @@ import canoneosr50 from "../../../../assets/canon-eosr50.png";
 import canoneosr100 from "../../../../assets/canon-eosr100.png";
 import { Heart, Pen, Trash } from "lucide-react";
 import { Navigate, useNavigate } from 'react-router-dom';
+import { useUser } from "../../../../context/UserContext";
 
 export interface CameraProduct {
   id: number;
@@ -80,22 +81,9 @@ const SingleCat: FC = () => {
     null
   );
 
-  // Get user role from localStorage
-  const [isAdmin, setIsAdmin] = useState(false);
+  const {role}=useUser();
 
-  useEffect(() => {
-    try {
-      if (typeof window !== "undefined") {
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-          const user = JSON.parse(storedUser);
-          setIsAdmin(user?.role === "admin");
-        }
-      }
-    } catch (error) {
-      console.error("שגיאה בקריאת localStorage:", error);
-    }
-  }, []);
+ 
 
   const navigate = useNavigate();
 
@@ -155,7 +143,7 @@ const SingleCat: FC = () => {
   };
 
   const handleManagePermissions = () => {
-    console.log("Manage permissions clicked");
+    navigate("/permissions");
   };
 
   return (
@@ -178,17 +166,18 @@ const SingleCat: FC = () => {
             className="flex flex-col items-center p-5 text-center border-b-2 border-gray-200 relative transition-transform duration-300 hover:-translate-y-1"
           >
             {/* Delete button */}
-            <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120px] h-[120px] pointer-events-none">
+            {role==="admin"&&<div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-48 pointer-events-none">
               <button
                 onClick={() => handleDelete(camera)}
-                className="absolute top-1 right-[90px] opacity-0 transform translate-x-3 scale-90 transition-all duration-300 ease-in-out pointer-events-auto h-8 w-8 rounded-full bg-white text-gray-800 flex items-center justify-center shadow-md hover:bg-red-600 hover:text-white hover:scale-110"
+                className="absolute top-1 left-1 opacity-1 transform translate-x-3 scale-90 transition-all duration-300 ease-in-out pointer-events-auto h-8 w-8 rounded-full bg-[#e5e7eb] text-gray-800 flex items-center justify-center shadow-md hover:bg-red-600 hover:text-white hover:scale-110"
               >
                 <Trash size={20} />
               </button>
-            </div>
+            </div>}
+            
 
             {/* Favorite */}
-            <button
+            {role!="admin"&& (<button
               onClick={() => toggleFavorite(camera.id)}
               className="absolute top-3 right-3 p-2 rounded-full bg-black/40 hover:bg-black/60 transition-colors"
             >
@@ -199,7 +188,8 @@ const SingleCat: FC = () => {
                   camera.favorite ? "fill-red-500 text-red-500" : "text-white"
                 }
               />
-            </button>
+            </button>)}
+           
 
             {/* Product image */}
             <div className="h-[140px] w-full flex justify-center items-center p-5" onClick={()=>handleClick()}
@@ -224,7 +214,7 @@ const SingleCat: FC = () => {
               </p>
 
               {/* Manage permissions button - only for admin*/}
-              {isAdmin && (
+              {role==="admin" && (
                 <div className="mt-2 flex justify-center">
                   <button
                     onClick={handleManagePermissions}
@@ -241,7 +231,7 @@ const SingleCat: FC = () => {
       </main>
 
       {/* Add product button */}
-      <div
+      {role==="admin"&& <div
         className="fixed bottom-10 right-10 w-12 h-12 bg-[#0D305B] flex items-center justify-center rounded-full cursor-pointer hover:bg-[#1e3a5f] transition-colors"
         onClick={() => setShowAddCatModal(true)}
       >
@@ -258,10 +248,11 @@ const SingleCat: FC = () => {
           <line x1="12" y1="5" x2="12" y2="19" />
           <line x1="5" y1="12" x2="19" y2="12" />
         </svg>
-      </div>
-
+      </div>}
+     
+       
       {/* Add modal */}
-      {showAddCatModal && (
+      {role==="admin"&&showAddCatModal && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
           onClick={closeAllModals}
@@ -270,7 +261,7 @@ const SingleCat: FC = () => {
             className="bg-white p-6 rounded-lg w-full max-w-md"
             onClick={(e) => e.stopPropagation()}
           >
-            <h4 className="text-lg font-semibold mb-4">הוסף מוצר חדשה</h4>
+            <h4 className="text-lg font-semibold mb-4">הוסף מוצר חדש</h4>
             <input
               type="text"
               placeholder="שם מוצר"
@@ -317,7 +308,7 @@ const SingleCat: FC = () => {
       )}
 
       {/* Delete modal */}
-      {showDeleteModal && productToDelete && (
+      {role==="admin"&&showDeleteModal && productToDelete && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
           onClick={closeAllModals}
