@@ -14,6 +14,7 @@ const GroupControl: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddUsersModal, setShowAddUsersModal] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
+  const [initialUsers, setInitialUsers] = useState<User[]>([]);
 
   // modal state for delete confirmation
   const [groupToDelete, setGroupToDelete] = useState<Group | null>(null);
@@ -48,43 +49,48 @@ const GroupControl: React.FC = () => {
     },
   ]);
 
-  const [users, setUsers] = useState<User[]>([
-    {
-      id: "1",
-      name: "ג׳ון סמית׳",
-      email: "john.smith@system.com",
-      avatar: "JS",
-      groups: ["group1", "group2"],
-    },
-    {
-      id: "2",
-      name: "שרה מילר",
-      email: "sarah.miller@system.com",
-      avatar: "SM",
-      groups: ["group1"],
-    },
-    {
-      id: "3",
-      name: "רוברט ג׳ונסון",
-      email: "robert.j@system.com",
-      avatar: "RJ",
-      groups: ["group1"],
-    },
-    {
-      id: "4",
-      name: "אמה וילסון",
-      email: "emma.w@system.com",
-      avatar: "EW",
-      groups: ["group1"],
-    },
-    {
-      id: "5",
-      name: "מייקל בראון",
-      email: "michael.b@system.com",
-      avatar: "MB",
-      groups: ["group1", "group3"],
-    },
-  ]);
+  const initialUsersData = [
+  {
+    id: "1",
+    name: "ג׳ון סמית׳",
+    email: "john.smith@system.com",
+    avatar: "JS",
+    groups: ["group1", "group2"],
+  },
+  {
+    id: "2",
+    name: "שרה מילר",
+    email: "sarah.miller@system.com",
+    avatar: "SM",
+    groups: ["group1"],
+  },
+  {
+    id: "3",
+    name: "רוברט ג׳ונסון",
+    email: "robert.j@system.com",
+    avatar: "RJ",
+    groups: ["group1"],
+  },
+  {
+    id: "4",
+    name: "אמה וילסון",
+    email: "emma.w@system.com",
+    avatar: "EW",
+    groups: ["group1"],
+  },
+  {
+    id: "5",
+    name: "מייקל בראון",
+    email: "michael.b@system.com",
+    avatar: "MB",
+    groups: ["group1", "group3"],
+  },
+];
+
+const [users, setUsers] = useState<User[]>(initialUsersData);
+useEffect(() => {
+  setInitialUsers(JSON.parse(JSON.stringify(initialUsersData)));
+}, []);
 
   const currentGroup = useMemo(
     () => groups.find((g) => g.id === selectedGroup),
@@ -108,6 +114,10 @@ const GroupControl: React.FC = () => {
     [users]
   );
 
+  const hasChanges = useMemo(() => {
+  if (initialUsers.length === 0) return false;
+  return JSON.stringify(users) !== JSON.stringify(initialUsers);
+}, [users, initialUsers]);
 
   const handleSelectGroup = (id: string) => {
     setSelectedGroup(id);
@@ -169,9 +179,10 @@ const GroupControl: React.FC = () => {
   };
 
   const handleSaveChanges = () => {
-    setSaveMessage("השינויים נשמרו בהצלחה");
-    setTimeout(() => setSaveMessage(""), 3000);
-  };
+  setInitialUsers(JSON.parse(JSON.stringify(users)));
+  setSaveMessage("השינויים נשמרו בהצלחה");
+  setTimeout(() => setSaveMessage(""), 3000);
+};
 
   const handleAddGroup = () => {};
 
@@ -297,8 +308,10 @@ const GroupControl: React.FC = () => {
               </button>
 
               <button
-                className="px-8 py-3 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-all text-sm font-medium flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
+               className="px-8 py-3 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-all text-sm font-medium flex items-center justify-center gap-2 shadow-sm hover:shadow-md disabled:bg-gray-300 disabled:cursor-not-allowed disabled:shadow-none"
                 onClick={handleSaveChanges}
+                disabled={!hasChanges}
+                
               >
                 <Save className="w-4 h-4" />
                 שמור שינויים
