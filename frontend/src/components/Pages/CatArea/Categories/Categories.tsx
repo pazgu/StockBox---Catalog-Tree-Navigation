@@ -348,11 +348,14 @@ const {role}=useUser();  const navigate = useNavigate();
               alt="preview"
               className="w-42 h-44 object-cover rounded-lg mt-2.5 mb-5"
             />
-            <a href="/permissions">
-              <small className="text-gray-500 underline cursor-pointer text-slate-700 mt-2.5 inline-block">
-                לניהול הרשאות
-              </small>
-            </a>
+            
+              <small  onClick={(e) => {
+                  e.stopPropagation();
+                  navigate("/permissions");
+                }} className="text-gray-500 underline cursor-pointer text-slate-700 mt-2.5 inline-block">
+                              לניהול הרשאות
+                            </small>
+            
 
             <div className="flex justify-between gap-3 w-full mt-5">
               <button
