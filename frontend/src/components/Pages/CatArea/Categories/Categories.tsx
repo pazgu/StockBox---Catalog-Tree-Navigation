@@ -6,6 +6,7 @@ import camera from "../../../../assets/camera.png";
 import video from "../../../../assets/video.png";
 import { useUser } from "../../../../context/UserContext";
 import { Navigate, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 interface CategoriesProps {}
 
@@ -74,6 +75,8 @@ const {role}=useUser();  const navigate = useNavigate();
     setShowAddCatModal(false);
     setNewCatName("");
     setNewCatImage(null);
+    toast.success(`הקטגוריה "${newCatName}" נוספה בהצלחה!`)
+
   };
 
   const handleDelete = (category: Category) => {
@@ -87,6 +90,8 @@ const {role}=useUser();  const navigate = useNavigate();
     }
     setShowDeleteModal(false);
     setCategoryToDelete(null);
+    toast.success(`הקטגוריה "${categoryToDelete?.name}" נמחקה בהצלחה!`)
+
   };
 
   const handleEdit = (category: Category) => {
@@ -104,6 +109,8 @@ const {role}=useUser();  const navigate = useNavigate();
     }
     setShowEditModal(false);
     setCategoryToEdit(null);
+    toast.success(`הקטגוריה "${categoryToEdit?.name}" עודכנה בהצלחה!`)
+
   };
 
   const closeAllModals = () => {
@@ -351,11 +358,14 @@ const {role}=useUser();  const navigate = useNavigate();
               alt="preview"
               className="w-42 h-44 object-cover rounded-lg mt-2.5 mb-5"
             />
-            <a href="/permissions">
-              <small className="text-gray-500 underline cursor-pointer text-slate-700 mt-2.5 inline-block">
-                לניהול הרשאות
-              </small>
-            </a>
+            
+              <small  onClick={(e) => {
+                  e.stopPropagation();
+                  navigate("/permissions");
+                }} className="text-gray-500 underline cursor-pointer text-slate-700 mt-2.5 inline-block">
+                              לניהול הרשאות
+                            </small>
+            
 
             <div className="flex justify-between gap-3 w-full mt-5">
               <button
