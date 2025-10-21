@@ -1,6 +1,5 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
-import { Users, Save } from 'lucide-react';
+import { Users, Save, UserMinus, CheckCircle2, Trash2, Edit, Plus } from 'lucide-react';
 import GroupList from './GroupList';
 import UsersList from '../AllUsers/UsersList';
 import BannedItems from '../Permissions/BannedItems';
@@ -182,7 +181,7 @@ const GroupControl: React.FC = () => {
     >
       {saveMessage && (
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2 animate-pulse">
-          <Save className="w-5 h-5" />
+          <CheckCircle2 className="w-5 h-5" />
           {saveMessage}
         </div>
       )}
@@ -244,27 +243,29 @@ const GroupControl: React.FC = () => {
             bannedItems={currentGroup?.bannedItems || []}
           />
         </div>
-        <div className="bg-white border-t border-gray-200 px-4 sm:px-8 py-4">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
-            <span className="text-gray-600 text-sm">
+        <div className="bg-white border-t border-gray-200 px-4 sm:px-8 py-6">
+          <div className="flex flex-col items-center gap-4">
+            <span className="text-gray-700 text-base font-medium">
               {selectedUsers.size === 0
                 ? "לא נבחרו משתמשים"
                 : `${selectedUsers.size} משתמשים נבחרו`}
             </span>
 
-            <div className="flex gap-3 w-full sm:w-auto">
+            <div className="flex gap-4 w-full sm:w-auto justify-center">
               <button
-                className="flex-1 sm:flex-none px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed text-sm font-medium"
+                className="px-8 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed text-sm font-medium flex items-center justify-center gap-2 shadow-sm hover:shadow-md disabled:shadow-none"
                 onClick={handleRemoveUsersFromGroup}
                 disabled={selectedUsers.size === 0}
               >
+                <UserMinus className="w-4 h-4" />
                 הסר מהקבוצה
               </button>
 
               <button
-                className="flex-1 sm:flex-none px-6 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 hover:shadow-lg transition-all text-sm font-medium"
+                className="px-8 py-3 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-all text-sm font-medium flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
                 onClick={handleSaveChanges}
               >
+                <Save className="w-4 h-4" />
                 שמור שינויים
               </button>
             </div>
