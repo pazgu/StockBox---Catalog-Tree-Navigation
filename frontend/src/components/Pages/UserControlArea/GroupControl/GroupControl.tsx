@@ -233,7 +233,7 @@ const GroupControl: React.FC = () => {
             <div className="flex gap-4 sm:gap-12 w-full sm:w-auto justify-around sm:justify-start">
               <div className="text-center">
                 <div className="text-2xl font-bold">{totalUsers}</div>
-                <div className="text-sm opacity-90">משתמשים בסה״כ</div>
+                <div className="text-sm opacity-90">משתמשים בכל המערכת</div>
               </div>
 
               <div className="text-center">
