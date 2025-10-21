@@ -286,7 +286,6 @@ useEffect(() => {
                           id={`group-${index}`}
                           checked={group.enabled}
                           onCheckedChange={() => handleGroupToggle(group.name)} // Use the new group-specific handler
-                          disabled={!userPermissions.generalAccess}
                         />
                       </div>
                     ))}
