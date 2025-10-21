@@ -1,26 +1,29 @@
-import React, { useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Ban, Shield, Database } from 'lucide-react';
-import { BannedItem, BannedEntityType } from '../../../../types/types';
+import React, { useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { Ban, Shield, Database } from "lucide-react";
+import { BannedItem, BannedEntityType } from "../../../../types/types";
 
 interface BannedItemsProps {
   currentGroupName: string;
   bannedItems: BannedItem[];
 }
 
-const BannedItems: React.FC<BannedItemsProps> = ({ currentGroupName, bannedItems }) => {
-  const navigate = useNavigate(); 
+const BannedItems: React.FC<BannedItemsProps> = ({
+  currentGroupName,
+  bannedItems,
+}) => {
+  const navigate = useNavigate();
 
   const getTypeDisplayName = useCallback((type: BannedEntityType): string => {
     switch (type) {
-      case 'product':
-        return 'מוצר';
-      case 'category':
-        return 'קטגוריה';
-      case 'subcategory':
-        return 'תת קטגוריה';
+      case "product":
+        return "מוצר";
+      case "category":
+        return "קטגוריה";
+      case "subcategory":
+        return "תת קטגוריה";
       default:
-        return '';
+        return "";
     }
   }, []);
 
@@ -28,15 +31,13 @@ const BannedItems: React.FC<BannedItemsProps> = ({ currentGroupName, bannedItems
     <div className="col-span-12 lg:col-span-4 bg-gray-50 p-6 text-right">
       <h3 className="text-xl font-semibold text-gray-700 mb-2 flex items-center gap-2">
         <Ban className="w-5 h-5 text-red-600" />
-        ניהול הרשאות (חסימת משאבים)
+        ניהול חסימות{" "}
       </h3>
-      <p className="text-sm text-gray-500 mb-6">
-        רשימת הפריטים (מוצרים, קטגוריות, תת־קטגוריות) ש **חסומים** לקבוצה זו.
-      </p>
 
       <div className="bg-white rounded-xl p-5 shadow-lg max-h-[500px] lg:max-h-[700px] overflow-y-auto pr-2">
         <h4 className="font-semibold text-gray-800 mb-4 border-b pb-2">
-          חסימות עבור: <span className="text-slate-700">{currentGroupName || '...'}</span>
+          עבור:{" "}
+          <span className="text-slate-700">{currentGroupName || "..."}</span>
         </h4>
 
         {bannedItems.length > 0 ? (
