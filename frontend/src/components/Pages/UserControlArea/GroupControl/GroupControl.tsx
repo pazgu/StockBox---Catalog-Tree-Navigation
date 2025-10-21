@@ -1,72 +1,107 @@
-import React, { useState, useMemo } from 'react';
-import { Users, Save } from 'lucide-react';
-import GroupList from './GroupList';
-import UsersList from '../AllUsers/UsersList';
-import BannedItems from '../Permissions/BannedItems';
-import AddUsersModal from './AddUsersModal';
-import { Group, User, BannedItem } from '../../../../types/types';
+import React, { useState, useMemo } from "react";
+import { Users, Save } from "lucide-react";
+import GroupList from "./GroupList";
+import UsersList from "../AllUsers/UsersList";
+import BannedItems from "../Permissions/BannedItems";
+import AddUsersModal from "./AddUsersModal";
+import { Group, User, BannedItem } from "../../../../types/types";
 
 //mock data
 const mockBannedItems: BannedItem[] = [
-  { id: 1, name: 'מצלמה דיגיטלית Canon EOS 250D DSLR', type: 'product' },
-  { id: 4, name: 'מצלמה דיגיטלית ללא מראה Canon EOS R100', type: 'product' },
-  { id: 'cat_2', name: 'הקלטה', type: 'category' },
-  { id: 'sub_cat_7', name: 'עדשות EF', type: 'subcategory' }
+  { id: 1, name: "מצלמה דיגיטלית Canon EOS 250D DSLR", type: "product" },
+  { id: 4, name: "מצלמה דיגיטלית ללא מראה Canon EOS R100", type: "product" },
+  { id: "cat_2", name: "הקלטה", type: "category" },
+  { id: "sub_cat_7", name: "עדשות EF", type: "subcategory" },
 ];
 
 const GroupControl: React.FC = () => {
-  const [selectedGroup, setSelectedGroup] = useState('group1');
+  const [selectedGroup, setSelectedGroup] = useState("group1");
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [showAddUsersModal, setShowAddUsersModal] = useState(false);
-  const [saveMessage, setSaveMessage] = useState('');
+  const [saveMessage, setSaveMessage] = useState("");
 
   const [groups, setGroups] = useState<Group[]>([
     {
-      id: 'group1',
-      name: 'קבוצה 1',
-      description: 'קבוצת גישה ראשית',
+      id: "group1",
+      name: "קבוצה 1",
+      description: "קבוצת גישה ראשית",
       permissions: [],
       bannedItems: [mockBannedItems[0], mockBannedItems[2]],
     },
     {
-      id: 'group2',
-      name: 'קבוצה 2',
-      description: 'קבוצת גישה משנית',
+      id: "group2",
+      name: "קבוצה 2",
+      description: "קבוצת גישה משנית",
       permissions: [],
       bannedItems: [mockBannedItems[1], mockBannedItems[3], mockBannedItems[2]],
     },
     {
-      id: 'group3',
-      name: 'קבוצה 3',
-      description: 'קבוצת משתמשים סטנדרטית',
+      id: "group3",
+      name: "קבוצה 3",
+      description: "קבוצת משתמשים סטנדרטית",
       permissions: [],
       bannedItems: [],
     },
   ]);
 
   const [users, setUsers] = useState<User[]>([
-    { id: '1', name: 'ג׳ון סמית׳', email: 'john.smith@system.com', avatar: 'JS', groups: ['group1', 'group2'] },
-    { id: '2', name: 'שרה מילר', email: 'sarah.miller@system.com', avatar: 'SM', groups: ['group1'] },
-    { id: '3', name: 'רוברט ג׳ונסון', email: 'robert.j@system.com', avatar: 'RJ', groups: ['group1'] },
-    { id: '4', name: 'אמה וילסון', email: 'emma.w@system.com', avatar: 'EW', groups: ['group1'] },
-    { id: '5', name: 'מייקל בראון', email: 'michael.b@system.com', avatar: 'MB', groups: ['group1', 'group3'] },
+    {
+      id: "1",
+      name: "ג׳ון סמית׳",
+      email: "john.smith@system.com",
+      avatar: "JS",
+      groups: ["group1", "group2"],
+    },
+    {
+      id: "2",
+      name: "שרה מילר",
+      email: "sarah.miller@system.com",
+      avatar: "SM",
+      groups: ["group1"],
+    },
+    {
+      id: "3",
+      name: "רוברט ג׳ונסון",
+      email: "robert.j@system.com",
+      avatar: "RJ",
+      groups: ["group1"],
+    },
+    {
+      id: "4",
+      name: "אמה וילסון",
+      email: "emma.w@system.com",
+      avatar: "EW",
+      groups: ["group1"],
+    },
+    {
+      id: "5",
+      name: "מייקל בראון",
+      email: "michael.b@system.com",
+      avatar: "MB",
+      groups: ["group1", "group3"],
+    },
   ]);
 
-  const currentGroup = useMemo(() => groups.find((g) => g.id === selectedGroup), [groups, selectedGroup]);
+  const currentGroup = useMemo(
+    () => groups.find((g) => g.id === selectedGroup),
+    [groups, selectedGroup]
+  );
 
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
       const inGroup = user.groups.includes(selectedGroup);
       const matchesSearch =
-        searchQuery === '' ||
+        searchQuery === "" ||
         user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         user.email.toLowerCase().includes(searchQuery.toLowerCase());
       return inGroup && matchesSearch;
-
     });
   }, [users, selectedGroup, searchQuery]);
-  const totalUsers = useMemo(() => new Set(users.map((u) => u.id)).size, [users]);
+  const totalUsers = useMemo(
+    () => new Set(users.map((u) => u.id)).size,
+    [users]
+  );
   const handleSelectGroup = (id: string) => {
     setSelectedGroup(id);
     setSelectedUsers(new Set());
@@ -80,7 +115,7 @@ const GroupControl: React.FC = () => {
       newSelection.add(userId);
     }
     setSelectedUsers(newSelection);
-  }
+  };
 
   const handleSelectAll = () => {
     if (selectedUsers.size === filteredUsers.length) {
@@ -94,7 +129,6 @@ const GroupControl: React.FC = () => {
     if (selectedUsers.size === 0) return;
     setUsers((prevUsers) =>
       prevUsers.map((u) => {
-
         if (selectedUsers.has(u.id)) {
           return {
             ...u,
@@ -107,12 +141,11 @@ const GroupControl: React.FC = () => {
 
     setSelectedUsers(new Set());
     setSaveMessage(`${selectedUsers.size} משתמשים הוסרו מהקבוצה`);
-    setTimeout(() => setSaveMessage(''), 3000);
+    setTimeout(() => setSaveMessage(""), 3000);
   };
 
   const handleAddUsers = (groupId: string, userIds: string[]) => {
     setUsers((prevUsers) =>
-
       prevUsers.map((u) => {
         if (userIds.includes(u.id) && !u.groups.includes(groupId)) {
           return {
@@ -125,32 +158,25 @@ const GroupControl: React.FC = () => {
     );
 
     setSaveMessage(`${userIds.length} משתמשים נוספו בהצלחה לקבוצה`);
-    setTimeout(() => setSaveMessage(''), 3000);
+    setTimeout(() => setSaveMessage(""), 3000);
   };
 
   const handleSaveChanges = () => {
-    setSaveMessage('השינויים נשמרו בהצלחה');
-    setTimeout(() => setSaveMessage(''), 3000);
+    setSaveMessage("השינויים נשמרו בהצלחה");
+    setTimeout(() => setSaveMessage(""), 3000);
   };
 
-  const handleAddGroup = () => {
-    
-  };
+  const handleAddGroup = () => {};
 
+  const handleEditGroup = (group: Group) => {};
 
-
-  const handleEditGroup = (group: Group) => {
-
-  };
-
-
-  const handleDeleteGroup = (group: Group) => { 
-    
-  };
+  const handleDeleteGroup = (group: Group) => {};
 
   return (
-    <div dir="rtl" className="min-h-screen bg-gray-100 p-4 sm:p-8 md:p-12 lg:p-16 pt-28 font-sans">
-
+    <div
+      dir="rtl"
+      className="min-h-screen bg-gray-100 p-4 sm:p-8 md:p-12 lg:p-16 pt-28 font-sans"
+    >
       {saveMessage && (
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2 animate-pulse">
           <Save className="w-5 h-5" />
@@ -162,10 +188,6 @@ const GroupControl: React.FC = () => {
         <h2 className="text-4xl sm:text-5xl font-light text-slate-700 mb-2 tracking-tight">
           ניהול קבוצות והרשאות
         </h2>
-
-        <p className="text-sm text-gray-500">
-          מערכת לקביעת מי יכול לצפות ולאיזה משאבים — ברירת המחדל: כולם רואים. כאן חוסמים גישה.
-        </p>
       </div>
 
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
@@ -200,14 +222,14 @@ const GroupControl: React.FC = () => {
             onDeleteGroup={handleDeleteGroup}
             onAddGroup={handleAddGroup}
           />
-          
+
           <UsersList
             users={users}
             groups={groups}
             filteredUsers={filteredUsers}
             selectedUsers={selectedUsers}
             searchQuery={searchQuery}
-            currentGroupName={currentGroup?.name || ''}
+            currentGroupName={currentGroup?.name || ""}
             selectedGroup={selectedGroup}
             onToggleUser={toggleUserSelection}
             onSelectAll={handleSelectAll}
@@ -215,14 +237,16 @@ const GroupControl: React.FC = () => {
             onSearchChange={setSearchQuery}
           />
           <BannedItems
-            currentGroupName={currentGroup?.name || ''}
+            currentGroupName={currentGroup?.name || ""}
             bannedItems={currentGroup?.bannedItems || []}
           />
         </div>
         <div className="bg-white border-t border-gray-200 px-4 sm:px-8 py-4">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
             <span className="text-gray-600 text-sm">
-              {selectedUsers.size === 0 ? 'לא נבחרו משתמשים' : `${selectedUsers.size} משתמשים נבחרו`}
+              {selectedUsers.size === 0
+                ? "לא נבחרו משתמשים"
+                : `${selectedUsers.size} משתמשים נבחרו`}
             </span>
 
             <div className="flex gap-3 w-full sm:w-auto">

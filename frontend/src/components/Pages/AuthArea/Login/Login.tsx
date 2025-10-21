@@ -8,7 +8,7 @@ const Login: FC<LoginProps> = () => {
   const [password, setPassword] = useState('');
 
   return (
-    <div className="h-240 pt-14 bg-gray-100 flex p-0 overflow-hidden box-border w-full">
+    <div className="h-236 pt-12 bg-gray-100 flex p-0 overflow-hidden box-border w-full">
       <div className="flex-1 flex justify-center items-center ">
         <div className="max-w-lg w-full bg-white rounded-2xl shadow-2xl p-8 mt-6 border border-slate-100 animate-fadeInUp">
           <h1 className="text-3xl font-bold text-right text-gray-800 mb-6 -mt-3">התחברות</h1>
