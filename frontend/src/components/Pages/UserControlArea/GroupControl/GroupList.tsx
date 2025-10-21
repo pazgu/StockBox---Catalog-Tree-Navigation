@@ -1,9 +1,7 @@
 import React from "react";
-import { Users, Plus, Trash2 } from "lucide-react";
+import { Users, Trash2, Plus} from "lucide-react";
 import { Group, User } from "../../../../types/types";
-import { useNavigate } from "react-router-dom";
-import AddGroup from "../AddGroup/AddGroup/AddGroup";
-import { useState } from "react";
+
 interface GroupListProps {
   groups: Group[];
   users: User[];
@@ -23,36 +21,19 @@ const GroupList: React.FC<GroupListProps> = ({
   onDeleteGroup,
   onAddGroup,
 }) => {
-  const navigate = useNavigate();
-  const [showModal, setShowModal] = useState(false);
-
-  const handleAddGroup = () => {
-    setShowModal(true);
-  };
-
-  const handleClose = () => {
-    setShowModal(false);
-  };
-
-  const handleSave = (group: any) => {
-    console.log("Saved group:", group);
-    setShowModal(false);
-  };
-
   return (
     <div className="col-span-12 lg:col-span-3 bg-gray-50 border-l lg:border-r border-gray-200 p-6 text-right">
       <div className="flex justify-between items-center mb-6">
-        <h3 className="text-lg font-semibold text-gray-700">קבוצות</h3>
+       <h3 className="text-lg font-semibold text-gray-700">קבוצות</h3>
         <button
-          onClick={handleAddGroup}
+          onClick={onAddGroup} 
           title="ליצירת קבוצה חדשה"
           className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-all duration-200 shadow-md text-sm"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-4 h-4" /> {/* אייקון הפלאס */}
           <span className="hidden sm:inline">קבוצה חדשה</span>
         </button>
 
-        {showModal && <AddGroup onClose={handleClose} onSave={handleSave} />}
       </div>
 
       {groups.length === 0 ? (
@@ -90,7 +71,7 @@ const GroupList: React.FC<GroupListProps> = ({
                     e.stopPropagation();
                     onDeleteGroup(group);
                   }}
-                  className="p-1.5 rounded-full bg-white  hover:bg-red-600 hover:text-white transition-colors"
+                  className="p-1.5 rounded-full bg-white hover:bg-red-600 hover:text-white transition-colors"
                   title="מחק קבוצה"
                 >
                   <Trash2 size={14} />
