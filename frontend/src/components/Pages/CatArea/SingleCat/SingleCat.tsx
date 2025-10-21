@@ -129,7 +129,7 @@ const SingleCat: FC = () => {
         imageUrl: newProductImage,
         favorite: false,
       };
-      setCameras([...cameras, newProduct]);
+      setCameras([newProduct, ...cameras]);
     }
     setShowAddCatModal(false);
     setNewProductName("");
