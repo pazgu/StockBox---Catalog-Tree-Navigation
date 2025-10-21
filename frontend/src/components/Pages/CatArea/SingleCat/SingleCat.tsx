@@ -149,7 +149,7 @@ const SingleCat: FC = () => {
   return (
     <div className="max-w-[1200px] mx-auto px-5 rtl">
       {/* Header */}
-      <header className="flex flex-col items-start mt-[150px] mb-10">
+      <header className="flex flex-col items-start mt-20 mb-10">
         <h1 className="text-[48px] font-light font-alef text-[#0D305B] border-b-4 border-gray-400 pb-1 mb-5 tracking-tight">
           קטגוריה: צילום
         </h1>

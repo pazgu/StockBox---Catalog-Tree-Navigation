@@ -12,6 +12,7 @@ import SingleProd from '../../Pages/ProductArea/SingleProd/SingleProd';
 import Page404 from '../../Pages/Page404/Page404';
 import GroupControl from '../../Pages/UserControlArea/GroupControl/GroupControl';
 import Favorites from '../../Pages/CatArea/Favorites/Favorites';
+import SubCat from '../../../components/Pages/CatArea/SubCats/SubCat/SubCat';
 interface LayoutProps {}
 
 const Layout: FC<LayoutProps> = () => (
@@ -26,6 +27,7 @@ const Layout: FC<LayoutProps> = () => (
         <Route path="/product" element={<SingleProd></SingleProd>} />
         <Route path="/categories" element={<Categories></Categories>} />
         <Route path="/single-cat" element={<SingleCat></SingleCat>} />
+        <Route path="/subcat/:subcatName" element={<SubCat initialCategories={[]} SubCatName=''></SubCat>} />
         <Route path="/new-user" element={<NewUser></NewUser>} />
         <Route path="/product-details" element={<SingleProd></SingleProd>} />
         <Route path="/allUsers" element={<AllUsers></AllUsers>} />
