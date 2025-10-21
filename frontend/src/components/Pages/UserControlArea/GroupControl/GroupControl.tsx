@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Users, Save, UserMinus, CheckCircle2, Trash2, Edit, Plus } from 'lucide-react';
+import { Users, Save, UserMinus, CheckCircle2 } from 'lucide-react';
 import GroupList from './GroupList';
 import UsersList from '../AllUsers/UsersList';
 import BannedItems from './BannedItems';
@@ -7,13 +7,6 @@ import AddUsersModal from './AddUsersModal';
 import { Group, User, BannedItem } from '../../../../types/types';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../../../context/UserContext';
-
-const mockBannedItems: BannedItem[] = [
-  { id: 1, name: "מצלמה דיגיטלית Canon EOS 250D DSLR", type: "product" },
-  { id: 4, name: "מצלמה דיגיטלית ללא מראה Canon EOS R100", type: "product" },
-  { id: "cat_2", name: "הקלטה", type: "category" },
-  { id: "sub_cat_7", name: "עדשות EF", type: "subcategory" },
-];
 
 const GroupControl: React.FC = () => {
   const [selectedGroup, setSelectedGroup] = useState("group1");
@@ -39,13 +32,20 @@ const GroupControl: React.FC = () => {
       id: "group1",
       name: "קבוצה 1",
       permissions: [],
-      bannedItems: [mockBannedItems[0], mockBannedItems[2]],
+      bannedItems: [
+        { id: 1, name: "מצלמה דיגיטלית Canon EOS 250D DSLR", type: "product" },
+        { id: "cat_2", name: "הקלטה", type: "category" }
+      ],
     },
     {
       id: "group2",
       name: "קבוצה 2",
       permissions: [],
-      bannedItems: [mockBannedItems[1], mockBannedItems[3], mockBannedItems[2]],
+      bannedItems: [
+        { id: 4, name: "מצלמה דיגיטלית ללא מראה Canon EOS R100", type: "product" },
+        { id: "sub_cat_7", name: "עדשות EF", type: "subcategory" },
+        { id: "cat_2", name: "הקלטה", type: "category" }
+      ],
     },
     {
       id: "group3",

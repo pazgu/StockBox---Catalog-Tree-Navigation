@@ -9,12 +9,6 @@ interface BannedItemsProps {
   onUpdateBannedItems?: (items: BannedItem[]) => void;
 }
 
-interface BannedItemsProps {
-  currentGroupName: string;
-  bannedItems: BannedItem[];
-  onUpdateBannedItems?: (items: BannedItem[]) => void;
-}
-
 const BannedItems: React.FC<BannedItemsProps> = ({
   currentGroupName,
   bannedItems,

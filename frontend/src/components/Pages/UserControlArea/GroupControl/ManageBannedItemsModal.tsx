@@ -82,9 +82,9 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
   }, [localBannedItems, searchQuery]);
 
   const availableItems = useMemo(() => {
-    const bannedIds = new Set(localBannedItems.map(item => item.id));
+    const bannedIds = new Set(localBannedItems.map(item => String(item.id)));
     return allAvailableItems
-      .filter(item => !bannedIds.has(item.id))
+      .filter(item => !bannedIds.has(String(item.id)))
       .filter(item =>
         searchQuery === '' ||
         item.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -107,11 +107,12 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 bg-slate-900 bg-opacity-85 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-slate-900 bg-opacity-85 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-xl w-full max-w-3xl max-h-[90vh] shadow-2xl text-right overflow-hidden flex flex-col"
+        className="bg-white rounded-xl w-full max-w-4xl shadow-2xl text-right flex flex-col my-8"
+        style={{ maxHeight: 'calc(100vh - 4rem)' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -153,7 +154,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-6 h-[400px] flex flex-col">
+        <div className="p-6 flex-1 flex flex-col overflow-hidden">
           {/* Search */}
           <div className="relative mb-4 flex-shrink-0">
             <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -168,7 +169,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
           </div>
 
           {/* Items List */}
-          <div className="flex-1 overflow-y-auto space-y-2 min-h-0">
+          <div className="flex-1 overflow-y-auto space-y-2 min-h-0 pr-2">
             {activeTab === 'banned' ? (
               filteredBannedItems.length === 0 ? (
                 <div className="text-center py-12 text-gray-400">
