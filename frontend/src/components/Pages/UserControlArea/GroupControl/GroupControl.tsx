@@ -7,13 +7,13 @@ import AddUsersModal from './AddUsersModal';
 import { Group, User, mockBannedItems } from '../../../../types/types';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../../../context/UserContext';
+import { toast } from 'sonner';
 
 const GroupControl: React.FC = () => {
   const [selectedGroup, setSelectedGroup] = useState("group1");
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddUsersModal, setShowAddUsersModal] = useState(false);
-  const [saveMessage, setSaveMessage] = useState("");
 
   // modal state for delete confirmation
   const [groupToDelete, setGroupToDelete] = useState<Group | null>(null);
@@ -147,8 +147,7 @@ const GroupControl: React.FC = () => {
     );
 
     setSelectedUsers(new Set());
-    setSaveMessage(`${selectedUsers.size} משתמשים הוסרו מהקבוצה`);
-    setTimeout(() => setSaveMessage(""), 3000);
+    toast.info(`${selectedUsers.size} משתמשים הוסרו מהקבוצה`);
   };
 
   const handleAddUsers = (groupId: string, userIds: string[]) => {
@@ -163,14 +162,11 @@ const GroupControl: React.FC = () => {
         return u;
       })
     );
-
-    setSaveMessage(`${userIds.length} משתמשים נוספו בהצלחה לקבוצה`);
-    setTimeout(() => setSaveMessage(""), 3000);
+    toast.success(`${userIds.length} משתמשים נוספו בהצלחה לקבוצה`);
   };
 
   const handleSaveChanges = () => {
-    setSaveMessage("השינויים נשמרו בהצלחה");
-    setTimeout(() => setSaveMessage(""), 3000);
+    toast.success("השינויים נשמרו בהצלחה");
   };
 
   const handleAddGroup = () => {};
@@ -203,8 +199,7 @@ const GroupControl: React.FC = () => {
       return prevSelected;
     });
 
-    setSaveMessage(`הקבוצה "${groupToDelete.name}" נמחקה בהצלחה`);
-    setTimeout(() => setSaveMessage(""), 3000);
+    toast.info(`הקבוצה "${groupToDelete.name}" נמחקה בהצלחה`);
 
     setGroupToDelete(null);
   };
@@ -214,12 +209,6 @@ const GroupControl: React.FC = () => {
       dir="rtl"
       className="min-h-screen bg-gray-100 p-4 sm:p-8 md:p-12 lg:p-16 pt-28 font-sans"
     >
-      {saveMessage && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2 animate-pulse">
-          <CheckCircle2 className="w-5 h-5" />
-          {saveMessage}
-        </div>
-      )}
 
       <div className="mb-8 text-right mt-10">
         <h2 className="text-4xl sm:text-5xl font-light text-slate-700 mb-2 tracking-tight">
