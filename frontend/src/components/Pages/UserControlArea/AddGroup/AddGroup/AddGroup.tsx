@@ -40,7 +40,7 @@ const AddGroup: FC<AddGroupProps> = ({ onClose, onSave }) => {
 
   const handleSave = () => {
     if (!groupName.trim()) return;
-    onSave({ name: groupName, members: users, enabled: true });
+    onSave({ name: groupName, members: users, enabled: false });
   };
 
   // close dropdown slightly after blur so click can register
