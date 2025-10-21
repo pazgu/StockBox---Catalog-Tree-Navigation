@@ -1,10 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Users, Save } from 'lucide-react';
 import GroupList from './GroupList';
 import UsersList from '../AllUsers/UsersList';
 import BannedItems from '../Permissions/BannedItems';
 import AddUsersModal from './AddUsersModal';
 import { Group, User, BannedItem } from '../../../../types/types';
+import { useNavigate } from 'react-router-dom';
+import { useUser } from '../../../../context/UserContext';
 
 //mock data
 const mockBannedItems: BannedItem[] = [
@@ -14,6 +16,7 @@ const mockBannedItems: BannedItem[] = [
   { id: 'sub_cat_7', name: 'עדשות EF', type: 'subcategory' }
 ];
 
+
 const GroupControl: React.FC = () => {
   const [selectedGroup, setSelectedGroup] = useState('group1');
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
@@ -21,6 +24,14 @@ const GroupControl: React.FC = () => {
   const [showAddUsersModal, setShowAddUsersModal] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
 
+  const navigate = useNavigate();
+  const {role}=useUser();
+  useEffect(() => {
+  
+      if (role !== "admin") {
+        navigate("/");
+      }
+    }, [navigate]);
   const [groups, setGroups] = useState<Group[]>([
     {
       id: 'group1',
