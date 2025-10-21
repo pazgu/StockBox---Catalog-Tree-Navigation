@@ -70,9 +70,6 @@ const GroupList: React.FC<GroupListProps> = ({
               <div className="flex justify-between items-start">
                 <div className="text-right">
                   <h4 className="font-semibold text-gray-800">{group.name}</h4>
-                  <p className="text-sm text-gray-600 mt-1 truncate max-w-[150px]">
-                    {group.description}
-                  </p>
                 </div>
                 <span className="px-2 py-1 bg-slate-100 text-slate-700 text-xs rounded-full whitespace-nowrap">
                   {users.filter((u) => u.groups.includes(group.id)).length} משתמשים

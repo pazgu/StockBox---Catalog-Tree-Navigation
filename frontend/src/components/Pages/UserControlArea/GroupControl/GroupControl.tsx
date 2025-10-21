@@ -36,21 +36,18 @@ const GroupControl: React.FC = () => {
     {
       id: 'group1',
       name: 'קבוצה 1',
-      description: 'קבוצת גישה ראשית',
       permissions: [],
       bannedItems: [mockBannedItems[0], mockBannedItems[2]],
     },
     {
       id: 'group2',
       name: 'קבוצה 2',
-      description: 'קבוצת גישה משנית',
       permissions: [],
       bannedItems: [mockBannedItems[1], mockBannedItems[3], mockBannedItems[2]],
     },
     {
       id: 'group3',
       name: 'קבוצה 3',
-      description: 'קבוצת משתמשים סטנדרטית',
       permissions: [],
       bannedItems: [],
     },

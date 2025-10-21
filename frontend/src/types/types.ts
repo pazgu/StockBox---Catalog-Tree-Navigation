@@ -24,7 +24,6 @@ export interface User {
 export interface Group {
     id: string;
     name: string;
-    description: string;
     permissions: string[];
     bannedItems: BannedItem[]; 
 }
