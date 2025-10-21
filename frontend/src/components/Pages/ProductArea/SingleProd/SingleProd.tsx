@@ -9,6 +9,7 @@ import cam from "../../../../assets/red-lens-camera.png";
 import { Heart, PencilLine, Upload, Plus, GripVertical } from "lucide-react";
 import { useUser } from "../../../../context/UserContext";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 // Define the structure for an accordion item
 interface AccordionData {
   id: string; // Unique ID for key and manipulation
@@ -70,8 +71,15 @@ const SingleProd: FC<SingleProdProps> = () => {
   const [draggedItem, setDraggedItem] = useState<AccordionData | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
 
-  const toggleFavorite = () => setIsFavorite((prev) => !prev);
+const toggleFavorite = () => {
+  if (isFavorite) {
+    toast.info("הוסר מהמועדפים ");
+  } else {
+    toast.success("נוסף למועדפים ");
+  }
 
+  setIsFavorite((prev) => !prev);
+};
   // Handle accordion content change
   const handleAccordionContentChange = (id: string, newContent: string) => {
     setAccordionData((prevData) =>
@@ -175,6 +183,12 @@ const SingleProd: FC<SingleProdProps> = () => {
     setProductImage(originalImage);
     setHasImageChanged(false);
   };
+const handleSaveClick = () => {
+  if(isEditing){
+      toast.success("השינויים נישמרו בהצלחה!");
+  }
+  setIsEditing(!isEditing); 
+}
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -225,7 +239,7 @@ const SingleProd: FC<SingleProdProps> = () => {
           {role === "admin" && (
             <button
               className="flex items-center gap-2 px-5 py-2.5 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300"
-              onClick={() => setIsEditing(!isEditing)}
+              onClick={handleSaveClick}
               aria-label={isEditing ? "סיום עריכה" : "עריכת דף"}
             >
               <PencilLine size={18} />
