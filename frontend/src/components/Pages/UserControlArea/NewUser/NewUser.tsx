@@ -82,7 +82,7 @@ useEffect(() => {
       navigate('/AllUsers');
     } catch (error) {
       console.error('שגיאה בשליחת הנתונים:', error);
-      toast.error("שגיאה בשליחת ניתונים")
+      toast.error("שגיאה בשליחת נתונים")
     }
   };
 
