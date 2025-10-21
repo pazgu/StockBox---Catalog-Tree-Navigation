@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Users, Save } from 'lucide-react';
+import { Users, Save, Plus } from 'lucide-react';
 import GroupList from './GroupList';
 import UsersList from '../AllUsers/UsersList';
 import BannedItems from '../Permissions/BannedItems';
@@ -17,6 +17,10 @@ const GroupControl: React.FC = () => {
 
   // modal state for delete confirmation
   const [groupToDelete, setGroupToDelete] = useState<Group | null>(null);
+
+  // modal state for adding a new group
+  const [showAddGroupModal, setShowAddGroupModal] = useState(false);
+  const [newGroupName, setNewGroupName] = useState("");
 
   const navigate = useNavigate();
   const { role } = useUser();
@@ -102,13 +106,12 @@ const GroupControl: React.FC = () => {
     });
   }, [users, selectedGroup, searchQuery]);
 
-
   const totalUsers = useMemo(
     () => new Set(users.map((u) => u.id)).size,
     [users]
   );
 
-
+  // --- Group Handlers ---
   const handleSelectGroup = (id: string) => {
     setSelectedGroup(id);
     setSelectedUsers(new Set());
@@ -116,54 +119,38 @@ const GroupControl: React.FC = () => {
 
   const toggleUserSelection = (userId: string) => {
     const newSelection = new Set(selectedUsers);
-    if (newSelection.has(userId)) {
-      newSelection.delete(userId);
-    } else {
-      newSelection.add(userId);
-    }
+    if (newSelection.has(userId)) newSelection.delete(userId);
+    else newSelection.add(userId);
     setSelectedUsers(newSelection);
   };
 
   const handleSelectAll = () => {
-    if (selectedUsers.size === filteredUsers.length) {
-      setSelectedUsers(new Set());
-    } else {
-      setSelectedUsers(new Set(filteredUsers.map((u) => u.id)));
-    }
+    if (selectedUsers.size === filteredUsers.length) setSelectedUsers(new Set());
+    else setSelectedUsers(new Set(filteredUsers.map((u) => u.id)));
   };
 
   const handleRemoveUsersFromGroup = () => {
     if (selectedUsers.size === 0) return;
-    setUsers((prevUsers) =>
-      prevUsers.map((u) => {
-        if (selectedUsers.has(u.id)) {
-          return {
-            ...u,
-            groups: u.groups.filter((gid) => gid !== selectedGroup),
-          };
-        }
-        return u;
-      })
+    setUsers(prevUsers =>
+      prevUsers.map(u => ({
+        ...u,
+        groups: u.groups.filter(gid => !selectedUsers.has(u.id) || gid !== selectedGroup)
+      }))
     );
-
-    setSelectedUsers(new Set());
     setSaveMessage(`${selectedUsers.size} משתמשים הוסרו מהקבוצה`);
+    setSelectedUsers(new Set());
     setTimeout(() => setSaveMessage(""), 3000);
   };
 
   const handleAddUsers = (groupId: string, userIds: string[]) => {
-    setUsers((prevUsers) =>
-      prevUsers.map((u) => {
+    setUsers(prevUsers =>
+      prevUsers.map(u => {
         if (userIds.includes(u.id) && !u.groups.includes(groupId)) {
-          return {
-            ...u,
-            groups: [...u.groups, groupId],
-          };
+          return { ...u, groups: [...u.groups, groupId] };
         }
         return u;
       })
     );
-
     setSaveMessage(`${userIds.length} משתמשים נוספו בהצלחה לקבוצה`);
     setTimeout(() => setSaveMessage(""), 3000);
   };
@@ -173,28 +160,41 @@ const GroupControl: React.FC = () => {
     setTimeout(() => setSaveMessage(""), 3000);
   };
 
-  const handleAddGroup = () => {};
+  // --- Add Group Modal ---
+  const openAddGroupModal = () => setShowAddGroupModal(true);
+  const closeAddGroupModal = () => {
+    setShowAddGroupModal(false);
+    setNewGroupName("");
+  };
+
+  const saveNewGroup = () => {
+    if (!newGroupName.trim()) return;
+    const newGroup: Group = {
+      id: `group${Date.now()}`,
+      name: newGroupName,
+      permissions: [],
+      bannedItems: [],
+    };
+    setGroups(prevGroups => [...prevGroups, newGroup]);
+    setSelectedGroup(newGroup.id);
+    setSaveMessage(`הקבוצה "${newGroup.name}" נוספה בהצלחה`);
+    setTimeout(() => setSaveMessage(""), 3000);
+    closeAddGroupModal();
+  };
 
   const handleEditGroup = (group: Group) => {};
 
-  const handleDeleteGroup = (group: Group) => {
-    setGroupToDelete(group);
-  };
-
+  const handleDeleteGroup = (group: Group) => setGroupToDelete(group);
   const closeDeleteModal = () => setGroupToDelete(null);
-
   const confirmDeleteGroup = () => {
     if (!groupToDelete) return;
-
     setGroups(prevGroups => prevGroups.filter(g => g.id !== groupToDelete.id));
-
     setUsers(prevUsers =>
       prevUsers.map(u => ({
         ...u,
         groups: u.groups.filter(gid => gid !== groupToDelete.id)
       }))
     );
-
     setSelectedGroup(prevSelected => {
       if (prevSelected === groupToDelete.id) {
         const remainingGroups = groups.filter(g => g.id !== groupToDelete.id);
@@ -202,18 +202,13 @@ const GroupControl: React.FC = () => {
       }
       return prevSelected;
     });
-
     setSaveMessage(`הקבוצה "${groupToDelete.name}" נמחקה בהצלחה`);
     setTimeout(() => setSaveMessage(""), 3000);
-
     setGroupToDelete(null);
   };
 
   return (
-    <div
-      dir="rtl"
-      className="min-h-screen bg-gray-100 p-4 sm:p-8 md:p-12 lg:p-16 pt-28 font-sans"
-    >
+    <div dir="rtl" className="min-h-screen bg-gray-100 p-4 sm:p-8 md:p-12 lg:p-16 pt-28 font-sans">
       {saveMessage && (
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2 animate-pulse">
           <Save className="w-5 h-5" />
@@ -257,7 +252,7 @@ const GroupControl: React.FC = () => {
             onSelectGroup={handleSelectGroup}
             onEditGroup={handleEditGroup}
             onDeleteGroup={handleDeleteGroup}
-            onAddGroup={handleAddGroup}
+            onAddGroup={openAddGroupModal} // הפעלת מודאל הוספה
           />
 
           <UsersList
@@ -278,6 +273,7 @@ const GroupControl: React.FC = () => {
             bannedItems={currentGroup?.bannedItems || []}
           />
         </div>
+
         <div className="bg-white border-t border-gray-200 px-4 sm:px-8 py-4">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
             <span className="text-gray-600 text-sm">
@@ -315,7 +311,37 @@ const GroupControl: React.FC = () => {
         />
       )}
 
-     {/* Delete Modal */}
+      {/* Add Group Modal */}
+      {showAddGroupModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-96 text-center shadow-lg">
+            <h3 className="text-lg font-semibold mb-3">יצירת קבוצה חדשה</h3>
+            <input
+              type="text"
+              value={newGroupName}
+              onChange={(e) => setNewGroupName(e.target.value)}
+              placeholder="שם הקבוצה"
+              className="w-full p-2 mb-4 border border-gray-300 rounded-lg text-right"
+            />
+            <div className="flex justify-between gap-3">
+              <button
+                onClick={closeAddGroupModal}
+                className="flex-1 p-3 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                ביטול
+              </button>
+              <button
+                onClick={saveNewGroup}
+                className="flex-1 p-3 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
+              >
+                הוסף קבוצה
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Modal */}
       {groupToDelete && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-96 text-center shadow-lg">
@@ -325,7 +351,6 @@ const GroupControl: React.FC = () => {
             <small className="text-gray-500">
               לא ניתן לבטל פעולה זו לאחר מכן
             </small>
-
             <div className="flex justify-between gap-3 mt-5">
               <button
                 onClick={closeDeleteModal}
@@ -333,7 +358,6 @@ const GroupControl: React.FC = () => {
               >
                 ביטול
               </button>
-
               <button
                 onClick={confirmDeleteGroup}
                 className="flex-1 p-3 border-none rounded-lg text-base font-medium cursor-pointer transition-all duration-200 bg-red-600 text-white shadow-md hover:bg-red-700 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"
@@ -344,7 +368,6 @@ const GroupControl: React.FC = () => {
           </div>
         </div>
       )}
-
     </div>
   );
 };
