@@ -58,13 +58,13 @@ const GroupList: React.FC<GroupListProps> = ({
           <p className="text-sm">לחצי על "קבוצה חדשה" כדי להתחיל</p>
         </div>
       ) : (
-        <div className="space-y-3 max-h-[300px] lg:max-h-[700px] overflow-y-auto pr-2">
+        <div className="space-y-3 max-h-[300px] lg:max-h-[700px] overflow-y-auto px-0">
           {filteredGroups.map((group) => (
             <div
               key={group.id}
               onClick={() => onSelectGroup(group.id)}
               onDoubleClick={() => onEditGroup(group)}
-              className={`p-4 rounded-xl cursor-pointer transition-all relative group text-right shadow-sm ${
+              className={`w-full box-border p-4 rounded-xl cursor-pointer transition-all relative group text-right shadow-sm ${
                 selectedGroup === group.id
                   ? "bg-gradient-to-l from-slate-100 to-gray-100 border-2 border-slate-400"
                   : "bg-white border border-gray-100 hover:shadow-md hover:-translate-x-1"
