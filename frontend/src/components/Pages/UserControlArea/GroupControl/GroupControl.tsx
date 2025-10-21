@@ -14,6 +14,7 @@ const GroupControl: React.FC = () => {
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddUsersModal, setShowAddUsersModal] = useState(false);
+  const [initialUsers, setInitialUsers] = useState<User[]>([]);
 
   const [groupToDelete, setGroupToDelete] = useState<Group | null>(null);
   const [showAddGroupModal, setShowAddGroupModal] = useState(false);
@@ -63,13 +64,48 @@ const GroupControl: React.FC = () => {
     },
   ]);
 
-  const [users, setUsers] = useState<User[]>([
-    { id: "1", name: "ג׳ון סמית׳", email: "john.smith@system.com", avatar: "JS", groups: ["group1", "group2"] },
-    { id: "2", name: "שרה מילר", email: "sarah.miller@system.com", avatar: "SM", groups: ["group1"] },
-    { id: "3", name: "רוברט ג׳ונסון", email: "robert.j@system.com", avatar: "RJ", groups: ["group1"] },
-    { id: "4", name: "אמה וילסון", email: "emma.w@system.com", avatar: "EW", groups: ["group1"] },
-    { id: "5", name: "מייקל בראון", email: "michael.b@system.com", avatar: "MB", groups: ["group1", "group3"] },
-  ]);
+  const initialUsersData = [
+  {
+    id: "1",
+    name: "ג׳ון סמית׳",
+    email: "john.smith@system.com",
+    avatar: "JS",
+    groups: ["group1", "group2"],
+  },
+  {
+    id: "2",
+    name: "שרה מילר",
+    email: "sarah.miller@system.com",
+    avatar: "SM",
+    groups: ["group1"],
+  },
+  {
+    id: "3",
+    name: "רוברט ג׳ונסון",
+    email: "robert.j@system.com",
+    avatar: "RJ",
+    groups: ["group1"],
+  },
+  {
+    id: "4",
+    name: "אמה וילסון",
+    email: "emma.w@system.com",
+    avatar: "EW",
+    groups: ["group1"],
+  },
+  {
+    id: "5",
+    name: "מייקל בראון",
+    email: "michael.b@system.com",
+    avatar: "MB",
+    groups: ["group1", "group3"],
+  },
+];
+
+const [users, setUsers] = useState<User[]>(initialUsersData);
+useEffect(() => {
+  setInitialUsers(JSON.parse(JSON.stringify(initialUsersData)));
+}, []);
 
   const currentGroup = useMemo(() => groups.find((g) => g.id === selectedGroup), [groups, selectedGroup]);
 const openAddGroupModal = () => setShowAddGroupModal(true);
@@ -78,14 +114,26 @@ const openAddGroupModal = () => setShowAddGroupModal(true);
     setNewGroupName("");
   };
 
-  const saveNewGroup = () => {
+const saveNewGroup = () => {
     const trimmedName = newGroupName.trim();
     if (!trimmedName) return;
 
-    if (groups.some(g => g.name === trimmedName)) {
-      toast.error(`קבוצה בשם "${trimmedName}" כבר קיימת`)
+    if (groups.some(g => g.name === trimmedName)) { 
+      toast.error("כבר קיימת קבוצה עם שם זה. אנא בחר שם אחר.");
       return;
-    }}
+    }
+
+    const newGroup: Group = { id: `group${Date.now()}`, name: trimmedName, permissions: [], bannedItems: [] };
+    setGroups(prev => {
+      const newGroups = [...prev, newGroup];
+      setSelectedGroup(newGroup.id);
+      return newGroups;
+    });
+
+    toast.success(`הקבוצה "${trimmedName}" נוצרה בהצלחה`);
+    closeAddGroupModal();
+  };
+
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
       const inGroup = user.groups.includes(selectedGroup);
@@ -97,11 +145,17 @@ const openAddGroupModal = () => setShowAddGroupModal(true);
     });
   }, [users, selectedGroup, searchQuery]);
 
-  const totalUsers = useMemo(() => users.length, [users]);
 
-  // --- Message helper ---
- 
-  // --- Group Handlers ---
+  const totalUsers = useMemo(
+    () => new Set(users.map((u) => u.id)).size,
+    [users]
+  );
+
+  const hasChanges = useMemo(() => {
+  if (initialUsers.length === 0) return false;
+  return JSON.stringify(users) !== JSON.stringify(initialUsers);
+}, [users, initialUsers]);
+
   const handleSelectGroup = (id: string) => {
     setSelectedGroup(id);
     setSelectedUsers(new Set());
@@ -146,8 +200,8 @@ const openAddGroupModal = () => setShowAddGroupModal(true);
         return { ...u, groups: [...u.groups, groupId] };
       })
     );
+    toast.success(`${userIds.length} משתמשים נוספו בהצלחה לקבוצה`);
 
-    toast.info("פריטים חסומים עודכנו בהצלחה");
   };
 
   const handleUpdateBannedItems = (groupId: string, items: BannedItem[]) => {
@@ -162,14 +216,16 @@ const openAddGroupModal = () => setShowAddGroupModal(true);
         return g;
       })
     );
-    toast.success(`${users.length} משתמשים נוספו בהצלחה לקבוצה`);
+        toast.info("פריטים חסומים עודכנו בהצלחה");
+
   };
 
   const handleSaveChanges = () => {
-    toast.success("השינויים נשמרו בהצלחה");
-  };
+  setInitialUsers(JSON.parse(JSON.stringify(users)));
+     toast.success("השינויים נשמרו בהצלחה");
 
-  const handleAddGroup = () => {};
+};
+
 
   const handleEditGroup = (group: Group) => {
     // ניתן להוסיף עריכת שם/הרשאות בעתיד
@@ -278,8 +334,10 @@ const openAddGroupModal = () => setShowAddGroupModal(true);
               </button>
 
               <button
-                className="px-8 py-3 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-all text-sm font-medium flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
+               className="px-8 py-3 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-all text-sm font-medium flex items-center justify-center gap-2 shadow-sm hover:shadow-md disabled:bg-gray-300 disabled:cursor-not-allowed disabled:shadow-none"
                 onClick={handleSaveChanges}
+                disabled={!hasChanges}
+                
               >
                 <Save className="w-4 h-4" />
                 שמור שינויים
