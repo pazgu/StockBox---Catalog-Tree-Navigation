@@ -276,34 +276,37 @@ const {role}=useUser();  const navigate = useNavigate();
         </div>
       )}
 
-      {showDeleteModal && categoryToDelete && (
-        <div
-          className="fixed inset-0 bg-slate-900 bg-opacity-85 backdrop-blur-xl flex items-center justify-center z-50 transition-all duration-300"
+    {showDeleteModal && categoryToDelete && (
+      <div
+          className="fixed inset-0 bg-slate-800 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 transition-all duration-300"
           onClick={closeAllModals}
         >
           <div
-            className="bg-white p-8 rounded-xl w-96 max-w-[90%] shadow-2xl text-center transform translate-y-[-2px]"
+            className="bg-white p-8 rounded-xl w-96 max-w-[90%] shadow-xl text-center transform translate-y-[-2px]"
             onClick={(e) => e.stopPropagation()}
           >
             <h4 className="m-0 mb-5 text-xl text-slate-700 font-semibold tracking-tight">
               מחיקת קטגוריה
             </h4>
+
             <p className="text-slate-700 mb-3">
-              האם אתה בטוח שברצונך למחוק את הקטגוריה "{categoryToDelete.name}"?
+              האם את/ה בטוח/ה שברצונך למחוק את הקטגוריה "{categoryToDelete.name}"?
             </p>
-            <small className="text-gray-500">לא יהיה ניתן לבטל פעולה זו</small>
+            <small className="text-gray-500">לא ניתן לבטל פעולה זו לאחר מכן</small>
+
             <div className="flex justify-between gap-3 mt-5">
+              <button
+                onClick={closeAllModals}
+                className="flex-1 p-3 border-none rounded-lg text-base font-medium cursor-pointer transition-all duration-200 bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"
+              >
+                ביטול
+              </button>
+
               <button
                 onClick={confirmDelete}
                 className="flex-1 p-3 border-none rounded-lg text-base font-medium cursor-pointer transition-all duration-200 bg-red-600 text-white shadow-md hover:bg-red-700 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"
               >
                 מחק
-              </button>
-              <button
-                onClick={closeAllModals}
-                className="flex-1 p-3 border-none rounded-lg text-base font-medium cursor-pointer transition-all duration-200 bg-gray-100 text-gray-500 border border-gray-300 hover:bg-gray-300 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"
-              >
-                ביטול
               </button>
             </div>
           </div>

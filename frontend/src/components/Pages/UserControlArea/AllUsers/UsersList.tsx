@@ -1,6 +1,6 @@
-import React from 'react';
-import { Search, Users, Plus } from 'lucide-react';
-import { User, Group } from '../../../../types/types';
+import React from "react";
+import { Search, Users, Plus } from "lucide-react";
+import { User, Group } from "../../../../types/types";
 
 interface UsersListProps {
   users: User[];
@@ -33,7 +33,8 @@ const UsersList: React.FC<UsersListProps> = ({
     <div className="col-span-12 lg:col-span-5 p-6 border-r border-gray-200 text-right">
       <div className="mb-6">
         <h3 className="text-xl font-semibold text-gray-700 mb-4">
-          משתמשים ב־<span className="text-slate-700 underline">{currentGroupName || '...'}</span>
+          משתמשים ב
+          <span className="text-slate-700 ">{currentGroupName || "..."}</span>
         </h3>
         <div className="relative">
           <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -53,17 +54,20 @@ const UsersList: React.FC<UsersListProps> = ({
           className="text-sm text-slate-700 hover:text-slate-600 font-medium underline"
           disabled={filteredUsers.length === 0}
         >
-          {selectedUsers.size === filteredUsers.length && filteredUsers.length > 0
-            ? 'בטל בחירה'
-            : 'בחר הכל'}
+          {selectedUsers.size === filteredUsers.length &&
+          filteredUsers.length > 0
+            ? "בטל בחירה"
+            : "בחר הכל"}
         </button>
-        <span className="text-sm text-gray-600">נמצאו {filteredUsers.length} משתמשים</span>
+        <span className="text-sm text-gray-600">
+          נמצאו {filteredUsers.length} משתמשים
+        </span>
       </div>
 
       <button
         onClick={onAddUsers}
         disabled={!selectedGroup}
-        className="w-full mb-4 flex items-center justify-center gap-2 px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all duration-200 shadow-md text-sm font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
+        className="w-full mb-4 flex items-center justify-center gap-2 px-4 py-3 bg-blue-900 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-md text-sm font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
       >
         <Plus className="w-4 h-4" />
         הוסף משתמשים לקבוצה
@@ -83,8 +87,8 @@ const UsersList: React.FC<UsersListProps> = ({
               onClick={() => onToggleUser(user.id)}
               className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${
                 selectedUsers.has(user.id)
-                  ? 'bg-slate-50 border-slate-400 shadow-md'
-                  : 'bg-white border-gray-200 hover:shadow-lg hover:-translate-y-0.5'
+                  ? "bg-slate-50 border-slate-400 shadow-md"
+                  : "bg-white border-gray-200 hover:shadow-lg hover:-translate-y-0.5"
               }`}
             >
               <input
@@ -100,7 +104,9 @@ const UsersList: React.FC<UsersListProps> = ({
               </div>
 
               <div className="flex-1 text-right min-w-0">
-                <h4 className="font-semibold text-gray-800 truncate">{user.name}</h4>
+                <h4 className="font-semibold text-gray-800 truncate">
+                  {user.name}
+                </h4>
                 <p className="text-sm text-gray-600 truncate">{user.email}</p>
               </div>
 
@@ -112,8 +118,8 @@ const UsersList: React.FC<UsersListProps> = ({
                       key={groupId}
                       className={`px-2 py-1 text-xs rounded-md whitespace-nowrap ${
                         groupId === selectedGroup
-                          ? 'bg-slate-700 text-white font-medium'
-                          : 'bg-gray-100 text-gray-700'
+                          ? "bg-slate-700 text-white font-medium"
+                          : "bg-gray-100 text-gray-700"
                       }`}
                     >
                       {group.name}
