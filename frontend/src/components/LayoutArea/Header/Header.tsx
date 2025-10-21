@@ -107,7 +107,7 @@ const Header: React.FC<HeaderProps> = ({
                 </NavLink>
                 <span className="text-white/30 animate-pulse">|</span>
                 <NavLink to="/" className={navLinkClass}>
-                  דף הבית
+                 אודות
                 </NavLink>
                 <span className="text-white/30 animate-pulse">|</span>
                 <NavLink to="/login" className={navLinkClass}>
@@ -257,7 +257,7 @@ const Header: React.FC<HeaderProps> = ({
                 className={navLinkClass}
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                דף הבית
+               אודות
               </NavLink>
               <NavLink
                 to="/categories"
