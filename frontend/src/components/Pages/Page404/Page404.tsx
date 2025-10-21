@@ -21,7 +21,7 @@ const Page404: FC<Page404Props> = () => (
         href="/"
         className="inline-block -mt-7 bg-[#0D305B] text-white px-7 py-3 rounded-lg font-semibold text-base transition-transform duration-200 hover:bg-[#0a2340] hover:-translate-y-0.5 hover:shadow-lg"
       >
-        חזור לדף הבית
+חזרה לאודות
       </a>
     </div>
   </div>
