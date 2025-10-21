@@ -7,7 +7,7 @@ import video from "../../../../assets/video.png";
 import { useUser } from "../../../../context/UserContext";
 import { Navigate, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-
+import { Link } from "react-router-dom";
 interface CategoriesProps {}
 
 interface Category {
@@ -379,11 +379,11 @@ const Categories: FC<CategoriesProps> = () => {
                   alt="preview"
                   className="w-42 h-44 object-cover rounded-lg mt-2.5 mb-5"
                 />
-                <a href="/permissions">
+                <Link to="/permissions">
                   <small className="text-gray-500 underline cursor-pointer text-slate-700 mt-2.5 inline-block">
                     לניהול הרשאות
                   </small>
-                </a>
+                </Link>
 
                 <div className="flex justify-between gap-3 w-full mt-5">
                   <button

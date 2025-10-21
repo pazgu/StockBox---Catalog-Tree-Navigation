@@ -2,7 +2,7 @@ import React, { FC, useState, ChangeEvent } from "react";
 import { Trash, Pen, Lock } from "lucide-react"; // Assuming you use lucide-react or similar for icons
 import { useNavigate } from "react-router-dom"; // Assuming you use react-router-dom for navigation
 import { useParams } from "react-router-dom";
-
+import { Link } from "react-router-dom";
 interface Category {
   id: string | number;
   name: string;
@@ -423,11 +423,11 @@ const SubCat: FC<SubCatProps> = ({ initialCategories = [] }) => {
                 />
 
                 {/* Permissions Link */}
-                <a href="/permissions">
+                <Link to="/permissions">
                   <small className="text-gray-500 underline cursor-pointer text-slate-700 mt-2.5 inline-block">
                     לניהול הרשאות
                   </small>
-                </a>
+                </Link>
 
                 <div className="flex justify-between gap-3 w-full mt-5">
                   <button
