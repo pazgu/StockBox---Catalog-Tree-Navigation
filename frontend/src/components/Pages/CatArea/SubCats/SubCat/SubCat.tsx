@@ -170,83 +170,81 @@ const SubCat: FC<SubCatProps> = ({ initialCategories = [] }) => {
             className="flex flex-col items-center transition-transform duration-200 hover:translate-y-[-2px] relative"
           >
             <div className="w-full flex justify-center flex-wrap gap-10 my-12">
-  {categories.map((category) => (
-    <div
-      key={category.id}
-      className="flex flex-col items-center transition-transform duration-200 hover:translate-y-[-2px]"
-    >
-      {/* Image container */}
-      <div
-        className="relative group cursor-pointer "
-        onClick={() => handleCategoryClick(category)}
-      >
-        <img
-          src={category.image}
-          alt={category.name}
-          className="w-44 h-44 object-cover rounded-full shadow-md mt-2"
-        />
+              {categories.map((category) => (
+                <div
+                  key={category.id}
+                  className="flex flex-col items-center transition-transform duration-200 hover:translate-y-[-2px]"
+                >
+                  {/* Image container */}
+                  <div
+                    className="relative group cursor-pointer "
+                    onClick={() => handleCategoryClick(category)}
+                  >
+                    <img
+                      src={category.image}
+                      alt={category.name}
+                      className="w-44 h-44 object-cover rounded-full shadow-md mt-2"
+                    />
 
-        {/* Overlay buttons (shown on hover) */}
-        <div className="-ml-10 absolute inset-0 flex justify-end items-start gap-2 p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-          
-          {/* Delete Button */}
-          <div className="relative pointer-events-auto">
-            <button
-              className="-mt-4 peer h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDelete(category);
-              }}
-            >
-              <Trash size={18} />
-            </button>
-            <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap">
-              מחק קטגוריה
-            </span>
-          </div>
+                    {/* Overlay buttons (shown on hover) */}
+                    <div className="-ml-10 absolute inset-0 flex justify-end items-start gap-2 p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                      {/* Delete Button */}
+                      <div className="relative pointer-events-auto">
+                        <button
+                          className="-mt-4 peer h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(category);
+                          }}
+                        >
+                          <Trash size={18} />
+                        </button>
+                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap">
+                          מחק קטגוריה
+                        </span>
+                      </div>
 
-          {/* Edit Button */}
-          <div className="relative pointer-events-auto">
-            <button
-              className="peer mr-2 h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleEdit(category);
-              }}
-            >
-              <Pen size={18} />
-            </button>
-            <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap">
-              ערוך קטגוריה
-            </span>
-          </div>
+                      {/* Edit Button */}
+                      <div className="relative pointer-events-auto">
+                        <button
+                          className="peer mr-2 h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(category);
+                          }}
+                        >
+                          <Pen size={18} />
+                        </button>
+                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap">
+                          ערוך קטגוריה
+                        </span>
+                      </div>
 
-          {/* Lock Button */}
-          <div className="relative pointer-events-auto ">
-            <button
-              className="mt-8 ml-2 peer h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate("/permissions");
-              }}
-            >
-              <Lock size={18} />
-            </button>
-            <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap">
-              ניהול הרשאות
-            </span>
-          </div>
-        </div>
-      </div>
+                      {/* Lock Button */}
+                      <div className="relative pointer-events-auto ">
+                        <button
+                          className="mt-8 ml-2 peer h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate("/permissions");
+                          }}
+                        >
+                          <Lock size={18} />
+                        </button>
+                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap">
+                          ניהול הרשאות
+                        </span>
+                      </div>
+                    </div>
+                  </div>
 
-      {/* Category Name */}
-      <span className="text-base text-slate-700 font-medium mt-2">
-        {category.name}
-      </span>
-    </div>
-  ))}
-</div>
-
+                  {/* Category Name */}
+                  <span className="text-base text-slate-700 font-medium mt-2">
+                    {category.name}
+                  </span>
+                </div>
+              ))}
+            </div>
 
             {/* Category Name */}
             <span className="text-base text-slate-700 font-medium mt-2">

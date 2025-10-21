@@ -72,15 +72,14 @@ const Categories: FC<CategoriesProps> = () => {
         id: Date.now(),
         name: newCatName,
         image: newCatImage,
-        type: null
+        type: null,
       };
       setCategories([...categories, newCategory]);
     }
     setShowAddCatModal(false);
     setNewCatName("");
     setNewCatImage(null);
-    toast.success(`הקטגוריה "${newCatName}" נוספה בהצלחה!`)
-
+    toast.success(`הקטגוריה "${newCatName}" נוספה בהצלחה!`);
   };
 
   const handleDelete = (category: Category) => {
@@ -94,8 +93,7 @@ const Categories: FC<CategoriesProps> = () => {
     }
     setShowDeleteModal(false);
     setCategoryToDelete(null);
-    toast.success(`הקטגוריה "${categoryToDelete?.name}" נמחקה בהצלחה!`)
-
+    toast.success(`הקטגוריה "${categoryToDelete?.name}" נמחקה בהצלחה!`);
   };
 
   const handleEdit = (category: Category) => {
@@ -113,8 +111,7 @@ const Categories: FC<CategoriesProps> = () => {
     }
     setShowEditModal(false);
     setCategoryToEdit(null);
-    toast.success(`הקטגוריה "${categoryToEdit?.name}" עודכנה בהצלחה!`)
-
+    toast.success(`הקטגוריה "${categoryToEdit?.name}" עודכנה בהצלחה!`);
   };
 
   const closeAllModals = () => {
