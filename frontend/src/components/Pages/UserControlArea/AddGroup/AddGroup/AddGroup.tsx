@@ -1,5 +1,6 @@
 import React, { FC, useRef, useState } from 'react';
 import { X, Users, ChevronDown } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Group {
   name: string;
@@ -41,6 +42,8 @@ const AddGroup: FC<AddGroupProps> = ({ onClose, onSave }) => {
   const handleSave = () => {
     if (!groupName.trim()) return;
     onSave({ name: groupName, members: users, enabled: false });
+    toast.success("הקבוצה נשמרה בהצלחה!");
+
   };
 
   // close dropdown slightly after blur so click can register
