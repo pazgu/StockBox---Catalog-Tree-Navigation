@@ -4,7 +4,7 @@ import GroupList from './GroupList';
 import UsersList from '../AllUsers/UsersList';
 import BannedItems from './BannedItems';
 import AddUsersModal from './AddUsersModal';
-import { Group, User, BannedItem } from '../../../../types/types';
+import { BannedItem, Group, User, mockBannedItems } from '../../../../types/types';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../../../context/UserContext';
 
@@ -25,8 +25,10 @@ const GroupControl: React.FC = () => {
 
   // Redirect non-admins
   useEffect(() => {
-    if (role !== "admin") navigate("/");
-  }, [role, navigate]);
+    if (role !== "admin") {
+      navigate("/");
+    }
+  }, [navigate, role]);
 
   // Focus input when modal opens
   useEffect(() => {

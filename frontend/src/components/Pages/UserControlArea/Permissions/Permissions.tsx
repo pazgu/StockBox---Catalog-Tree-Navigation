@@ -199,8 +199,9 @@ useEffect(() => {
                   >
                     מוסתרת מהמשתמשים:
                   </Label>
-                  <div className="bg-white border border-gray-200 rounded-lg">
-                    {filteredUsers.map((user) => (
+                  <div className="bg-white border border-gray-200 rounded-lg max-h-48 overflow-y-auto" dir="ltr">
+                 <div dir="rtl">
+                 {filteredUsers.map((user) => (
                       <div
                         key={user.name}
                         className="flex justify-between items-center px-4 py-3 border-b last:border-b-0"
@@ -217,8 +218,9 @@ useEffect(() => {
                           onCheckedChange={() => handleUserToggle(user.name)}
                         />
                       </div>
-                    ))}
+                     ))}
                   </div>
+                </div>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -248,10 +250,11 @@ useEffect(() => {
                   className="mt-2"
                 >
                   <Label className="block mb-2 text-sm font-medium text-gray-700">
-                    מוסתרת מהקבוצות:
+                  מוסתרת מהקבוצות:
                   </Label>
-                  <div className="bg-white border border-gray-200 rounded-lg">
-                    {userPermissions.permissions.map((permission) => (
+                  <div className="bg-white border border-gray-200 rounded-lg max-h-32 overflow-y-auto" dir="ltr">
+                  <div dir="rtl">
+                  {userPermissions.permissions.map((permission) => (
                       <div
                         key={permission.id}
                         className="flex justify-between items-center px-4 py-3 border-b last:border-b-0"
@@ -290,6 +293,7 @@ useEffect(() => {
                       </div>
                     ))}
                   </div>
+                </div>
 
                   {/* Add Group Button */}
                   <div className="flex justify-center mt-4">
