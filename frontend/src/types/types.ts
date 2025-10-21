@@ -1,4 +1,7 @@
+export type UserRole = "admin" | "user";
+
 export type BannedEntityType = "product" | "category" | "subcategory";
+
 export interface BannedItem {
   id: number | string;
   name: string;
@@ -22,10 +25,10 @@ export interface User {
 }
 
 export interface Group {
-    id: string;
-    name: string;
-    permissions: string[];
-    bannedItems: BannedItem[]; 
+  id: string;
+   name: string;
+  permissions: string[];
+  bannedItems: BannedItem[]; 
 }
 
 export interface Permission {

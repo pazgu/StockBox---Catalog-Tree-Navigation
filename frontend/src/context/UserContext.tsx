@@ -1,27 +1,29 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { UserRole } from "../types/types";
 
 interface UserContextType {
-  role: string | null;
-  setRole: (role: string | null) => void;
+  role: UserRole | null;
+  setRole: (role: UserRole | null) => void;
 }
 
-const UserContext = createContext<UserContextType>({
-  role: null,
-  setRole: () => {},
-});
+const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [role, setRole] = useState<string | null>(null);
+  const [role, setRole] = useState<UserRole | null>(null);
 
   useEffect(() => {
     const storedRole = localStorage.getItem("role");
-    if (storedRole) {
-      setRole(storedRole);
+    if (storedRole === "admin" || storedRole === "user") {
+      setRole(storedRole as UserRole);
     }
   }, []);
 
   useEffect(() => {
-    if (role) localStorage.setItem("role", role);
+    if (role) {
+      localStorage.setItem("role", role);
+    } else {
+      localStorage.removeItem("role");
+    }
   }, [role]);
 
   return (
@@ -31,4 +33,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-export const useUser = () => useContext(UserContext);
+export const useUser = () => {
+  const context = useContext(UserContext);
+  if (!context) {
+    throw new Error("useUser must be used within UserProvider");
+  }
+  return context;
+};

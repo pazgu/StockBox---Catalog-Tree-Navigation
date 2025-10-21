@@ -5,18 +5,9 @@ import GroupList from './GroupList';
 import UsersList from '../AllUsers/UsersList';
 import BannedItems from '../Permissions/BannedItems';
 import AddUsersModal from './AddUsersModal';
-import { Group, User, BannedItem } from '../../../../types/types';
+import { Group, User, mockBannedItems } from '../../../../types/types';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../../../context/UserContext';
-
-//mock data
-const mockBannedItems: BannedItem[] = [
-  { id: 1, name: "מצלמה דיגיטלית Canon EOS 250D DSLR", type: "product" },
-  { id: 4, name: "מצלמה דיגיטלית ללא מראה Canon EOS R100", type: "product" },
-  { id: "cat_2", name: "הקלטה", type: "category" },
-  { id: "sub_cat_7", name: "עדשות EF", type: "subcategory" },
-];
-
 
 const GroupControl: React.FC = () => {
   const [selectedGroup, setSelectedGroup] = useState("group1");
@@ -26,13 +17,14 @@ const GroupControl: React.FC = () => {
   const [saveMessage, setSaveMessage] = useState("");
 
   const navigate = useNavigate();
-  const {role}=useUser();
-  useEffect(() => {
+  const { role } = useUser();
   
-      if (role !== "admin") {
-        navigate("/");
-      }
-    }, [navigate]);
+  useEffect(() => {
+    if (role !== "admin") {
+      navigate("/");
+    }
+  }, [role, navigate]);
+
   const [groups, setGroups] = useState<Group[]>([
     {
       id: "group1",
@@ -107,10 +99,12 @@ const GroupControl: React.FC = () => {
       return inGroup && matchesSearch;
     });
   }, [users, selectedGroup, searchQuery]);
+
   const totalUsers = useMemo(
     () => new Set(users.map((u) => u.id)).size,
     [users]
   );
+
   const handleSelectGroup = (id: string) => {
     setSelectedGroup(id);
     setSelectedUsers(new Set());
