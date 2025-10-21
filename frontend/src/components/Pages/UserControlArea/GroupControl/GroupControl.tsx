@@ -72,7 +72,20 @@ const GroupControl: React.FC = () => {
   ]);
 
   const currentGroup = useMemo(() => groups.find((g) => g.id === selectedGroup), [groups, selectedGroup]);
+const openAddGroupModal = () => setShowAddGroupModal(true);
+  const closeAddGroupModal = () => {
+    setShowAddGroupModal(false);
+    setNewGroupName("");
+  };
 
+  const saveNewGroup = () => {
+    const trimmedName = newGroupName.trim();
+    if (!trimmedName) return;
+
+    if (groups.some(g => g.name === trimmedName)) {
+      toast.error(`קבוצה בשם "${trimmedName}" כבר קיימת`)
+      return;
+    }}
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
       const inGroup = user.groups.includes(selectedGroup);
@@ -87,11 +100,7 @@ const GroupControl: React.FC = () => {
   const totalUsers = useMemo(() => users.length, [users]);
 
   // --- Message helper ---
-  const showMessage = (msg: string) => {
-    setSaveMessage(msg);
-    setTimeout(() => setSaveMessage(""), 3000);
-  };
-
+ 
   // --- Group Handlers ---
   const handleSelectGroup = (id: string) => {
     setSelectedGroup(id);
@@ -125,7 +134,7 @@ const GroupControl: React.FC = () => {
       })
     );
 
-    showMessage(`${selectedUsers.size} משתמשים הוסרו מהקבוצה`);
+    toast.info(`${selectedUsers.size} משתמשים הוסרו מהקבוצה`);
     setSelectedUsers(new Set());
   };
 
