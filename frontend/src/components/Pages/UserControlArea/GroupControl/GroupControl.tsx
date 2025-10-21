@@ -3,11 +3,18 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Users, Save } from 'lucide-react';
 import GroupList from './GroupList';
 import UsersList from '../AllUsers/UsersList';
-import BannedItems from '../Permissions/BannedItems';
+import BannedItems from './BannedItems';
 import AddUsersModal from './AddUsersModal';
-import { Group, User, mockBannedItems } from '../../../../types/types';
+import { Group, User, BannedItem } from '../../../../types/types';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../../../context/UserContext';
+
+const mockBannedItems: BannedItem[] = [
+  { id: 1, name: "מצלמה דיגיטלית Canon EOS 250D DSLR", type: "product" },
+  { id: 4, name: "מצלמה דיגיטלית ללא מראה Canon EOS R100", type: "product" },
+  { id: "cat_2", name: "הקלטה", type: "category" },
+  { id: "sub_cat_7", name: "עדשות EF", type: "subcategory" },
+];
 
 const GroupControl: React.FC = () => {
   const [selectedGroup, setSelectedGroup] = useState("group1");
@@ -23,7 +30,7 @@ const GroupControl: React.FC = () => {
     if (role !== "admin") {
       navigate("/");
     }
-  }, [role, navigate]);
+  }, [navigate, role]);
 
   const [groups, setGroups] = useState<Group[]>([
     {
@@ -164,6 +171,23 @@ const GroupControl: React.FC = () => {
     setTimeout(() => setSaveMessage(""), 3000);
   };
 
+  const handleUpdateBannedItems = (groupId: string, items: BannedItem[]) => {
+    setGroups((prevGroups) =>
+      prevGroups.map((g) => {
+        if (g.id === groupId) {
+          return {
+            ...g,
+            bannedItems: items,
+          };
+        }
+        return g;
+      })
+    );
+
+    setSaveMessage("פריטים חסומים עודכנו בהצלחה");
+    setTimeout(() => setSaveMessage(""), 3000);
+  };
+
   const handleSaveChanges = () => {
     setSaveMessage("השינויים נשמרו בהצלחה");
     setTimeout(() => setSaveMessage(""), 3000);
@@ -242,6 +266,7 @@ const GroupControl: React.FC = () => {
           <BannedItems
             currentGroupName={currentGroup?.name || ""}
             bannedItems={currentGroup?.bannedItems || []}
+            onUpdateBannedItems={(items: BannedItem[]) => handleUpdateBannedItems(selectedGroup, items)}
           />
         </div>
         <div className="bg-white border-t border-gray-200 px-4 sm:px-8 py-4">
