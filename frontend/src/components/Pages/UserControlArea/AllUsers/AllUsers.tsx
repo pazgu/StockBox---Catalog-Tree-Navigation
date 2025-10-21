@@ -2,6 +2,7 @@ import React, { FC, useEffect, useState } from "react";
 import Header from "../../../LayoutArea/Header/Header";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
+import { toast } from "sonner";
 
 interface User {
   id: string | number;
@@ -70,6 +71,7 @@ const currentUsers = filteredUsers.slice(startIndex, startIndex + usersPerPage);
       const globalIndex = (currentPage - 1) * usersPerPage + deleteUserIndex;
       const newUsers = [...users];
       newUsers.splice(globalIndex, 1);
+      
       setUsers(newUsers);
 
       if (currentPage > Math.ceil(newUsers.length / usersPerPage) && currentPage > 1) {
@@ -77,6 +79,7 @@ const currentUsers = filteredUsers.slice(startIndex, startIndex + usersPerPage);
       }
 
       setDeleteUserIndex(null);
+       toast.info(`המשתמש נמחק בהצלחה!`);
     }
   };
 
@@ -101,6 +104,7 @@ const currentUsers = filteredUsers.slice(startIndex, startIndex + usersPerPage);
   const handleSaveEdit = () => {
     if (userToEdit) {
       setUsers(users.map((u) => (u.id === userToEdit.id ? userToEdit : u)));
+      toast.success("המשתמש עודכן בהצלחה!");
       setShowEditModal(false);
       setUserToEdit(null);
     }

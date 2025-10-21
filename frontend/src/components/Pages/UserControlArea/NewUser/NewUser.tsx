@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../../../context/UserContext';
+import { toast } from 'sonner';
 
 // Zod validation schema
 const userSchema = z.object({
@@ -77,11 +78,11 @@ useEffect(() => {
       console.log('User data:', data);
       
       reset();
-      alert('המשתמש נוסף בהצלחה!');
+      toast.success("משתמש נוסף בהצלחה!")      
       navigate('/AllUsers');
     } catch (error) {
       console.error('שגיאה בשליחת הנתונים:', error);
-      alert('אירעה שגיאה בעת הוספת המשתמש');
+      toast.error("שגיאה בשליחת ניתונים")
     }
   };
 
