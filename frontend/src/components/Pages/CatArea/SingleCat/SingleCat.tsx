@@ -261,7 +261,7 @@ const SingleCat: FC = () => {
             className="bg-white p-6 rounded-lg w-full max-w-md"
             onClick={(e) => e.stopPropagation()}
           >
-            <h4 className="text-lg font-semibold mb-4">הוסף מוצר חדשה</h4>
+            <h4 className="text-lg font-semibold mb-4">הוסף מוצר חדש</h4>
             <input
               type="text"
               placeholder="שם מוצר"
