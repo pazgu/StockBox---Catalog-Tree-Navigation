@@ -138,7 +138,7 @@ const toggleFavorite = (id: number) => {
         imageUrl: newProductImage,
         favorite: false,
       };
-      setCameras([...cameras, newProduct]);
+      setCameras([newProduct, ...cameras]);
     }
     setShowAddCatModal(false);
     setNewProductName("");

@@ -183,7 +183,7 @@ const Header: React.FC<HeaderProps> = ({
                   </button>
 
                   {/* Dropdown on hover */}
-                  <div className="absolute right-0 mt-2 w-40 bg-[#beaa88] rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                  <div className="absolute left-1/2 ml-3 -translate-x-1/2 mt-2 w-40 bg-[#beaa88] rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
                     <button
                       onClick={() => navigate("/AllUsers")}
                       className="w-full px-4 py-2 text-right text-sm text-white hover:bg-[#e7cc9c] transition-colors rounded-t-lg"
