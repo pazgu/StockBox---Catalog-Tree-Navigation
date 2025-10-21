@@ -22,10 +22,10 @@ export interface User {
 }
 
 export interface Group {
-  id: string;
-  name: string;
-  permissions: string[];
-  bannedItems: BannedItem[];
+    id: string;
+    name: string;
+    permissions: string[];
+    bannedItems: BannedItem[]; 
 }
 
 export interface Permission {
