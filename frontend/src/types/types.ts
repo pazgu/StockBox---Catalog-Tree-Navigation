@@ -45,3 +45,9 @@ export interface PermissionCategory {
   icon: React.ReactNode;
   permissions: Permission[];
 }
+
+export interface BannedItem {
+  id: string | number;
+  name: string;
+  type: "product" | "category" | "subcategory";
+}

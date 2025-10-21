@@ -1,9 +1,7 @@
-import React from "react";
-import { Users, Plus, Trash2 } from "lucide-react";
+import React, { useState } from "react";
+import { Users, Trash2, Plus } from "lucide-react";
 import { Group, User } from "../../../../types/types";
-import { useNavigate } from "react-router-dom";
-import AddGroup from "../AddGroup/AddGroup/AddGroup";
-import { useState } from "react";
+
 interface GroupListProps {
   groups: Group[];
   users: User[];
@@ -23,52 +21,50 @@ const GroupList: React.FC<GroupListProps> = ({
   onDeleteGroup,
   onAddGroup,
 }) => {
-  const navigate = useNavigate();
-  const [showModal, setShowModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const handleAddGroup = () => {
-    setShowModal(true);
-  };
-
-  const handleClose = () => {
-    setShowModal(false);
-  };
-
-  const handleSave = (group: any) => {
-    console.log("Saved group:", group);
-    setShowModal(false);
-  };
+  const filteredGroups = groups.filter((group) =>
+    group.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="col-span-12 lg:col-span-3 bg-gray-50 border-l lg:border-r border-gray-200 p-6 text-right">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-3">
         <h3 className="text-lg font-semibold text-gray-700">קבוצות</h3>
         <button
-          onClick={handleAddGroup}
+          onClick={onAddGroup}
           title="ליצירת קבוצה חדשה"
           className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-all duration-200 shadow-md text-sm"
         >
           <Plus className="w-4 h-4" />
           <span className="hidden sm:inline">קבוצה חדשה</span>
         </button>
-
-        {showModal && <AddGroup onClose={handleClose} onSave={handleSave} />}
       </div>
 
-      {groups.length === 0 ? (
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="חפש קבוצה..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-400 text-right"
+        />
+      </div>
+
+      {filteredGroups.length === 0 ? (
         <div className="text-center py-8 text-gray-400">
           <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
           <p>אין קבוצות במערכת</p>
           <p className="text-sm">לחצי על "קבוצה חדשה" כדי להתחיל</p>
         </div>
       ) : (
-        <div className="space-y-3 max-h-[300px] lg:max-h-[700px] overflow-y-auto pr-2">
-          {groups.map((group) => (
+        <div className="space-y-3 max-h-[300px] lg:max-h-[700px] overflow-y-auto px-0">
+          {filteredGroups.map((group) => (
             <div
               key={group.id}
               onClick={() => onSelectGroup(group.id)}
               onDoubleClick={() => onEditGroup(group)}
-              className={`p-4 rounded-xl cursor-pointer transition-all relative group text-right shadow-sm ${
+              className={`w-full box-border p-4 rounded-xl cursor-pointer transition-all relative group text-right shadow-sm ${
                 selectedGroup === group.id
                   ? "bg-gradient-to-l from-slate-100 to-gray-100 border-2 border-slate-400"
                   : "bg-white border border-gray-100 hover:shadow-md hover:-translate-x-1"
@@ -90,7 +86,7 @@ const GroupList: React.FC<GroupListProps> = ({
                     e.stopPropagation();
                     onDeleteGroup(group);
                   }}
-                  className="p-1.5 rounded-full bg-white  hover:bg-red-600 hover:text-white transition-colors"
+                  className="p-1.5 rounded-full bg-white hover:bg-red-600 hover:text-white transition-colors"
                   title="מחק קבוצה"
                 >
                   <Trash2 size={14} />

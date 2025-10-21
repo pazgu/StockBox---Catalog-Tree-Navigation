@@ -1,14 +1,20 @@
 import React, { FC, useState, useEffect } from 'react';
-import { Star, Settings, TrendingUp, Search, CheckCircle2 } from 'lucide-react';
+import { Star, Settings, TrendingUp, Search, CheckCircle2 , Compass  } from 'lucide-react';
 import pic1 from '../../../../assets/pic1.jpg';
 import pic2 from '../../../../assets/pic2.jpg';
 import pic3 from '../../../../assets/pic3.jpg';
+import { useNavigate } from 'react-router-dom';
 
 interface AboutProps {}
 
 const About: FC<AboutProps> = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const images = [pic1, pic2, pic3];
+  const navigate = useNavigate(); 
+
+  const handleNavigateToCategories = () => {
+    navigate("/categories"); // Assuming the path to Categories is "/categories"
+  };
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -52,6 +58,42 @@ const About: FC<AboutProps> = () => {
               נהלים, תיעוד, החלטות, קבצים ותוצרים חשובים, לשתף בקלות ולשמור על הנתונים הרצויים.
             </p>
           </div>
+
+<div className="flex justify-center my-10">
+  <button
+    onClick={handleNavigateToCategories}
+    className="group inline-flex items-center gap-3 rounded-2xl border border-stockblue/20 
+               bg-gradient-to-r from-white/90 via-white/80 to-blue-50/60
+               px-10 py-4 text-[1.15rem] font-bold text-stockblue backdrop-blur-sm
+               shadow-[0_8px_28px_rgba(13,48,91,0.18)] hover:shadow-[0_12px_38px_rgba(13,48,91,0.3)]
+               hover:scale-105 active:scale-95 transition-all duration-300 ease-out
+               focus:outline-none focus-visible:ring-4 focus-visible:ring-stockblue/25"
+  >
+    {/* Icon chip */}
+    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-stockblue text-white
+                     shadow-[0_4px_14px_rgba(13,48,91,0.35)] group-hover:rotate-12 transition-transform duration-300">
+      <Compass size={22} />
+    </span>
+
+    גלו את התכולות והאמצעים
+
+    {/* Arrow */}
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="h-[22px] w-[22px] -scale-x-100 transition-transform duration-300 group-hover:translate-x-1"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M5 12h14" />
+      <path d="m12 5 7 7-7 7" />
+    </svg>
+  </button>
+</div>
+
 
           {/* Features Section */}
           <h2 className="text-[1.8rem] text-stockblue my-6 mb-4 font-bold border-b-2 border-stockblue/15 pb-1.5 inline-block">
