@@ -12,6 +12,7 @@ import SingleProd from '../../Pages/ProductArea/SingleProd/SingleProd';
 import Page404 from '../../Pages/Page404/Page404';
 import GroupControl from '../../Pages/UserControlArea/GroupControl/GroupControl';
 import Favorites from '../../Pages/CatArea/Favorites/Favorites';
+import { Toaster } from 'sonner';
 import SubCat from '../../../components/Pages/CatArea/SubCats/SubCat/SubCat';
 interface LayoutProps {}
 
@@ -38,6 +39,7 @@ const Layout: FC<LayoutProps> = () => (
 
       </Routes>
     </main>
+    <Toaster position="top-center"/>
   </div>
 );
 

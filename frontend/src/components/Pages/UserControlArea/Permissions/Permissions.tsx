@@ -43,19 +43,19 @@ const Permissions: React.FC = () => {
   const [userSearch, setUserSearch] = useState("");
   const [groups, setGroups] = useState<Group[]>([]);
   const [users, setUsers] = useState<User[]>([
-    { name: "Alice", enabled: true },
-    { name: "Bob", enabled: true },
-    { name: "Charlie", enabled: true },
-    { name: "Dana", enabled: true },
+    { name: "Alice", enabled: false },
+    { name: "Bob", enabled: false },
+    { name: "Charlie", enabled: false },
+    { name: "Dana", enabled: false },
   ]);
   const [userPermissions, setUserPermissions] = useState<UserPermissions>({
-    generalAccess: true,
+    generalAccess: false,
     specificUsers: "",
     onlyRegistered: true,
     permissions: [
-      { id: "finance", label: "פיננסים", enabled: true },
-      { id: "hr", label: "משאבי אנוש", enabled: true },
-      { id: "security", label: "אבטחה", enabled: true },
+      { id: "finance", label: "פיננסים", enabled: false },
+      { id: "hr", label: "משאבי אנוש", enabled: false },
+      { id: "security", label: "אבטחה", enabled: false },
     ],
   });
   const [isOpen, setIsOpen] = useState(false);
@@ -177,7 +177,7 @@ useEffect(() => {
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.3 }}
-                  className="overflow-hidden mt-2"
+                  className="mt-2"
                 >
                   <Label
                     htmlFor="user-search"
@@ -191,7 +191,7 @@ useEffect(() => {
                     placeholder="הקלד שם..."
                     value={userSearch}
                     onChange={(e) => setUserSearch(e.target.value)}
-                    className="w-full p-2 mb-3 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full p-2 mb-3 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-900 focus:border-indigo-900"
                   />
                   <Label
                     htmlFor="only-registered"
@@ -199,8 +199,9 @@ useEffect(() => {
                   >
                     מוסתרת מהמשתמשים:
                   </Label>
-                  <div className="bg-white border border-gray-200 rounded-lg">
-                    {filteredUsers.map((user) => (
+                  <div className="bg-white border border-gray-200 rounded-lg max-h-48 overflow-y-auto" dir="ltr">
+                 <div dir="rtl">
+                 {filteredUsers.map((user) => (
                       <div
                         key={user.name}
                         className="flex justify-between items-center px-4 py-3 border-b last:border-b-0"
@@ -217,8 +218,9 @@ useEffect(() => {
                           onCheckedChange={() => handleUserToggle(user.name)}
                         />
                       </div>
-                    ))}
+                     ))}
                   </div>
+                </div>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -245,13 +247,14 @@ useEffect(() => {
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.3 }}
-                  className="overflow-hidden mt-2"
+                  className="mt-2"
                 >
                   <Label className="block mb-2 text-sm font-medium text-gray-700">
-                    מוסתרת מהקבוצות:
+                  מוסתרת מהקבוצות:
                   </Label>
-                  <div className="bg-white border border-gray-200 rounded-lg">
-                    {userPermissions.permissions.map((permission) => (
+                  <div className="bg-white border border-gray-200 rounded-lg max-h-32 overflow-y-auto" dir="ltr">
+                  <div dir="rtl">
+                  {userPermissions.permissions.map((permission) => (
                       <div
                         key={permission.id}
                         className="flex justify-between items-center px-4 py-3 border-b last:border-b-0"
@@ -286,11 +289,11 @@ useEffect(() => {
                           id={`group-${index}`}
                           checked={group.enabled}
                           onCheckedChange={() => handleGroupToggle(group.name)} // Use the new group-specific handler
-                          disabled={!userPermissions.generalAccess}
                         />
                       </div>
                     ))}
                   </div>
+                </div>
 
                   {/* Add Group Button */}
                   <div className="flex justify-center mt-4">
@@ -304,7 +307,7 @@ useEffect(() => {
                     <AddGroup
                         onClose={() => setIsOpen(false)}
                         onSave={(newGroup: Group) => {
-                          setGroups(prev => [...prev, { ...newGroup, enabled: true }]); 
+                          setGroups(prev => [...prev, { ...newGroup, enabled: false }]); 
                           setIsOpen(false);
                         }}
                       />
