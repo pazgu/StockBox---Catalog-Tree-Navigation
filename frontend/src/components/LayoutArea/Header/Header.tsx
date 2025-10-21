@@ -54,6 +54,16 @@ const Header: React.FC<HeaderProps> = ({
     return () => document.removeEventListener("keydown", handleEscape);
   }, []);
 
+  useEffect(() => {
+  const handleResize = () => {
+    if (window.innerWidth >= 1024 && isMobileMenuOpen) {
+      setIsMobileMenuOpen(false);
+    }
+  };
+  window.addEventListener('resize', handleResize);
+  return () => window.removeEventListener('resize', handleResize);
+}, [isMobileMenuOpen]);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim() && onSearch) {
@@ -90,8 +100,8 @@ const Header: React.FC<HeaderProps> = ({
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
-            <div className="flex-shrink-0 transform transition-transform duration-300 hover:scale-105">
-              <img
+            <div className="hidden sm:block flex-shrink-0 transform transition-transform duration-300 hover:scale-105">
+              <img 
                 src={logoSrc}
                 alt="StockBox Logo"
                 className="h-20 w-auto"
@@ -118,10 +128,10 @@ const Header: React.FC<HeaderProps> = ({
 
             <form
               onSubmit={handleSearch}
-              className={`hidden md:flex items-center backdrop-blur-sm rounded-full px-1 py-1 mr-4 transition-all duration-300 ${
-                isSearchFocused
-                  ? "bg-white/20 shadow-lg"
-                  : "bg-white/10 hover:bg-white/15"
+              className={`${isMobileMenuOpen ? 'hidden' : 'hidden md:flex'} items-center backdrop-blur-sm rounded-full px-1 py-1 mr-4 transition-all duration-300 ${
+                isSearchFocused 
+                  ? 'bg-white/20 shadow-lg' 
+                  : 'bg-white/10 hover:bg-white/15'
               }`}
             >
               <input
@@ -145,7 +155,7 @@ const Header: React.FC<HeaderProps> = ({
             </form>
 
             {/* Action Icons */}
-            <div className="flex items-center gap-2">
+            <div className={`flex items-center gap-2 ${isMobileMenuOpen ? 'hidden' : ''}`}>
               {/* Favorites */}
               {role === "user" && !isMobileMenuOpen && (
                 <button
@@ -193,7 +203,7 @@ const Header: React.FC<HeaderProps> = ({
               {/* Mobile Menu Toggle */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="lg:hidden p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 active:scale-95"
+                className="lg:hidden p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 active:scale-95 ml-auto "
                 aria-label="Toggle menu"
                 aria-expanded={isMobileMenuOpen}
               >
@@ -205,15 +215,10 @@ const Header: React.FC<HeaderProps> = ({
                         ? "opacity-0 rotate-180"
                         : "opacity-100 rotate-0"
                     }`}
+                    
                   />
-                  <X
-                    size={24}
-                    className={`absolute transition-all duration-300 ${
-                      isMobileMenuOpen
-                        ? "opacity-100 rotate-0"
-                        : "opacity-0 -rotate-180"
-                    }`}
-                  />
+                 
+               
                 </div>
               </button>
             </div>
@@ -221,19 +226,29 @@ const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Mobile Menu */}
-        <div
+       
+        <div 
           className={`lg:hidden transition-all duration-500 ease-in-out mt-32 ${
             isMobileMenuOpen
               ? "max-h-[600px] opacity-100"
               : "max-h-0 opacity-0 overflow-hidden"
           }`}
         >
+                 
           <div className="container mx-auto px-4 py-4 bg-gradient-to-b from-[#0a2644] to-[#0D305B]">
             {/* Mobile Search */}
-            <form
+               <X 
+                    size={24} 
+                    className={`transition-all duration-300 text-white ml-3 ${
+                      isMobileMenuOpen ? 'opacity-100 rotate-0' : 'opacity-0 -rotate-180'
+                    }`}
+                    onClick={()=>setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  />
+            <form 
               onSubmit={handleSearch}
               className="flex items-center bg-white/10 backdrop-blur-sm rounded-full px-1 py-1 mb-6"
             >
+             
               <input
                 type="text"
                 value={searchQuery}
@@ -273,6 +288,7 @@ const Header: React.FC<HeaderProps> = ({
               >
                 התחברות
               </NavLink>
+               
             </nav>
 
             {/* Mobile Quick Actions */}

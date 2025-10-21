@@ -15,6 +15,9 @@ const GroupControl: React.FC = () => {
   const [showAddUsersModal, setShowAddUsersModal] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
 
+  // modal state for delete confirmation
+  const [groupToDelete, setGroupToDelete] = useState<Group | null>(null);
+
   const navigate = useNavigate();
   const { role } = useUser();
   
@@ -99,10 +102,12 @@ const GroupControl: React.FC = () => {
     });
   }, [users, selectedGroup, searchQuery]);
 
+
   const totalUsers = useMemo(
     () => new Set(users.map((u) => u.id)).size,
     [users]
   );
+
 
   const handleSelectGroup = (id: string) => {
     setSelectedGroup(id);
@@ -172,7 +177,37 @@ const GroupControl: React.FC = () => {
 
   const handleEditGroup = (group: Group) => {};
 
-  const handleDeleteGroup = (group: Group) => {};
+  const handleDeleteGroup = (group: Group) => {
+    setGroupToDelete(group);
+  };
+
+  const closeDeleteModal = () => setGroupToDelete(null);
+
+  const confirmDeleteGroup = () => {
+    if (!groupToDelete) return;
+
+    setGroups(prevGroups => prevGroups.filter(g => g.id !== groupToDelete.id));
+
+    setUsers(prevUsers =>
+      prevUsers.map(u => ({
+        ...u,
+        groups: u.groups.filter(gid => gid !== groupToDelete.id)
+      }))
+    );
+
+    setSelectedGroup(prevSelected => {
+      if (prevSelected === groupToDelete.id) {
+        const remainingGroups = groups.filter(g => g.id !== groupToDelete.id);
+        return remainingGroups.length > 0 ? remainingGroups[0].id : "";
+      }
+      return prevSelected;
+    });
+
+    setSaveMessage(`הקבוצה "${groupToDelete.name}" נמחקה בהצלחה`);
+    setTimeout(() => setSaveMessage(""), 3000);
+
+    setGroupToDelete(null);
+  };
 
   return (
     <div
@@ -281,6 +316,37 @@ const GroupControl: React.FC = () => {
           onAddUsers={handleAddUsers}
         />
       )}
+
+     {/* Delete Modal */}
+      {groupToDelete && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-96 text-center shadow-lg">
+            <p className="text-slate-700 mb-3">
+              האם את/ה בטוח/ה שברצונך למחוק את הקבוצה "{groupToDelete.name}"?
+            </p>
+            <small className="text-gray-500">
+              לא ניתן לבטל פעולה זו לאחר מכן
+            </small>
+
+            <div className="flex justify-between gap-3 mt-5">
+              <button
+                onClick={closeDeleteModal}
+                className="flex-1 p-3 border-none rounded-lg text-base font-medium cursor-pointer transition-all duration-200 bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"
+              >
+                ביטול
+              </button>
+
+              <button
+                onClick={confirmDeleteGroup}
+                className="flex-1 p-3 border-none rounded-lg text-base font-medium cursor-pointer transition-all duration-200 bg-red-600 text-white shadow-md hover:bg-red-700 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"
+              >
+                מחק
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
