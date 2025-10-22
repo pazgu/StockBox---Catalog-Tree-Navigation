@@ -1,5 +1,5 @@
 import React, { FC, useState, useEffect } from 'react';
-import { Star, Settings, TrendingUp, Search, CheckCircle2, Compass, Edit2, X, Plus } from 'lucide-react';
+import { Star, Settings, TrendingUp, Search, CheckCircle2, Compass, Edit2, X, Plus, GripVertical } from 'lucide-react';
 import pic1 from '../../../../assets/pic1.jpg';
 import pic2 from '../../../../assets/pic2.jpg';
 import pic3 from '../../../../assets/pic3.jpg';
@@ -35,6 +35,9 @@ const About: FC<AboutProps> = () => {
     "מערכת נעימה, יציבה ומתאימה לזרימות עבודה יומיומיות.",
     "גדלה יחד עם הצוות והצרכים שלו"
   ]);
+
+  const [draggedFeatureIndex, setDraggedFeatureIndex] = useState<number | null>(null);
+  const [draggedVisionIndex, setDraggedVisionIndex] = useState<number | null>(null);
 
   const handleNavigateToCategories = () => {
     navigate("/categories");
@@ -91,6 +94,50 @@ const About: FC<AboutProps> = () => {
   const removeVisionPoint = (index: number) => {
     const newVisionPoints = editableVisionPoints.filter((_, i) => i !== index);
     setEditableVisionPoints(newVisionPoints);
+  };
+
+  // Drag and drop handlers for features
+  const handleFeatureDragStart = (index: number) => {
+    setDraggedFeatureIndex(index);
+  };
+
+  const handleFeatureDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedFeatureIndex === null || draggedFeatureIndex === index) return;
+
+    const newFeatures = [...editableFeatures];
+    const draggedItem = newFeatures[draggedFeatureIndex];
+    newFeatures.splice(draggedFeatureIndex, 1);
+    newFeatures.splice(index, 0, draggedItem);
+
+    setEditableFeatures(newFeatures);
+    setDraggedFeatureIndex(index);
+  };
+
+  const handleFeatureDragEnd = () => {
+    setDraggedFeatureIndex(null);
+  };
+
+  // Drag and drop handlers for vision points
+  const handleVisionDragStart = (index: number) => {
+    setDraggedVisionIndex(index);
+  };
+
+  const handleVisionDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedVisionIndex === null || draggedVisionIndex === index) return;
+
+    const newVisionPoints = [...editableVisionPoints];
+    const draggedItem = newVisionPoints[draggedVisionIndex];
+    newVisionPoints.splice(draggedVisionIndex, 1);
+    newVisionPoints.splice(index, 0, draggedItem);
+
+    setEditableVisionPoints(newVisionPoints);
+    setDraggedVisionIndex(index);
+  };
+
+  const handleVisionDragEnd = () => {
+    setDraggedVisionIndex(null);
   };
 
   return (
@@ -180,7 +227,21 @@ const About: FC<AboutProps> = () => {
             {editableFeatures.map((feature, index) => {
               const IconComponent = feature.icon;
               return (
-                <div key={index} className="bg-white/90 backdrop-blur-[8px] rounded-[14px] p-5 flex items-start gap-3.5 shadow-[0_4px_20px_rgba(0,0,0,0.06)] border border-stockblue/8 transition-all duration-[250ms] ease-out hover:transform hover:-translate-y-[3px] hover:shadow-[0_8px_30px_rgba(0,0,0,0.1)] hover:bg-white/96">
+                <div 
+                  key={index} 
+                  className={`bg-white/90 backdrop-blur-[8px] rounded-[14px] p-5 flex items-start gap-3.5 shadow-[0_4px_20px_rgba(0,0,0,0.06)] border border-stockblue/8 transition-all duration-[250ms] ease-out hover:transform hover:-translate-y-[3px] hover:shadow-[0_8px_30px_rgba(0,0,0,0.1)] hover:bg-white/96 ${
+                    isEditing ? 'cursor-move' : ''
+                  } ${draggedFeatureIndex === index ? 'opacity-50' : ''}`}
+                  draggable={isEditing}
+                  onDragStart={() => handleFeatureDragStart(index)}
+                  onDragOver={(e) => handleFeatureDragOver(e, index)}
+                  onDragEnd={handleFeatureDragEnd}
+                >
+                  {isEditing && (
+                    <div className="flex-shrink-0 text-stockblue/40 cursor-move pt-1">
+                      <GripVertical size={20} />
+                    </div>
+                  )}
                   <div className="bg-stockblue text-white w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 shadow-[0_4px_14px_rgba(13,48,91,0.25)]">
                     <IconComponent size={22} />
                   </div>
@@ -229,7 +290,21 @@ const About: FC<AboutProps> = () => {
 
           <ul className="list-none p-0 my-5 mb-7 grid gap-3">
             {editableVisionPoints.map((point, i) => (
-              <li key={i} className="flex items-start gap-2.5">
+              <li 
+                key={i} 
+                className={`flex items-start gap-2.5 ${
+                  isEditing ? 'cursor-move' : ''
+                } ${draggedVisionIndex === i ? 'opacity-50' : ''}`}
+                draggable={isEditing}
+                onDragStart={() => handleVisionDragStart(i)}
+                onDragOver={(e) => handleVisionDragOver(e, i)}
+                onDragEnd={handleVisionDragEnd}
+              >
+                {isEditing && (
+                  <div className="flex-shrink-0 text-stockblue/40 cursor-move mt-1">
+                    <GripVertical size={18} />
+                  </div>
+                )}
                 <span className="bg-stockblue/10 text-stockblue w-7 h-7 rounded-full inline-flex items-center justify-center flex-shrink-0 mt-0.5">
                   <CheckCircle2 size={18} />
                 </span>
