@@ -138,6 +138,7 @@ const SubCat: FC<SubCatProps> = ({ initialCategories = [] }) => {
 
   const showDeleteModal = !!categoryToDelete;
   const showEditModal = !!categoryToEdit;
+  const noCats = categories.length === 0;
 
   // Function to handle category click logic
   const handleCategoryClick = (category: Category) => {
@@ -162,13 +163,18 @@ const SubCat: FC<SubCatProps> = ({ initialCategories = [] }) => {
           קטגוריה {subcatName}
         </h2>
       </div>
+      
 
       <div className="w-full flex justify-center flex-wrap gap-10 my-12">
+        {noCats &&
+        <h3 >לא נמצאו קטגורית</h3>
+}
         {categories.map((category) => (
           <div
             key={category.id}
             className="flex flex-col items-center transition-transform duration-200 hover:translate-y-[-2px] relative"
           >
+            
             <div className="w-full flex justify-center flex-wrap gap-10 my-12">
               {categories.map((category) => (
                 <div
