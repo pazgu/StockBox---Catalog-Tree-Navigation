@@ -154,7 +154,7 @@ useEffect(() => {
           </div>
 
           <div className="flex flex-col mb-3 min-w-[300px] max-w-[350px]">
-            <label htmlFor="phoneNumber" className="mb-2 text-sm font-semibold text-gray-700 rtl text-right">טלפון משתמש</label>
+            <label htmlFor="phoneNumber" className="mb-2 text-sm font-semibold text-gray-700 rtl text-right">מספר טלפון </label>
             <input
               {...register('phoneNumber')}
               type="tel"
