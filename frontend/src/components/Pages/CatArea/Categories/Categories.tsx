@@ -340,7 +340,7 @@ const Categories: FC<CategoriesProps> = () => {
           )}
           {showEditModal && categoryToEdit && (
             <div
-              className="fixed inset-0 bg-slate-900 bg-opacity-85 backdrop-blur-xl flex items-center justify-center z-50 transition-all duration-300"
+              className="fixed inset-0 bg-slate-800 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 transition-all duration-300"
               onClick={closeAllModals}
             >
               <div
