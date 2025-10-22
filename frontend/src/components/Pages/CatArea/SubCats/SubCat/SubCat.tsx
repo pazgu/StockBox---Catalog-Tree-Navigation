@@ -163,18 +163,14 @@ const SubCat: FC<SubCatProps> = ({ initialCategories = [] }) => {
           קטגוריה {subcatName}
         </h2>
       </div>
-      
 
       <div className="w-full flex justify-center flex-wrap gap-10 my-12">
-        {noCats &&
-        <h3 >לא נמצאו קטגורית</h3>
-}
+        {noCats && <h3>לא נמצאו קטגורית</h3>}
         {categories.map((category) => (
           <div
             key={category.id}
             className="flex flex-col items-center transition-transform duration-200 hover:translate-y-[-2px] relative"
           >
-            
             <div className="w-full flex justify-center flex-wrap gap-10 my-12">
               {categories.map((category) => (
                 <div
@@ -334,10 +330,10 @@ const SubCat: FC<SubCatProps> = ({ initialCategories = [] }) => {
                   </button>
 
                   <button
-                     onClick={() => {
-    closeAllModals();
-    setShowAddCatModal(false);
-  }}
+                    onClick={() => {
+                      closeAllModals();
+                      setShowAddCatModal(false);
+                    }}
                     className="flex-1 p-3 border-none rounded-lg text-base font-medium cursor-pointer transition-all duration-200 bg-gray-100 text-gray-500 border border-gray-300 hover:bg-gray-300 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"
                   >
                     ביטול
@@ -511,10 +507,10 @@ const SubCat: FC<SubCatProps> = ({ initialCategories = [] }) => {
               </button>
 
               <button
-                 onClick={() => {
-    setCategoryToType(null);
-    closeAllModals();
-  }}
+                onClick={() => {
+                  setCategoryToType(null);
+                  closeAllModals();
+                }}
                 className="p-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all w-32 mt-2"
               >
                 ביטול
