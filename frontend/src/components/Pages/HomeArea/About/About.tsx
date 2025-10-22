@@ -5,6 +5,7 @@ import pic2 from '../../../../assets/pic2.jpg';
 import pic3 from '../../../../assets/pic3.jpg';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../../../context/UserContext';
+import { toast } from 'sonner';
 
 interface AboutProps {
 }
@@ -60,6 +61,7 @@ const About: FC<AboutProps> = () => {
       editableFeatures, 
       editableVisionPoints 
     });
+    toast.success("השינויים נישמרו בהצלחה")
   };
 
   const handleImageUpload = (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
