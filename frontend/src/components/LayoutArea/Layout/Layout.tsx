@@ -39,10 +39,7 @@ const Layout: FC<LayoutProps> = () => (
 
       </Routes>
     </main>
-    <Toaster
-  position="top-center"
-  richColors
-/>
+    <Toaster richColors/>
 
   </div>
 );
