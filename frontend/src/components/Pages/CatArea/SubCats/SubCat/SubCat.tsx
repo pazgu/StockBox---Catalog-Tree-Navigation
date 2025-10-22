@@ -138,6 +138,7 @@ const SubCat: FC<SubCatProps> = ({ initialCategories = [] }) => {
 
   const showDeleteModal = !!categoryToDelete;
   const showEditModal = !!categoryToEdit;
+  const noCats = categories.length === 0;
 
   // Function to handle category click logic
   const handleCategoryClick = (category: Category) => {
@@ -164,6 +165,7 @@ const SubCat: FC<SubCatProps> = ({ initialCategories = [] }) => {
       </div>
 
       <div className="w-full flex justify-center flex-wrap gap-10 my-12">
+        {noCats && <h3>לא נמצאו קטגורית</h3>}
         {categories.map((category) => (
           <div
             key={category.id}
@@ -282,7 +284,7 @@ const SubCat: FC<SubCatProps> = ({ initialCategories = [] }) => {
           {/* Add Category Modal */}
           {showAddCatModal && (
             <div
-              className="fixed inset-0 bg-slate-900 bg-opacity-85 backdrop-blur-xl flex items-center justify-center z-50 transition-all duration-300"
+              className="fixed inset-0 bg-slate-600 bg-opacity-85 backdrop-blur-xl flex items-center justify-center z-50 transition-all duration-300"
               onClick={closeAllModals}
             >
               <div
@@ -328,7 +330,10 @@ const SubCat: FC<SubCatProps> = ({ initialCategories = [] }) => {
                   </button>
 
                   <button
-                    onClick={closeAllModals}
+                    onClick={() => {
+                      closeAllModals();
+                      setShowAddCatModal(false);
+                    }}
                     className="flex-1 p-3 border-none rounded-lg text-base font-medium cursor-pointer transition-all duration-200 bg-gray-100 text-gray-500 border border-gray-300 hover:bg-gray-300 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"
                   >
                     ביטול
@@ -502,7 +507,10 @@ const SubCat: FC<SubCatProps> = ({ initialCategories = [] }) => {
               </button>
 
               <button
-                onClick={() => setCategoryToType(null)}
+                onClick={() => {
+                  setCategoryToType(null);
+                  closeAllModals();
+                }}
                 className="p-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all w-32 mt-2"
               >
                 ביטול
