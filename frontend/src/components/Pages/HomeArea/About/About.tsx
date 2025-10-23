@@ -5,6 +5,8 @@ import pic2 from '../../../../assets/pic2.jpg';
 import pic3 from '../../../../assets/pic3.jpg';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../../../context/UserContext';
+import { toast } from 'sonner';
+import isEqual from "lodash/isEqual";
 
 interface AboutProps {
 }
@@ -50,17 +52,48 @@ const About: FC<AboutProps> = () => {
     return () => clearInterval(interval);
   }, [images.length]);
 
-  const handleSaveChanges = () => {
-    setIsEditing(false);
-    // Here you can add logic to save changes to backend/database
-    console.log('Changes saved:', { 
-      editableTitle, 
-      editableContent, 
-      editableImages, 
-      editableFeatures, 
-      editableVisionPoints 
+
+const handleSaveChanges = () => {
+  const hasChanges =
+    editableTitle !== originalData.title ||
+    editableContent !== originalData.content ||
+    !isEqual(editableImages, originalData.images) ||
+    !isEqual(editableFeatures, originalData.features) ||
+    !isEqual(editableVisionPoints, originalData.visionPoints);
+
+  setIsEditing(false);
+
+  if (hasChanges) {
+
+    setOriginalData({
+      title: editableTitle,
+      content: editableContent,
+      images: editableImages,
+      features: editableFeatures,
+      visionPoints: editableVisionPoints,
     });
-  };
+
+    toast.success("השינויים נישמרו בהצלחה");
+  } 
+};
+
+const [originalData, setOriginalData] = useState({
+  title: editableTitle,
+  content: editableContent,
+  images: editableImages,
+  features: editableFeatures,
+  visionPoints: editableVisionPoints,
+});
+
+useEffect(() => {
+  setOriginalData({
+    title: editableTitle,
+    content: editableContent,
+    images: editableImages,
+    features: editableFeatures,
+    visionPoints: editableVisionPoints,
+  });
+}, []);
 
   const handleImageUpload = (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
