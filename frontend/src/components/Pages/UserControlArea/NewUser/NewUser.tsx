@@ -300,10 +300,8 @@ const NewUser: React.FC = () => {
             )}
           </div>
 
-          <div
-            className={`${wideFieldClasses} flex-row gap-5 !mb-3 !min-w-[300px] !max-w-[350px]`}
-          >
-            <div className="flex flex-col w-1/2">
+          <div className="flex flex-row gap-5 mb-3">
+            <div className="flex flex-col  w-[150px]">
               <label
                 htmlFor="role"
                 className="mb-2 text-sm font-semibold text-gray-700 rtl text-right"
