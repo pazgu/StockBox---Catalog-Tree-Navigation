@@ -6,7 +6,14 @@ import {
   AccordionContent,
 } from "../../../ui/accordion";
 import cam from "../../../../assets/red-lens-camera.png";
-import { Heart, PencilLine, Upload, Plus, GripVertical } from "lucide-react";
+import {
+  Heart,
+  PencilLine,
+  Upload,
+  Plus,
+  GripVertical,
+  MailQuestionIcon,
+} from "lucide-react";
 import { useUser } from "../../../../context/UserContext";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -71,15 +78,15 @@ const SingleProd: FC<SingleProdProps> = () => {
   const [draggedItem, setDraggedItem] = useState<AccordionData | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
 
-const toggleFavorite = () => {
-  if (isFavorite) {
-    toast.info("הוסר מהמועדפים ");
-  } else {
-    toast.success("נוסף למועדפים ");
-  }
+  const toggleFavorite = () => {
+    if (isFavorite) {
+      toast.info("הוסר מהמועדפים ");
+    } else {
+      toast.success("נוסף למועדפים ");
+    }
 
-  setIsFavorite((prev) => !prev);
-};
+    setIsFavorite((prev) => !prev);
+  };
   // Handle accordion content change
   const handleAccordionContentChange = (id: string, newContent: string) => {
     setAccordionData((prevData) =>
@@ -183,12 +190,12 @@ const toggleFavorite = () => {
     setProductImage(originalImage);
     setHasImageChanged(false);
   };
-const handleSaveClick = () => {
-  if(isEditing){
+  const handleSaveClick = () => {
+    if (isEditing) {
       toast.success("השינויים נישמרו בהצלחה!");
-  }
-  setIsEditing(!isEditing); 
-}
+    }
+    setIsEditing(!isEditing);
+  };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -317,9 +324,10 @@ const handleSaveClick = () => {
 
               {/* Buttons */}
               {role === "user" ? (
-                <div className="space-y-2 relative z-10">
+                <div className="space-y-2 relative z-10 flex flex-row justify-center">
                   <button
-                    className="w-full py-3 px-4 rounded-lg font-semibold text-white bg-stockblue shadow-md transition-all duration-300 transform hover:scale-105 hover:bg-stockboxblue/90 active:scale-95"
+                  title="צור קשר"
+                    className="w-14 h-12 py-3 px-4 rounded-lg font-semibold text-stockblue transition-all duration-300 transform hover:bg-stockboxblue/90 active:scale-95"
                     onClick={() => {
                       const email = "Superstockbox@outlook.com";
                       const subject = encodeURIComponent(`${title}`);
@@ -333,24 +341,26 @@ const handleSaveClick = () => {
                       fontFamily: "system-ui, -apple-system, sans-serif",
                     }}
                   >
-                    צור קשר עם הצוות שלנו
+                    <MailQuestionIcon size={24} 
+                    ></MailQuestionIcon>
                   </button>
 
                   <button
+                  title="הוסף למועדפים"
                     onClick={toggleFavorite}
-                    className={`w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg border transition-all duration-300 transform hover:scale-105
+                    className={` w-14 h-12 flex items-center justify-center rounded-lg  transition-all duration-300 transform
         ${
           isFavorite
             ? " text-red-600"
-            : "bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200"
+            : " text-gray-700"
         }`}
+        
                   >
                     <Heart
-                      size={16}
+                      size={24}
                       fill={isFavorite ? "currentColor" : "none"}
-                      className="transition-all duration-300"
+                      className="transition-all duration-300 mb-3.5" 
                     />
-                    {isFavorite ? "הסר מהמועדפים" : "הוסף למועדפים"}
                   </button>
                 </div>
               ) : role === "admin" ? (
@@ -489,7 +499,6 @@ const handleSaveClick = () => {
             {isEditing && (
               <div
                 onClick={addCustomAccordion}
-                // 2. Changed justify-end to justify-start to align with the right in RTL mode
                 className="flex items-center justify-start gap-2 mt-4 p-4 rounded-lg border border-dashed border-gray-300 text-stockblue hover:border-stockblue/50 hover:bg-stockblue/5 transition-all duration-300 cursor-pointer"
               >
                 <Plus size={18} />
