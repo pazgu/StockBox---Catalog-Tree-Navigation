@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
 import { Lock, Unlock } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 
 interface User {
   id: string | number;
@@ -32,31 +33,37 @@ const AllUsers: FC<AllUsersProps> = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [deleteUserIndex, setDeleteUserIndex] = useState<number | null>(null);
+  const [searchParams] = useSearchParams();
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [userToEdit, setUserToEdit] = useState<User | null>(null);
-const [blockUserIndex, setBlockUserIndex] = useState<number | null>(null);
-const [blockedUsers, setBlockedUsers] = useState<number[]>([]); // store blocked user IDs
+  const [blockUserIndex, setBlockUserIndex] = useState<number | null>(null);
+  const [blockedUsers, setBlockedUsers] = useState<number[]>([]); // store blocked user IDs
 
   const usersPerPage = 8;
-  const {role}=useUser();
+  const { role } = useUser();
 
-useEffect(() => {
-
-    if (role !== "admin") {
-      navigate("/");
+  useEffect(() => {
+    const query = searchParams.get("search");
+    if (query) {
+      setSearchTerm(query);
+      setCurrentPage(1);
     }
-  }, [navigate]);
+  }, [searchParams]);
 
-const filteredUsers = users.filter((user) =>
-  user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-  user.email.toLowerCase().includes(searchTerm.toLowerCase())
-);
+  const filteredUsers = users.filter(
+    (user) =>
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
 
-const startIndex = (currentPage - 1) * usersPerPage;
-const currentUsers = filteredUsers.slice(startIndex, startIndex + usersPerPage);
+  const startIndex = (currentPage - 1) * usersPerPage;
+  const currentUsers = filteredUsers.slice(
+    startIndex,
+    startIndex + usersPerPage
+  );
 
   const handleAddClick = () => navigate("/new-user");
 
@@ -74,42 +81,41 @@ const currentUsers = filteredUsers.slice(startIndex, startIndex + usersPerPage);
       const globalIndex = (currentPage - 1) * usersPerPage + deleteUserIndex;
       const newUsers = [...users];
       newUsers.splice(globalIndex, 1);
-      
+
       setUsers(newUsers);
 
-      if (currentPage > Math.ceil(newUsers.length / usersPerPage) && currentPage > 1) {
+      if (
+        currentPage > Math.ceil(newUsers.length / usersPerPage) &&
+        currentPage > 1
+      ) {
         setCurrentPage(currentPage - 1);
       }
 
       setDeleteUserIndex(null);
-       toast.info(`המשתמש נמחק בהצלחה!`);
+      toast.info(`המשתמש נמחק בהצלחה!`);
     }
   };
-const confirmBlock = () => {
-  if (blockUserIndex !== null) {
-    const userId = Number(currentUsers[blockUserIndex].id);
-    const isBlocked = blockedUsers.includes(userId);
+  const confirmBlock = () => {
+    if (blockUserIndex !== null) {
+      const userId = Number(currentUsers[blockUserIndex].id);
+      const isBlocked = blockedUsers.includes(userId);
 
-    setBlockedUsers((prev) =>
-      isBlocked ? prev.filter((id) => id !== userId) : [...prev, userId]
-    );
+      setBlockedUsers((prev) =>
+        isBlocked ? prev.filter((id) => id !== userId) : [...prev, userId]
+      );
 
-    toast.success(
-      isBlocked
-        ? "המשתמש שוחרר"
-        : "המשתמש נחסם בהצלחה"
-    );
+      toast.success(isBlocked ? "המשתמש שוחרר" : "המשתמש נחסם בהצלחה");
 
-    setBlockUserIndex(null);
-  }
-};
+      setBlockUserIndex(null);
+    }
+  };
 
   const cancelDelete = () => setDeleteUserIndex(null);
-  
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  setSearchTerm(e.target.value);
-  setCurrentPage(1); // Reset to page 1 when searching
-};
+    setSearchTerm(e.target.value);
+    setCurrentPage(1); // Reset to page 1 when searching
+  };
 
   const handleEditClick = (user: User) => {
     setUserToEdit(user);
@@ -143,32 +149,31 @@ const confirmBlock = () => {
         {/* Header Section */}
         <div className="flex justify-between items-center mb-8">
           <div className="text-right flex-1">
-  <h1 className="text-3xl font-bold mb-4">כל המשתמשים</h1>
-  
-  
-  <div className="relative max-w-xs">
-    <input
-      type="text"
-      placeholder="חיפוש לפי שם או אימייל..."
-      value={searchTerm}
-      onChange={handleSearchChange}
-      className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent text-right"
-    />
-    <svg
-      className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-      />
-    </svg>
-  </div>
-</div>
+            <h1 className="text-3xl font-bold mb-4">כל המשתמשים</h1>
+
+            <div className="relative max-w-xs">
+              <input
+                type="text"
+                placeholder="חיפוש לפי שם או אימייל..."
+                value={searchTerm}
+                onChange={handleSearchChange}
+                className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent text-right"
+              />
+              <svg
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </div>
+          </div>
           <div
             className="w-15 h-15 bg-[#2c3e50] rounded-full flex items-center justify-center text-white text-3xl font-light cursor-pointer transition-transform hover:scale-105 hover:bg-[#34495e]"
             onClick={handleAddClick}
@@ -189,12 +194,12 @@ const confirmBlock = () => {
           </div>
         </div>
 
-          {/* Results count */}
-  {searchTerm && (
-    <div className="text-right mb-4 text-gray-600">
-      נמצאו {filteredUsers.length} תוצאות
-    </div>
-  )}
+        {/* Results count */}
+        {searchTerm && (
+          <div className="text-right mb-4 text-gray-600">
+            נמצאו {filteredUsers.length} תוצאות
+          </div>
+        )}
 
         <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {currentUsers.map((user, index) => (
@@ -245,20 +250,19 @@ const confirmBlock = () => {
                   </svg>
                 </button>
                 <button
-  className={`p-1 w-6 h-6 rounded transition ${
-    blockedUsers.includes(Number(user.id))
-      ? "bg-green-600/70 text-white hover:bg-green-600"
-      : "hover:bg-gray-100 opacity-60 hover:opacity-100"
-  }`}
-  onClick={() => setBlockUserIndex(index)}
->
-   {blockedUsers.includes(Number(user.id)) ? (
-    <Unlock size={14} />
-  ) : (
-    <Lock size={14} />
-  )}
-</button>
-
+                  className={`p-1 w-6 h-6 rounded transition ${
+                    blockedUsers.includes(Number(user.id))
+                      ? "bg-green-600/70 text-white hover:bg-green-600"
+                      : "hover:bg-gray-100 opacity-60 hover:opacity-100"
+                  }`}
+                  onClick={() => setBlockUserIndex(index)}
+                >
+                  {blockedUsers.includes(Number(user.id)) ? (
+                    <Unlock size={14} />
+                  ) : (
+                    <Lock size={14} />
+                  )}
+                </button>
               </div>
 
               <div className="w-10 h-10 rounded-full bg-gray-100 border border-gray-200 mx-auto flex items-center justify-center mb-2">
@@ -298,17 +302,16 @@ const confirmBlock = () => {
 
         <div className="flex justify-center items-center gap-2 mt-8">
           {currentPage > 1 && (
-          <button
-            className="px-3 py-1 text-gray-600 hover:text-[#0D305B]"
-            onClick={() => goToPage(currentPage - 1)}
-            disabled={currentPage === 1}
-          >
-            הקודם
-          </button>)}
+            <button
+              className="px-3 py-1 text-gray-600 hover:text-[#0D305B]"
+              onClick={() => goToPage(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              הקודם
+            </button>
+          )}
 
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-            
-            
             <button
               key={page}
               className={`px-3 py-1 border rounded ${
@@ -322,22 +325,21 @@ const confirmBlock = () => {
             </button>
           ))}
 
-{currentPage < totalPages && (
-          <button
-            className="px-3 py-1 text-gray-600 hover:text-[#0D305B]"
-            onClick={() => goToPage(currentPage + 1)}
-            disabled={currentPage === totalPages}
-          >
-            הבא
-          </button>)}
+          {currentPage < totalPages && (
+            <button
+              className="px-3 py-1 text-gray-600 hover:text-[#0D305B]"
+              onClick={() => goToPage(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              הבא
+            </button>
+          )}
         </div>
 
         {deleteUserIndex !== null && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-xl p-6 w-80 text-right shadow-lg">
-              <h2 className="text-xl font-semibold mb-4">
-                למחוק משתמש זה?
-              </h2>
+              <h2 className="text-xl font-semibold mb-4">למחוק משתמש זה?</h2>
               <p className="mb-6 text-gray-600">
                 פעולה זו לא ניתנת לביטול. האם אתה בטוח שברצונך למחוק את המשתמש?
               </p>
@@ -358,42 +360,46 @@ const confirmBlock = () => {
             </div>
           </div>
         )}
-{blockUserIndex !== null && (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div className="bg-white rounded-xl p-6 w-80 text-right shadow-lg">
-      <h2 className="text-xl font-semibold mb-4">
-        {blockedUsers.includes(Number(currentUsers[blockUserIndex].id))
-          ? "לבטל חסימת משתמש זה?"
-          : "לחסום משתמש זה?"}
-      </h2>
-      <p className="mb-6 text-gray-600">
-        {blockedUsers.includes(Number(currentUsers[blockUserIndex].id))
-          ? "האם אתה בטוח שברצונך לבטל את חסימת המשתמש ולאפשר לו גישה מחדש לאתר?"
-          : "האם אתה בטוח שברצונך לחסום משתמש זה מגישה לאתר?"}
-      </p>
-      <div className="flex justify-end gap-3">
-        <button
-          className="px-4 py-2 rounded border border-gray-300 hover:bg-gray-100"
-          onClick={() => setBlockUserIndex(null)}
-        >
-          ביטול
-        </button>
-        <button
-          className={`px-4 py-2 rounded text-white ${
-            blockedUsers.includes(Number(currentUsers[blockUserIndex].id))
-              ? "bg-green-700 hover:bg-green-600"
-              : "bg-red-500 hover:bg-red-600"
-          }`}
-          onClick={() => confirmBlock()}
-        >
-          {blockedUsers.includes(Number(currentUsers[blockUserIndex].id))
-            ? "בטל חסימה"
-            : "חסום"}
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+        {blockUserIndex !== null && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl p-6 w-80 text-right shadow-lg">
+              <h2 className="text-xl font-semibold mb-4">
+                {blockedUsers.includes(Number(currentUsers[blockUserIndex].id))
+                  ? "לבטל חסימת משתמש זה?"
+                  : "לחסום משתמש זה?"}
+              </h2>
+              <p className="mb-6 text-gray-600">
+                {blockedUsers.includes(Number(currentUsers[blockUserIndex].id))
+                  ? "האם אתה בטוח שברצונך לבטל את חסימת המשתמש ולאפשר לו גישה מחדש לאתר?"
+                  : "האם אתה בטוח שברצונך לחסום משתמש זה מגישה לאתר?"}
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  className="px-4 py-2 rounded border border-gray-300 hover:bg-gray-100"
+                  onClick={() => setBlockUserIndex(null)}
+                >
+                  ביטול
+                </button>
+                <button
+                  className={`px-4 py-2 rounded text-white ${
+                    blockedUsers.includes(
+                      Number(currentUsers[blockUserIndex].id)
+                    )
+                      ? "bg-green-700 hover:bg-green-600"
+                      : "bg-red-500 hover:bg-red-600"
+                  }`}
+                  onClick={() => confirmBlock()}
+                >
+                  {blockedUsers.includes(
+                    Number(currentUsers[blockUserIndex].id)
+                  )
+                    ? "בטל חסימה"
+                    : "חסום"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Edit Modal */}
         {showEditModal && userToEdit && (
