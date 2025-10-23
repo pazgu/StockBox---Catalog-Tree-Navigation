@@ -253,7 +253,7 @@ const saveNewGroup = () => {
   return (
     <div
       dir="rtl"
-      className="min-h-screen bg-gray-100 p-4 sm:p-8 md:p-12 lg:p-16 pt-28 font-sans"
+      className="min-h-screen bg-[#fffaf1] p-4 sm:p-8 md:p-12 lg:p-16 pt-28 font-sans"
     >
 
       <div className="mb-8 text-right mt-10">

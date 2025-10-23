@@ -137,7 +137,7 @@ const confirmBlock = () => {
   };
 
   return (
-    <div className="min-h-80 font-sans text-[#0D305B] rtl bg-gray-50">
+    <div className="min-h-80 font-sans text-[#0D305B] rtl bg-[#fffaf1]">
       <Header />
       <main className="px-10 pt-7 md:px-5  relative pb-4">
         {/* Header Section */}
@@ -152,7 +152,7 @@ const confirmBlock = () => {
       placeholder="חיפוש לפי שם או אימייל..."
       value={searchTerm}
       onChange={handleSearchChange}
-      className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent text-right"
+      className="w-full px-4 py-2 pr-10 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent text-right bg-[#fffdf8]"
     />
     <svg
       className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
@@ -200,7 +200,7 @@ const confirmBlock = () => {
           {currentUsers.map((user, index) => (
             <div
               key={index}
-              className="bg-white rounded-xl p-4 text-center shadow-sm relative min-h-[110px] transition-transform hover:-translate-y-1 hover:shadow-md"
+              className="bg-[#fffdf8] rounded-xl p-4 text-center shadow-sm relative min-h-[110px] transition-transform hover:-translate-y-1 hover:shadow-md border-gray-100"
             >
               <div className="absolute top-2 right-2 flex gap-2">
                 <button
