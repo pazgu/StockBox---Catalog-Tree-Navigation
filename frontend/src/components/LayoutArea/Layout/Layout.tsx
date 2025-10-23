@@ -14,7 +14,7 @@ import GroupControl from '../../Pages/UserControlArea/GroupControl/GroupControl'
 import Favorites from '../../Pages/CatArea/Favorites/Favorites';
 import { Toaster } from 'sonner';
 import SubCat from '../../../components/Pages/CatArea/SubCats/SubCat/SubCat';
-import Breadcrumbs from '../Breadcrumbs/Breadcrumbs/Breadcrumbs';
+import Breadcrumbs from '../Breadcrumbs/Breadcrumbs';
 interface LayoutProps {}
 
 const Layout: FC<LayoutProps> = () => {

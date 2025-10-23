@@ -4,7 +4,7 @@ import { Heart, Search, User, Menu, X, ShoppingCart, Bell } from "lucide-react";
 import logo from "../../../assets/logo.png";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../context/UserContext";
-import Breadcrumbs from "../Breadcrumbs/Breadcrumbs/Breadcrumbs";
+import Breadcrumbs from "../Breadcrumbs/Breadcrumbs";
 
 interface HeaderProps {
   logoSrc?: string;
