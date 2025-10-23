@@ -327,7 +327,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
                       onClick={() => handleToggleSelection(item.id)}
                     >
                       {/* תמונה */}
-                      <div className="relative w-full h-3/4.25 bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
+                      <div className="relative w-full h-3/4 bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
                         <img 
                           src={item.image || '/assets/images/default-product.jpg'} 
                           alt={item.name}
