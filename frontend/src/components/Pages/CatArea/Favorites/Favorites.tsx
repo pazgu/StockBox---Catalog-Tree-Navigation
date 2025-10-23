@@ -8,23 +8,13 @@ export const Favorites: React.FC = () => {
   const [cameras, setCameras] = useState<CameraProduct[]>(initialCameraData);
 
   const favoriteCameras = cameras.filter((camera) => camera.favorite);
-  const navigate=useNavigate();
-  const {role}=useUser();
 
   useEffect(() => {
-
-    if (role !== "user") {
-      navigate("/");
-    }
-  }, [navigate]);
-
-  useEffect(() => {
-  window.scrollBy({
-    top: 10, // scroll down 100px
-    behavior: "smooth",
-  });
-}, []);
-  
+    window.scrollBy({
+      top: 10, // scroll down 100px
+      behavior: "smooth",
+    });
+  }, []);
 
   const toggleFavorite = (id: number) => {
     setCameras((prev) =>

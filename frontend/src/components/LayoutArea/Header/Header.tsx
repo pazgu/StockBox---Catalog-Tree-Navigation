@@ -55,14 +55,14 @@ const Header: React.FC<HeaderProps> = ({
   }, []);
 
   useEffect(() => {
-  const handleResize = () => {
-    if (window.innerWidth >= 1024 && isMobileMenuOpen) {
-      setIsMobileMenuOpen(false);
-    }
-  };
-  window.addEventListener('resize', handleResize);
-  return () => window.removeEventListener('resize', handleResize);
-}, [isMobileMenuOpen]);
+    const handleResize = () => {
+      if (window.innerWidth >= 1024 && isMobileMenuOpen) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [isMobileMenuOpen]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,7 +101,7 @@ const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
             <div className="hidden sm:block flex-shrink-0 transform transition-transform duration-300 hover:scale-105">
-              <img 
+              <img
                 src={logoSrc}
                 alt="StockBox Logo"
                 className="h-20 w-auto"
@@ -117,7 +117,7 @@ const Header: React.FC<HeaderProps> = ({
                 </NavLink>
                 <span className="text-white/30 animate-pulse">|</span>
                 <NavLink to="/" className={navLinkClass}>
-                 אודות
+                  אודות
                 </NavLink>
                 <span className="text-white/30 animate-pulse">|</span>
                 <NavLink to="/login" className={navLinkClass}>
@@ -128,10 +128,12 @@ const Header: React.FC<HeaderProps> = ({
 
             <form
               onSubmit={handleSearch}
-              className={`${isMobileMenuOpen ? 'hidden' : 'hidden md:flex'} items-center backdrop-blur-sm rounded-full px-1 py-1 mr-4 transition-all duration-300 ${
-                isSearchFocused 
-                  ? 'bg-white/20 shadow-lg' 
-                  : 'bg-white/10 hover:bg-white/15'
+              className={`${
+                isMobileMenuOpen ? "hidden" : "hidden md:flex"
+              } items-center backdrop-blur-sm rounded-full px-1 py-1 transition-all duration-300 ${
+                isSearchFocused
+                  ? "bg-white/20 shadow-lg"
+                  : "bg-white/10 hover:bg-white/15"
               }`}
             >
               <input
@@ -155,15 +157,19 @@ const Header: React.FC<HeaderProps> = ({
             </form>
 
             {/* Action Icons */}
-            <div className={`flex items-center gap-2 ${isMobileMenuOpen ? 'hidden' : ''}`}>
+            <div
+              className={`flex items-center gap-2 mr-4 ${
+                isMobileMenuOpen ? "hidden" : ""
+              }`}
+            >
               {/* Favorites */}
-              {role === "user" && !isMobileMenuOpen && (
+              {!isMobileMenuOpen && (
                 <button
                   aria-label="Favorites"
                   className="relative p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 hover:scale-110 mr-2"
                   onClick={() => navigate("/Favorites")}
                 >
-                  <Heart size={22} className="hover:fill-current" />
+                  <Heart size={21} className="hover:fill-current" />
                   <Badge count={favoriteCount} />
                 </button>
               )}
@@ -178,7 +184,7 @@ const Header: React.FC<HeaderProps> = ({
                     <img
                       src="https://img.icons8.com/?size=100&id=cykh8BZMTKkb&format=png&color=FFFFFF"
                       alt="User Avatar"
-                      className="w-10 h-10 rounded-full mr-4  hover:bg-white/10 p-2 "
+                      className="w-10 h-10 rounded-full  hover:bg-white/10 p-1"
                     />
                   </button>
 
@@ -215,10 +221,7 @@ const Header: React.FC<HeaderProps> = ({
                         ? "opacity-0 rotate-180"
                         : "opacity-100 rotate-0"
                     }`}
-                    
                   />
-                 
-               
                 </div>
               </button>
             </div>
@@ -226,29 +229,29 @@ const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Mobile Menu */}
-       
-        <div 
+
+        <div
           className={`lg:hidden transition-all duration-500 ease-in-out mt-32 ${
             isMobileMenuOpen
               ? "max-h-[600px] opacity-100"
               : "max-h-0 opacity-0 overflow-hidden"
           }`}
         >
-                 
           <div className="container mx-auto px-4 py-4 bg-gradient-to-b from-[#0a2644] to-[#0D305B]">
             {/* Mobile Search */}
-               <X 
-                    size={24} 
-                    className={`transition-all duration-300 text-white ml-3 ${
-                      isMobileMenuOpen ? 'opacity-100 rotate-0' : 'opacity-0 -rotate-180'
-                    }`}
-                    onClick={()=>setIsMobileMenuOpen(!isMobileMenuOpen)}
-                  />
-            <form 
+            <X
+              size={24}
+              className={`transition-all duration-300 text-white ml-3 ${
+                isMobileMenuOpen
+                  ? "opacity-100 rotate-0"
+                  : "opacity-0 -rotate-180"
+              }`}
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            />
+            <form
               onSubmit={handleSearch}
               className="flex items-center bg-white/10 backdrop-blur-sm rounded-full px-1 py-1 mb-6"
             >
-             
               <input
                 type="text"
                 value={searchQuery}
@@ -272,7 +275,7 @@ const Header: React.FC<HeaderProps> = ({
                 className={navLinkClass}
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-               אודות
+                אודות
               </NavLink>
               <NavLink
                 to="/categories"
@@ -288,17 +291,16 @@ const Header: React.FC<HeaderProps> = ({
               >
                 התחברות
               </NavLink>
-               
             </nav>
 
             {/* Mobile Quick Actions */}
             <div className="flex justify-around mt-6 pt-6 border-t border-white/20">
-              {role === "user" && (
+              {
                 <button className="flex flex-col items-center gap-1 text-white/80 hover:text-white transition-colors">
                   <Heart size={20} />
                   <span className="text-xs">מועדפים</span>
                 </button>
-              )}
+              }
               {role === "admin" && (
                 <button className="flex flex-col items-center gap-1 text-white/80 hover:text-white transition-colors">
                   <User size={20} />
