@@ -248,10 +248,6 @@ const SubCat: FC<SubCatProps> = ({ initialCategories = [] }) => {
               ))}
             </div>
 
-            {/* Category Name */}
-            <span className="text-base text-slate-700 font-medium mt-2">
-              {category.name}
-            </span>
           </div>
         ))}
       </div>
