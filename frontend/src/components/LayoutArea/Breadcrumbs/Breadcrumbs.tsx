@@ -8,24 +8,31 @@ const Breadcrumbs = () => {
   const pathSegments = location.pathname.split("/").filter(Boolean);
 
   return (
-    <div className="relative w-max mx-auto pt-4">
-      <span
-        role="img"
-        aria-label="Cute cat peeking"
-        className="
-          absolute            
-          top-[-17px]         
-          left-5  
-          z-10                
-        "
-      >
-        <img 
-        src={catIcon} 
-        alt="Cute cat peeking"
-        className="w-8 h-8 object-cover"
-      />
-      </span>
-    <div className="px-4 py-1 text-sm bg-gray-400 rounded text-white flex gap-1 items-center ">
+  <div className="relative w-max mx-auto pt-4 group"> 
+            
+            <span
+                role="img"
+                aria-label="Cute cat peeking"
+                className="
+                    absolute
+                    left-5 
+                    translate-y-[80%] 
+                    opacity-0
+                    transition-transform duration-300 ease-out
+                    group-hover:translate-y-0
+                    top-[-17px] 
+                    group-hover:opacity-100
+                "
+            >
+                <img 
+                    src={catIcon} 
+                    alt="Cute cat peeking"
+                    className="w-8 h-8 object-cover"
+                />
+            </span>
+    <div className="px-4 py-1 text-sm bg-gray-400 rounded text-white flex gap-1 items-center 
+            relative z-20
+            overflow-hidden">
       <span
         className="cursor-pointer hover:underline"
         onClick={() => navigate("/")}
