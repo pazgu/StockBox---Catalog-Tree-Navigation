@@ -212,7 +212,7 @@ const SingleCat: FC = () => {
             )}
 
             {/* Favorite */}
-            {role !== "admin" && (
+            { (
               <button
                 onClick={() => toggleFavorite(camera.id)}
                 className="absolute top-3 right-3 p-2 rounded-full bg-black/40 hover:bg-black/60 transition-colors"
