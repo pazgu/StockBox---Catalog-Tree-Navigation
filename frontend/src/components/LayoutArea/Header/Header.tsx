@@ -4,7 +4,7 @@ import { Heart, Search, User, Menu, X, ShoppingCart, Bell } from "lucide-react";
 import logo from "../../../assets/logo.png";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../context/UserContext";
-import Breadcrumbs from "../Breadcrumbs/Breadcrumbs/Breadcrumbs";
+import Breadcrumbs from "../Breadcrumbs/Breadcrumbs";
 
 interface HeaderProps {
   logoSrc?: string;
@@ -313,7 +313,7 @@ const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
        
-          <div className="absolute bottom-0.5 right-12"> <Breadcrumbs/>
+          <div className="hidden sm:block flex-shrink-0 transform transition-transform duration-300 absolute bottom-0.5 right-12"> <Breadcrumbs/>
         </div>
       </header>
 

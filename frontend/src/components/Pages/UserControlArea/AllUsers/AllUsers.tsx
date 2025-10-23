@@ -143,7 +143,7 @@ const AllUsers: FC<AllUsersProps> = () => {
   };
 
   return (
-    <div className="min-h-80 font-sans text-[#0D305B] rtl bg-gray-50">
+    <div className="min-h-80 font-sans text-[#0D305B] rtl bg-[#fffaf1]">
       <Header />
       <main className="px-10 pt-7 md:px-5  relative pb-4">
         {/* Header Section */}
@@ -205,7 +205,7 @@ const AllUsers: FC<AllUsersProps> = () => {
           {currentUsers.map((user, index) => (
             <div
               key={index}
-              className="bg-white rounded-xl p-4 text-center shadow-sm relative min-h-[110px] transition-transform hover:-translate-y-1 hover:shadow-md"
+              className="bg-[#fffdf8] rounded-xl p-4 text-center shadow-sm relative min-h-[110px] transition-transform hover:-translate-y-1 hover:shadow-md border-gray-100"
             >
               <div className="absolute top-2 right-2 flex gap-2">
                 <button

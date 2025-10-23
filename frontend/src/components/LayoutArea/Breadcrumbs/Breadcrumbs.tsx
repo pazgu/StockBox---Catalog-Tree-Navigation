@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import catIcon from "../../../../assets/newcat.png";
+import catIcon from "../../../assets/newcat.png";
 const Breadcrumbs = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -14,15 +14,15 @@ const Breadcrumbs = () => {
         aria-label="Cute cat peeking"
         className="
           absolute            
-          top-[-25px]         
-          left-2   
+          top-[-17px]         
+          left-5  
           z-10                
         "
       >
         <img 
         src={catIcon} 
         alt="Cute cat peeking"
-        className="w-10 h-10 object-cover"
+        className="w-8 h-8 object-cover"
       />
       </span>
     <div className="px-4 py-1 text-sm bg-gray-400 rounded text-white flex gap-1 items-center ">
