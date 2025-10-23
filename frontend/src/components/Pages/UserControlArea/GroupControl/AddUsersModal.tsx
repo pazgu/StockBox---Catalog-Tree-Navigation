@@ -30,6 +30,15 @@ const AddUsersModal: React.FC<AddUsersModalProps> = ({ group, allUsers, onClose,
     );
   };
 
+  const handleSelectAll = () => {
+  if (selectedUserIds.length === usersNotInGroup.length) {
+    // אם כולם נבחרו, בטל את הבחירה
+    setSelectedUserIds([]);
+  } else {
+    // בחר את כולם
+    setSelectedUserIds(usersNotInGroup.map((user) => user.id));
+  }
+};
   const handleAdd = () => {
     onAddUsers(group.id, selectedUserIds);
     onClose();
@@ -59,6 +68,14 @@ const AddUsersModal: React.FC<AddUsersModalProps> = ({ group, allUsers, onClose,
             autoFocus
           />
         </div>
+        {usersNotInGroup.length > 0 && (
+          <button
+            onClick={handleSelectAll}
+            className="px-4 py-2 mb-3 text-sm font-medium bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-all shadow-sm hover:shadow-md"
+          >
+            {selectedUserIds.length === usersNotInGroup.length ? 'בטל בחירת הכל' : 'בחר את כל המשתמשים'}
+          </button>
+        )}
 
         <div className="max-h-64 overflow-y-auto space-y-2 mb-6 pr-2">
           {usersNotInGroup.length === 0 ? (
