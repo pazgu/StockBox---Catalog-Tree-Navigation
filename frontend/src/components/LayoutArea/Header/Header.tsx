@@ -311,7 +311,7 @@ const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
        
-          <div className="absolute bottom-0.5 right-12"> <Breadcrumbs/>
+          <div className="hidden sm:block flex-shrink-0 transform transition-transform duration-300 absolute bottom-0.5 right-12"> <Breadcrumbs/>
         </div>
       </header>
 
