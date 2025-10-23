@@ -7,7 +7,7 @@ const Footer: FC<FooterProps> = () => {
   const copyrightText = `© ${currentYear} כל הזכויות שמורות`; 
   
   return (
-    <footer className="w-full mt-8 py-3 bg-[#fffaf1] text-gray-700 text-sm fixed bottom-0">
+    <footer className="w-full mt-8 py-3 bg-[#fffaf1] text-gray-700 text-sm">
       
       <div className="flex justify-center items-center gap-2 max-w-6xl mx-auto px-4">
         
