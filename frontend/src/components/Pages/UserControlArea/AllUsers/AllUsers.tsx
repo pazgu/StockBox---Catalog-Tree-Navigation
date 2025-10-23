@@ -3,6 +3,7 @@ import Header from "../../../LayoutArea/Header/Header";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
+import { Lock, Unlock } from "lucide-react";
 
 interface User {
   id: string | number;
@@ -34,6 +35,8 @@ const AllUsers: FC<AllUsersProps> = () => {
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [userToEdit, setUserToEdit] = useState<User | null>(null);
+const [blockUserIndex, setBlockUserIndex] = useState<number | null>(null);
+const [blockedUsers, setBlockedUsers] = useState<number[]>([]); // store blocked user IDs
 
   const usersPerPage = 8;
   const {role}=useUser();
@@ -82,6 +85,24 @@ const currentUsers = filteredUsers.slice(startIndex, startIndex + usersPerPage);
        toast.info(`המשתמש נמחק בהצלחה!`);
     }
   };
+const confirmBlock = () => {
+  if (blockUserIndex !== null) {
+    const userId = Number(currentUsers[blockUserIndex].id);
+    const isBlocked = blockedUsers.includes(userId);
+
+    setBlockedUsers((prev) =>
+      isBlocked ? prev.filter((id) => id !== userId) : [...prev, userId]
+    );
+
+    toast.success(
+      isBlocked
+        ? "המשתמש שוחרר"
+        : "המשתמש נחסם בהצלחה"
+    );
+
+    setBlockUserIndex(null);
+  }
+};
 
   const cancelDelete = () => setDeleteUserIndex(null);
   
@@ -223,6 +244,21 @@ const currentUsers = filteredUsers.slice(startIndex, startIndex + usersPerPage);
                     />
                   </svg>
                 </button>
+                <button
+  className={`p-1 w-6 h-6 rounded transition ${
+    blockedUsers.includes(Number(user.id))
+      ? "bg-green-600/70 text-white hover:bg-green-600"
+      : "hover:bg-gray-100 opacity-60 hover:opacity-100"
+  }`}
+  onClick={() => setBlockUserIndex(index)}
+>
+   {blockedUsers.includes(Number(user.id)) ? (
+    <Unlock size={14} />
+  ) : (
+    <Lock size={14} />
+  )}
+</button>
+
               </div>
 
               <div className="w-10 h-10 rounded-full bg-gray-100 border border-gray-200 mx-auto flex items-center justify-center mb-2">
@@ -322,6 +358,42 @@ const currentUsers = filteredUsers.slice(startIndex, startIndex + usersPerPage);
             </div>
           </div>
         )}
+{blockUserIndex !== null && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="bg-white rounded-xl p-6 w-80 text-right shadow-lg">
+      <h2 className="text-xl font-semibold mb-4">
+        {blockedUsers.includes(Number(currentUsers[blockUserIndex].id))
+          ? "לבטל חסימת משתמש זה?"
+          : "לחסום משתמש זה?"}
+      </h2>
+      <p className="mb-6 text-gray-600">
+        {blockedUsers.includes(Number(currentUsers[blockUserIndex].id))
+          ? "האם אתה בטוח שברצונך לבטל את חסימת המשתמש ולאפשר לו גישה מחדש לאתר?"
+          : "האם אתה בטוח שברצונך לחסום משתמש זה מגישה לאתר?"}
+      </p>
+      <div className="flex justify-end gap-3">
+        <button
+          className="px-4 py-2 rounded border border-gray-300 hover:bg-gray-100"
+          onClick={() => setBlockUserIndex(null)}
+        >
+          ביטול
+        </button>
+        <button
+          className={`px-4 py-2 rounded text-white ${
+            blockedUsers.includes(Number(currentUsers[blockUserIndex].id))
+              ? "bg-green-700 hover:bg-green-600"
+              : "bg-red-500 hover:bg-red-600"
+          }`}
+          onClick={() => confirmBlock()}
+        >
+          {blockedUsers.includes(Number(currentUsers[blockUserIndex].id))
+            ? "בטל חסימה"
+            : "חסום"}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
         {/* Edit Modal */}
         {showEditModal && userToEdit && (
