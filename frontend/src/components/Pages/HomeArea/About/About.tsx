@@ -38,6 +38,25 @@ const About: FC<AboutProps> = () => {
   const navigate = useNavigate();
   const { role } = useUser();
 
+const [featuresTitle, setFeaturesTitle] = useState("מה אפשר לעשות עם StockBox");
+const [visionTitle, setVisionTitle] = useState("החזון שלנו");
+
+// refs for file inputs
+const replaceInputRef = React.useRef<HTMLInputElement>(null);
+const addInputRef = React.useRef<HTMLInputElement>(null);
+
+const goPrev = () =>
+  setCurrentImageIndex((i) => (i - 1 + images.length) % images.length);
+const goNext = () =>
+  setCurrentImageIndex((i) => (i + 1) % images.length);
+
+// refs for focusing/scrolling to the last-added feature
+const featureItemRefs = React.useRef<HTMLDivElement[]>([]);
+const featureTitleInputRefs = React.useRef<HTMLInputElement[]>([]);
+
+
+
+
 
   const [editableFeatures, setEditableFeatures] = useState([
     { icon: "Star", title: "איחוד מידע במקום אחד", description: "דפים, קבצים, החלטות, הערות ושיתופים." },
@@ -76,37 +95,57 @@ const About: FC<AboutProps> = () => {
       editableContent, 
       editableImages, 
       editableFeatures, 
-      editableVisionPoints 
+      editableVisionPoints ,
+      visionTitle, 
+      featuresTitle 
     });
     toast.success("השינויים נישמרו בהצלחה")
   };
 
- const handleImageUpload = (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const newImages = [...editableImages];
-        if (index === newImages.length) {
-            // Add new image at the end
-            setEditableImages([...newImages, reader.result as string]);
-        } else {
-            // Replace existing image
-            newImages[index] = reader.result as string;
-            setEditableImages(newImages);
-        }
-      };
-      reader.readAsDataURL(file);
-    }
+  useEffect(() => {
+  // keep arrays same length as features
+  featureItemRefs.current.length = editableFeatures.length;
+  featureTitleInputRefs.current.length = editableFeatures.length;
+}, [editableFeatures.length]);
+
+const handleImageUpload = (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onloadend = () => {
+    setEditableImages((prev) => {
+      const arr = [...prev];
+      if (index >= arr.length) {
+        // Add new image to the end
+        arr.push(reader.result as string);
+        // Setting the index here is correct:
+        setCurrentImageIndex(arr.length - 1); 
+      } else {
+        // Replace existing image
+        arr[index] = reader.result as string;
+      }
+      return arr;
+    });
+
+    event.target.value = '';
   };
+ reader.readAsDataURL(file);
+};
+
 
   const removeImage = (index: number) => {
-    const newImages = editableImages.filter((_, i) => i !== index);
-    setEditableImages(newImages);
-    if (currentImageIndex >= newImages.length) {
-      setCurrentImageIndex(newImages.length > 0 ? newImages.length - 1 : 0);
-    }
-  };
+  setEditableImages((prev) => {
+    const arr = prev.filter((_, i) => i !== index);
+    setCurrentImageIndex((cur) => {
+      if (arr.length === 0) return 0;
+      // if we deleted the last slide, step back one
+      return Math.min(cur, arr.length - 1);
+    });
+    return arr;
+  });
+};
+
 
   const handleFeatureChange = (index: number, field: 'title' | 'description', value: string) => {
     const newFeatures = [...editableFeatures];
@@ -121,11 +160,33 @@ const About: FC<AboutProps> = () => {
   };
 
   const addFeature = () => {
-    setEditableFeatures([
-      ...editableFeatures,
-      { icon: "Plus", title: "כותרת חדשה", description: "תיאור פיצ'ר חדש." },
-    ]);
-  };
+  if (!isEditing) setIsEditing(true);
+
+  const newItem = { icon: "Plus", title: "כותרת חדשה", description: "תיאור פיצ'ר חדש." };
+  const nextIndex = editableFeatures.length;
+
+  setEditableFeatures(prev => [...prev, newItem]);
+
+  // Wait for DOM to paint, then scroll & focus
+  requestAnimationFrame(() => {
+    const el = featureItemRefs.current[nextIndex];
+    const input = featureTitleInputRefs.current[nextIndex];
+
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      // quick visual cue
+      el.classList.add("ring-2", "ring-stockblue", "ring-offset-2", "ring-offset-white");
+      setTimeout(() => {
+        el.classList.remove("ring-2", "ring-stockblue", "ring-offset-2", "ring-offset-white");
+      }, 1200);
+    }
+    if (input) {
+      input.focus();
+      input.select();
+    }
+  });
+};
+
 
   const removeFeature = (index: number) => {
     const newFeatures = editableFeatures.filter((_, i) => i !== index);
@@ -216,6 +277,7 @@ const About: FC<AboutProps> = () => {
           {/* Main Title */}
           {isEditing ? (
             <input
+              
               type="text"
               value={editableTitle}
               onChange={(e) => setEditableTitle(e.target.value)}
@@ -274,28 +336,39 @@ const About: FC<AboutProps> = () => {
           </div>
 
           {/* Features Section Header - MODIFIED */}
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-[1.8rem] text-stockblue my-6 mb-4 font-bold border-b-2 border-stockblue/15 pb-1.5 inline-block">
-              מה אפשר לעשות עם StockBox
-            </h2>
-            {isEditing && (
-              <button
-                onClick={addFeature}
-                className="mt-4 inline-flex items-center gap-1 text-stockblue hover:text-blue-700 font-semibold text-sm"
-              >
-                <Plus size={16} />
-                הוסף פיצ'ר
-              </button>
-            )}
-          </div>
+<div className="flex items-center justify-between mb-4">
+  {isEditing ? (
+    <input
+      type="text"
+      value={featuresTitle}
+      onChange={(e) => setFeaturesTitle(e.target.value)}
+      className="text-[1.8rem] text-stockblue my-6 mb-4 font-bold border-b-2 border-stockblue/15 pb-1.5 inline-block w-full border border-stockblue/30 rounded px-3 py-1 focus:outline-none focus:border-stockblue"
+    />
+  ) : (
+    <h2 className="text-[1.8rem] text-stockblue my-6 mb-4 font-bold border-b-2 border-stockblue/15 pb-1.5 inline-block">
+      {featuresTitle}
+    </h2>
+  )}
+  {isEditing && (
+    <button
+      onClick={addFeature}
+      className="ml-3 mt-4 inline-flex items-center gap-1 text-stockblue hover:text-blue-700 font-semibold text-sm"
+    >
+      <Plus size={16} />
+      הוסף פיצ'ר
+    </button>
+  )}
+</div>
+
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 my-8">
             {editableFeatures.map((feature, index) => {
               const IconComponent = IconMap[feature.icon] || Star; 
               return (
-                <div 
+               <div 
                   key={index} 
-                  className={`bg-white/90 backdrop-blur-[8px] rounded-[14px] p-5 flex items-start gap-3.5 shadow-[0_4px_20px_rgba(0,0,0,0.06)] border border-stockblue/8 transition-all duration-[250ms] ease-out hover:transform hover:-translate-y-[3px] hover:shadow-[0_8px_30px_rgba(0,0,0,0.1)] hover:bg-white/96 ${
+                  ref={(el) => { if (el) featureItemRefs.current[index] = el; }}
+                  className={`relative bg-white/90 backdrop-blur-[8px] rounded-[14px] p-5 flex items-start gap-3.5 shadow-[0_4px_20px_rgba(0,0,0,0.06)] border border-stockblue/8 transition-all duration-[250ms] ease-out hover:transform hover:-translate-y-[3px] hover:shadow-[0_8px_30px_rgba(0,0,0,0.1)] hover:bg-white/96 ${
                     isEditing ? 'cursor-move' : ''
                   } ${draggedFeatureIndex === index ? 'opacity-50' : ''}`}
                   draggable={isEditing}
@@ -306,7 +379,7 @@ const About: FC<AboutProps> = () => {
                   {isEditing && editableFeatures.length > 1 && (
                     <button
                       onClick={() => removeFeature(index)}
-                      className="absolute top-2 left-2 text-red-500 hover:text-red-700 z-10 p-1 rounded-full bg-white/50 hover:bg-white transition-colors"
+                      className="absolute -top-2 -right-2 text-red-500 hover:text-red-700 z-10 p-1 rounded-full bg-white shadow-md hover:shadow-lg transition-all"
                       title="הסר פיצ'ר"
                     >
                       <X size={16} />
@@ -334,6 +407,7 @@ const About: FC<AboutProps> = () => {
                     {isEditing ? (
                       <>
                         <input
+                         ref={(el) => { if (el) featureTitleInputRefs.current[index] = el; }}
                           type="text"
                           value={feature.title}
                           onChange={(e) => handleFeatureChange(index, 'title', e.target.value)}
@@ -359,19 +433,29 @@ const About: FC<AboutProps> = () => {
 
           {/* Vision Section */}
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-[1.8rem] text-stockblue mt-8 mb-4 font-bold border-b-2 border-stockblue/15 pb-1.5 inline-block">
-              החזון שלנו
-            </h2>
-            {isEditing && (
-              <button
-                onClick={addVisionPoint}
-                className="mt-4 inline-flex items-center gap-1 text-stockblue hover:text-blue-700 font-semibold text-sm"
-              >
-                <Plus size={16} />
-                הוסף נקודה
-              </button>
-            )}
-          </div>
+  {isEditing ? (
+    <input
+      type="text"
+      value={visionTitle}
+      onChange={(e) => setVisionTitle(e.target.value)}
+      className="text-[1.8rem] text-stockblue mt-8 mb-4 font-bold border-b-2 border-stockblue/15 pb-1.5 inline-block w-full border border-stockblue/30 rounded px-3 py-1 focus:outline-none focus:border-stockblue"
+    />
+  ) : (
+    <h2 className="text-[1.8rem] text-stockblue mt-8 mb-4 font-bold border-b-2 border-stockblue/15 pb-1.5 inline-block">
+      {visionTitle}
+    </h2>
+  )}
+  {isEditing && (
+    <button
+      onClick={addVisionPoint}
+      className="mt-4 ml-3 inline-flex items-center gap-1 text-stockblue hover:text-blue-700 font-semibold text-sm"
+    >
+      <Plus size={16} />
+      הוסף נקודה
+    </button>
+  )}
+</div>
+
 
           <ul className="list-none p-0 my-5 mb-7 grid gap-3">
             {editableVisionPoints.map((point, i) => (
@@ -423,64 +507,108 @@ const About: FC<AboutProps> = () => {
           <div className="relative w-[300px] h-[400px]">
             <div className="absolute inset-0 bg-gradient-to-br from-blue-400/20 via-blue-500/20 to-purple-500/20 rounded-full scale-110 blur-3xl"></div>
 
-            <div className="relative w-full h-full rounded-[3rem] overflow-hidden bg-gradient-to-br from-white via-blue-50 to-blue-100/70 shadow-2xl transition-all duration-700 ease-out hover:shadow-[0_30px_80px_rgba(59,130,246,0.3)] hover:scale-105 hover:-translate-y-2 hover:rotate-2 border-4 border-white/60 backdrop-blur-sm">
-              <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-blue-600/10 z-10 pointer-events-none"></div>
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent -translate-x-full hover:translate-x-full transition-transform duration-1000 z-20 pointer-events-none skew-x-12"></div>
+          <div className="relative w-full h-full rounded-[3rem] overflow-hidden bg-gradient-to-br from-white via-blue-50 to-blue-100/70 shadow-2xl transition-all duration-700 ease-out hover:shadow-[0_30px_80px_rgba(59,130,246,0.3)] hover:scale-105 hover:-translate-y-2
+           hover:rotate-2 border-4 border-white/60 backdrop-blur-sm">
+  <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-blue-600/10 z-10 pointer-events-none"></div>
+  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent -translate-x-full hover:translate-x-full transition-transform duration-1000 z-20 pointer-events-none skew-x-12"></div>
 
-              <img
-                src={images[currentImageIndex]}
-                alt="StockBox preview"
-                className="w-full h-full object-cover transition-all duration-1000 ease-out scale-105 hover:scale-110"
-              />
+  <img
+    src={images[currentImageIndex]}
+    alt="StockBox preview"
+    className="w-full h-full object-cover transition-all duration-1000 ease-out scale-105 hover:scale-110"
+  />
 
-              <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-blue-900/30 to-transparent z-10 pointer-events-none"></div>
+  <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-blue-900/30 to-transparent z-10 pointer-events-none"></div>
 
-              {isEditing && role === 'admin' && (
-                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-30 flex gap-2 flex-wrap justify-center">
-                  {/* Map through existing images for replacement/removal */}
-                  {editableImages.map((_, idx) => (
-                    <div key={idx} className="relative group">
-                      <label
-                        className="cursor-pointer bg-white/90 hover:bg-white text-stockblue px-3 py-1.5 rounded-lg text-xs font-semibold shadow-lg transition-all relative inline-flex items-center justify-center"
-                        title={`החלף תמונה ${idx + 1}`}
-                      >
-                        תמונה {idx + 1}
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => handleImageUpload(idx, e)}
-                          className="hidden"
-                        />
-                      </label>
-                      {/* Remove Image Button */}
-                      {editableImages.length > 1 && (
-                        <button
-                          onClick={() => removeImage(idx)}
-                          className="absolute -top-2 -right-2 text-red-500 hover:text-red-700 bg-white rounded-full p-0.5 shadow-md"
-                          title="הסר תמונה"
-                        >
-                          <X size={14} />
-                        </button>
-                      )}
-                    </div>
-                  ))}
+  {/* Delete current image */}
+ {isEditing && role === 'admin' && editableImages.length > 1 && (
+ <button
+ onClick={() => removeImage(currentImageIndex)}
+ className="absolute top-4 right-4 z-50 inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold text-white bg-red-600/90 hover:bg-red-700 shadow-xl transition-all"
+ title="מחק את התמונה הנוכחית"
+ aria-label="מחק תמונה"
+ >
+מחק תמונה
+ </button>
+ )}
 
-                    {/* Button to ADD a new Image */}
-                    <label
-                      className="group cursor-pointer bg-stockblue/90 hover:bg-stockblue text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow-lg transition-all relative inline-flex items-center justify-center gap-1"
-                      title="הוסף תמונה חדשה"
-                    >
-                      <Plus size={14} /> הוסף
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handleImageUpload(editableImages.length, e)}
-                        className="hidden"
-                      />
-                    </label>
-                </div>
-              )}
-            </div>
+  {/* Compact toolbar */}
+  {isEditing && role === 'admin' && (
+    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-2xl bg-white/80 backdrop-blur shadow-lg px-3 py-2">
+      {/* Prev */}
+      <button
+        onClick={() => setCurrentImageIndex((i) => (i - 1 + images.length) % images.length)}
+        className="h-8 w-8 rounded-full grid place-items-center border border-stockblue/20 hover:bg-white"
+        title="קודם"
+      >
+        ‹
+      </button>
+
+      {/* Numbered dots */}
+      <div className="flex items-center gap-2">
+        {editableImages.map((_, idx) => (
+          <button
+            key={idx}
+            onClick={() => setCurrentImageIndex(idx)}
+            className={`h-8 min-w-8 px-2 rounded-full text-xs font-bold transition ${
+              currentImageIndex === idx
+                ? 'bg-stockblue text-white shadow'
+                : 'bg-white text-stockblue border border-stockblue/20 hover:bg-blue-50'
+            }`}
+            aria-label={`עבור לתמונה ${idx + 1}`}
+            title={`תמונה ${idx + 1}`}
+          >
+            {idx + 1}
+          </button>
+        ))}
+      </div>
+
+      {/* Replace current */}
+      <button
+        onClick={() => replaceInputRef.current?.click()}
+        className="ml-1 h-8 rounded-full px-3 text-xs font-semibold bg-white text-stockblue border border-stockblue/20 hover:bg-blue-50"
+        title="החלף תמונה נוכחית"
+      >
+        החלף
+      </button>
+      <input
+        ref={replaceInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => handleImageUpload(currentImageIndex, e)}
+      />
+
+      {/* Add new */}
+      <button
+        onClick={() => addInputRef.current?.click()}
+        className="h-8 rounded-full px-3 text-xs font-semibold bg-stockblue text-white hover:bg-blue-700"
+        title="הוסף תמונה חדשה"
+      >
+        <span className="inline-flex items-center gap-1">
+          <Plus size={14} /> הוסף
+        </span>
+      </button>
+      <input
+        ref={addInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => handleImageUpload(editableImages.length, e)}
+      />
+
+      {/* Next */}
+      <button
+        onClick={() => setCurrentImageIndex((i) => (i + 1) % images.length)}
+        className="h-8 w-8 rounded-full grid place-items-center border border-stockblue/20 hover:bg-white"
+        title="הבא"
+      >
+        ›
+      </button>
+    </div>
+  )}
+</div>
+
 
             <div className="absolute -top-6 -right-6 w-24 h-24 bg-gradient-to-br from-blue-400/40 to-purple-400/30 rounded-full blur-2xl animate-pulse"></div>
             <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-gradient-to-tr from-purple-500/20 to-blue-500/30 rounded-full blur-3xl animate-pulse"></div>
