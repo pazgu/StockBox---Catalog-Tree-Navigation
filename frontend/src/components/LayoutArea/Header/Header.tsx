@@ -4,6 +4,7 @@ import { Heart, Search, User, Menu, X, ShoppingCart, Bell } from "lucide-react";
 import logo from "../../../assets/logo.png";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../context/UserContext";
+import Breadcrumbs from "../Breadcrumbs/Breadcrumbs/Breadcrumbs";
 
 interface HeaderProps {
   logoSrc?: string;
@@ -206,6 +207,7 @@ const Header: React.FC<HeaderProps> = ({
                 </div>
               )}
 
+
               {/* Mobile Menu Toggle */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -309,6 +311,9 @@ const Header: React.FC<HeaderProps> = ({
               )}
             </div>
           </div>
+        </div>
+       
+          <div className="absolute bottom-0.5 right-12"> <Breadcrumbs/>
         </div>
       </header>
 
