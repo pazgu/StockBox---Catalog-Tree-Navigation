@@ -1,4 +1,4 @@
-import React, { FC } from 'react';
+import React, { FC, useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import About from '../../Pages/HomeArea/About/About';
 import Login from '../../Pages/AuthArea/Login/Login';
@@ -14,13 +14,13 @@ import GroupControl from '../../Pages/UserControlArea/GroupControl/GroupControl'
 import Favorites from '../../Pages/CatArea/Favorites/Favorites';
 import { Toaster } from 'sonner';
 import SubCat from '../../../components/Pages/CatArea/SubCats/SubCat/SubCat';
+import Breadcrumbs from '../Breadcrumbs/Breadcrumbs/Breadcrumbs';
 interface LayoutProps {}
 
-const Layout: FC<LayoutProps> = () => (
+const Layout: FC<LayoutProps> = () => {
+  return(
   <div className="Layout">
     <Header></Header>
-   
-
     <main>
       <Routes>
         <Route path="/" element={<About></About>} />
@@ -39,12 +39,9 @@ const Layout: FC<LayoutProps> = () => (
 
       </Routes>
     </main>
-    <Toaster
-  position="top-center"
-  richColors
-/>
+    <Toaster richColors/>
 
   </div>
-);
+);}
 
 export default Layout;
