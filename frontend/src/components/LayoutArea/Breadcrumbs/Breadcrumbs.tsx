@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import catIcon from "../../../../assets/newcat.png";
+import catIcon from "../../../assets/newcat.png";
 const Breadcrumbs = () => {
   const location = useLocation();
   const navigate = useNavigate();
