@@ -155,15 +155,15 @@ const Header: React.FC<HeaderProps> = ({
             </form>
 
             {/* Action Icons */}
-            <div className={`flex items-center gap-2 ${isMobileMenuOpen ? 'hidden' : ''}`}>
+            <div className={`flex items-center w-32 gap-2 ${isMobileMenuOpen ? 'hidden' : ''}`}>
               {/* Favorites */}
-              {role === "user" && !isMobileMenuOpen && (
+              {!isMobileMenuOpen && (
                 <button
                   aria-label="Favorites"
                   className="relative p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 hover:scale-110 mr-2"
                   onClick={() => navigate("/Favorites")}
                 >
-                  <Heart size={22} className="hover:fill-current" />
+                  <Heart size={21} className="hover:fill-current mr-4" />
                   <Badge count={favoriteCount} />
                 </button>
               )}
@@ -178,7 +178,7 @@ const Header: React.FC<HeaderProps> = ({
                     <img
                       src="https://img.icons8.com/?size=100&id=cykh8BZMTKkb&format=png&color=FFFFFF"
                       alt="User Avatar"
-                      className="w-10 h-10 rounded-full mr-4  hover:bg-white/10 p-2 "
+                      className="w-10 h-10 rounded-full  hover:bg-white/10 p-2 "
                     />
                   </button>
 
@@ -293,7 +293,7 @@ const Header: React.FC<HeaderProps> = ({
 
             {/* Mobile Quick Actions */}
             <div className="flex justify-around mt-6 pt-6 border-t border-white/20">
-              {role === "user" && (
+              {  (
                 <button className="flex flex-col items-center gap-1 text-white/80 hover:text-white transition-colors">
                   <Heart size={20} />
                   <span className="text-xs">מועדפים</span>
