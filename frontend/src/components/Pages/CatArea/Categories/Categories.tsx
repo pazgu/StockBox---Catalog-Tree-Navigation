@@ -19,7 +19,7 @@ import { toast } from "sonner";
 import { Link } from "react-router-dom";
 interface CategoriesProps {}
 
-interface Category {
+export interface Category {
   id: number;
   name: string;
   image: string;
@@ -29,7 +29,26 @@ interface Category {
   favorite?: boolean;
 }
 
-const Categories: FC<CategoriesProps> = () => {
+export const initialCategories: Category[] = [
+  {
+    id: 1,
+    name: "שמיעה",
+    image: headphones,
+    type: "prodparent",
+    favorite: true,
+  },
+  { id: 2, name: "הקלטה", image: audio, type: "prodparent", favorite: false },
+  { id: 3, name: "וידיאו", image: video, type: "prodparent", favorite: true },
+  {
+    id: 4,
+    name: "צילום",
+    image: camera,
+    type: "prodparent",
+    favorite: false,
+  },
+];
+
+export const Categories: FC<CategoriesProps> = () => {
   const [showAddCatModal, setShowAddCatModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -40,24 +59,7 @@ const Categories: FC<CategoriesProps> = () => {
   );
   const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
   const [categoryToType, setCategoryToType] = useState<Category | null>(null);
-  const [categories, setCategories] = useState<Category[]>([
-    {
-      id: 1,
-      name: "שמיעה",
-      image: headphones,
-      type: "prodparent",
-      favorite: true,
-    },
-    { id: 2, name: "הקלטה", image: audio, type: "prodparent", favorite: false },
-    { id: 3, name: "וידיאו", image: video, type: "prodparent", favorite: true },
-    {
-      id: 4,
-      name: "צילום",
-      image: camera,
-      type: "prodparent",
-      favorite: false,
-    },
-  ]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const { role } = useUser();
   const navigate = useNavigate();
 
