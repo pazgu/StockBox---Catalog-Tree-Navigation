@@ -81,6 +81,8 @@ const EN_TO_HE: Record<string, string> = {
 const iconOptions = ICONS_HE.map(i => ({ value: i.value, label: i.label }));
 
 
+
+
 interface AboutProps {
 }
 
@@ -241,13 +243,14 @@ const handleImageUpload = (index: number, event: React.ChangeEvent<HTMLInputElem
   setEditableImages((prev) => {
     const arr = prev.filter((_, i) => i !== index);
     setCurrentImageIndex((cur) => {
-      if (arr.length === 0) return 0;
-      // if we deleted the last slide, step back one
-      return Math.min(cur, arr.length - 1);
+      if (arr.length === 0) return 0;               
+      const next = Math.min(cur, arr.length - 1);    
+      return next;
     });
     return arr;
   });
 };
+
 
 
   const handleFeatureChange = (index: number, field: 'title' | 'description', value: string) => {
@@ -255,6 +258,12 @@ const handleImageUpload = (index: number, event: React.ChangeEvent<HTMLInputElem
     newFeatures[index] = { ...newFeatures[index], [field]: value };
     setEditableFeatures(newFeatures);
   };
+
+  const clearAllImages = () => {
+  setEditableImages([]);
+  setCurrentImageIndex(0);
+};
+
 
   const handleFeatureIconChange = (index: number, iconName: string) => {
     const newFeatures = [...editableFeatures];
@@ -650,104 +659,141 @@ const handleImageUpload = (index: number, event: React.ChangeEvent<HTMLInputElem
 ></div>
 
 
+   {images.length > 0 ? (
+  <>
+    {/* Current image */}
     <img
-    src={images[currentImageIndex]}
-    alt="StockBox preview"
-    className={`w-full h-full object-cover scale-105
-      ${isEditing ? '' : 'transition-all duration-1000 ease-out hover:scale-110'} pointer-events-none`}  // CHANGE
-  />
+      src={images[currentImageIndex]}
+      alt="StockBox preview"
+      className={`w-full h-full object-cover scale-105 ${
+        isEditing ? '' : 'transition-all duration-1000 ease-out hover:scale-110'
+      } pointer-events-none`}
+    />
 
+    {/* Bottom fade */}
+    <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-blue-900/30 to-transparent z-10 pointer-events-none"></div>
 
-
-  <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-blue-900/30 to-transparent z-10 pointer-events-none"></div>
-
-  {/* Delete current image */}
- {isEditing && role === 'admin' && editableImages.length > 1 && (
- <button
- onClick={() => removeImage(currentImageIndex)}
- className="absolute top-4 right-4 z-[60] pointer-events-auto inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold text-white bg-red-600/90 hover:bg-red-700 shadow-xl transition-all" 
- title="מחק את התמונה הנוכחית"
- aria-label="מחק תמונה"
- >
-מחק תמונה
- </button>
- )}
-
-  {/* Compact toolbar */}
-  {isEditing && role === 'admin' && (
-     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[60] pointer-events-auto flex items-center gap-3 rounded-2xl bg-white/80 backdrop-blur shadow-lg px-3 py-2"> 
-      {/* Prev */}
+    {/* Delete current image */}
+    {isEditing && role === 'admin' && (
       <button
-        onClick={() => setCurrentImageIndex((i) => (i - 1 + images.length) % images.length)}
-        className="h-8 w-8 rounded-full grid place-items-center border border-stockblue/20 hover:bg-white"
-        title="קודם"
+        onClick={() => removeImage(currentImageIndex)}
+        className="absolute top-4 right-4 z-[60] pointer-events-auto inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold text-white bg-red-600/90 hover:bg-red-700 shadow-xl transition-all" 
+        title="מחק את התמונה הנוכחית"
+        aria-label="מחק תמונה"
       >
-        ‹
+        מחק תמונה
       </button>
+    )}
 
-      {/* Numbered dots */}
-      <div className="flex items-center gap-2">
-        {editableImages.map((_, idx) => (
-          <button
-            key={idx}
-            onClick={() => setCurrentImageIndex(idx)}
-            className={`h-8 min-w-8 px-2 rounded-full text-xs font-bold transition ${
-              currentImageIndex === idx
-                ? 'bg-stockblue text-white shadow'
-                : 'bg-white text-stockblue border border-stockblue/20 hover:bg-blue-50'
-            }`}
-            aria-label={`עבור לתמונה ${idx + 1}`}
-            title={`תמונה ${idx + 1}`}
-          >
-            {idx + 1}
-          </button>
-        ))}
+    {/* Delete all images */}
+    {isEditing && role === 'admin' && images.length > 0 && (
+      <button
+        onClick={clearAllImages}
+        className="absolute top-4 left-4 z-[60] pointer-events-auto inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold text-red-700 bg-white/90 border border-red-200 hover:bg-red-50 shadow transition-all"
+        title="מחק את כל התמונות"
+      >
+        מחק הכל
+      </button>
+    )}
+
+    {/* Toolbar */}
+    {isEditing && role === 'admin' && (
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[60] pointer-events-auto flex items-center gap-3 rounded-2xl bg-white/80 backdrop-blur shadow-lg px-3 py-2">
+        {/* Prev */}
+        <button
+          onClick={() => setCurrentImageIndex((i) => (i - 1 + images.length) % images.length)}
+          className="h-8 w-8 rounded-full grid place-items-center border border-stockblue/20 hover:bg-white"
+          title="קודם"
+        >
+          ‹
+        </button>
+
+        {/* Numbered dots */}
+        <div className="flex items-center gap-2">
+          {editableImages.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setCurrentImageIndex(idx)}
+              className={`h-8 min-w-8 px-2 rounded-full text-xs font-bold transition ${
+                currentImageIndex === idx
+                  ? 'bg-stockblue text-white shadow'
+                  : 'bg-white text-stockblue border border-stockblue/20 hover:bg-blue-50'
+              }`}
+              aria-label={`עבור לתמונה ${idx + 1}`}
+              title={`תמונה ${idx + 1}`}
+            >
+              {idx + 1}
+            </button>
+          ))}
+        </div>
+
+        {/* Replace current */}
+        <button
+          onClick={() => replaceInputRef.current?.click()}
+          className="ml-1 h-8 rounded-full px-3 text-xs font-semibold bg-white text-stockblue border border-stockblue/20 hover:bg-blue-50"
+          title="החלף תמונה נוכחית"
+        >
+          החלף
+        </button>
+        <input
+          ref={replaceInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => handleImageUpload(currentImageIndex, e)}
+        />
+
+        {/* Add new */}
+        <button
+          onClick={() => addInputRef.current?.click()}
+          className="h-8 rounded-full px-3 text-xs font-semibold bg-stockblue text-white hover:bg-blue-700"
+          title="הוסף תמונה חדשה"
+        >
+          <span className="inline-flex items-center gap-1">
+            <Plus size={14} /> הוסף
+          </span>
+        </button>
+        <input
+          ref={addInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => handleImageUpload(editableImages.length, e)}
+        />
+
+        {/* Next */}
+        <button
+          onClick={() => setCurrentImageIndex((i) => (i + 1) % images.length)}
+          className="h-8 w-8 rounded-full grid place-items-center border border-stockblue/20 hover:bg-white"
+          title="הבא"
+        >
+          ›
+        </button>
       </div>
+    )}
+  </>
+) : (
+  /* EMPTY STATE with Upload icon */
+  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-6">
+    <button
+      onClick={() => addInputRef.current?.click()}
+      className="group w-full h-full rounded-[3rem] border-2 border-dashed border-stockblue/30 bg-white/70 backdrop-blur-sm flex flex-col items-center justify-center gap-3 hover:border-stockblue/50 hover:bg-white transition"
+      title="העלה תמונה"
+    >
+      <Upload size={32} className="opacity-70 group-hover:opacity-100" />
+      <span className="text-stockblue/80 font-semibold">אין תמונות כרגע – לחצו כדי להעלות</span>
+      <span className="text-xs text-slate-500">PNG · JPG · JPEG</span>
+    </button>
+    <input
+      ref={addInputRef}
+      type="file"
+      accept="image/*"
+      className="hidden"
+      onChange={(e) => handleImageUpload(0, e)}  // add as first image
+    />
+  </div>
+)}
 
-      {/* Replace current */}
-      <button
-        onClick={() => replaceInputRef.current?.click()}
-        className="ml-1 h-8 rounded-full px-3 text-xs font-semibold bg-white text-stockblue border border-stockblue/20 hover:bg-blue-50"
-        title="החלף תמונה נוכחית"
-      >
-        החלף
-      </button>
-      <input
-        ref={replaceInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => handleImageUpload(currentImageIndex, e)}
-      />
-
-      {/* Add new */}
-      <button
-        onClick={() => addInputRef.current?.click()}
-        className="h-8 rounded-full px-3 text-xs font-semibold bg-stockblue text-white hover:bg-blue-700"
-        title="הוסף תמונה חדשה"
-      >
-        <span className="inline-flex items-center gap-1">
-          <Plus size={14} /> הוסף
-        </span>
-      </button>
-      <input
-        ref={addInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => handleImageUpload(editableImages.length, e)}
-      />
-
-      {/* Next */}
-      <button
-        onClick={() => setCurrentImageIndex((i) => (i + 1) % images.length)}
-        className="h-8 w-8 rounded-full grid place-items-center border border-stockblue/20 hover:bg-white"
-        title="הבא"
-      >
-        ›
-      </button>
-    </div>
-  )}
 </div>
 
 
