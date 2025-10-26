@@ -10,21 +10,22 @@ interface User {
   id: string | number;
   name: string;
   email: string;
+  isApproved?: boolean;
 }
 
 interface AllUsersProps {}
 const usersData: User[] = [
-  { id: 1, name: "ליאלי עמנואלי", email: "lali@outlook.com" },
-  { id: 2, name: "משתמש 2", email: "user2@domain.com" },
-  { id: 3, name: "משתמש 3", email: "user3@domain.com" },
-  { id: 4, name: "משתמש 4", email: "user4@domain.com" },
-  { id: 5, name: "משתמש 5", email: "user5@domain.com" },
-  { id: 6, name: "משתמש 6", email: "user6@domain.com" },
-  { id: 7, name: "משתמש 7", email: "user7@domain.com" },
-  { id: 8, name: "משתמש 8", email: "user8@domain.com" },
-  { id: 9, name: "משתמש 9", email: "user9@domain.com" },
-  { id: 10, name: "משתמש 10", email: "user10@domain.com" },
-  { id: 11, name: "משתמש 11", email: "user11@domain.com" },
+  { id: 1, name: "ליאלי עמנואלי", email: "lali@outlook.com",isApproved: false },
+  { id: 2, name: "משתמש 2", email: "user2@domain.com",isApproved: false },
+  { id: 3, name: "משתמש 3", email: "user3@domain.com",isApproved: false },
+  { id: 4, name: "משתמש 4", email: "user4@domain.com",isApproved: true },
+  { id: 5, name: "משתמש 5", email: "user5@domain.com",isApproved: true },
+  { id: 6, name: "משתמש 6", email: "user6@domain.com" ,isApproved: true},
+  { id: 7, name: "משתמש 7", email: "user7@domain.com",isApproved: true },
+  { id: 8, name: "משתמש 8", email: "user8@domain.com",isApproved: true },
+  { id: 9, name: "משתמש 9", email: "user9@domain.com",isApproved: true },
+  { id: 10, name: "משתמש 10", email: "user10@domain.com",isApproved: true },
+  { id: 11, name: "משתמש 11", email: "user11@domain.com",isApproved: true },
 ];
 
 const AllUsers: FC<AllUsersProps> = () => {
@@ -39,6 +40,7 @@ const AllUsers: FC<AllUsersProps> = () => {
   const [userToEdit, setUserToEdit] = useState<User | null>(null);
   const [blockUserIndex, setBlockUserIndex] = useState<number | null>(null);
   const [blockedUsers, setBlockedUsers] = useState<number[]>([]); // store blocked user IDs
+  const [approveUserIndex, setApproveUserIndex] = useState<number | null>(null);
 
   const usersPerPage = 8;
   const { role } = useUser();
@@ -109,7 +111,17 @@ const AllUsers: FC<AllUsersProps> = () => {
       setBlockUserIndex(null);
     }
   };
-
+  const handleApproveClick = (index: number) => setApproveUserIndex(index);
+const confirmApprove = () => {
+    if (approveUserIndex !== null) {
+      const userId = currentUsers[approveUserIndex].id;
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, isApproved: true } : u))
+      );
+      toast.success("המשתמש אושר בהצלחה!");
+      setApproveUserIndex(null);
+    }
+  };
   const cancelDelete = () => setDeleteUserIndex(null);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -202,17 +214,28 @@ const AllUsers: FC<AllUsersProps> = () => {
         )}
 
         <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {currentUsers.map((user, index) => (
+                    {currentUsers.map((user, index) => (
             <div
               key={index}
-              className="bg-[#fffdf8] rounded-xl p-4 text-center shadow-sm relative min-h-[110px] transition-transform hover:-translate-y-1 hover:shadow-md border-gray-100"
+              className={`rounded-xl p-4 text-center shadow-sm relative min-h-[110px] transition-transform hover:-translate-y-1 hover:shadow-md border-gray-100 ${
+                user.isApproved ? "bg-[#fffdf8]" : "bg-gray-100"
+              }`}
             >
+              {!user.isApproved && (
+                <div
+                  className="absolute top-2 left-2 text-red-600 bg-red-100 px-3 py-1 rounded-full text-xs font-medium cursor-pointer hover:bg-red-200 transition"
+                  onClick={() => handleApproveClick(index)}
+                >
+                  ממתין לאישור
+                </div>
+              )}
+
+              {/* Top right buttons */}
               <div className="absolute top-2 right-2 flex gap-2">
                 <button
                   className="p-1 w-6 h-6 rounded hover:bg-gray-100 opacity-60 hover:opacity-100 transition"
                   onClick={() => handleEditClick(user)}
                 >
-                  {/* Edit Icon */}
                   <svg
                     width="14"
                     height="14"
@@ -229,6 +252,7 @@ const AllUsers: FC<AllUsersProps> = () => {
                     />
                   </svg>
                 </button>
+
                 <button
                   className="p-1 w-6 h-6 rounded hover:bg-red-500 hover:text-white opacity-60 hover:opacity-100 transition"
                   onClick={() => handleDeleteClick(index)}
@@ -249,6 +273,7 @@ const AllUsers: FC<AllUsersProps> = () => {
                     />
                   </svg>
                 </button>
+
                 <button
                   className={`p-1 w-6 h-6 rounded transition ${
                     blockedUsers.includes(Number(user.id))
@@ -265,6 +290,7 @@ const AllUsers: FC<AllUsersProps> = () => {
                 </button>
               </div>
 
+              {/* Avatar */}
               <div className="w-10 h-10 rounded-full bg-gray-100 border border-gray-200 mx-auto flex items-center justify-center mb-2">
                 <svg
                   className="w-5 h-5 text-gray-400"
@@ -300,6 +326,31 @@ const AllUsers: FC<AllUsersProps> = () => {
           ))}
         </div>
 
+        {/* Approval Dialog */}
+        {approveUserIndex !== null && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl p-6 w-80 text-right shadow-lg">
+              <h2 className="text-xl font-semibold mb-4">לאשר משתמש זה?</h2>
+              <p className="mb-6 text-gray-600">
+                האם אתה רוצה להכניס את המשתמש למערכת ולאפשר לו גישה לאתר?
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  className="px-4 py-2 rounded border border-gray-300 hover:bg-gray-100"
+                  onClick={() => setApproveUserIndex(null)}
+                >
+                  ביטול
+                </button>
+                <button
+                  className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700"
+                  onClick={confirmApprove}
+                >
+                  כן, אשר
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="flex justify-center items-center gap-2 mt-8">
           {currentPage > 1 && (
             <button
