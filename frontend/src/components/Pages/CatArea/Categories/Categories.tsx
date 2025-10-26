@@ -59,8 +59,7 @@ export const Categories: FC<CategoriesProps> = () => {
   );
   const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
   const [categoryToType, setCategoryToType] = useState<Category | null>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const { role } = useUser();
+const [categories, setCategories] = useState<Category[]>(initialCategories);  const { role } = useUser();
   const navigate = useNavigate();
 
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {

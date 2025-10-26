@@ -4,6 +4,8 @@ import { Heart } from "lucide-react";
 import { useUser } from "../../../../context/UserContext";
 import { Categories as CategoriesData } from "../Categories/Categories";
 import { initialCategories, type Category } from "../Categories/Categories";
+import { Navigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 //MISSING SUBCATS LOGIC HERE AFTER BACKEND EXISTS IT MAY BE ADDED
 
@@ -52,11 +54,13 @@ export const Favorites: React.FC = () => {
                 key={cat.id}
                 className="relative bg-white rounded-xl p-6 text-center shadow-md transition-transform hover:-translate-y-1 hover:shadow-lg"
               >
-                <img
-                  src={cat.image}
-                  alt={cat.name}
-                  className="w-[100px] h-[100px] object-contain mx-auto mb-3"
-                />
+                <Link to={"/single-cat"}>
+                  <img
+                    src={cat.image}
+                    alt={cat.name}
+                    className="w-[100px] h-[100px] object-contain mx-auto mb-3"
+                  />
+                </Link>
                 <p className="font-semibold text-slate-800">{cat.name}</p>
               </div>
             ))}
@@ -89,12 +93,13 @@ export const Favorites: React.FC = () => {
                     }
                   />
                 </button>
-
-                <img
-                  src={camera.imageUrl}
-                  alt={camera.name}
-                  className="w-[140px] h-[140px] object-contain rounded-lg mb-3 mx-auto"
-                />
+                <Link to={"/product"}>
+                  <img
+                    src={camera.imageUrl}
+                    alt={camera.name}
+                    className="w-[140px] h-[140px] object-contain rounded-lg mb-3 mx-auto"
+                  />
+                </Link>
                 <span className="block text-base font-semibold text-slate-800 mb-1">
                   {camera.name}
                 </span>
