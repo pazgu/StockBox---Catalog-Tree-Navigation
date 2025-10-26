@@ -1,13 +1,15 @@
 import React, { FC, useState, ChangeEvent } from "react";
-import { Trash, Pen, Lock } from "lucide-react"; // Assuming you use lucide-react or similar for icons
+import { Trash, Pen, Lock, Heart } from "lucide-react"; // Assuming you use lucide-react or similar for icons
 import { useNavigate } from "react-router-dom"; // Assuming you use react-router-dom for navigation
 import { useParams } from "react-router-dom";
+import { toast } from "sonner";
 import { Link } from "react-router-dom";
 interface Category {
-  id: string | number;
+  id: number;
   name: string;
   image: string;
   type: "prodparent" | "catparent" | null;
+  favorite?: boolean;
 }
 
 interface SubCatProps {
@@ -81,6 +83,7 @@ const useCategoryManagement = (initialCategories: Category[]) => {
         name: newCatName,
         image: newCatImage,
         type: null,
+        favorite: false,
       };
       setCategories([...categories, newCategory]);
       setNewCatName("");
@@ -153,6 +156,20 @@ const SubCat: FC<SubCatProps> = ({ initialCategories = [] }) => {
     }
   };
 
+  const toggleFavorite = (id: number) => {
+    const cam = categories.find((c) => c.id === id);
+    if (!cam) return;
+
+    if (cam.favorite) {
+      toast.info(`${cam.name} הוסר מהמועדפים`);
+    } else {
+      toast.success(`${cam.name} נוסף למועדפים`);
+    }
+    setCategories((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, favorite: !c.favorite } : c))
+    );
+  };
+
   return (
     <div
       className="p-4 font-system direction-rtl text-right"
@@ -177,11 +194,32 @@ const SubCat: FC<SubCatProps> = ({ initialCategories = [] }) => {
                   key={category.id}
                   className="flex flex-col items-center transition-transform duration-200 hover:translate-y-[-2px]"
                 >
+                   
                   {/* Image container */}
                   <div
                     className="relative group cursor-pointer "
                     onClick={() => handleCategoryClick(category)}
                   >
+                   {
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          toggleFavorite(category.id);
+                        }}
+                        className="absolute top-3 right-3 p-2 rounded-full bg-black/40 hover:bg-black/60 transition-colors"
+                      >
+                        <Heart
+                          size={22}
+                          strokeWidth={2}
+                          className={
+                            category.favorite
+                              ? "fill-red-500 text-red-500"
+                              : "text-white"
+                          }
+                        />
+                      </button>
+                    }
                     <img
                       src={category.image}
                       alt={category.name}
@@ -247,7 +285,6 @@ const SubCat: FC<SubCatProps> = ({ initialCategories = [] }) => {
                 </div>
               ))}
             </div>
-
           </div>
         ))}
       </div>
