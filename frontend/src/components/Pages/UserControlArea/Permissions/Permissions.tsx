@@ -104,8 +104,11 @@ useEffect(() => {
       ...prev,
       generalAccess: !prev.generalAccess,
     }));
-    setIsExpandedUsers(false);
-    setIsExpandedGroups(false);
+    // לא סוגר את הסקשנים כשמדליקים - רק כשמכבים
+    if (userPermissions.generalAccess) {
+      setIsExpandedUsers(false);
+      setIsExpandedGroups(false);
+    }
   };
 
   const handleOnlyRegisteredToggle = () => {
@@ -154,9 +157,175 @@ useEffect(() => {
             </div>
           </div>
 
+          {userPermissions.generalAccess && (
+            <>
+          {/* Expand Users - חוץ מ */}
+          <div className="mb-4">
+            <Button
+              variant="ghost"
+              onClick={() => setIsExpandedUsers(!isExpandedUsers)}
+              className="flex justify-between items-center w-full p-3 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              <span>חוץ ממשתמשים ספציפיים:</span>
+              {isExpandedUsers ? (
+                <ChevronUp className="w-4 h-4" />
+              ) : (
+                <ChevronDown className="w-4 h-4" />
+              )}
+            </Button>
+            <AnimatePresence>
+              {isExpandedUsers && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="mt-2"
+                >
+                  <Label
+                    htmlFor="user-search"
+                    className="block mb-2 text-sm font-medium text-gray-700"
+                  >
+                    חפש משתמש:
+                  </Label>
+                  <input
+                    id="user-search"
+                    type="text"
+                    placeholder="הקלד שם..."
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                    className="w-full p-2 mb-3 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-900 focus:border-indigo-900"
+                  />
+                  <Label
+                    htmlFor="only-registered"
+                    className="block mb-2 text-sm font-medium text-gray-700"
+                  >
+                    נגיש למשתמשים:
+                  </Label>
+                  <div className="bg-white border border-gray-200 rounded-lg max-h-48 overflow-y-auto" dir="ltr">
+                 <div dir="rtl">
+                 {filteredUsers.map((user) => (
+                      <div
+                        key={user.name}
+                        className="flex justify-between items-center px-4 py-3 border-b last:border-b-0"
+                      >
+                        <Label
+                          htmlFor={user.name}
+                          className="text-sm font-medium text-gray-700"
+                        >
+                          {user.name}
+                        </Label>
+                        <Switch
+                          id={user.name}
+                          checked={user.enabled}
+                          onCheckedChange={() => handleUserToggle(user.name)}
+                        />
+                      </div>
+                     ))}
+                  </div>
+                </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Expand Groups - חוץ מ */}
+          <div className="mb-4">
+            <Button
+              variant="ghost"
+              onClick={() => setIsExpandedGroups(!isExpandedGroups)}
+              className="flex justify-between items-center w-full p-3 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              <span>חוץ מקבוצות ספציפיות:</span>
+              {isExpandedGroups ? (
+                <ChevronUp className="w-4 h-4" />
+              ) : (
+                <ChevronDown className="w-4 h-4" />
+              )}
+            </Button>
+            <AnimatePresence>
+              {isExpandedGroups && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="mt-2"
+                >
+                  <Label className="block mb-2 text-sm font-medium text-gray-700">
+                  נגיש לקבוצות:
+                  </Label>
+                  <div className="bg-white border border-gray-200 rounded-lg max-h-32 overflow-y-auto" dir="ltr">
+                  <div dir="rtl">
+                  {userPermissions.permissions.map((permission) => (
+                      <div
+                        key={permission.id}
+                        className="flex justify-between items-center px-4 py-3 border-b last:border-b-0"
+                      >
+                        <Label
+                          htmlFor={permission.id}
+                          className="text-sm font-medium text-gray-700"
+                        >
+                          {permission.label}
+                        </Label>
+                        <Switch
+                          id={permission.id}
+                          checked={permission.enabled}
+                          onCheckedChange={() =>
+                            handlePermissionToggle(permission.id)
+                          }
+                        />
+                      </div>
+                    ))}
+                    {groups.map((group, index) => (
+                      <div
+                        key={index}
+                        className="flex justify-between items-center px-4 py-3 border-b last:border-b-0"
+                      >
+                        <Label
+                          htmlFor={`group-${index}`}
+                          className="text-sm font-medium text-gray-700"
+                        >
+                          {group.name}
+                        </Label>
+                        <Switch
+                          id={`group-${index}`}
+                          checked={group.enabled}
+                          onCheckedChange={() => handleGroupToggle(group.name)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                  {/* Add Group Button */}
+                  <div className="flex justify-center mt-4">
+                  <button
+    className="px-2 py-1 bg-indigo-900 text-white text-sm rounded-sm hover:bg-indigo-800 transition"
+    onClick={() => setIsOpen(true)}
+>
+    לחץ להוסיף קבוצה
+</button>
+                    {isOpen && (
+                    <AddGroup
+                        onClose={() => setIsOpen(false)}
+                        onSave={(newGroup: Group) => {
+                          setGroups(prev => [...prev, { ...newGroup, enabled: false }]); 
+                          setIsOpen(false);
+                        }}
+                      />
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+          </>
+          )}
+
           {!userPermissions.generalAccess && (
             <>
-          {/* Expand Users */}
+          {/* Expand Users - מוסתר מ */}
           <div className="mb-4">
             <Button
               variant="ghost"
@@ -226,7 +395,7 @@ useEffect(() => {
             </AnimatePresence>
           </div>
 
-          {/* Expand Groups */}
+          {/* Expand Groups - מוסתר מ */}
           <div className="mb-4">
             <Button
               variant="ghost"
