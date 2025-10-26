@@ -70,11 +70,58 @@ const SingleProd: FC<SingleProdProps> = () => {
     },
   ]);
 
-  const [productImage, setProductImage] = useState(cam);
-  const [originalImage] = useState(cam);
+  // === IMAGE STATES (MODIFIED) ===
+  const [productImages, setProductImages] = useState<string[]>([cam]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [originalImages] = useState<string[]>([cam]);
   const [hasImageChanged, setHasImageChanged] = useState(false);
 
-  // State to manage the item being dragged (for reordering)
+  // === IMAGE HANDLERS ===
+  const nextImage = () => {
+    setCurrentImageIndex((prev) =>
+      prev === productImages.length - 1 ? 0 : prev + 1
+    );
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) =>
+      prev === 0 ? productImages.length - 1 : prev - 1
+    );
+  };
+
+
+const handleAddImages = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const files = e.target.files;
+  if (files && files.length > 0) {
+    const newImages = Array.from(files).map((file) => URL.createObjectURL(file));
+    setProductImages((prev) => [...prev, ...newImages]);
+  }
+};
+
+// Replace current image
+const handleReplaceImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const files = e.target.files;
+  if (files && files.length > 0) {
+    const newImage = URL.createObjectURL(files[0]);
+    setProductImages((prev) =>
+      prev.map((img, i) => (i === currentImageIndex ? newImage : img))
+    );
+  }
+};
+
+// Delete current image
+const handleDeleteImage = () => {
+  setProductImages((prev) => {
+    if (prev.length === 1) return prev; // keep at least one
+    const updated = prev.filter((_, i) => i !== currentImageIndex);
+    setCurrentImageIndex((prevIndex) =>
+      prevIndex === updated.length ? updated.length - 1 : prevIndex
+    );
+    return updated;
+  });
+};
+
+
   const [draggedItem, setDraggedItem] = useState<AccordionData | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
 
@@ -186,10 +233,7 @@ const SingleProd: FC<SingleProdProps> = () => {
     setFeatures(features.filter((_: string, i: number) => i !== index));
   // --- Image Handlers (kept from original) ---
 
-  const resetImage = () => {
-    setProductImage(originalImage);
-    setHasImageChanged(false);
-  };
+  
   const handleSaveClick = () => {
     if (isEditing) {
       toast.success("השינויים נישמרו בהצלחה!");
@@ -197,30 +241,7 @@ const SingleProd: FC<SingleProdProps> = () => {
     setIsEditing(!isEditing);
   };
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (file.type.startsWith("image/")) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const result = e.target?.result;
-          if (result && typeof result === "string") {
-            setProductImage(result);
-            setHasImageChanged(true);
-          }
-        };
-        reader.onerror = () => {
-          console.error("Error reading file");
-          alert("שגיאה בקריאת הקובץ");
-        };
-        reader.readAsDataURL(file);
-      } else {
-        alert("אנא בחר קובץ תמונה תקין");
-      }
-    }
-    event.target.value = "";
-  };
-
+ 
   // --- Render Logic ---
 
   return (
@@ -277,50 +298,101 @@ const SingleProd: FC<SingleProdProps> = () => {
               {/* Top accent line */}
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-stockblue to-stockblue"></div>
 
-              {/* Image */}
-              <div className="relative bg-gray-50 p-6 rounded-xl mb-4 overflow-hidden">
-                <img
-                  src={productImage}
-                  alt={title}
-                  className="w-full h-40 object-contain relative z-10 transition-all duration-300 group-hover:scale-105 drop-shadow-md"
-                />
+                            {/* === IMAGE CAROUSEL START === */}
+              <div className="relative bg-gray-50 p-6 rounded-xl mb-4 overflow-hidden group">
+  {/* Image container */}
+  <div className="relative w-full h-40 flex items-center justify-center">
+    <img
+      src={productImages[currentImageIndex]}
+      alt={title}
+      className="w-full h-40 object-contain relative z-10 transition-all duration-500 ease-in-out transform drop-shadow-md"
+    />
 
-                {isEditing && (
-                  <div className="absolute inset-0 rounded-xl bg-gradient-to-t from-black/70 via-black/30 to-transparent flex items-end justify-center pb-3 z-20 transition-all duration-300">
-                    <div className="flex gap-2">
-                      <label
-                        htmlFor="image-upload"
-                        className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-stockblue bg-white/95 backdrop-blur-sm rounded-lg shadow-md border border-white/30 cursor-pointer hover:shadow-lg hover:scale-105 hover:bg-white transition-all duration-300"
-                      >
-                        <Upload size={14} />
-                        החלף
-                      </label>
+    {/* Left arrow */}
+    {productImages.length > 1 && (
+      <button
+        onClick={prevImage}
+        className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-700 rounded-full p-2 shadow-md opacity-0 group-hover:opacity-100 transition-all duration-300 z-10"
+      >
+        ‹
+      </button>
+    )}
 
-                      {hasImageChanged && (
-                        <button
-                          onClick={resetImage}
-                          className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-gray-700/95 backdrop-blur-sm rounded-lg shadow-md border border-gray-600/30 hover:shadow-lg hover:scale-105 hover:bg-gray-800 transition-all duration-300"
-                        >
-                          <span className="text-xs">↶</span> ביטול
-                        </button>
-                      )}
-                    </div>
-                    <input
-                      type="file"
-                      id="image-upload"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                    />
-                  </div>
-                )}
+    {/* Right arrow */}
+    {productImages.length > 1 && (
+      <button
+        onClick={nextImage}
+        className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-700 rounded-full p-2 shadow-md opacity-0 group-hover:opacity-100 transition-all duration-300 z-10"
+      >
+        ›
+      </button>
+    )}
+  </div>
 
-                {isEditing && (
-                  <div className="absolute top-2 right-2 bg-stockblue/90 text-white text-xs font-medium px-2 py-1 rounded-full backdrop-blur-sm">
-                    עריכה
-                  </div>
-                )}
-              </div>
+  {/* Dots indicator */}
+  {productImages.length > 1 && (
+    <div className="flex justify-center gap-2 mt-2">
+      {productImages.map((_, index) => (
+        <div
+          key={index}
+          onClick={() => setCurrentImageIndex(index)}
+          className={`w-2.5 h-2.5 rounded-full cursor-pointer transition-all duration-300 ${
+            index === currentImageIndex ? "bg-stockblue" : "bg-gray-300"
+          }`}
+        />
+      ))}
+    </div>
+  )}
+
+  {/* Editing Overlay */}
+  {isEditing && (
+    <div className="absolute inset-0 rounded-xl bg-gradient-to-t from-black/70 via-black/30 to-transparent flex items-end justify-center pb-3 z-20 transition-all duration-300">
+      <div className="flex gap-2 flex-wrap justify-center">
+        {/* Replace current */}
+        <label
+          htmlFor="replace-upload"
+          className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-stockblue bg-white/95 backdrop-blur-sm rounded-lg shadow-md border border-white/30 cursor-pointer hover:shadow-lg hover:scale-105 hover:bg-white transition-all duration-300"
+        >
+          <Upload size={14} />
+          החלף
+        </label>
+        <input
+          type="file"
+          id="replace-upload"
+          accept="image/*"
+          onChange={handleReplaceImage}
+          className="hidden"
+        />
+
+        {/* Add new */}
+           <label
+          htmlFor="add-upload"
+          className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-green-600 bg-white/95 backdrop-blur-sm rounded-lg shadow-md border border-white/30 cursor-pointer hover:shadow-lg hover:scale-105 hover:bg-white transition-all duration-300"
+        >
+          <Upload size={14} />
+          הוסף
+        </label>
+        <input
+          type="file"
+          id="add-upload"
+          accept="image/*"
+          multiple
+          onChange={handleAddImages}
+          className="hidden"
+        />
+        {/* Delete current */}
+        <button
+          onClick={handleDeleteImage}
+          className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-red-600/95 backdrop-blur-sm rounded-lg shadow-md border border-red-600/30 hover:shadow-lg hover:scale-105 hover:bg-red-700 transition-all duration-300"
+        >
+          מחק
+        </button>
+      </div>
+    </div>
+  )}
+</div>
+              {/* === IMAGE CAROUSEL END === */}
+
 
               {/* Buttons */}
               {role === "user" ? (
