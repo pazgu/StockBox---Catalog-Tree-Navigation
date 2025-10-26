@@ -212,30 +212,51 @@ useEffect(() => {
   visionInputRefs.current.length = editableVisionPoints.length;
 }, [editableFeatures.length, editableVisionPoints.length]);
 
+// Replace (single file) the image at `index`
+const handleReplaceImage = (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
 
-const handleImageUpload = (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
-  const file = event.target.files?.[0];
-  if (!file) return;
+  const reader = new FileReader();
+  reader.onloadend = () => {
+    setEditableImages((prev) => {
+      const arr = [...prev];
+      if (index >= arr.length) {
+        // If index is out of range, append instead
+        arr.push(reader.result as string);
+        setCurrentImageIndex(arr.length - 1);
+      } else {
+        arr[index] = reader.result as string;
+      }
+      return arr;
+    });
+    event.target.value = '';
+  };
+  reader.readAsDataURL(file);
+};
 
-  const reader = new FileReader();
-  reader.onloadend = () => {
-    setEditableImages((prev) => {
-      const arr = [...prev];
-      if (index >= arr.length) {
-        // Add new image to the end
-        arr.push(reader.result as string);
-        // Setting the index here is correct:
-        setCurrentImageIndex(arr.length - 1); 
-      } else {
-        // Replace existing image
-        arr[index] = reader.result as string;
-      }
-      return arr;
-    });
+// ADD (multiple files) to the end
+const handleAddImages = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const files = Array.from(event.target.files || []);
+  if (!files.length) return;
 
-    event.target.value = '';
-  };
- reader.readAsDataURL(file);
+  const toDataUrl = (file: File) =>
+    new Promise<string>((resolve) => {
+      const r = new FileReader();
+      r.onloadend = () => resolve(r.result as string);
+      r.readAsDataURL(file);
+    });
+
+  Promise.all(files.map(toDataUrl)).then((dataUrls) => {
+    setEditableImages((prev) => {
+      const startIndex = prev.length;          // index of the first newly-added image
+      const merged = [...prev, ...dataUrls];
+      // jump to the first of the newly added images
+      setCurrentImageIndex(startIndex > 0 ? startIndex : 0);
+      return merged;
+    });
+    event.target.value = '';
+  });
 };
 
 
@@ -740,7 +761,7 @@ const handleImageUpload = (index: number, event: React.ChangeEvent<HTMLInputElem
           type="file"
           accept="image/*"
           className="hidden"
-          onChange={(e) => handleImageUpload(currentImageIndex, e)}
+          onChange={(e) => handleReplaceImage(currentImageIndex, e)}
         />
 
         {/* Add new */}
@@ -757,8 +778,9 @@ const handleImageUpload = (index: number, event: React.ChangeEvent<HTMLInputElem
           ref={addInputRef}
           type="file"
           accept="image/*"
+          multiple                               
           className="hidden"
-          onChange={(e) => handleImageUpload(editableImages.length, e)}
+          onChange={handleAddImages} 
         />
 
         {/* Next */}
@@ -788,8 +810,9 @@ const handleImageUpload = (index: number, event: React.ChangeEvent<HTMLInputElem
       ref={addInputRef}
       type="file"
       accept="image/*"
+      multiple                               
       className="hidden"
-      onChange={(e) => handleImageUpload(0, e)}  // add as first image
+      onChange={handleAddImages}  
     />
   </div>
 )}
