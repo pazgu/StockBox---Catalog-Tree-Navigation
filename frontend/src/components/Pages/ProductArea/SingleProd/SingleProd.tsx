@@ -6,18 +6,32 @@ import {
   AccordionContent,
 } from "../../../ui/accordion";
 import cam from "../../../../assets/red-lens-camera.png";
-import { Heart, PencilLine, Upload, Plus, GripVertical } from "lucide-react";
+import {
+  Heart,
+  PencilLine,
+  Upload,
+  Plus,
+  GripVertical,
+  MailQuestionIcon,
+} from "lucide-react";
 import { useUser } from "../../../../context/UserContext";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import {
+  FolderPlus,
+  Folder,
+  File,
+  Video,
+  Music,
+  FileText,
+  Download,
+  Trash2,
+  X,
+} from "lucide-react";
 // Define the structure for an accordion item
-interface AccordionData {
-  id: string; // Unique ID for key and manipulation
-  title: string;
-  content: string;
-  isEditable: boolean; // Flag to indicate if content is editable (like the default ones)
-}
-
+import {AccordionData,UploadedFile,FileFolder} from "../../../../types/types"
+import AccordionSection from "../AccordionSection/AccordionSection/AccordionSection";
+import ImageCarousel from "../ImageCarousel/ImageCarousel/ImageCarousel";
 interface SingleProdProps {}
 
 // Helper function to generate a unique ID (simple timestamp for this example)
@@ -63,24 +77,72 @@ const SingleProd: FC<SingleProdProps> = () => {
     },
   ]);
 
-  const [productImage, setProductImage] = useState(cam);
-  const [originalImage] = useState(cam);
+  // === IMAGE STATES (MODIFIED) ===
+  const [productImages, setProductImages] = useState<string[]>([cam]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [originalImages] = useState<string[]>([cam]);
   const [hasImageChanged, setHasImageChanged] = useState(false);
 
-  // State to manage the item being dragged (for reordering)
+  // === IMAGE HANDLERS ===
+  const nextImage = () => {
+    setCurrentImageIndex((prev) =>
+      prev === productImages.length - 1 ? 0 : prev + 1
+    );
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) =>
+      prev === 0 ? productImages.length - 1 : prev - 1
+    );
+  };
+
+  //This section is for the files upload
+  const handleAddImages = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const newImages = Array.from(files).map((file) =>
+        URL.createObjectURL(file)
+      );
+      setProductImages((prev) => [...prev, ...newImages]);
+    }
+  };
+
+  const handleReplaceImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const newImage = URL.createObjectURL(files[0]);
+      setProductImages((prev) =>
+        prev.map((img, i) => (i === currentImageIndex ? newImage : img))
+      );
+    }
+  };
+
+  const handleDeleteImage = () => {
+    setProductImages((prev) => {
+      if (prev.length === 1) return prev; // keep at least one
+      const updated = prev.filter((_, i) => i !== currentImageIndex);
+      setCurrentImageIndex((prevIndex) =>
+        prevIndex === updated.length ? updated.length - 1 : prevIndex
+      );
+      return updated;
+    });
+  };
+
   const [draggedItem, setDraggedItem] = useState<AccordionData | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
-
-const toggleFavorite = () => {
-  if (isFavorite) {
-    toast.info("הוסר מהמועדפים ");
-  } else {
-    toast.success("נוסף למועדפים ");
-  }
-
-  setIsFavorite((prev) => !prev);
-};
-  // Handle accordion content change
+  const [newFolderName, setNewFolderName] = useState("");
+  const [showNewFolderInput, setShowNewFolderInput] = useState(false);
+  const [folders, setFolders] = useState<FileFolder[]>([
+    { id: "folder-1", name: "ניסויים", files: [] },
+  ]);
+  const toggleFavorite = () => {
+    if (isFavorite) {
+      toast.info("הוסר מהמועדפים ");
+    } else {
+      toast.success("נוסף למועדפים ");
+    }
+    setIsFavorite((prev) => !prev);
+  };
   const handleAccordionContentChange = (id: string, newContent: string) => {
     setAccordionData((prevData) =>
       prevData.map((item) =>
@@ -89,7 +151,6 @@ const toggleFavorite = () => {
     );
   };
 
-  // Handle accordion title change
   const handleAccordionTitleChange = (id: string, newTitle: string) => {
     setAccordionData((prevData) =>
       prevData.map((item) =>
@@ -98,7 +159,6 @@ const toggleFavorite = () => {
     );
   };
 
-  // Add a new custom accordion
   const addCustomAccordion = () => {
     setAccordionData((prevData) => [
       ...prevData,
@@ -123,7 +183,7 @@ const toggleFavorite = () => {
 
   // Handle drag over
   const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault(); // Necessary to allow dropping
+    e.preventDefault();
   };
 
   const handleDrop = (targetItem: AccordionData) => {
@@ -140,7 +200,6 @@ const toggleFavorite = () => {
 
       if (draggedIndex === -1 || targetIndex === -1) return prevData;
 
-      // Reorder logic
       const [removed] = newItems.splice(draggedIndex, 1);
       newItems.splice(targetIndex, 0, removed);
 
@@ -150,9 +209,6 @@ const toggleFavorite = () => {
     setDraggedItem(null); // Reset dragged item
   };
 
-  // --- Features Logic (integrated with the 'features' accordion) ---
-
-  // Memoize the features array for easier manipulation
   const features = useMemo(() => {
     try {
       const data = accordionData.find(
@@ -160,7 +216,7 @@ const toggleFavorite = () => {
       )?.content;
       return data ? JSON.parse(data) : [];
     } catch {
-      return []; // Handle potential JSON parsing error
+      return [];
     }
   }, [accordionData]);
 
@@ -177,45 +233,86 @@ const toggleFavorite = () => {
   const addFeature = () => setFeatures([...features, "תכונה חדשה"]);
   const removeFeature = (index: number) =>
     setFeatures(features.filter((_: string, i: number) => i !== index));
-  // --- Image Handlers (kept from original) ---
 
-  const resetImage = () => {
-    setProductImage(originalImage);
-    setHasImageChanged(false);
-  };
-const handleSaveClick = () => {
-  if(isEditing){
+  const handleSaveClick = () => {
+    if (isEditing) {
       toast.success("השינויים נישמרו בהצלחה!");
-  }
-  setIsEditing(!isEditing); 
-}
-
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (file.type.startsWith("image/")) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const result = e.target?.result;
-          if (result && typeof result === "string") {
-            setProductImage(result);
-            setHasImageChanged(true);
-          }
-        };
-        reader.onerror = () => {
-          console.error("Error reading file");
-          alert("שגיאה בקריאת הקובץ");
-        };
-        reader.readAsDataURL(file);
-      } else {
-        alert("אנא בחר קובץ תמונה תקין");
-      }
     }
-    event.target.value = "";
+    setIsEditing(!isEditing);
   };
 
-  // --- Render Logic ---
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
+  };
 
+  const getFileIcon = (type: string) => {
+    if (type.startsWith("video/"))
+      return <Video size={20} className="text-purple-600" />;
+    if (type.startsWith("audio/"))
+      return <Music size={20} className="text-blue-600" />;
+    if (type.startsWith("image/"))
+      return <File size={20} className="text-green-600" />;
+    if (type.includes("pdf"))
+      return <FileText size={20} className="text-red-600" />;
+    return <File size={20} className="text-gray-600" />;
+  };
+
+  const handleFileUpload = (
+    folderId: string,
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const newFiles: UploadedFile[] = Array.from(files).map((file) => ({
+        id: generateUniqueId(),
+        name: file.name,
+        type: file.type,
+        url: URL.createObjectURL(file),
+        size: file.size,
+      }));
+
+      setFolders((prev) =>
+        prev.map((folder) =>
+          folder.id === folderId
+            ? { ...folder, files: [...folder.files, ...newFiles] }
+            : folder
+        )
+      );
+    }
+  };
+
+  const handleDeleteFile = (folderId: string, fileId: string) => {
+    setFolders((prev) =>
+      prev.map((folder) =>
+        folder.id === folderId
+          ? { ...folder, files: folder.files.filter((f) => f.id !== fileId) }
+          : folder
+      )
+    );
+  };
+
+  const handleCreateFolder = () => {
+    if (newFolderName.trim()) {
+      setFolders((prev) => [
+        ...prev,
+        {
+          id: generateUniqueId(),
+          name: newFolderName,
+          files: [],
+        },
+      ]);
+      setNewFolderName("");
+      setShowNewFolderInput(false);
+    }
+  };
+
+  const handleDeleteFolder = (folderId: string) => {
+    setFolders((prev) => prev.filter((f) => f.id !== folderId));
+  };
   return (
     <div className="pt-32 px-6 pb-10 font-sans-['Noto_Sans_Hebrew'] rtl">
       <div className="max-w-6xl mx-auto">
@@ -262,95 +359,56 @@ const handleSaveClick = () => {
           )}
         </div>
 
-        {/* Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
-          {/* Left: Image & CTA */}
           <div className="lg:col-span-1 order-2 lg:order-1">
             <div className="group relative bg-white p-6 rounded-2xl border border-gray-200 shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300 overflow-hidden">
-              {/* Top accent line */}
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-stockblue to-stockblue"></div>
 
-              {/* Image */}
-              <div className="relative bg-gray-50 p-6 rounded-xl mb-4 overflow-hidden">
-                <img
-                  src={productImage}
-                  alt={title}
-                  className="w-full h-40 object-contain relative z-10 transition-all duration-300 group-hover:scale-105 drop-shadow-md"
-                />
-
-                {isEditing && (
-                  <div className="absolute inset-0 rounded-xl bg-gradient-to-t from-black/70 via-black/30 to-transparent flex items-end justify-center pb-3 z-20 transition-all duration-300">
-                    <div className="flex gap-2">
-                      <label
-                        htmlFor="image-upload"
-                        className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-stockblue bg-white/95 backdrop-blur-sm rounded-lg shadow-md border border-white/30 cursor-pointer hover:shadow-lg hover:scale-105 hover:bg-white transition-all duration-300"
-                      >
-                        <Upload size={14} />
-                        החלף
-                      </label>
-
-                      {hasImageChanged && (
-                        <button
-                          onClick={resetImage}
-                          className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-gray-700/95 backdrop-blur-sm rounded-lg shadow-md border border-gray-600/30 hover:shadow-lg hover:scale-105 hover:bg-gray-800 transition-all duration-300"
-                        >
-                          <span className="text-xs">↶</span> ביטול
-                        </button>
-                      )}
-                    </div>
-                    <input
-                      type="file"
-                      id="image-upload"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                    />
-                  </div>
-                )}
-
-                {isEditing && (
-                  <div className="absolute top-2 right-2 bg-stockblue/90 text-white text-xs font-medium px-2 py-1 rounded-full backdrop-blur-sm">
-                    עריכה
-                  </div>
-                )}
-              </div>
+              {/* === IMAGE CAROUSEL START === */}
+             <ImageCarousel
+                productImages={productImages}
+                currentImageIndex={currentImageIndex}
+                setCurrentImageIndex={setCurrentImageIndex}
+                prevImage={prevImage}
+                nextImage={nextImage}
+                isEditing={isEditing}
+                handleReplaceImage={handleReplaceImage}
+                handleAddImages={handleAddImages}
+                handleDeleteImage={handleDeleteImage}
+                title={title}
+              />
 
               {/* Buttons */}
               {role === "user" ? (
-                <div className="space-y-2 relative z-10">
-                  <button
-                    className="w-full py-3 px-4 rounded-lg font-semibold text-white bg-stockblue shadow-md transition-all duration-300 transform hover:scale-105 hover:bg-stockboxblue/90 active:scale-95"
-                    onClick={() => {
-                      const email = "Superstockbox@outlook.com";
-                      const subject = encodeURIComponent(`${title}`);
-                      const body = encodeURIComponent(
-                        `שלום,\n...אשמח לקבל מידע נוסף לגבי\n\nתודה`
-                      );
-                      window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
-                    }}
-                    dir="rtl"
-                    style={{
-                      fontFamily: "system-ui, -apple-system, sans-serif",
-                    }}
-                  >
-                    צור קשר עם הצוות שלנו
-                  </button>
+                <div className="space-y-2 relative z-10 flex flex-row justify-center">
+              <button
+  title="צור קשר"
+  className="w-14 h-12 py-3 px-4 rounded-lg font-semibold text-stockblue transition-all duration-300 transform hover:bg-stockboxblue/90 active:scale-95"
+  onClick={() => {
+    const email = process.env.REACT_APP_CONTACT_EMAIL;
+    const subject = encodeURIComponent(`${title}`);
+    const body = process.env.REACT_APP_EMAIL_BODY || '';
+    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+  }}
+  dir="rtl"
+  style={{
+    fontFamily: "system-ui, -apple-system, sans-serif",
+  }}
+>
+  <MailQuestionIcon size={24} />
+</button>
 
                   <button
+                    title="הוסף למועדפים"
                     onClick={toggleFavorite}
-                    className={`w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg border transition-all duration-300 transform hover:scale-105
-        ${
-          isFavorite
-            ? " text-red-600"
-            : "bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200"
-        }`}
+                    className={` w-14 h-12 flex items-center justify-center rounded-lg  transition-all duration-300 transform
+        ${isFavorite ? " text-red-600" : " text-gray-700"}`}
                   >
                     <Heart
-                      size={16}
+                      size={24}
                       fill={isFavorite ? "currentColor" : "none"}
-                      className="transition-all duration-300"
+                      className="transition-all duration-300 mb-3.5"
                     />
-                    {isFavorite ? "הסר מהמועדפים" : "הוסף למועדפים"}
                   </button>
                 </div>
               ) : role === "admin" ? (
@@ -367,136 +425,37 @@ const handleSaveClick = () => {
           </div>
 
           {/* Right: Accordion List */}
-          <div className="lg:col-span-2 order-1 lg:order-2">
-            <Accordion type="single" collapsible className="w-full space-y-2">
-              {accordionData.map((item, index) => (
-                <AccordionItem
-                  key={item.id}
-                  value={item.id}
-                  className={`border-b border-gray-200/70 ${
-                    isEditing &&
-                    "p-2 border border-dashed border-gray-300 rounded-lg"
-                  }`}
-                  draggable={isEditing}
-                  onDragStart={() => handleDragStart(item)}
-                  onDragOver={handleDragOver}
-                  onDrop={() => handleDrop(item)}
-                  onDragEnd={() => setDraggedItem(null)} // Reset dragged item on drag end
-                  style={{
-                    opacity:
-                      draggedItem && draggedItem.id === item.id ? 0.4 : 1,
-                  }}
-                >
-                  <AccordionTrigger className="w-full text-right text-lg font-semibold text-stockblue py-4 px-2 rounded-lg hover:bg-stockblue/5 transition-colors [&>svg]:text-stockblue">
-                    {isEditing && (
-                      <div className="flex items-center gap-2 ml-3 text-gray-500 cursor-grab">
-                        <GripVertical size={18} className="cursor-grab" />
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            removeAccordion(item.id);
-                          }}
-                          className="text-black hover:text-gray-700 transition-colors font-bold"
-                          title="הסר אקורדיון"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    )}
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={item.title}
-                        onChange={(e) =>
-                          handleAccordionTitleChange(item.id, e.target.value)
-                        }
-                        onClick={(e) => e.stopPropagation()} // Prevent accordion toggle when editing title
-                        className="bg-transparent text-lg font-semibold text-stockblue border-b border-gray-400 w-full text-right outline-none"
-                      />
-                    ) : (
-                      item.title
-                    )}
-                  </AccordionTrigger>
 
-                  <AccordionContent className="text-right text-base text-gray-700 leading-relaxed pb-6">
-                    {item.id === "features" ? (
-                      // Special rendering for 'features'
-                      isEditing ? (
-                        <div className="space-y-3">
-                          {features.map((feature: string, idx: number) => (
-                            <div key={idx} className="flex items-center gap-2">
-                              <button
-                                onClick={() => removeFeature(idx)}
-                                // Note: The feature remove button is still red for clarity of removal,
-                                // but the main accordion remove 'X' is navy.
-                                className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full p-1 transition-colors duration-200 text-sm"
-                                title="הסר תכונה"
-                              >
-                                ✕
-                              </button>
-                              <input
-                                type="text"
-                                value={feature}
-                                onChange={(e) =>
-                                  handleFeatureChange(idx, e.target.value)
-                                }
-                                className="flex-1 px-3 py-2 text-sm text-gray-700 bg-white/50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-stockblue/50 focus:border-stockblue transition-all duration-300"
-                                placeholder="תכונה..."
-                              />
-                            </div>
-                          ))}
-                          <button
-                            onClick={addFeature}
-                            className="flex items-center gap-1 px-4 py-2 font-medium rounded-lg border border-stockblue/30 text-stockblue bg-stockblue/10 hover:bg-stockblue/20 hover:border-stockblue/50 transition-all duration-300"
-                          >
-                            <Plus size={16} /> הוסף תכונה
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="space-y-2 text-right">
-                          {features.map((feature: string, idx: number) => (
-                            <div key={idx} className="text-sm text-stockblue">
-                              • {feature}
-                            </div>
-                          ))}
-                        </div>
-                      )
-                    ) : // General content rendering
-                    isEditing ? (
-                      <textarea
-                        value={item.content}
-                        onChange={(e) =>
-                          handleAccordionContentChange(item.id, e.target.value)
-                        }
-                        rows={
-                          item.id === "description" ||
-                          item.id === "specifications"
-                            ? 4
-                            : 3
-                        }
-                        className="w-full p-4 text-gray-700 text-sm bg-white/50 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-stockblue/50 focus:border-stockblue transition-all duration-300"
-                      />
-                    ) : (
-                      item.content
-                    )}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
+<AccordionSection
+  isEditing={isEditing}
+  accordionData={accordionData}
+  features={features}
+  folders={folders}
+  draggedItem={draggedItem}
+  showNewFolderInput={showNewFolderInput}
+  newFolderName={newFolderName}
+  handleDragStart={handleDragStart}
+  handleDragOver={handleDragOver}
+  handleDrop={handleDrop}
+  setDraggedItem={setDraggedItem}
+  handleAccordionTitleChange={handleAccordionTitleChange}
+  handleAccordionContentChange={handleAccordionContentChange}
+  removeAccordion={removeAccordion}
+  addCustomAccordion={addCustomAccordion}
+  addFeature={addFeature}
+  removeFeature={removeFeature}
+  handleFeatureChange={handleFeatureChange}
+  getFileIcon={getFileIcon}
+  handleFileUpload={handleFileUpload}
+  handleDeleteFolder={handleDeleteFolder}
+  handleDeleteFile={handleDeleteFile}
+  formatFileSize={formatFileSize}
+  setShowNewFolderInput={setShowNewFolderInput}
+  setNewFolderName={setNewFolderName}
+  handleCreateFolder={handleCreateFolder}
+/>
 
-            {/* Add New Accordion Button */}
-            {isEditing && (
-              <div
-                onClick={addCustomAccordion}
-                // 2. Changed justify-end to justify-start to align with the right in RTL mode
-                className="flex items-center justify-start gap-2 mt-4 p-4 rounded-lg border border-dashed border-gray-300 text-stockblue hover:border-stockblue/50 hover:bg-stockblue/5 transition-all duration-300 cursor-pointer"
-              >
-                <Plus size={18} />
-                <span className="font-medium">הוסף אקורדיון חדש</span>
-              </div>
-            )}
-          </div>
+          
         </div>
       </div>
     </div>
