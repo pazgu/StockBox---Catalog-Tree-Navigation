@@ -11,9 +11,7 @@ import { Link } from "react-router-dom";
 
 export const Favorites: React.FC = () => {
   const [cameras, setCameras] = useState<CameraProduct[]>(initialCameraData);
-  const [categories] = useState<Category[]>(
-    initialCategories.filter((cat: Category) => cat.favorite)
-  );
+  const [categories, setCategories] = useState<Category[]>(initialCategories);
 
   const favoriteCameras = cameras.filter((camera) => camera.favorite);
 
@@ -25,6 +23,14 @@ export const Favorites: React.FC = () => {
     setCameras((prev) =>
       prev.map((cam) =>
         cam.id === id ? { ...cam, favorite: !cam.favorite } : cam
+      )
+    );
+  };
+
+  const toggleCategoryFavorite = (id: number) => {
+    setCategories((prev) =>
+      prev.map((cat) =>
+        cat.id === id ? { ...cat, favorite: !cat.favorite } : cat
       )
     );
   };
@@ -43,27 +49,44 @@ export const Favorites: React.FC = () => {
         מועדפים
       </h1>
 
-      {categories.length > 0 && (
+      {categories.filter((cat) => cat.favorite).length > 0 && (
         <>
           <h2 className="mr-8 text-xl font-semibold text-slate-800 mb-4 text-right">
             קטגוריות מועדפות
           </h2>
           <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-6 m-8">
-            {categories.map((cat) => (
-              <div
-                key={cat.id}
-                className="relative bg-white rounded-xl p-6 text-center shadow-md transition-transform hover:-translate-y-1 hover:shadow-lg"
-              >
-                <Link to={"/single-cat"}>
-                  <img
-                    src={cat.image}
-                    alt={cat.name}
-                    className="w-[100px] h-[100px] object-contain mx-auto mb-3"
-                  />
-                </Link>
-                <p className="font-semibold text-slate-800">{cat.name}</p>
-              </div>
-            ))}
+            {categories
+              .filter((cat) => cat.favorite)
+              .map((cat) => (
+                <div
+                  key={cat.id}
+                  className="relative bg-white rounded-xl p-6 text-center shadow-md transition-transform hover:-translate-y-1 hover:shadow-lg"
+                >
+                  <button
+                    onClick={() => toggleCategoryFavorite(cat.id)}
+                    className="absolute top-3 right-3 p-2 rounded-full bg-black/40 hover:bg-black/60 transition-colors"
+                  >
+                    <Heart
+                      size={22}
+                      strokeWidth={2}
+                      className={
+                        cat.favorite
+                          ? "fill-red-500 text-red-500"
+                          : "text-white"
+                      }
+                    />
+                  </button>
+
+                  <Link to={"/single-cat"}>
+                    <img
+                      src={cat.image}
+                      alt={cat.name}
+                      className="w-[100px] h-[100px] object-contain mx-auto mb-3"
+                    />
+                  </Link>
+                  <p className="font-semibold text-slate-800">{cat.name}</p>
+                </div>
+              ))}
           </div>
         </>
       )}
