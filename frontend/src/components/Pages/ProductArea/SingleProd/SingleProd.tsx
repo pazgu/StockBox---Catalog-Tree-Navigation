@@ -474,24 +474,22 @@ const SingleProd: FC<SingleProdProps> = () => {
               {/* Buttons */}
               {role === "user" ? (
                 <div className="space-y-2 relative z-10 flex flex-row justify-center">
-                  <button
-                    title="צור קשר"
-                    className="w-14 h-12 py-3 px-4 rounded-lg font-semibold text-stockblue transition-all duration-300 transform hover:bg-stockboxblue/90 active:scale-95"
-                    onClick={() => {
-                      const email = "Superstockbox@outlook.com";
-                      const subject = encodeURIComponent(`${title}`);
-                      const body = encodeURIComponent(
-                        `שלום,\n...אשמח לקבל מידע נוסף לגבי\n\nתודה`
-                      );
-                      window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
-                    }}
-                    dir="rtl"
-                    style={{
-                      fontFamily: "system-ui, -apple-system, sans-serif",
-                    }}
-                  >
-                    <MailQuestionIcon size={24}></MailQuestionIcon>
-                  </button>
+              <button
+  title="צור קשר"
+  className="w-14 h-12 py-3 px-4 rounded-lg font-semibold text-stockblue transition-all duration-300 transform hover:bg-stockboxblue/90 active:scale-95"
+  onClick={() => {
+    const email = process.env.REACT_APP_CONTACT_EMAIL;
+    const subject = encodeURIComponent(`${title}`);
+    const body = process.env.REACT_APP_EMAIL_BODY || '';
+    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+  }}
+  dir="rtl"
+  style={{
+    fontFamily: "system-ui, -apple-system, sans-serif",
+  }}
+>
+  <MailQuestionIcon size={24} />
+</button>
 
                   <button
                     title="הוסף למועדפים"
