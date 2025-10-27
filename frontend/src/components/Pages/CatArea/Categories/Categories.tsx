@@ -1,5 +1,14 @@
 import React, { FC, useState, ChangeEvent } from "react";
-import { Pen, Trash, Lock, Headphones, Mic, Camera, Video } from "lucide-react";
+import {
+  Pen,
+  Trash,
+  Lock,
+  Headphones,
+  Mic,
+  Camera,
+  Video,
+  Heart,
+} from "lucide-react";
 import headphones from "../../../../assets/headphones.png";
 import audio from "../../../../assets/audio.png";
 import camera from "../../../../assets/camera.png";
@@ -10,16 +19,36 @@ import { toast } from "sonner";
 import { Link } from "react-router-dom";
 interface CategoriesProps {}
 
-interface Category {
+export interface Category {
   id: number;
   name: string;
   image: string;
   type?: "catparent" | "prodparent" | null;
   children?: Category[];
   isActive?: boolean;
+  favorite?: boolean;
 }
 
-const Categories: FC<CategoriesProps> = () => {
+export const initialCategories: Category[] = [
+  {
+    id: 1,
+    name: "שמיעה",
+    image: headphones,
+    type: "prodparent",
+    favorite: true,
+  },
+  { id: 2, name: "הקלטה", image: audio, type: "prodparent", favorite: false },
+  { id: 3, name: "וידיאו", image: video, type: "prodparent", favorite: true },
+  {
+    id: 4,
+    name: "צילום",
+    image: camera,
+    type: "prodparent",
+    favorite: false,
+  },
+];
+
+export const Categories: FC<CategoriesProps> = () => {
   const [showAddCatModal, setShowAddCatModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -30,13 +59,7 @@ const Categories: FC<CategoriesProps> = () => {
   );
   const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
   const [categoryToType, setCategoryToType] = useState<Category | null>(null);
-  const [categories, setCategories] = useState<Category[]>([
-    { id: 1, name: "שמיעה", image: headphones, type: "prodparent" },
-    { id: 2, name: "הקלטה", image: audio, type: "prodparent" },
-    { id: 3, name: "וידיאו", image: video, type: "prodparent" },
-    { id: 4, name: "צילום", image: camera, type: "prodparent" },
-  ]);
-  const { role } = useUser();
+const [categories, setCategories] = useState<Category[]>(initialCategories);  const { role } = useUser();
   const navigate = useNavigate();
 
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
@@ -48,6 +71,19 @@ const Categories: FC<CategoriesProps> = () => {
       };
       reader.readAsDataURL(file);
     }
+  };
+  const toggleFavorite = (id: number) => {
+    const cam = categories.find((c) => c.id === id);
+    if (!cam) return;
+
+    if (cam.favorite) {
+      toast.info(`${cam.name} הוסר מהמועדפים`);
+    } else {
+      toast.success(`${cam.name} נוסף למועדפים`);
+    }
+    setCategories((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, favorite: !c.favorite } : c))
+    );
   };
 
   const handleEditImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
@@ -73,6 +109,7 @@ const Categories: FC<CategoriesProps> = () => {
         name: newCatName,
         image: newCatImage,
         type: null,
+        favorite: false,
       };
       setCategories([...categories, newCategory]);
     }
@@ -153,6 +190,26 @@ const Categories: FC<CategoriesProps> = () => {
                   }
                 }}
               >
+                {
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      toggleFavorite(category.id);
+                    }}
+                    className="absolute top-3 right-3 p-2 rounded-full bg-black/40 hover:bg-black/60 transition-colors"
+                  >
+                    <Heart
+                      size={22}
+                      strokeWidth={2}
+                      className={
+                        category.favorite
+                          ? "fill-red-500 text-red-500"
+                          : "text-white"
+                      }
+                    />
+                  </button>
+                }
                 <img
                   src={category.image}
                   alt={category.name}
