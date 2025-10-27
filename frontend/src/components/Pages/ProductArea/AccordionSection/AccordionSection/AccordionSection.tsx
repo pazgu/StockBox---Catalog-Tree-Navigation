@@ -15,7 +15,7 @@ import {
   Download,
   X,
 } from "lucide-react";
-import { UploadedFile } from "@/types/types";
+import { UploadedFile } from "../../../../../types/types";
 interface AccordionSectionProps {
   isEditing: boolean;
   accordionData: any[];
