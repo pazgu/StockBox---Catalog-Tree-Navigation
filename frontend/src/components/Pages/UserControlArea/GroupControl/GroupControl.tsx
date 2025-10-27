@@ -24,6 +24,10 @@ const GroupControl: React.FC = () => {
   const { role } = useUser();
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const [groupToEdit, setGroupToEdit] = useState<Group | null>(null);
+  const [editedGroupName, setEditedGroupName] = useState("");
+
+
   // Redirect non-admins
   useEffect(() => {
     if (role !== "admin") {
@@ -228,7 +232,27 @@ const saveNewGroup = () => {
 
 
   const handleEditGroup = (group: Group) => {
-    // ניתן להוסיף עריכת שם/הרשאות בעתיד
+  setGroupToEdit(group);
+  setEditedGroupName(group.name);
+};
+
+  const saveEditedGroup = () => {
+    if (!groupToEdit) return;
+    const trimmedName = editedGroupName.trim();
+    if (!trimmedName) {
+      toast.error("שם הקבוצה לא יכול להיות ריק");
+      return;
+    }
+    if (groups.some((g) => g.name === trimmedName && g.id !== groupToEdit.id)) {
+      toast.error("כבר קיימת קבוצה עם שם זה");
+      return;
+    }
+    setGroups((prev) =>
+      prev.map((g) => (g.id === groupToEdit.id ? { ...g, name: trimmedName } : g))
+    );
+    toast.success("שם הקבוצה עודכן בהצלחה");
+    setGroupToEdit(null);
+    setEditedGroupName("");
   };
 
   const handleDeleteGroup = (group: Group) => setGroupToDelete(group);
@@ -249,6 +273,7 @@ const saveNewGroup = () => {
 
     setGroupToDelete(null);
   };
+  
 
   return (
     <div
@@ -262,7 +287,7 @@ const saveNewGroup = () => {
         </h2>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-lg overflow-hidden max-w-[5000px] mx-auto">
         {/* Header */}
         <div className="bg-gradient-to-l from-slate-700 to-slate-600 text-white p-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
@@ -405,6 +430,34 @@ const saveNewGroup = () => {
                 className="flex-1 p-3 border-none rounded-lg text-base font-medium cursor-pointer transition-all duration-200 bg-red-600 text-white shadow-md hover:bg-red-700 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"
               >
                 מחק
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {groupToEdit && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-96 text-center shadow-lg">
+            <h3 className="text-lg font-semibold mb-3">עריכת שם הקבוצה</h3>
+            <input
+              type="text"
+              value={editedGroupName}
+              onChange={(e) => setEditedGroupName(e.target.value)}
+              placeholder="שם חדש לקבוצה"
+              className="w-full p-2 mb-4 border border-gray-300 rounded-lg text-right"
+            />
+            <div className="flex justify-between gap-3">
+              <button
+                onClick={() => setGroupToEdit(null)}
+                className="flex-1 p-3 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                ביטול
+              </button>
+              <button
+                onClick={saveEditedGroup}
+                className="flex-1 p-3 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
+              >
+                שמור
               </button>
             </div>
           </div>
