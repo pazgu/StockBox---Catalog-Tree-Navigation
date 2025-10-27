@@ -52,3 +52,25 @@ export interface BannedItem {
   type: "product" | "category" | "subcategory";
   image?: string; 
 }
+
+
+export interface AccordionData {
+  id: string; // Unique ID for key and manipulation
+  title: string;
+  content: string;
+  isEditable: boolean; // Flag to indicate if content is editable (like the default ones)
+}
+export interface UploadedFile {
+  id: string;
+  name: string;
+  type: string;
+  url: string;
+  size: number;
+}
+
+// Folder interface
+export interface FileFolder {
+  id: string;
+  name: string;
+  files: UploadedFile[];
+}
