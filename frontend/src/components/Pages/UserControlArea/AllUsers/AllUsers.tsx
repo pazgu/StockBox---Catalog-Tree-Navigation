@@ -6,27 +6,43 @@ import { toast } from "sonner";
 import { Lock, Unlock } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 
+
+
 interface User {
   id: string | number;
   name: string;
   email: string;
   isApproved?: boolean;
+  role: "admin" | "user"; 
 }
+
+const ROLE_OPTIONS: Array<{ value: User["role"]; label: string }> = [
+  { value: "admin", label: "מנהל" },  
+  { value: "user",  label: "משתמש" },  
+];
+
+const roleLabel = (r: User["role"]) =>
+  ROLE_OPTIONS.find((o) => o.value === r)?.label ?? r;
+
+
+
 
 interface AllUsersProps {}
 const usersData: User[] = [
-  { id: 1, name: "ליאלי עמנואלי", email: "lali@outlook.com",isApproved: false },
-  { id: 2, name: "משתמש 2", email: "user2@domain.com",isApproved: false },
-  { id: 3, name: "משתמש 3", email: "user3@domain.com",isApproved: false },
-  { id: 4, name: "משתמש 4", email: "user4@domain.com",isApproved: true },
-  { id: 5, name: "משתמש 5", email: "user5@domain.com",isApproved: true },
-  { id: 6, name: "משתמש 6", email: "user6@domain.com" ,isApproved: true},
-  { id: 7, name: "משתמש 7", email: "user7@domain.com",isApproved: true },
-  { id: 8, name: "משתמש 8", email: "user8@domain.com",isApproved: true },
-  { id: 9, name: "משתמש 9", email: "user9@domain.com",isApproved: true },
-  { id: 10, name: "משתמש 10", email: "user10@domain.com",isApproved: true },
-  { id: 11, name: "משתמש 11", email: "user11@domain.com",isApproved: true },
+  { id: 1,  name: "ליאלי עמנואלי", email: "lali@outlook.com",  isApproved: false, role: "admin" },
+  { id: 2,  name: "משתמש 2",       email: "user2@domain.com", isApproved: false, role: "user" },
+  { id: 3,  name: "משתמש 3",       email: "user3@domain.com", isApproved: false, role: "user" },
+  { id: 4,  name: "משתמש 4",       email: "user4@domain.com", isApproved: true,  role: "user" },
+  { id: 5,  name: "משתמש 5",       email: "user5@domain.com", isApproved: true,  role: "user" },
+  { id: 6,  name: "משתמש 6",       email: "user6@domain.com", isApproved: true,  role: "user" },
+  { id: 7,  name: "משתמש 7",       email: "user7@domain.com", isApproved: true,  role: "user" },
+  { id: 8,  name: "משתמש 8",       email: "user8@domain.com", isApproved: true,  role: "user" },
+  { id: 9,  name: "משתמש 9",       email: "user9@domain.com", isApproved: true,  role: "user" },
+  { id: 10, name: "משתמש 10",      email: "user10@domain.com",isApproved: true,  role: "user" },
+  { id: 11, name: "משתמש 11",      email: "user11@domain.com",isApproved: true,  role: "user" },
 ];
+
+
 
 const AllUsers: FC<AllUsersProps> = () => {
   const navigate = useNavigate();
@@ -318,11 +334,16 @@ const confirmApprove = () => {
               </div>
 
               <div>
-                <div className="text-sm text-gray-600">שם:</div>
-                <div className="font-semibold text-[#0D305B]">{user.name}</div>
-                <div className="text-sm text-gray-600">{user.email}</div>
-              </div>
-            </div>
+  <div className="text-sm text-gray-600">שם:</div>
+  <div className="font-semibold text-[#0D305B]">{user.name}</div>
+  <div className="text-sm text-gray-600">{user.email}</div>
+
+  <div className="inline-block mt-2 text-xs px-2 py-1 rounded-full bg-[#0D305B]/10 text-[#0D305B]">
+    {roleLabel(user.role)}
+  </div>
+</div>
+      </div>
+
           ))}
         </div>
 
@@ -473,6 +494,20 @@ const confirmApprove = () => {
                 onChange={(e) => handleEditChange("email", e.target.value)}
                 className="w-full border rounded px-3 py-2 mb-6 focus:outline-none focus:ring-2 focus:ring-[#0D305B]"
               />
+
+              <label className="block text-sm mb-1">תפקיד:</label>
+<select
+  value={userToEdit.role}
+  onChange={(e) => handleEditChange("role", e.target.value as User["role"])}
+  className="w-full border rounded px-3 py-2 mb-6 focus:outline-none focus:ring-2 focus:ring-[#0D305B]"
+>
+  {ROLE_OPTIONS.map((opt) => (
+    <option key={opt.value} value={opt.value}>
+      {opt.label}
+    </option>
+  ))}
+</select>
+
 
               <div className="flex justify-end gap-3">
                 <button
