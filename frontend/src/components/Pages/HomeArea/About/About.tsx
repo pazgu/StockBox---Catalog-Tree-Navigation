@@ -336,7 +336,7 @@ const handleAddImages = (event: React.ChangeEvent<HTMLInputElement>) => {
 
   const addVisionPoint = () => {
   const nextIndex = editableVisionPoints.length;
-  setEditableVisionPoints(prev => [...prev, "נקודת חזון חדשה"]);
+  setEditableVisionPoints(prev => [...prev, "נקודה חדשה"]);
 
   // Wait for DOM to paint, then scroll & focus
   requestAnimationFrame(() => {
@@ -504,14 +504,14 @@ const handleAddImages = (event: React.ChangeEvent<HTMLInputElement>) => {
     </h2>
   )}
   {isEditing && (
-    <button
-      onClick={addFeature}
-      className="ml-3 mt-4 inline-flex items-center gap-1 text-stockblue hover:text-blue-700 font-semibold text-sm"
-    >
-      <Plus size={16} />
-      הוסף פיצ'ר
-    </button>
-  )}
+  <button
+    onClick={addFeature}
+    className="ml-3 mt-4 inline-flex items-center gap-1 text-stockblue hover:text-blue-700 font-semibold text-sm"
+  >
+    הוסף פיצ'ר
+    <Plus size={16} />
+  </button>
+)}
 </div>
 
 
@@ -600,15 +600,15 @@ const handleAddImages = (event: React.ChangeEvent<HTMLInputElement>) => {
       {visionTitle}
     </h2>
   )}
-  {isEditing && (
-    <button
-      onClick={addVisionPoint}
-      className="mt-4 ml-3 inline-flex items-center gap-1 text-stockblue hover:text-blue-700 font-semibold text-sm"
-    >
-      <Plus size={16} />
-      הוסף נקודה
-    </button>
-  )}
+ {isEditing && (
+  <button
+    onClick={addVisionPoint}
+    className="mt-4 ml-3 inline-flex items-center gap-1 text-stockblue hover:text-blue-700 font-semibold text-sm"
+  >
+    הוסף נקודה
+    <Plus size={16} />
+  </button>
+)}
 </div>
 
 
