@@ -8,14 +8,15 @@ import { Navigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 
 //MISSING SUBCATS LOGIC HERE AFTER BACKEND EXISTS IT MAY BE ADDED
+type FilterType = "all" | "products" | "categories" | "subcategories";
 
 export const Favorites: React.FC = () => {
   const [cameras, setCameras] = useState<CameraProduct[]>(initialCameraData);
-  const [categories] = useState<Category[]>(
-    initialCategories.filter((cat: Category) => cat.favorite)
-  );
+  const [categories, setCategories] = useState<Category[]>(initialCategories);
+  const [activeFilter, setActiveFilter] = useState<FilterType>("all");
 
   const favoriteCameras = cameras.filter((camera) => camera.favorite);
+  const favoriteCategories = categories.filter((cat) => cat.favorite);
 
   useEffect(() => {
     window.scrollBy({ top: 10, behavior: "smooth" });
@@ -29,7 +30,19 @@ export const Favorites: React.FC = () => {
     );
   };
 
-  if (favoriteCameras.length === 0 && categories.length === 0) {
+  const toggleCategoryFavorite = (id: number) => {
+    setCategories((prev) =>
+      prev.map((cat) =>
+        cat.id === id ? { ...cat, favorite: !cat.favorite } : cat
+      )
+    );
+  };
+
+  const showCategories = activeFilter === "all" || activeFilter === "categories";
+  const showProducts = activeFilter === "all" || activeFilter === "products";
+  const showSubcategories = activeFilter === "all" || activeFilter === "subcategories";
+
+  if (favoriteCameras.length === 0 && favoriteCategories.length === 0) {
     return (
       <p className="text-gray-600 text-center mt-40 text-lg">
         אין מועדפים כרגע.
@@ -43,17 +56,77 @@ export const Favorites: React.FC = () => {
         מועדפים
       </h1>
 
-      {categories.length > 0 && (
+      {/* Filter Buttons */}
+      <div className="flex justify-center gap-3 mb-8 flex-wrap">
+        <button
+          onClick={() => setActiveFilter("all")}
+          className={`px-6 py-2 rounded-full font-medium transition-all ${
+            activeFilter === "all"
+              ? "bg-blue-950 text-white shadow-md"
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+          }`}
+        >
+          הכל
+        </button>
+        <button
+          onClick={() => setActiveFilter("categories")}
+          className={`px-6 py-2 rounded-full font-medium transition-all ${
+            activeFilter === "categories"
+              ? "bg-blue-950 text-white shadow-md"
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+          }`}
+        >
+          קטגוריות
+        </button>
+        <button
+          onClick={() => setActiveFilter("subcategories")}
+          className={`px-6 py-2 rounded-full font-medium transition-all ${
+            activeFilter === "subcategories"
+              ? "bg-blue-950 text-white shadow-md"
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+          }`}
+        >
+          תתי קטגוריות
+        </button>
+        <button
+          onClick={() => setActiveFilter("products")}
+          className={`px-6 py-2 rounded-full font-medium transition-all ${
+            activeFilter === "products"
+              ? "bg-blue-950 text-white shadow-md"
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+          }`}
+        >
+          מוצרים
+        </button>
+      </div>
+
+      {/* Categories Section */}
+      {showCategories && favoriteCategories.length > 0 && (
         <>
           <h2 className="mr-8 text-xl font-semibold text-slate-800 mb-4 text-right">
             קטגוריות מועדפות
           </h2>
           <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-6 m-8">
-            {categories.map((cat) => (
+            {favoriteCategories.map((cat) => (
               <div
                 key={cat.id}
                 className="relative bg-white rounded-xl p-6 text-center shadow-md transition-transform hover:-translate-y-1 hover:shadow-lg"
               >
+                <button
+                  onClick={() => toggleCategoryFavorite(cat.id)}
+                  className="absolute top-3 right-3 p-2 rounded-full bg-black/40 hover:bg-black/60 transition-colors"
+                >
+                  <Heart
+                    size={22}
+                    strokeWidth={2}
+                    className={
+                      cat.favorite
+                        ? "fill-red-500 text-red-500"
+                        : "text-white"
+                    }
+                  />
+                </button>
+
                 <Link to={"/single-cat"}>
                   <img
                     src={cat.image}
@@ -68,10 +141,23 @@ export const Favorites: React.FC = () => {
         </>
       )}
 
-      {favoriteCameras.length > 0 && (
+      {/* Subcategories Section - Placeholder for when backend exists */}
+      {showSubcategories && (
+        <div className="m-8">
+          <h2 className="text-xl font-semibold text-slate-800 mb-4 text-right">
+            תתי קטגוריות מועדפות
+          </h2>
+          <p className="text-gray-500 text-center">
+            תתי קטגוריות יתווספו כשהבאקאנד יהיה מוכן
+          </p>
+        </div>
+      )}
+
+      {/* Products Section */}
+      {showProducts && favoriteCameras.length > 0 && (
         <>
           <h2 className="mr-8 text-xl font-semibold text-slate-800 mb-4 text-right">
-            מוצרים מועדפים{" "}
+            מוצרים מועדפים
           </h2>
           <div className="grid grid-cols-[repeat(auto-fill,minmax(273px,1fr))] gap-8 m-8">
             {favoriteCameras.map((camera) => (

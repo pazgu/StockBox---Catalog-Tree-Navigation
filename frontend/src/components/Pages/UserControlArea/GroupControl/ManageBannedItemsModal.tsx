@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { Search, X, Plus, Trash2, Package, FolderTree, Tag, CheckCircle2, AlertCircle, Settings } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { Search, X, Plus, Trash2, Package, FolderTree, Tag, AlertCircle, Settings } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { BannedItem } from '../../../../types/types';
 import canoneos2000d from "../../../../assets/canon-eos2000d.png";
 import headphones from "../../../../assets/headphones.png";
@@ -96,21 +96,18 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
 
   const filteredBannedItems = useMemo(() => {
     return localBannedItems.filter((item) =>
-      (searchQuery === '' ||
-      item.name.toLowerCase().includes(searchQuery.toLowerCase())) &&
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
       (filterType === 'all' || item.type === filterType)
     );
   }, [localBannedItems, searchQuery, filterType]);
 
   const availableItems = useMemo(() => {
     const bannedIds = new Set(localBannedItems.map(item => String(item.id)));
-    return allAvailableItems
-      .filter(item => !bannedIds.has(String(item.id)))
-      .filter(item =>
-        (searchQuery === '' ||
-        item.name.toLowerCase().includes(searchQuery.toLowerCase())) &&
-        (filterType === 'all' || item.type === filterType)
-      );
+    return allAvailableItems.filter(item => 
+      !bannedIds.has(String(item.id)) &&
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+      (filterType === 'all' || item.type === filterType)
+    );
   }, [localBannedItems, searchQuery, filterType]);
 
   const handleRemoveItem = (itemId: string | number) => {
@@ -179,7 +176,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
     >
       <div
         className="bg-white rounded-xl w-full max-w-5xl shadow-2xl text-right flex flex-col my-auto"
-        style={{ maxHeight: 'calc(100vh - 2rem)', minHeight: '400px' }}
+        style={{ height: '570px' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -199,8 +196,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
         {/* Tabs */}
         <div className="flex border-b border-gray-200 flex-shrink-0">
           <button
-            onClick={(e) => {
-              e.preventDefault();
+            onClick={() => {
               setActiveTab('banned');
               if (scrollContainerRef.current) {
                 scrollContainerRef.current.scrollTop = 0;
@@ -218,8 +214,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
             </div>
           </button>
           <button
-            onClick={(e) => {
-              e.preventDefault();
+            onClick={() => {
               setActiveTab('available');
               if (scrollContainerRef.current) {
                 scrollContainerRef.current.scrollTop = 0;
@@ -344,65 +339,61 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
                 </div>
               ) : (
                 <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-1.5">
-                  {filteredBannedItems.map((item) => {
-                    const typeColorClass = getTypeColor(item.type);
-                    return (
-                      <div
-                        key={item.id}
-                        className={`group relative rounded overflow-hidden transition-all cursor-pointer ${
-                          selectedItems.has(item.id) ? 'ring-1 ring-blue-400 shadow-md' : 'hover:shadow-md shadow-sm'
-                        }`}
-                        onClick={() => handleToggleSelection(item.id)}
-                      >
-                        <div className="relative w-full h-24 bg-gray-100 overflow-hidden">
-                          <img 
-                            src={item.image || '/assets/images/default-product.jpg'} 
-                            alt={item.name}
-                            className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105"
-                            onError={(e) => {
-                              e.currentTarget.src = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400';
-                            }}
-                          />
-                          <div className={`absolute top-0.5 right-0.5 w-3 h-3 rounded flex items-center justify-center transition-all ${
-                            selectedItems.has(item.id) ? 'bg-blue-500' : 'bg-white/90'
-                          }`}>
-                            {selectedItems.has(item.id) && (
-                              <svg className="w-1.5 h-1.5 text-white" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" viewBox="0 0 24 24" stroke="currentColor">
-                                <path d="M5 13l4 4L19 7"></path>
-                              </svg>
-                            )}
-                          </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRemoveItem(item.id);
-                            }}
-                            className="absolute top-0.5 left-0.5 p-0.5 bg-white/90 text-gray-700 hover:text-white hover:bg-red-500 rounded transition-all opacity-0 group-hover:opacity-100"
-                            title="הסר חסימה"
-                          >
-                            <Trash2 className="w-2.5 h-2.5" />
-                          </button>
-                          {/* Permissions Button */}
-                          <Link
-                            to={`/permissions?item=${item.id}&type=${item.type}`}
-                            onClick={(e) => e.stopPropagation()}
-                            className="absolute bottom-0.5 left-0.5 px-1 py-0.5 bg-orange-600 hover:bg-orange-700 text-white text-[8px] font-bold rounded transition-all opacity-0 group-hover:opacity-100 flex items-center gap-0.5"
-                            title="נהל הרשאות"
-                          >
-                            <Settings className="w-2 h-2" />
-                            הרשאות
-                          </Link>
-                          <div className={`absolute bottom-0.5 right-0.5 px-1 py-0.5 ${typeColorClass} text-white text-[7px] font-bold rounded-full flex items-center gap-0.5`}>
-                            {getItemIcon(item.type)}
-                            <span>{getItemTypeLabel(item.type)}</span>
-                          </div>
+                  {filteredBannedItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className={`group relative rounded overflow-hidden transition-all cursor-pointer ${
+                        selectedItems.has(item.id) ? 'ring-1 ring-blue-400 shadow-md' : 'hover:shadow-md shadow-sm'
+                      }`}
+                      onClick={() => handleToggleSelection(item.id)}
+                    >
+                      <div className="relative w-full h-24 bg-gray-100 overflow-hidden">
+                        <img 
+                          src={item.image || '/assets/images/default-product.jpg'} 
+                          alt={item.name}
+                          className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105"
+                          onError={(e) => {
+                            e.currentTarget.src = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400';
+                          }}
+                        />
+                        <div className={`absolute top-0.5 right-0.5 w-3 h-3 rounded flex items-center justify-center transition-all ${
+                          selectedItems.has(item.id) ? 'bg-blue-500' : 'bg-white/90'
+                        }`}>
+                          {selectedItems.has(item.id) && (
+                            <svg className="w-1.5 h-1.5 text-white" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" viewBox="0 0 24 24" stroke="currentColor">
+                              <path d="M5 13l4 4L19 7"></path>
+                            </svg>
+                          )}
                         </div>
-                        <div className="p-1.5 bg-white">
-                          <h4 className="font-semibold text-gray-800 text-[10px] line-clamp-2 text-center leading-tight">{item.name}</h4>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveItem(item.id);
+                          }}
+                          className="absolute top-1 left-1 p-1 bg-white/90 text-gray-700 hover:text-white hover:bg-red-500 rounded transition-all opacity-0 group-hover:opacity-100"
+                          title="הסר חסימה"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                        <Link
+                          to={`/permissions?item=${item.id}&type=${item.type}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="absolute bottom-1 left-1 px-1 py-1 bg-orange-600 hover:bg-orange-700 text-white text-[8px] font-bold rounded transition-all opacity-0 group-hover:opacity-100 flex items-center gap-0.5"
+                          title="נהל הרשאות"
+                        >
+                          <Settings className="w-2 h-2" />
+                          הרשאות
+                        </Link>
+                        <div className={`absolute bottom-0.5 right-0.5 px-1 py-0.5 ${getTypeColor(item.type)} text-white text-[7px] font-bold rounded-full flex items-center gap-0.5`}>
+                          {getItemIcon(item.type)}
+                          <span>{getItemTypeLabel(item.type)}</span>
                         </div>
                       </div>
-                    );
-                  })}
+                      <div className="p-1.5 bg-white">
+                        <h4 className="font-semibold text-gray-800 text-[10px] line-clamp-2 text-center leading-tight">{item.name}</h4>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )
             ) : (
@@ -415,65 +406,61 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
                 </div>
               ) : (
                 <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-1.5">
-                  {availableItems.map((item) => {
-                    const typeColorClass = getTypeColor(item.type);
-                    return (
-                      <div
-                        key={item.id}
-                        className={`group relative rounded overflow-hidden transition-all cursor-pointer ${
-                          selectedItems.has(item.id) ? 'ring-1 ring-blue-400 shadow-md' : 'hover:shadow-md shadow-sm'
-                        }`}
-                        onClick={() => handleToggleSelection(item.id)}
-                      >
-                        <div className="relative w-full h-24 bg-gray-100 overflow-hidden">
-                          <img 
-                            src={item.image || '/assets/images/default-product.jpg'} 
-                            alt={item.name}
-                            className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105"
-                            onError={(e) => {
-                              e.currentTarget.src = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400';
-                            }}
-                          />
-                          <div className={`absolute top-0.5 right-0.5 w-3 h-3 rounded flex items-center justify-center transition-all ${
-                            selectedItems.has(item.id) ? 'bg-blue-500' : 'bg-white/90'
-                          }`}>
-                            {selectedItems.has(item.id) && (
-                              <svg className="w-1.5 h-1.5 text-white" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" viewBox="0 0 24 24" stroke="currentColor">
-                                <path d="M5 13l4 4L19 7"></path>
-                              </svg>
-                            )}
-                          </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleAddItem(item);
-                            }}
-                            className="absolute top-0.5 left-0.5 p-0.5 bg-white/90 text-gray-700 hover:text-white hover:bg-green-500 rounded transition-all opacity-0 group-hover:opacity-100"
-                            title="הוסף לחסימה"
-                          >
-                            <Plus className="w-2.5 h-2.5" />
-                          </button>
-                          {/* Permissions Button */}
-                          <Link
-                            to={`/permissions?item=${item.id}&type=${item.type}`}
-                            onClick={(e) => e.stopPropagation()}
-                            className="absolute bottom-0.5 left-0.5 px-1 py-0.5 bg-orange-600 hover:bg-orange-700 text-white text-[8px] font-bold rounded transition-all opacity-0 group-hover:opacity-100 flex items-center gap-0.5"
-                            title="נהל הרשאות"
-                          >
-                            <Settings className="w-2 h-2" />
-                            הרשאות
-                          </Link>
-                          <div className={`absolute bottom-0.5 right-0.5 px-1 py-0.5 ${typeColorClass} text-white text-[7px] font-bold rounded-full flex items-center gap-0.5`}>
-                            {getItemIcon(item.type)}
-                            <span>{getItemTypeLabel(item.type)}</span>
-                          </div>
+                  {availableItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className={`group relative rounded overflow-hidden transition-all cursor-pointer ${
+                        selectedItems.has(item.id) ? 'ring-1 ring-blue-400 shadow-md' : 'hover:shadow-md shadow-sm'
+                      }`}
+                      onClick={() => handleToggleSelection(item.id)}
+                    >
+                      <div className="relative w-full h-24 bg-gray-100 overflow-hidden">
+                        <img 
+                          src={item.image || '/assets/images/default-product.jpg'} 
+                          alt={item.name}
+                          className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105"
+                          onError={(e) => {
+                            e.currentTarget.src = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400';
+                          }}
+                        />
+                        <div className={`absolute top-0.5 right-0.5 w-3 h-3 rounded flex items-center justify-center transition-all ${
+                          selectedItems.has(item.id) ? 'bg-blue-500' : 'bg-white/90'
+                        }`}>
+                          {selectedItems.has(item.id) && (
+                            <svg className="w-1.5 h-1.5 text-white" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" viewBox="0 0 24 24" stroke="currentColor">
+                              <path d="M5 13l4 4L19 7"></path>
+                            </svg>
+                          )}
                         </div>
-                        <div className="p-1.5 bg-white">
-                          <h4 className="font-semibold text-gray-800 text-[10px] line-clamp-2 text-center leading-tight">{item.name}</h4>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAddItem(item);
+                          }}
+                          className="absolute top-1 left-1 p-1 bg-white/90 text-gray-700 hover:text-white hover:bg-green-500 rounded transition-all opacity-0 group-hover:opacity-100"
+                          title="הוסף לחסימה"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                        </button>
+                        <Link
+                          to={`/permissions?item=${item.id}&type=${item.type}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="absolute bottom-1 left-1 px-1 py-1 bg-orange-600 hover:bg-orange-700 text-white text-[8px] font-bold rounded transition-all opacity-0 group-hover:opacity-100 flex items-center gap-0.5"
+                          title="נהל הרשאות"
+                        >
+                          <Settings className="w-2 h-2" />
+                          הרשאות
+                        </Link>
+                        <div className={`absolute bottom-0.5 right-0.5 px-1 py-0.5 ${getTypeColor(item.type)} text-white text-[7px] font-bold rounded-full flex items-center gap-0.5`}>
+                          {getItemIcon(item.type)}
+                          <span>{getItemTypeLabel(item.type)}</span>
                         </div>
                       </div>
-                    );
-                  })}
+                      <div className="p-1.5 bg-white">
+                        <h4 className="font-semibold text-gray-800 text-[10px] line-clamp-2 text-center leading-tight">{item.name}</h4>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )
             )}
