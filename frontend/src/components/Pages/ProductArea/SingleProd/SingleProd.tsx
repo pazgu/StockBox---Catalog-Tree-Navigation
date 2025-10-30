@@ -399,7 +399,7 @@ const SingleProd: FC<SingleProdProps> = () => {
                     }}
                   >
                     <MailQuestionIcon size={24} />
-                  </button> <h3 className="pt-2">|</h3>
+                  </button> <h3 className="pt-1">|</h3>
 
                   <button
                     title="הוסף למועדפים"
@@ -410,7 +410,7 @@ const SingleProd: FC<SingleProdProps> = () => {
                     <Heart
                       size={24}
                       fill={isFavorite ? "currentColor" : "none"}
-                      className="transition-all duration-300 mb-3.5 text-red-700"
+                      className="transition-all duration-300 mb-3.5 text-red-700 size-6"
                     />
                   </button>
                 </div>
