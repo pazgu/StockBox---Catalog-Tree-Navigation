@@ -28,8 +28,11 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-// Define the structure for an accordion item
-import {AccordionData,UploadedFile,FileFolder} from "../../../../types/types"
+import {
+  AccordionData,
+  UploadedFile,
+  FileFolder,
+} from "../../../../types/types";
 import AccordionSection from "../AccordionSection/AccordionSection/AccordionSection";
 import ImageCarousel from "../ImageCarousel/ImageCarousel/ImageCarousel";
 interface SingleProdProps {}
@@ -361,11 +364,11 @@ const SingleProd: FC<SingleProdProps> = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
           <div className="lg:col-span-1 order-2 lg:order-1">
-            <div className="group relative bg-white p-6 rounded-2xl border border-gray-200 shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300 overflow-hidden">
+            <div className="group relative bg-white p-6 rounded-2xl border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-stockblue to-stockblue"></div>
 
               {/* === IMAGE CAROUSEL START === */}
-             <ImageCarousel
+              <ImageCarousel
                 productImages={productImages}
                 currentImageIndex={currentImageIndex}
                 setCurrentImageIndex={setCurrentImageIndex}
@@ -380,34 +383,34 @@ const SingleProd: FC<SingleProdProps> = () => {
 
               {/* Buttons */}
               {role === "user" ? (
-                <div className="space-y-2 relative z-10 flex flex-row justify-center">
-              <button
-  title="צור קשר"
-  className="w-14 h-12 py-3 px-4 rounded-lg font-semibold text-stockblue transition-all duration-300 transform hover:bg-stockboxblue/90 active:scale-95"
-  onClick={() => {
-    const email = process.env.REACT_APP_CONTACT_EMAIL;
-    const subject = encodeURIComponent(`${title}`);
-    const body = process.env.REACT_APP_EMAIL_BODY || '';
-    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
-  }}
-  dir="rtl"
-  style={{
-    fontFamily: "system-ui, -apple-system, sans-serif",
-  }}
->
-  <MailQuestionIcon size={24} />
-</button>
+                <div className="space-y-2 relative z-10 flex flex-row justify-center gap-12">
+                  <button
+                    title="צור קשר"
+                    className="w-14 h-12 py-3 px-4 rounded-lg font-semibold text-stockblue transition-all duration-300 transform hover:scale-105  active:scale-95"
+                    onClick={() => {
+                      const email = process.env.REACT_APP_CONTACT_EMAIL;
+                      const subject = encodeURIComponent(`${title}`);
+                      const body = process.env.REACT_APP_EMAIL_BODY || "";
+                      window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+                    }}
+                    dir="rtl"
+                    style={{
+                      fontFamily: "system-ui, -apple-system, sans-serif",
+                    }}
+                  >
+                    <MailQuestionIcon size={24} />
+                  </button> <h3 className="pt-2">|</h3>
 
                   <button
                     title="הוסף למועדפים"
                     onClick={toggleFavorite}
-                    className={` w-14 h-12 flex items-center justify-center rounded-lg  transition-all duration-300 transform
+                    className={` w-14 h-12 flex items-center justify-center rounded-lg hover:scale-105 transition-all duration-300 transform
         ${isFavorite ? " text-red-600" : " text-gray-700"}`}
                   >
                     <Heart
                       size={24}
                       fill={isFavorite ? "currentColor" : "none"}
-                      className="transition-all duration-300 mb-3.5"
+                      className="transition-all duration-300 mb-3.5 text-red-700"
                     />
                   </button>
                 </div>
@@ -426,36 +429,34 @@ const SingleProd: FC<SingleProdProps> = () => {
 
           {/* Right: Accordion List */}
 
-<AccordionSection
-  isEditing={isEditing}
-  accordionData={accordionData}
-  features={features}
-  folders={folders}
-  draggedItem={draggedItem}
-  showNewFolderInput={showNewFolderInput}
-  newFolderName={newFolderName}
-  handleDragStart={handleDragStart}
-  handleDragOver={handleDragOver}
-  handleDrop={handleDrop}
-  setDraggedItem={setDraggedItem}
-  handleAccordionTitleChange={handleAccordionTitleChange}
-  handleAccordionContentChange={handleAccordionContentChange}
-  removeAccordion={removeAccordion}
-  addCustomAccordion={addCustomAccordion}
-  addFeature={addFeature}
-  removeFeature={removeFeature}
-  handleFeatureChange={handleFeatureChange}
-  getFileIcon={getFileIcon}
-  handleFileUpload={handleFileUpload}
-  handleDeleteFolder={handleDeleteFolder}
-  handleDeleteFile={handleDeleteFile}
-  formatFileSize={formatFileSize}
-  setShowNewFolderInput={setShowNewFolderInput}
-  setNewFolderName={setNewFolderName}
-  handleCreateFolder={handleCreateFolder}
-/>
-
-          
+          <AccordionSection
+            isEditing={isEditing}
+            accordionData={accordionData}
+            features={features}
+            folders={folders}
+            draggedItem={draggedItem}
+            showNewFolderInput={showNewFolderInput}
+            newFolderName={newFolderName}
+            handleDragStart={handleDragStart}
+            handleDragOver={handleDragOver}
+            handleDrop={handleDrop}
+            setDraggedItem={setDraggedItem}
+            handleAccordionTitleChange={handleAccordionTitleChange}
+            handleAccordionContentChange={handleAccordionContentChange}
+            removeAccordion={removeAccordion}
+            addCustomAccordion={addCustomAccordion}
+            addFeature={addFeature}
+            removeFeature={removeFeature}
+            handleFeatureChange={handleFeatureChange}
+            getFileIcon={getFileIcon}
+            handleFileUpload={handleFileUpload}
+            handleDeleteFolder={handleDeleteFolder}
+            handleDeleteFile={handleDeleteFile}
+            formatFileSize={formatFileSize}
+            setShowNewFolderInput={setShowNewFolderInput}
+            setNewFolderName={setNewFolderName}
+            handleCreateFolder={handleCreateFolder}
+          />
         </div>
       </div>
     </div>

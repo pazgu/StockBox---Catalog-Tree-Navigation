@@ -1,10 +1,5 @@
 import React, { FC, useState, useEffect } from 'react';
-import {
-  Star, Settings, TrendingUp, Search, CheckCircle2, Compass, Edit2, X, Plus, GripVertical,
-  Camera, Video, Image as ImageIcon, Images, Microscope, Beaker, FlaskConical, TestTube, Rocket,
-  Wrench, Shield, Cloud, Database, Folder, FileText, Share2, Users, AlertTriangle, Bell, Calendar,
-  Map, MessageSquare, ClipboardList, Box, Package, Layers, Tag, Link, Lock, Unlock, Upload, Download
-} from 'lucide-react';
+
 import pic1 from '../../../../assets/pic1.jpg';
 import pic2 from '../../../../assets/pic2.jpg';
 import pic3 from '../../../../assets/pic3.jpg';
@@ -12,52 +7,16 @@ import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../../../context/UserContext';
 import { toast } from 'sonner';
 import isEqual from "lodash/isEqual";
+import {
+   CheckCircle2, Compass, Edit2, X, Plus, GripVertical,
+  Upload, 
+} from 'lucide-react';
 
-// --- Hebrew icon catalog (value is what we store; label is what we show) ---
-const ICONS_HE = [
-  { value: "כוכב",          label: "כוכב (דגש/מועדפים)",          component: Star },
-  { value: "הגדרות",        label: "הגדרות",                       component: Settings },
-  { value: "מגמה",          label: "מגמה/שיפור",                   component: TrendingUp },
-  { value: "חיפוש",         label: "חיפוש",                        component: Search },
-  { value: "אישור",         label: "אישור/בדיקה",                  component: CheckCircle2 },
-  { value: "מצפן",          label: "ניווט/מצפן",                    component: Compass },
 
-  // Cameras / experiments / lab
-  { value: "מצלמה",         label: "מצלמה",                        component: Camera },
-  { value: "וידאו",         label: "וידאו/צילום",                  component: Video },
-  { value: "תמונה",         label: "תמונה",                        component: ImageIcon },
-  { value: "גלריה",         label: "גלריה",                        component: Images },
-  { value: "מיקרוסקופ",     label: "מיקרוסקופ",                    component: Microscope },
-  { value: "כוס מדידה",     label: "כוס מדידה (Beaker)",           component: Beaker },
-  { value: "מבקרון",        label: "מבקרון (Flask)",               component: FlaskConical },
-  { value: "מבחנה",         label: "מבחנה (Test Tube)",            component: TestTube },
-  { value: "טיל",           label: "טיל/ניסוי",                    component: Rocket },
-
-  // Useful app icons
-  { value: "כלים",          label: "כלים/תחזוקה",                  component: Wrench },
-  { value: "מגן",           label: "אבטחה/מגן",                    component: Shield },
-  { value: "ענן",           label: "ענן/סנכרון",                    component: Cloud },
-  { value: "מסד נתונים",    label: "מסד נתונים",                   component: Database },
-  { value: "תיקייה",        label: "תיקייה",                        component: Folder },
-  { value: "מסמך",          label: "מסמך/קובץ",                     component: FileText },
-  { value: "שיתוף",         label: "שיתוף",                         component: Share2 },
-  { value: "משתמשים",       label: "משתמשים/צוות",                  component: Users },
-  { value: "אזהרה",         label: "אזהרה/שגיאה",                   component: AlertTriangle },
-  { value: "התראה",         label: "התראה/פעמון",                   component: Bell },
-  { value: "לוח שנה",       label: "לוח שנה",                       component: Calendar },
-  { value: "מפה",           label: "מפה",                           component: Map },
-  { value: "הודעה",         label: "הודעה/דיון",                    component: MessageSquare },
-  { value: "רשימת משימות",  label: "רשימת משימות",                  component: ClipboardList },
-  { value: "קופסה",         label: "קופסה/מוצר",                    component: Box },
-  { value: "חבילה",         label: "חבילה/משלוח",                   component: Package },
-  { value: "שכבות",         label: "שכבות/יררכיה",                  component: Layers },
-  { value: "תגית",          label: "תגית/קטגוריה",                   component: Tag },
-  { value: "קישור",         label: "קישור",                         component: Link },
-  { value: "נעילה",         label: "נעילה",                         component: Lock },
-  { value: "פתיחה",         label: "פתיחה/שחרור",                   component: Unlock },
-  { value: "העלאה",         label: "העלאה",                         component: Upload },
-  { value: "הורדה",         label: "הורדה",                         component: Download },
-];
+import { ICONS_HE } from '../../../../mockdata/icons';
+import FeaturesSection from './FeaturesSection/FeaturesSection';
+import VisionSection from './VisionSection/VisionSection';
+import AboutImagesPanel from './AboutImagesPanel/AboutImagesPanel';
 
 // Build a map for rendering (value -> component)
 const IconMap: { [key: string]: FC<any> } = Object.fromEntries(
@@ -79,8 +38,6 @@ const EN_TO_HE: Record<string, string> = {
 
 // For the <select> options:
 const iconOptions = ICONS_HE.map(i => ({ value: i.value, label: i.label }));
-
-
 
 
 interface AboutProps {
@@ -119,6 +76,43 @@ const visionItemRefs = React.useRef<HTMLLIElement[]>([]);
 const visionInputRefs = React.useRef<HTMLInputElement[]>([]);
 
 
+
+// Add near other hooks in About
+const imageWrapRef = React.useRef<HTMLDivElement | null>(null);
+const touchStartXRef = React.useRef<number | null>(null);
+
+// Keyboard arrows (←/→)
+React.useEffect(() => {
+  const onKeyDown = (e: KeyboardEvent) => {
+    const el = imageWrapRef.current;
+    if (!el) return;
+    const within =
+      el.contains(document.activeElement) || document.activeElement === document.body;
+    if (!within) return;
+
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      goPrev();
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      goNext();
+    }
+  };
+  window.addEventListener("keydown", onKeyDown);
+  return () => window.removeEventListener("keydown", onKeyDown);
+}, [goPrev, goNext]);
+
+// Touch swipe
+const onTouchStart = (e: React.TouchEvent) => {
+  touchStartXRef.current = e.touches[0].clientX;
+};
+const onTouchEnd = (e: React.TouchEvent) => {
+  if (touchStartXRef.current == null) return;
+  const dx = e.changedTouches[0].clientX - touchStartXRef.current;
+  touchStartXRef.current = null;
+  if (dx > 40) goPrev();
+  if (dx < -40) goNext();
+};
 
 
  const [editableFeatures, setEditableFeatures] = useState([
@@ -274,11 +268,13 @@ const handleAddImages = (event: React.ChangeEvent<HTMLInputElement>) => {
 
 
 
-  const handleFeatureChange = (index: number, field: 'title' | 'description', value: string) => {
-    const newFeatures = [...editableFeatures];
-    newFeatures[index] = { ...newFeatures[index], [field]: value };
-    setEditableFeatures(newFeatures);
-  };
+const handleFeatureChange = (index: number, field: "title" | "description" | "icon", value: string) => {
+  setEditableFeatures(prev => {
+    const next = [...prev];
+    next[index] = { ...next[index], [field]: value };
+    return next;
+  });
+};
 
   const clearAllImages = () => {
   setEditableImages([]);
@@ -286,45 +282,20 @@ const handleAddImages = (event: React.ChangeEvent<HTMLInputElement>) => {
 };
 
 
-  const handleFeatureIconChange = (index: number, iconName: string) => {
-    const newFeatures = [...editableFeatures];
-    newFeatures[index] = { ...newFeatures[index], icon: iconName };
-    setEditableFeatures(newFeatures);
-  };
-
-  const addFeature = () => {
+const addFeature = () => {
   if (!isEditing) setIsEditing(true);
-
-  const newItem = { icon: "כוכב", title: "כותרת חדשה", description: "תיאור פיצ'ר חדש." };
-  const nextIndex = editableFeatures.length;
-
-  setEditableFeatures(prev => [...prev, newItem]);
-
-  // Wait for DOM to paint, then scroll & focus
-  requestAnimationFrame(() => {
-    const el = featureItemRefs.current[nextIndex];
-    const input = featureTitleInputRefs.current[nextIndex];
-
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
-      // quick visual cue
-      el.classList.add("ring-2", "ring-stockblue", "ring-offset-2", "ring-offset-white");
-      setTimeout(() => {
-        el.classList.remove("ring-2", "ring-stockblue", "ring-offset-2", "ring-offset-white");
-      }, 1200);
-    }
-    if (input) {
-      input.focus();
-      input.select();
-    }
-  });
+  setEditableFeatures(prev => [...prev, { icon: "כוכב", title: "כותרת חדשה", description: "תיאור פיצ'ר חדש." }]);
 };
 
 
-  const removeFeature = (index: number) => {
-    const newFeatures = editableFeatures.filter((_, i) => i !== index);
-    setEditableFeatures(newFeatures);
-  };
+
+const removeFeature = (index: number) => {
+  setEditableFeatures(prev => prev.filter((_, i) => i !== index));
+};
+const handleFeaturesReorder = (next: typeof editableFeatures) => {
+  setEditableFeatures(next);
+};
+
 
   const handleVisionPointChange = (index: number, value: string) => {
     const newVisionPoints = [...editableVisionPoints];
@@ -336,7 +307,7 @@ const handleAddImages = (event: React.ChangeEvent<HTMLInputElement>) => {
 
   const addVisionPoint = () => {
   const nextIndex = editableVisionPoints.length;
-  setEditableVisionPoints(prev => [...prev, "נקודת חזון חדשה"]);
+  setEditableVisionPoints(prev => [...prev, "נקודה חדשה"]);
 
   // Wait for DOM to paint, then scroll & focus
   requestAnimationFrame(() => {
@@ -364,27 +335,7 @@ const handleAddImages = (event: React.ChangeEvent<HTMLInputElement>) => {
     setEditableVisionPoints(newVisionPoints);
   };
 
-  // Drag and drop handlers for features
-  const handleFeatureDragStart = (index: number) => {
-    setDraggedFeatureIndex(index);
-  };
 
-  const handleFeatureDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    if (draggedFeatureIndex === null || draggedFeatureIndex === index) return;
-
-    const newFeatures = [...editableFeatures];
-    const draggedItem = newFeatures[draggedFeatureIndex];
-    newFeatures.splice(draggedFeatureIndex, 1);
-    newFeatures.splice(index, 0, draggedItem);
-
-    setEditableFeatures(newFeatures);
-    setDraggedFeatureIndex(index);
-  };
-
-  const handleFeatureDragEnd = () => {
-    setDraggedFeatureIndex(null);
-  };
 
   // Drag and drop handlers for vision points
   const handleVisionDragStart = (index: number) => {
@@ -490,353 +441,60 @@ const handleAddImages = (event: React.ChangeEvent<HTMLInputElement>) => {
           </div>
 
           {/* Features Section Header - MODIFIED */}
-<div className="flex items-center justify-between mb-4">
-  {isEditing ? (
-    <input
-      type="text"
-      value={featuresTitle}
-      onChange={(e) => setFeaturesTitle(e.target.value)}
-      className="text-[1.8rem] text-stockblue my-6 mb-4 font-bold border-b-2 border-stockblue/15 pb-1.5 inline-block w-full border border-stockblue/30 rounded px-3 py-1 focus:outline-none focus:border-stockblue"
-    />
-  ) : (
-    <h2 className="text-[1.8rem] text-stockblue my-6 mb-4 font-bold border-b-2 border-stockblue/15 pb-1.5 inline-block">
-      {featuresTitle}
-    </h2>
-  )}
-  {isEditing && (
-    <button
-      onClick={addFeature}
-      className="ml-3 mt-4 inline-flex items-center gap-1 text-stockblue hover:text-blue-700 font-semibold text-sm"
-    >
-      <Plus size={16} />
-      הוסף פיצ'ר
-    </button>
-  )}
-</div>
+<FeaturesSection
+  isEditing={isEditing}
+  title={featuresTitle}
+  onChangeTitle={setFeaturesTitle}
+  features={editableFeatures}
+  onAdd={addFeature}
+  onRemove={removeFeature}
+  onChange={handleFeatureChange}
+  onReorder={handleFeaturesReorder}
+  iconOptions={iconOptions}
+  IconMap={IconMap}
+/>
 
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 my-8">
-            {editableFeatures.map((feature, index) => {
-              const IconComponent = IconMap[feature.icon] || Star; 
-              return (
-               <div 
-                  key={index} 
-                  ref={(el) => { if (el) featureItemRefs.current[index] = el; }}
-                  className={`relative bg-white/90 backdrop-blur-[8px] rounded-[14px] p-5 flex items-start gap-3.5 shadow-[0_4px_20px_rgba(0,0,0,0.06)] border border-stockblue/8 transition-all duration-[250ms] ease-out hover:transform hover:-translate-y-[3px] hover:shadow-[0_8px_30px_rgba(0,0,0,0.1)] hover:bg-white/96 ${
-                    isEditing ? 'cursor-move' : ''
-                  } ${draggedFeatureIndex === index ? 'opacity-50' : ''}`}
-                  draggable={isEditing}
-                  onDragStart={() => handleFeatureDragStart(index)}
-                  onDragOver={(e) => handleFeatureDragOver(e, index)}
-                  onDragEnd={handleFeatureDragEnd}
-                >
-                  {isEditing && editableFeatures.length > 1 && (
-                    <button
-                      onClick={() => removeFeature(index)}
-                      className="absolute -top-2 -right-2 text-red-500 hover:text-red-700 z-10 p-1 rounded-full bg-white shadow-md hover:shadow-lg transition-all"
-                      title="הסר פיצ'ר"
-                    >
-                      <X size={16} />
-                    </button>
-                  )}
-                  <div className="bg-stockblue text-white w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 shadow-[0_4px_14px_rgba(13,48,91,0.25)]">
-                    <IconComponent size={22} />
-                  </div>
-                  {isEditing && (
-                    <div className="flex-shrink-0">
-                     <select
-  value={feature.icon}
-  onChange={(e) => handleFeatureIconChange(index, e.target.value)}
-  className="text-xs font-semibold text-gray-800 mb-1 leading-[1.3] w-full border border-stockblue/30 rounded px-1 py-0.5 focus:outline-none focus:border-stockblue"
->
-  {iconOptions.map((opt) => (
-    <option key={opt.value} value={opt.value}>
-      {opt.label}
-    </option>
-  ))}
-</select>
-
-                    </div>
-                  )}
-                  <div className="feature-content flex-1">
-                    {isEditing ? (
-                      <>
-                        <input
-                         ref={(el) => { if (el) featureTitleInputRefs.current[index] = el; }}
-                          type="text"
-                          value={feature.title}
-                          onChange={(e) => handleFeatureChange(index, 'title', e.target.value)}
-                          className="text-[1.1rem] font-bold text-gray-800 mb-1.5 leading-[1.3] w-full border border-stockblue/30 rounded px-2 py-1 focus:outline-none focus:border-stockblue"
-                        />
-                        <textarea
-                          value={feature.description}
-                          onChange={(e) => handleFeatureChange(index, 'description', e.target.value)}
-                          className="text-[0.97rem] text-gray-600 leading-[1.6] w-full border-2 border-stockblue/30 rounded px-3 py-2 focus:outline-none focus:border-stockblue min-h-[80px]" // Added border-2, more padding, increased min-height
-                        />
-                      </>
-                    ) : (
-                      <>
-                        <h3 className="text-[1.1rem] font-bold text-gray-800 m-0 mb-1.5 leading-[1.3]">{feature.title}</h3>
-                        <p className="text-[0.97rem] text-gray-600 m-0 leading-[1.6]">{feature.description}</p>
-                      </>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+        
 
           {/* Vision Section */}
-          <div className="flex items-center justify-between mb-4">
-  {isEditing ? (
-    <input
-      type="text"
-      value={visionTitle}
-      onChange={(e) => setVisionTitle(e.target.value)}
-      className="text-[1.8rem] text-stockblue mt-8 mb-4 font-bold border-b-2 border-stockblue/15 pb-1.5 inline-block w-full border border-stockblue/30 rounded px-3 py-1 focus:outline-none focus:border-stockblue"
-    />
-  ) : (
-    <h2 className="text-[1.8rem] text-stockblue mt-8 mb-4 font-bold border-b-2 border-stockblue/15 pb-1.5 inline-block">
-      {visionTitle}
-    </h2>
-  )}
-  {isEditing && (
-    <button
-      onClick={addVisionPoint}
-      className="mt-4 ml-3 inline-flex items-center gap-1 text-stockblue hover:text-blue-700 font-semibold text-sm"
-    >
-      <Plus size={16} />
-      הוסף נקודה
-    </button>
-  )}
-</div>
 
 
-          <ul className="list-none p-0 my-5 mb-7 grid gap-3">
-            {editableVisionPoints.map((point, i) => (
-              <li 
-                key={i} 
-                ref={(el) => { if (el) visionItemRefs.current[i] = el; }}   
-                className={`flex items-start gap-2.5 ${
-                  isEditing ? 'cursor-move' : ''
-                } ${draggedVisionIndex === i ? 'opacity-50' : ''}`}
-                draggable={isEditing}
-                onDragStart={() => handleVisionDragStart(i)}
-                onDragOver={(e) => handleVisionDragOver(e, i)}
-                onDragEnd={handleVisionDragEnd}
-              >
-                {isEditing && (
-                  <div className="flex-shrink-0 text-stockblue/40 cursor-move mt-1">
-                    <GripVertical size={18} />
-                  </div>
-                )}
-                <span className="bg-stockblue/10 text-stockblue w-7 h-7 rounded-full inline-flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <CheckCircle2 size={18} />
-                </span>
-                {isEditing ? (
-                  <div className="flex-1 flex items-center gap-2">
-                    <input
-                      ref={(el) => { if (el) visionInputRefs.current[i] = el; }}   
-                      type="text"
-                      value={point}
-                      onChange={(e) => handleVisionPointChange(i, e.target.value)}
-                      className="flex-1 text-slate-700 text-base leading-[1.7] border border-stockblue/30 rounded px-3 py-1.5 focus:outline-none focus:border-stockblue"
-                    />
-                    {editableVisionPoints.length > 1 && (
-                      <button
-                        onClick={() => removeVisionPoint(i)}
-                        className="text-red-500 hover:text-red-700 flex-shrink-0"
-                      >
-                        <X size={18} />
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <span className="text-slate-700 text-base leading-[1.7]">{point}</span>
-                )}
-              </li>
-            ))}
-          </ul>
+         <VisionSection
+  isEditing={isEditing}
+  title={visionTitle}
+  onChangeTitle={setVisionTitle}
+  points={editableVisionPoints}
+  onAdd={addVisionPoint}
+  onRemove={removeVisionPoint}
+  onChange={handleVisionPointChange}
+  onReorder={(from, to) => {
+    // same logic you used before in onDragOver:
+    setEditableVisionPoints((prev) => {
+      const arr = [...prev];
+      const [moved] = arr.splice(from, 1);
+      arr.splice(to, 0, moved);
+      return arr;
+    });
+  }}
+/>
         </div>
 
         {/* Image Section */}
-        <div className="flex-[0_0_320px] flex justify-center items-start lg:fixed lg:top-[164px] lg:left-5 z-10 order-1 lg:order-2">
-          <div className="relative w-[300px] h-[400px]">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-400/20 via-blue-500/20 to-purple-500/20 rounded-full scale-110 blur-3xl"></div>
-
-          <div
-  className={`relative z-10 w-full h-full rounded-[3rem] overflow-hidden
-    bg-gradient-to-br from-white via-blue-50 to-blue-100/70
-    shadow-2xl border-4 border-white/60 backdrop-blur-sm
-    ${isEditing ? '' : 'transition-all duration-700 ease-out hover:shadow-[0_30px_80px_rgba(59,130,246,0.3)] hover:scale-105 hover:-translate-y-2 hover:rotate-2'}`}
->
-
-
-  <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-blue-600/10 z-10 pointer-events-none"></div>
-  <div
-  className={`absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent
-    z-20 pointer-events-none skew-x-12
-    ${isEditing ? '' : '-translate-x-full hover:translate-x-full transition-transform duration-1000'}`}
-></div>
-
-
-   {images.length > 0 ? (
-  <>
-    {/* Current image */}
-    <img
-      src={images[currentImageIndex]}
-      alt="StockBox preview"
-      className={`w-full h-full object-cover scale-105 ${
-        isEditing ? '' : 'transition-all duration-1000 ease-out hover:scale-110'
-      } pointer-events-none`}
-    />
-
-    {/* Bottom fade */}
-    <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-blue-900/30 to-transparent z-10 pointer-events-none"></div>
-
-    {/* Delete current image */}
-    {isEditing && role === 'admin' && (
-      <button
-        onClick={() => removeImage(currentImageIndex)}
-        className="absolute top-4 right-4 z-[60] pointer-events-auto inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold text-white bg-red-600/90 hover:bg-red-700 shadow-xl transition-all" 
-        title="מחק את התמונה הנוכחית"
-        aria-label="מחק תמונה"
-      >
-        מחק תמונה
-      </button>
-    )}
-
-    {/* Delete all images */}
-    {isEditing && role === 'admin' && images.length > 0 && (
-      <button
-        onClick={clearAllImages}
-        className="absolute top-4 left-4 z-[60] pointer-events-auto inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold text-red-700 bg-white/90 border border-red-200 hover:bg-red-50 shadow transition-all"
-        title="מחק את כל התמונות"
-      >
-        מחק הכל
-      </button>
-    )}
-
-    {/* Toolbar */}
-    {isEditing && role === 'admin' && (
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[60] pointer-events-auto flex items-center gap-3 rounded-2xl bg-white/80 backdrop-blur shadow-lg px-3 py-2">
-        {/* Prev */}
-        <button
-          onClick={() => setCurrentImageIndex((i) => (i - 1 + images.length) % images.length)}
-          className="h-8 w-8 rounded-full grid place-items-center border border-stockblue/20 hover:bg-white"
-          title="קודם"
-        >
-          ‹
-        </button>
-
-        {/* Numbered dots */}
-        <div className="flex items-center gap-2">
-          {editableImages.map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => setCurrentImageIndex(idx)}
-              className={`h-8 min-w-8 px-2 rounded-full text-xs font-bold transition ${
-                currentImageIndex === idx
-                  ? 'bg-stockblue text-white shadow'
-                  : 'bg-white text-stockblue border border-stockblue/20 hover:bg-blue-50'
-              }`}
-              aria-label={`עבור לתמונה ${idx + 1}`}
-              title={`תמונה ${idx + 1}`}
-            >
-              {idx + 1}
-            </button>
-          ))}
-        </div>
-
-        {/* Replace current */}
-        <button
-          onClick={() => replaceInputRef.current?.click()}
-          className="ml-1 h-8 rounded-full px-3 text-xs font-semibold bg-white text-stockblue border border-stockblue/20 hover:bg-blue-50"
-          title="החלף תמונה נוכחית"
-        >
-          החלף
-        </button>
-        <input
-          ref={replaceInputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => handleReplaceImage(currentImageIndex, e)}
-        />
-
-        {/* Add new */}
-        <button
-          onClick={() => addInputRef.current?.click()}
-          className="h-8 rounded-full px-3 text-xs font-semibold bg-stockblue text-white hover:bg-blue-700"
-          title="הוסף תמונה חדשה"
-        >
-          <span className="inline-flex items-center gap-1">
-            <Plus size={14} /> הוסף
-          </span>
-        </button>
-        <input
-          ref={addInputRef}
-          type="file"
-          accept="image/*"
-          multiple                               
-          className="hidden"
-          onChange={handleAddImages} 
-        />
-
-        {/* Next */}
-        <button
-          onClick={() => setCurrentImageIndex((i) => (i + 1) % images.length)}
-          className="h-8 w-8 rounded-full grid place-items-center border border-stockblue/20 hover:bg-white"
-          title="הבא"
-        >
-          ›
-        </button>
-      </div>
-    )}
-  </>
-) : (
-  /* EMPTY STATE with Upload icon */
-  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-6">
-    <button
-      onClick={() => addInputRef.current?.click()}
-      className="group w-full h-full rounded-[3rem] border-2 border-dashed border-stockblue/30 bg-white/70 backdrop-blur-sm flex flex-col items-center justify-center gap-3 hover:border-stockblue/50 hover:bg-white transition"
-      title="העלה תמונה"
-    >
-      <Upload size={32} className="opacity-70 group-hover:opacity-100" />
-      <span className="text-stockblue/80 font-semibold">אין תמונות כרגע – לחצו כדי להעלות</span>
-      <span className="text-xs text-slate-500">PNG · JPG · JPEG</span>
-    </button>
-    <input
-      ref={addInputRef}
-      type="file"
-      accept="image/*"
-      multiple                               
-      className="hidden"
-      onChange={handleAddImages}  
-    />
-  </div>
-)}
-
-</div>
-
-
-           <div
-  className={`absolute -top-6 -right-6 w-24 h-24
-    bg-gradient-to-br from-blue-400/40 to-purple-400/30
-    rounded-full blur-2xl pointer-events-none -z-10
-    ${isEditing ? '' : 'animate-pulse'}`}
-></div>
-
-
-<div
-  className={`absolute -bottom-8 -left-8 w-32 h-32
-    bg-gradient-to-tr from-purple-500/20 to-blue-500/30
-    rounded-full blur-3xl pointer-events-none -z-10
-    ${isEditing ? '' : 'animate-pulse'}`}
-></div>
-
-          </div>
-        </div>
+        <AboutImagesPanel
+  isEditing={isEditing}
+  role={role}
+  images={images}
+  currentIndex={currentImageIndex}
+  onPrev={goPrev}
+  onNext={goNext}
+  onRemoveImage={removeImage}
+  onClearAll={clearAllImages}
+  onReplaceImage={handleReplaceImage}
+  onAddImages={handleAddImages}
+  replaceInputRef={replaceInputRef}
+  addInputRef={addInputRef}
+/>
       </div>
     </div>
   );
