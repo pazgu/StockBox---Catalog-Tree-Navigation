@@ -6,6 +6,7 @@ import { Categories as CategoriesData } from "../Categories/Categories";
 import { initialCategories, type Category } from "../Categories/Categories";
 import { Navigate } from "react-router-dom";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 
 //MISSING SUBCATS LOGIC HERE AFTER BACKEND EXISTS IT MAY BE ADDED
 type FilterType = "all" | "products" | "categories" | "subcategories";
@@ -14,7 +15,6 @@ export const Favorites: React.FC = () => {
   const [cameras, setCameras] = useState<CameraProduct[]>(initialCameraData);
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
-
   const favoriteCameras = cameras.filter((camera) => camera.favorite);
   const favoriteCategories = categories.filter((cat) => cat.favorite);
 
@@ -23,20 +23,33 @@ export const Favorites: React.FC = () => {
   }, []);
 
   const toggleFavorite = (id: number) => {
-    setCameras((prev) =>
-      prev.map((cam) =>
-        cam.id === id ? { ...cam, favorite: !cam.favorite } : cam
-      )
+  setCameras((prev) => {
+    const updated = prev.map((cam) =>
+      cam.id === id ? { ...cam, favorite: !cam.favorite } : cam
     );
-  };
+    return updated;
+  });
 
-  const toggleCategoryFavorite = (id: number) => {
-    setCategories((prev) =>
-      prev.map((cat) =>
-        cat.id === id ? { ...cat, favorite: !cat.favorite } : cat
-      )
+  const camera = cameras.find((c) => c.id === id);
+  if (camera && camera.favorite) {
+    toast.info(`${camera.name} הוסר מהמועדפים`);
+  }
+};
+
+const toggleCategoryFavorite = (id: number) => {
+  setCategories((prev) => {
+    const updated = prev.map((cat) =>
+      cat.id === id ? { ...cat, favorite: !cat.favorite } : cat
     );
-  };
+    return updated;
+  });
+
+  const category = categories.find((c) => c.id === id);
+  if (category && category.favorite) {
+    toast.info(`${category.name} הוסר מהמועדפים`);
+  }
+};
+
 
   const showCategories = activeFilter === "all" || activeFilter === "categories";
   const showProducts = activeFilter === "all" || activeFilter === "products";
