@@ -37,7 +37,7 @@ const Breadcrumbs = () => {
   const pathSegments = location.pathname.split("/").filter(Boolean);
 
   return (
-    <div className="relative w-max mx-auto pt-4 group">
+    <div className="relative group">
       <span
         role="img"
         aria-label="Cute cat peeking"
@@ -58,10 +58,9 @@ const Breadcrumbs = () => {
           className="w-8 h-8 object-cover"
         />
       </span>
+      
       <div
-        className="px-4 py-1 text-sm bg-gray-400 rounded text-white flex gap-1 items-center 
-            relative z-20
-            overflow-hidden"
+        className="text-sm text-gray-700 flex gap-1 items-center relative z-20"
         dir="rtl"
       >
         <span
@@ -83,7 +82,7 @@ const Breadcrumbs = () => {
                 ${
                   !isLast
                     ? "cursor-pointer hover:underline"
-                    : "font-semibold text-gray-200"
+                    : "font-semibold text-gray-700"
                 }
                 transition-colors duration-200
               `}

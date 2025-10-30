@@ -313,12 +313,10 @@ const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
        
-          <div className="hidden sm:block flex-shrink-0 transform transition-transform duration-300 absolute bottom-0.5 right-12"> <Breadcrumbs/>
-        </div>
       </header>
 
       {/* Spacer to prevent content from going under fixed header */}
-      <div className="h-20" />
+      <div className="h-40" />
     </>
   );
 };
