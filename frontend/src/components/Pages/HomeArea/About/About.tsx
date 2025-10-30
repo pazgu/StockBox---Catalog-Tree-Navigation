@@ -81,8 +81,6 @@ const EN_TO_HE: Record<string, string> = {
 const iconOptions = ICONS_HE.map(i => ({ value: i.value, label: i.label }));
 
 
-
-
 interface AboutProps {
 }
 
@@ -119,6 +117,43 @@ const visionItemRefs = React.useRef<HTMLLIElement[]>([]);
 const visionInputRefs = React.useRef<HTMLInputElement[]>([]);
 
 
+
+// Add near other hooks in About
+const imageWrapRef = React.useRef<HTMLDivElement | null>(null);
+const touchStartXRef = React.useRef<number | null>(null);
+
+// Keyboard arrows (←/→)
+React.useEffect(() => {
+  const onKeyDown = (e: KeyboardEvent) => {
+    const el = imageWrapRef.current;
+    if (!el) return;
+    const within =
+      el.contains(document.activeElement) || document.activeElement === document.body;
+    if (!within) return;
+
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      goPrev();
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      goNext();
+    }
+  };
+  window.addEventListener("keydown", onKeyDown);
+  return () => window.removeEventListener("keydown", onKeyDown);
+}, [goPrev, goNext]);
+
+// Touch swipe
+const onTouchStart = (e: React.TouchEvent) => {
+  touchStartXRef.current = e.touches[0].clientX;
+};
+const onTouchEnd = (e: React.TouchEvent) => {
+  if (touchStartXRef.current == null) return;
+  const dx = e.changedTouches[0].clientX - touchStartXRef.current;
+  touchStartXRef.current = null;
+  if (dx > 40) goPrev();
+  if (dx < -40) goNext();
+};
 
 
  const [editableFeatures, setEditableFeatures] = useState([
@@ -665,11 +700,16 @@ const handleAddImages = (event: React.ChangeEvent<HTMLInputElement>) => {
             <div className="absolute inset-0 bg-gradient-to-br from-blue-400/20 via-blue-500/20 to-purple-500/20 rounded-full scale-110 blur-3xl"></div>
 
           <div
+  ref={imageWrapRef}
+  tabIndex={0}
+  onTouchStart={onTouchStart}
+  onTouchEnd={onTouchEnd}
   className={`relative z-10 w-full h-full rounded-[3rem] overflow-hidden
     bg-gradient-to-br from-white via-blue-50 to-blue-100/70
     shadow-2xl border-4 border-white/60 backdrop-blur-sm
     ${isEditing ? '' : 'transition-all duration-700 ease-out hover:shadow-[0_30px_80px_rgba(59,130,246,0.3)] hover:scale-105 hover:-translate-y-2 hover:rotate-2'}`}
 >
+
 
 
   <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-blue-600/10 z-10 pointer-events-none"></div>
@@ -690,6 +730,36 @@ const handleAddImages = (event: React.ChangeEvent<HTMLInputElement>) => {
         isEditing ? '' : 'transition-all duration-1000 ease-out hover:scale-110'
       } pointer-events-none`}
     />
+   {/* Side arrows — show only in edit mode */}
+{isEditing && images.length > 1 && (
+  <>
+    <button
+      type="button"
+      onClick={goPrev}
+      className="absolute right-3 top-1/2 -translate-y-1/2 z-[60]
+                 h-9 w-9 rounded-full grid place-items-center
+                 bg-white/90 text-gray-800 shadow hover:bg-white focus:outline-none"
+      aria-label="תמונה קודמת"
+      title="קודם"
+    >
+      ‹
+    </button>
+
+    <button
+      type="button"
+      onClick={goNext}
+      className="absolute left-3 top-1/2 -translate-y-1/2 z-[60]
+                 h-9 w-9 rounded-full grid place-items-center
+                 bg-white/90 text-gray-800 shadow hover:bg-white focus:outline-none"
+      aria-label="תמונה הבאה"
+      title="הבא"
+    >
+      ›
+    </button>
+  </>
+)}
+
+
 
     {/* Bottom fade */}
     <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-blue-900/30 to-transparent z-10 pointer-events-none"></div>
@@ -717,82 +787,46 @@ const handleAddImages = (event: React.ChangeEvent<HTMLInputElement>) => {
       </button>
     )}
 
-    {/* Toolbar */}
-    {isEditing && role === 'admin' && (
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[60] pointer-events-auto flex items-center gap-3 rounded-2xl bg-white/80 backdrop-blur shadow-lg px-3 py-2">
-        {/* Prev */}
-        <button
-          onClick={() => setCurrentImageIndex((i) => (i - 1 + images.length) % images.length)}
-          className="h-8 w-8 rounded-full grid place-items-center border border-stockblue/20 hover:bg-white"
-          title="קודם"
-        >
-          ‹
-        </button>
+   {/* Toolbar (edit mode only, no numbers) */}
+{isEditing && role === 'admin' && (
+  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[60] pointer-events-auto flex items-center gap-3 rounded-2xl bg-white/80 backdrop-blur shadow-lg px-3 py-2">
+    {/* Replace current */}
+    <button
+      onClick={() => replaceInputRef.current?.click()}
+      className="h-8 rounded-full px-3 text-xs font-semibold bg-white text-stockblue border border-stockblue/20 hover:bg-blue-50"
+      title="החלף תמונה נוכחית"
+    >
+      החלף
+    </button>
+    <input
+      ref={replaceInputRef}
+      type="file"
+      accept="image/*"
+      className="hidden"
+      onChange={(e) => handleReplaceImage(currentImageIndex, e)}
+    />
 
-        {/* Numbered dots */}
-        <div className="flex items-center gap-2">
-          {editableImages.map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => setCurrentImageIndex(idx)}
-              className={`h-8 min-w-8 px-2 rounded-full text-xs font-bold transition ${
-                currentImageIndex === idx
-                  ? 'bg-stockblue text-white shadow'
-                  : 'bg-white text-stockblue border border-stockblue/20 hover:bg-blue-50'
-              }`}
-              aria-label={`עבור לתמונה ${idx + 1}`}
-              title={`תמונה ${idx + 1}`}
-            >
-              {idx + 1}
-            </button>
-          ))}
-        </div>
+    {/* Add new */}
+    <button
+      onClick={() => addInputRef.current?.click()}
+      className="h-8 rounded-full px-3 text-xs font-semibold bg-stockblue text-white hover:bg-blue-700"
+      title="הוסף תמונה חדשה"
+    >
+      <span className="inline-flex items-center gap-1">
+        <Plus size={14} /> הוסף
+      </span>
+    </button>
+    <input
+      ref={addInputRef}
+      type="file"
+      accept="image/*"
+      multiple
+      className="hidden"
+      onChange={handleAddImages}
+    />
+  </div>
+)}
 
-        {/* Replace current */}
-        <button
-          onClick={() => replaceInputRef.current?.click()}
-          className="ml-1 h-8 rounded-full px-3 text-xs font-semibold bg-white text-stockblue border border-stockblue/20 hover:bg-blue-50"
-          title="החלף תמונה נוכחית"
-        >
-          החלף
-        </button>
-        <input
-          ref={replaceInputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => handleReplaceImage(currentImageIndex, e)}
-        />
-
-        {/* Add new */}
-        <button
-          onClick={() => addInputRef.current?.click()}
-          className="h-8 rounded-full px-3 text-xs font-semibold bg-stockblue text-white hover:bg-blue-700"
-          title="הוסף תמונה חדשה"
-        >
-          <span className="inline-flex items-center gap-1">
-            <Plus size={14} /> הוסף
-          </span>
-        </button>
-        <input
-          ref={addInputRef}
-          type="file"
-          accept="image/*"
-          multiple                               
-          className="hidden"
-          onChange={handleAddImages} 
-        />
-
-        {/* Next */}
-        <button
-          onClick={() => setCurrentImageIndex((i) => (i + 1) % images.length)}
-          className="h-8 w-8 rounded-full grid place-items-center border border-stockblue/20 hover:bg-white"
-          title="הבא"
-        >
-          ›
-        </button>
-      </div>
-    )}
   </>
 ) : (
   /* EMPTY STATE with Upload icon */

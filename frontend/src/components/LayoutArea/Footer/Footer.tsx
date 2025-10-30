@@ -1,26 +1,29 @@
-import React, { FC } from 'react';
-import logoImage from "../../../assets/keremlogo.png"
+import React, { FC } from "react";
+import logoImage from "../../../assets/keremlogo.png";
+
 interface FooterProps {}
 
 const Footer: FC<FooterProps> = () => {
-  const currentYear = new Date().getFullYear();
-  const copyrightText = `© ${currentYear} כל הזכויות שמורות`; 
-  
   return (
-    <footer className="w-full mt-8 py-3 bg-[#fffaf1] text-gray-700 text-sm">
-      
-      <div className="flex justify-center items-center gap-2 max-w-6xl mx-auto px-4">
-        
-        <span 
-          className="text-xl text-blue-600 flex items-center justify-center"
-        >
-            <img src={logoImage} alt="Logo" className="h-4 w-auto" /> 
-        </span>
+    <footer
+      className="w-full mt-8 py-3 bg-[#fffaf1] text-gray-700"
+      role="contentinfo"
+      dir="rtl"
+    >
+      <div className="max-w-6xl mx-auto px-4">
+        <div className="flex flex-row-reverse items-center justify-center gap-2">
+          {/* Logo on the far right */}
+          <img
+            src={logoImage}
+            alt="לוגו הכרם"
+            className="h-5 w-auto object-contain"
+          />
 
-        <p className="text-sm">
-          {copyrightText}
-        </p>
-        
+          {/* Text next to it, RTL order looks correct */}
+          <p className="text-sm whitespace-nowrap">
+            © כל הזכויות שמורות 2025
+          </p>
+        </div>
       </div>
     </footer>
   );
