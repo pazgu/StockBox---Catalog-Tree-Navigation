@@ -23,11 +23,11 @@ const Layout: FC<LayoutProps> = () => {
     <div className="Layout">
       <Header></Header>
 
-      <div className="container mx-auto py-6 pb-0">
-        <Breadcrumbs />
-      </div>
+<div className="container mx-auto pt-5 pb-0 mb-0">
+  <Breadcrumbs />
+</div>
 
-      <main>
+<main className="-mt-12">
         <Routes>
           <Route path="/" element={<About></About>} />
           <Route path="/login" element={<Login></Login>} />
