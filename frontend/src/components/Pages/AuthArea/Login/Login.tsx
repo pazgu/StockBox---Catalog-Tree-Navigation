@@ -1,4 +1,6 @@
-import React, { FC, useState } from "react";
+import React, { FC, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useUser } from "../../../../context/UserContext";
 import loginImg from "../../../../assets/login.png";
 import { MailQuestionIcon, UserPen, Lock } from "lucide-react";
 
@@ -7,6 +9,14 @@ interface LoginProps {}
 const Login: FC<LoginProps> = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const navigate = useNavigate();
+  const { role } = useUser();
+
+  useEffect(() => {
+    if (role === "admin") {
+      navigate("/");
+    }
+  }, [navigate, role]);
 
   return (
     <div className="h-230 pt-14 bg-gray-100 flex p-0 overflow-hidden box-border w-full">
