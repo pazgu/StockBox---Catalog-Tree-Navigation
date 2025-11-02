@@ -183,7 +183,6 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
         <div className="bg-slate-700 text-white p-5 flex justify-between items-center flex-shrink-0">
           <div>
             <h3 className="text-lg font-bold flex items-center gap-2 mb-1">
-              <AlertCircle className="w-4 h-4" />
               ניהול פריטים חסומים
             </h3>
             <p className="text-slate-300 text-xs">קבוצה: {groupName}</p>
