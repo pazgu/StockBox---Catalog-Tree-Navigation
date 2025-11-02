@@ -468,7 +468,7 @@ const SingleCat: FC = () => {
           >
             <h4 className="text-lg font-semibold mb-2">מחיקת מוצר</h4>
             <p className="mb-1">
-              האם אתה בטוח שברצונך למחוק את המוצר "{productToDelete.name}"?
+              האם ברצונך למחוק את המוצר "{productToDelete.name}"?
             </p>
             <small className="text-gray-500">לא יהיה ניתן לבטל פעולה זו</small>
             <div className="flex justify-end gap-3 mt-4">
@@ -501,7 +501,7 @@ const SingleCat: FC = () => {
           >
             <h4 className="text-lg font-semibold mb-2">מחיקת מוצרים נבחרים</h4>
             <p className="mb-1">
-              האם אתה בטוח שברצונך למחוק {selectedProducts.length} מוצרים?
+              האם ברצונך למחוק {selectedProducts.length} מוצרים?
             </p>
             <small className="text-red-600 font-medium block">
               אזהרה: פעולה זו תמחק את כל המוצרים הנבחרים ולא ניתן יהיה לשחזר

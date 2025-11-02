@@ -194,13 +194,12 @@ const SubCat: FC<SubCatProps> = ({ initialCategories = [] }) => {
                   key={category.id}
                   className="flex flex-col items-center transition-transform duration-200 hover:translate-y-[-2px]"
                 >
-                   
                   {/* Image container */}
                   <div
                     className="relative group cursor-pointer "
                     onClick={() => handleCategoryClick(category)}
                   >
-                   {
+                    {
                       <button
                         onClick={(e) => {
                           e.preventDefault();
@@ -391,7 +390,7 @@ const SubCat: FC<SubCatProps> = ({ initialCategories = [] }) => {
                 </h4>
 
                 <p className="text-slate-700 mb-3">
-                  האם את/ה בטוח/ה שברצונך למחוק את הקטגוריה "
+                  האם ברצונך למחוק את הקטגוריה "
                   <strong className="font-bold">{categoryToDelete.name}</strong>
                   "?
                 </p>

@@ -59,7 +59,8 @@ export const Categories: FC<CategoriesProps> = () => {
   );
   const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
   const [categoryToType, setCategoryToType] = useState<Category | null>(null);
-const [categories, setCategories] = useState<Category[]>(initialCategories);  const { role } = useUser();
+  const [categories, setCategories] = useState<Category[]>(initialCategories);
+  const { role } = useUser();
   const navigate = useNavigate();
 
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
@@ -370,8 +371,7 @@ const [categories, setCategories] = useState<Category[]>(initialCategories);  co
                 </h4>
 
                 <p className="text-slate-700 mb-3">
-                  האם את/ה בטוח/ה שברצונך למחוק את הקטגוריה "
-                  {categoryToDelete.name}"?
+                  האם ברצונך למחוק את הקטגוריה "{categoryToDelete.name}"?
                 </p>
                 <small className="text-gray-500">
                   לא ניתן לבטל פעולה זו לאחר מכן

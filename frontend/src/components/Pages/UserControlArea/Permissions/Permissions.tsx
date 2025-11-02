@@ -227,7 +227,7 @@ const Permissions: React.FC = () => {
                       className="w-full p-2 mb-3 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-900 focus:border-indigo-900"
                     />
                     <Label className="block mb-2 text-sm font-medium text-gray-700">
-                      לא חסום מהמשתמשים:
+                      זמין להמשתמשים:
                     </Label>
                     <div
                       className="bg-white border border-gray-200 rounded-lg max-h-48 overflow-y-auto mb-4"
@@ -259,8 +259,8 @@ const Permissions: React.FC = () => {
 
                     {/* Exception Groups */}
                     <Label className="block mb-2 text-sm font-medium text-gray-700">
-                      לא חסום מהקבוצות:
-                    </Label>
+                      זמין למהקבוצות:
+                                          </Label>
                     <div
                       className="bg-white border border-gray-200 rounded-lg max-h-32 overflow-y-auto"
                       dir="ltr"
