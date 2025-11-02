@@ -180,16 +180,16 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-slate-700 text-white p-3 flex justify-between items-center flex-shrink-0">
+        <div className="bg-slate-700 text-white p-5 flex justify-between items-center flex-shrink-0">
           <div>
-            <h3 className="text-lg font-bold flex items-center gap-2">
+            <h3 className="text-lg font-bold flex items-center gap-2 mb-1">
               <AlertCircle className="w-4 h-4" />
               ניהול פריטים חסומים
             </h3>
             <p className="text-slate-300 text-xs">קבוצה: {groupName}</p>
           </div>
           <button onClick={onClose} className="p-1.5 hover:bg-white/10 rounded-lg transition-all">
-            <X className="w-4 h-4" />
+            <X className="w-6 h-6" />
           </button>
         </div>
 
@@ -236,7 +236,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
         {/* Content */}
         <div className="p-3 flex-1 flex flex-col overflow-hidden min-h-0">
           {/* Search */}
-          <div className="relative mb-2">
+          <div className="relative mb-3">
             <Search className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3" />
             <input
               type="text"
@@ -252,7 +252,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
           <div className="flex gap-3 mb-2 flex-wrap flex-shrink-0">
             <button
               onClick={() => setFilterType('all')}
-              className={`px-8 py-2 rounded-md text-xs font-medium transition-all ${
+              className={`px-8 py-1.5 rounded-md text-[13px] font-medium transition-all ${
                 filterType === 'all'
                   ? 'bg-slate-700 text-white shadow-md'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -262,7 +262,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
             </button>
             <button
               onClick={() => setFilterType('product')}
-              className={`px-3 py-2 rounded-md text-xs font-medium flex items-center gap-0.5 transition-all ${
+              className={`px-8 py-1.5 rounded-md text-[13px] font-medium flex items-center gap-0.5 transition-all ${
                 filterType === 'product'
                   ? 'bg-blue-500 text-white shadow-md'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -273,7 +273,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
             </button>
             <button
               onClick={() => setFilterType('category')}
-              className={`px-3 py-2 rounded-md text-xs font-medium flex items-center gap-0.5 transition-all ${
+              className={`px-8 py-1.5 rounded-md text-[13px] font-medium flex items-center gap-0.5 transition-all ${
                 filterType === 'category'
                   ? 'bg-purple-500 text-white shadow-md'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -284,7 +284,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
             </button>
             <button
               onClick={() => setFilterType('subcategory')}
-              className={`px-3 py-2 rounded-md text-xs font-medium flex items-center gap-0.5 transition-all ${
+              className={`px-8 py-1.5 rounded-md text-[13px] font-medium flex items-center gap-0.5 transition-all ${
                 filterType === 'subcategory'
                   ? 'bg-emerald-500 text-white shadow-md'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -472,13 +472,13 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
           <div className="flex gap-2">
             <button
               onClick={handleSave}
-              className="flex-1 py-2 px-4 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-all font-medium text-[12px]"
+              className="flex-1 py-2 px-4 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-all font-medium text-[14px]"
             >
               שמור שינויים
             </button>
             <button
               onClick={onClose}
-              className="flex-1 py-2 px-4 bg-white text-gray-600 border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-all font-medium text-[12px]"
+              className="flex-1 py-2 px-4 bg-white text-gray-600 border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-all font-medium text-[14px]"
             >
               ביטול
             </button>

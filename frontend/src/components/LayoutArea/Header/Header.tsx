@@ -120,10 +120,14 @@ const Header: React.FC<HeaderProps> = ({
                 <NavLink to="/" className={navLinkClass}>
                   אודות
                 </NavLink>
-                <span className="text-white/30 animate-pulse">|</span>
-                <NavLink to="/login" className={navLinkClass}>
-                  התחברות
-                </NavLink>
+                {role !== "admin" && (
+                  <>
+                    <span className="text-white/30 animate-pulse">|</span>
+                    <NavLink to="/login" className={navLinkClass}>
+                      התחברות
+                    </NavLink>
+                  </>
+                )}
               </nav>
             </div>
 
@@ -286,13 +290,15 @@ const Header: React.FC<HeaderProps> = ({
               >
                 תכולות ואמצעים
               </NavLink>
-              <NavLink
-                to="/login"
-                className={navLinkClass}
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                התחברות
-              </NavLink>
+              {role !== "admin" && (
+                <NavLink
+                  to="/login"
+                  className={navLinkClass}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  התחברות
+                </NavLink>
+              )}
             </nav>
 
             {/* Mobile Quick Actions */}
@@ -313,12 +319,10 @@ const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
        
-          <div className="hidden sm:block flex-shrink-0 transform transition-transform duration-300 absolute bottom-0.5 right-12"> <Breadcrumbs/>
-        </div>
       </header>
 
       {/* Spacer to prevent content from going under fixed header */}
-      <div className="h-20" />
+      <div className="h-40" />
     </>
   );
 };
