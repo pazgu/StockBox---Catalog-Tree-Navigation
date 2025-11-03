@@ -67,7 +67,7 @@ const Breadcrumbs: FC<BreadcrumbsProps> = ({ path }) => {
                 className="
           absolute
           right-1.5
-          translate-y-[80%] 
+          translate-y-[20%] 
           opacity-0
           transition-transform duration-100 ease-out
           group-hover:translate-y-0
