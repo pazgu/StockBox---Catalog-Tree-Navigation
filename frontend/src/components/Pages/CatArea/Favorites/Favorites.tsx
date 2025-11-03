@@ -23,37 +23,38 @@ export const Favorites: React.FC = () => {
   }, []);
 
   const toggleFavorite = (id: number) => {
-  setCameras((prev) => {
-    const updated = prev.map((cam) =>
-      cam.id === id ? { ...cam, favorite: !cam.favorite } : cam
-    );
-    return updated;
-  });
+    setCameras((prev) => {
+      const updated = prev.map((cam) =>
+        cam.id === id ? { ...cam, favorite: !cam.favorite } : cam
+      );
+      return updated;
+    });
 
-  const camera = cameras.find((c) => c.id === id);
-  if (camera && camera.favorite) {
-    toast.info(`${camera.name} הוסר מהמועדפים`);
-  }
-};
+    const camera = cameras.find((c) => c.id === id);
+    if (camera && camera.favorite) {
+      toast.info(`${camera.name} הוסר מהמועדפים`);
+    }
+  };
 
-const toggleCategoryFavorite = (id: number) => {
-  setCategories((prev) => {
-    const updated = prev.map((cat) =>
-      cat.id === id ? { ...cat, favorite: !cat.favorite } : cat
-    );
-    return updated;
-  });
+  const toggleCategoryFavorite = (id: number) => {
+    setCategories((prev) => {
+      const updated = prev.map((cat) =>
+        cat.id === id ? { ...cat, favorite: !cat.favorite } : cat
+      );
+      return updated;
+    });
 
-  const category = categories.find((c) => c.id === id);
-  if (category && category.favorite) {
-    toast.info(`${category.name} הוסר מהמועדפים`);
-  }
-};
+    const category = categories.find((c) => c.id === id);
+    if (category && category.favorite) {
+      toast.info(`${category.name} הוסר מהמועדפים`);
+    }
+  };
 
-
-  const showCategories = activeFilter === "all" || activeFilter === "categories";
+  const showCategories =
+    activeFilter === "all" || activeFilter === "categories";
   const showProducts = activeFilter === "all" || activeFilter === "products";
-  const showSubcategories = activeFilter === "all" || activeFilter === "subcategories";
+  const showSubcategories =
+    activeFilter === "all" || activeFilter === "subcategories";
 
   if (favoriteCameras.length === 0 && favoriteCategories.length === 0) {
     return (
@@ -133,14 +134,12 @@ const toggleCategoryFavorite = (id: number) => {
                     size={22}
                     strokeWidth={2}
                     className={
-                      cat.favorite
-                        ? "fill-red-500 text-red-500"
-                        : "text-white"
+                      cat.favorite ? "fill-red-500 text-red-500" : "text-white"
                     }
                   />
                 </button>
 
-                <Link to={"/single-cat"}>
+                <Link to={"/categories/single-cat"}>
                   <img
                     src={cat.image}
                     alt={cat.name}
