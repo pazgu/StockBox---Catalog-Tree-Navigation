@@ -174,7 +174,7 @@ const handleSaveChanges = () => {
       visionPoints: editableVisionPoints,
     });
 
-    toast.success("השינויים נישמרו בהצלחה");
+    toast.success("השינויים נשמרו בהצלחה");
   } 
 };
 

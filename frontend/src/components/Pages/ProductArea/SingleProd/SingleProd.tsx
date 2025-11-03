@@ -240,7 +240,7 @@ const SingleProd: FC<SingleProdProps> = () => {
 
   const handleSaveClick = () => {
     if (isEditing) {
-      toast.success("השינויים נישמרו בהצלחה!");
+      toast.success("השינויים נשמרו בהצלחה!");
     }
     setIsEditing(!isEditing);
   };
