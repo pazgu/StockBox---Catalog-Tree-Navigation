@@ -447,7 +447,7 @@ const confirmApprove = () => {
               <p className="mb-6 text-gray-600">
                 {blockedUsers.includes(Number(currentUsers[blockUserIndex].id))
                   ? "האם אתה בטוח שברצונך לבטל את חסימת המשתמש ולאפשר לו גישה מחדש לאתר?"
-                  : "האם אתה בטוח שברצונך לחסום משתמש זה מגישה לאתר?"}
+                  : "האם אתה בטוח שברצונך לחסום משתמש זה מצפייה במוצרים?"}
               </p>
               <div className="flex justify-end gap-3">
                 <button
