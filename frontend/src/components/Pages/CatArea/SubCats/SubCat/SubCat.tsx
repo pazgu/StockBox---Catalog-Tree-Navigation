@@ -149,7 +149,7 @@ const SubCat: FC<SubCatProps> = ({ initialCategories = [] }) => {
     if (category.type === null) {
       setCategoryToType(category);
     } else if (category.type === "prodparent") {
-      navigate("/single-cat");
+      navigate("/categories/single-cat");
     } else if (category.type === "catparent") {
       navigate(`/subcat/${category.name}`);
       console.log("nane:", category.name);
@@ -194,13 +194,12 @@ const SubCat: FC<SubCatProps> = ({ initialCategories = [] }) => {
                   key={category.id}
                   className="flex flex-col items-center transition-transform duration-200 hover:translate-y-[-2px]"
                 >
-                   
                   {/* Image container */}
                   <div
                     className="relative group cursor-pointer "
                     onClick={() => handleCategoryClick(category)}
                   >
-                   {
+                    {
                       <button
                         onClick={(e) => {
                           e.preventDefault();

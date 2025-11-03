@@ -35,8 +35,9 @@ import {
 } from "../../../../types/types";
 import AccordionSection from "../AccordionSection/AccordionSection/AccordionSection";
 import ImageCarousel from "../ImageCarousel/ImageCarousel/ImageCarousel";
-interface SingleProdProps {}
+import Breadcrumbs from "../../../LayoutArea/Breadcrumbs/Breadcrumbs";
 
+interface SingleProdProps {}
 // Helper function to generate a unique ID (simple timestamp for this example)
 const generateUniqueId = () =>
   `accordion-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
@@ -44,8 +45,8 @@ const generateUniqueId = () =>
 const SingleProd: FC<SingleProdProps> = () => {
   const { role } = useUser();
   const [isEditing, setIsEditing] = useState(false);
-
   const [title, setTitle] = useState("מצלמת DSLR קלאסית עם עדשה אדומה");
+  const path: string[] = ["categories", "single-cat", title];
   const [description, setDescription] = useState(
     "פתרון מקצועי לצילום איכותי עם עיצוב רטרו ועמידות גבוהה."
   );
@@ -317,7 +318,8 @@ const SingleProd: FC<SingleProdProps> = () => {
     setFolders((prev) => prev.filter((f) => f.id !== folderId));
   };
   return (
-    <div className="pt-32 px-6 pb-10 font-sans-['Noto_Sans_Hebrew'] rtl">
+    <div className="pt-16 px-6 pb-10 font-sans-['Noto_Sans_Hebrew'] rtl">
+      <Breadcrumbs path={path} />
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-4 text-right">
