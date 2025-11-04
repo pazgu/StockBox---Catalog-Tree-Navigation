@@ -38,13 +38,13 @@ type UserFormData = z.infer<typeof userSchema>;
 
 const NewUser: React.FC = () => {
   const navigate = useNavigate();
-  const { role } = useUser();
+  const { role, addUser } = useUser();
 
   useEffect(() => {
     if (role !== "admin") {
       navigate("/");
     }
-  }, [navigate]);
+  }, [navigate, role]);
 
   const {
     register,
@@ -58,7 +58,15 @@ const NewUser: React.FC = () => {
 
   const onSubmit = async (data: UserFormData) => {
     try {
-      console.log("User data:", data);
+      const newUser = {
+        id: Date.now(),
+        name: data.username,
+        email: data.email,
+        role: data.role as "admin" | "user",
+        isApproved: false,
+      };
+
+      addUser(newUser);
 
       reset();
       toast.success("משתמש נוסף בהצלחה!");
