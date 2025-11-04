@@ -7,10 +7,12 @@ import { Button } from "../../../ui/button";
 import { Card, CardContent } from "../../../ui/card";
 import { Label } from "../../../ui/label";
 import { useNavigate } from "react-router-dom";
-
 import camera from "../../../../assets/camera.png";
 import AddGroup from "../AddGroup/AddGroup/AddGroup";
 import { useUser } from "../../../../context/UserContext";
+import { toast } from "sonner";
+
+
 
 interface Group {
   name: string;
@@ -155,23 +157,33 @@ const Permissions: React.FC = () => {
   };
 
   return (
-    <div className="rtl px-5 md:px-16 py-[149px] md:py-40 min-h-screen flex justify-center font-sans">
-      <Card className="w-full max-w-4xl bg-gray-100 border border-gray-200 rounded-xl shadow-md">
-        <CardContent className="p-6 md:p-6">
-          {/* Header with Avatar */}
-          <div className="flex flex-col md:flex-row items-center md:items-start gap-4 mb-5">
-            <div className="flex-shrink-0">
-              <img
-                src={camera}
-                alt="User permissions"
-                className="w-20 h-20 md:w-20 md:h-20 rounded-full object-cover border-3 border-white shadow-md"
-              />
-            </div>
-            <div className="flex-1 text-right">
-              <h2 className="text-lg md:text-xl font-semibold text-gray-800 mb-4">
-                ניהול הרשאות עבור: קטגורית שמע
-              </h2>
+    <div className="rtl px-5 md:px-16 py-20 flex justify-center font-sans">
+    <Card className="w-full max-w-4xl bg-gray-100 border border-gray-200 rounded-xl shadow-md">
+      <CardContent className="p-4 md:p-4">
+        {/* BACK BUTTON */}
+        <div className="flex justify-start mb-3" dir="ltr">
+          <Button
+            variant="ghost"
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-1 text-gray-700 hover:text-black"
+          >
+            ← חזרה
+          </Button>
+        </div>
 
+        {/* Header */}
+        <div className="flex flex-col md:flex-row items-center md:items-start gap-3 mb-4">
+          <div className="flex-shrink-0">
+            <img
+              src={camera}
+              alt="User permissions"
+              className="w-16 h-16 md:w-16 md:h-16 rounded-full object-cover border-2 border-white shadow-md"
+            />
+          </div>
+          <div className="flex-1 text-right">
+            <h2 className="text-lg md:text-xl font-semibold text-gray-800 mb-3">
+              ניהול הרשאות עבור: קטגורית שמע
+            </h2>
               <Label className="block mb-3 font-bold text-gray-800 text-base">
                 מוסתרת מ:
               </Label>
@@ -493,7 +505,7 @@ const Permissions: React.FC = () => {
             </>
           )}
 
-          {/* Action Buttons */}
+        
           <div className="flex flex-col md:flex-row md:justify-end gap-3 mt-6">
             <Button
               variant="outline"
@@ -502,9 +514,14 @@ const Permissions: React.FC = () => {
             >
               ביטול
             </Button>
-            <Button className="px-6 py-2 w-full md:w-auto bg-green-500 text-white rounded hover:bg-green-600">
-              שמירה
-            </Button>
+            <Button
+            className="px-6 py-2 w-full md:w-auto bg-green-500 text-white rounded hover:bg-green-600"
+            onClick={() => {
+              toast.success("השינויים בהרשאות נשמרו בהצלחה!");
+            }}
+          >
+            שמירה
+          </Button>
           </div>
         </CardContent>
       </Card>
