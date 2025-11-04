@@ -10,6 +10,8 @@ import { useNavigate } from "react-router-dom";
 import camera from "../../../../assets/camera.png";
 import AddGroup from "../AddGroup/AddGroup/AddGroup";
 import { useUser } from "../../../../context/UserContext";
+import { toast } from "sonner";
+
 
 
 interface Group {
@@ -512,9 +514,14 @@ const Permissions: React.FC = () => {
             >
               ביטול
             </Button>
-            <Button className="px-6 py-2 w-full md:w-auto bg-green-500 text-white rounded hover:bg-green-600">
-              שמירה
-            </Button>
+            <Button
+            className="px-6 py-2 w-full md:w-auto bg-green-500 text-white rounded hover:bg-green-600"
+            onClick={() => {
+              toast.success("השינויים בהרשאות נשמרו בהצלחה!");
+            }}
+          >
+            שמירה
+          </Button>
           </div>
         </CardContent>
       </Card>
