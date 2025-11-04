@@ -321,7 +321,7 @@ const Header: React.FC<HeaderProps> = ({
       </header>
 
       {/* Spacer to prevent content from going under fixed header */}
-      <div className="h-40" />
+      <div className="h-28" />
     </>
   );
 };
