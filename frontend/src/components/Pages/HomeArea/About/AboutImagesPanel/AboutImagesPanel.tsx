@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Plus, Upload } from "lucide-react";
 import { UserRole } from "@/types/types";
 
@@ -83,6 +83,7 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
     if (dx > 40) onPrev();
     if (dx < -40) onNext();
   };
+const [showClearDialog, setShowClearDialog] = useState(false);
 
   return (
 <aside
@@ -132,7 +133,7 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
                   <button
                     type="button"
                     onClick={onPrev}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 z-[60] h-9 w-9 rounded-full grid place-items-center bg-white/90 text-gray-800 shadow hover:bg-white focus:outline-none"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 z-60 h-9 w-9 rounded-full grid place-items-center bg-white/90 text-gray-800 shadow hover:bg-white focus:outline-none"
                     aria-label="תמונה קודמת"
                     title="קודם"
                   >
@@ -142,7 +143,7 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
                   <button
                     type="button"
                     onClick={onNext}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 z-[60] h-9 w-9 rounded-full grid place-items-center bg-white/90 text-gray-800 shadow hover:bg-white focus:outline-none"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 z-60 h-9 w-9 rounded-full grid place-items-center bg-white/90 text-gray-800 shadow hover:bg-white focus:outline-none"
                     aria-label="תמונה הבאה"
                     title="הבא"
                   >
@@ -166,15 +167,40 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
                     מחק תמונה
                   </button>
 
-                  {images.length > 0 && (
-                    <button
-                      onClick={onClearAll}
-                      className="absolute top-4 left-4 z-[60] pointer-events-auto inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold text-red-700 bg-white/90 border border-red-200 hover:bg-red-50 shadow transition-all"
-                      title="מחק את כל התמונות"
-                    >
-                      מחק הכל
-                    </button>
-                  )}
+                   {images.length > 0 && (
+      <button
+        onClick={() => setShowClearDialog(true)}
+        className="absolute top-4 left-4 z-[60] pointer-events-auto inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold text-red-700 bg-white/90 border border-red-200 hover:bg-red-50 shadow transition-all"
+        title="מחק את כל התמונות"
+      >
+        מחק הכל
+      </button>
+    )}
+
+    {showClearDialog && (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-xl p-6 w-60 text-right shadow-lg">
+          <h2 className="text-xl font-semibold mb-4">למחוק את כל התמונות?</h2>
+          <div className="flex justify-end gap-3">
+            <button
+              className="px-4 py-2 rounded border border-gray-300 hover:bg-gray-100"
+              onClick={() => setShowClearDialog(false)}
+            >
+              ביטול
+            </button>
+            <button
+              className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
+              onClick={() => {
+                onClearAll();
+                setShowClearDialog(false);
+              }}
+            >
+              כן, מחק
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
                 </>
               )}
 
