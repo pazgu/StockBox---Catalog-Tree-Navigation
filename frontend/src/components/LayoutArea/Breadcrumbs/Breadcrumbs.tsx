@@ -35,12 +35,11 @@ const Breadcrumbs: FC<BreadcrumbsProps> = ({ path }) => {
     if (index === segments.length - 1) return segment;
 
     // If subcategory, decode URI
-    if (index > 0 && segments[index - 1].toLowerCase() === "subcat") {
-      try {
-        return decodeURIComponent(segment);
-      } catch {
-        return segment;
-      }
+    // If this is a dynamic product title (identifier-like segment), leave as-is
+    const isDynamic =
+      !segmentMap[segment.toLowerCase()] && /\d+|-/g.test(segment);
+    if (isDynamic && index === segments.length) {
+      return decodeURIComponent(segment);
     }
 
     return segmentMap[segment.toLowerCase()] || segment;
@@ -56,7 +55,20 @@ const Breadcrumbs: FC<BreadcrumbsProps> = ({ path }) => {
         <FolderOpen className="size-8 fill-[#e7d6ba]"></FolderOpen>
         {pathSegments.map((segment, index) => {
           const pathToHere = "/" + pathSegments.slice(0, index + 1).join("/");
-          const displayName = getDisplayName(segment, index, pathSegments);
+          const getDisplayName = (
+            segment: string,
+            index: number,
+            segments: string[]
+          ) => {
+            const decoded = decodeURIComponent(segment);
+            const lower = decoded.toLowerCase();
+
+            if (segmentMap[lower]) return segmentMap[lower];
+
+            if (index === segments.length - 1) return decoded;
+
+            return decoded;
+          };
           const isLast = index === pathSegments.length - 1;
 
           return (
@@ -91,9 +103,9 @@ const Breadcrumbs: FC<BreadcrumbsProps> = ({ path }) => {
                 } transition-colors duration-200`}
                 onClick={() => !isLast && navigate(pathToHere)}
               >
-                {displayName}
+                {getDisplayName(segment, index, pathSegments)}
               </span>
-              <span>{">"}</span>
+              {!isLast && <span className="mx-1">{">"}</span>}
             </span>
           );
         })}
