@@ -149,7 +149,7 @@ const SubCat: FC<SubCatProps> = ({ initialCategories = [] }) => {
     if (category.type === null) {
       setCategoryToType(category);
     } else if (category.type === "prodparent") {
-      navigate("/single-cat");
+      navigate("/categories/single-cat");
     } else if (category.type === "catparent") {
       navigate(`/subcat/${category.name}`);
       console.log("nane:", category.name);
