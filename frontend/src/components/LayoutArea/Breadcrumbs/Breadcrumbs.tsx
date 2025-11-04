@@ -47,7 +47,7 @@ const Breadcrumbs: FC<BreadcrumbsProps> = ({ path }) => {
   };
 
   return (
-    <div className="relative group mb-4">
+    <div className="relative group mb-4 mt-14">
       {/* Breadcrumbs */}
       <div
         className="text-sm text-gray-700 flex gap-1 items-center relative z-20"

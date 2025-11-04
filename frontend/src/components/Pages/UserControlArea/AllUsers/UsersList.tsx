@@ -30,7 +30,7 @@ const UsersList: React.FC<UsersListProps> = ({
   onSearchChange,
 }) => {
   return (
-    <div className="col-span-12 lg:col-span-5 p-6 border-r border-gray-200 text-right">
+    <div className="col-span-12 lg:col-span-5 p-2 border-r border-gray-200 text-right">
       <div className="mb-6">
         <h3 className="text-xl font-semibold text-gray-700 mb-4">
           משתמשים ב
