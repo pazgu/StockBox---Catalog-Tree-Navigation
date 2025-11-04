@@ -9,7 +9,8 @@ import { toast } from 'sonner';
 import isEqual from "lodash/isEqual";
 import {
    CheckCircle2, Compass, Edit2, X, Plus, GripVertical,
-  Upload, 
+  Upload,
+  Check, 
 } from 'lucide-react';
 
 
@@ -369,12 +370,11 @@ const handleFeaturesReorder = (next: typeof editableFeatures) => {
           {/* Edit Button moved to the far right (start in RTL) */}
           {role === 'admin' && (
             <div className="flex justify-start mb-4">
-              <button
-                onClick={() => isEditing ? handleSaveChanges() : setIsEditing(true)}
-                className="inline-flex items-center gap-2 rounded-lg border border-stockblue/30 bg-white px-5 py-2.5 text-sm font-semibold text-stockblue shadow-md hover:bg-stockblue hover:text-white transition-all duration-300"
+            <button
+                onClick={() => (isEditing ? handleSaveChanges() : setIsEditing(true))}
+                className="fixed bottom-6 right-6 inline-flex items-center justify-center w-12 h-12 rounded-full border border-stockblue/30 bg-white text-xl font-semibold text-stockblue shadow-md hover:bg-stockblue hover:text-white transition-all duration-300 z-10"
               >
-                <Edit2 size={18} />
-                {isEditing ? 'שמור שינויים' : 'ערוך דף אודות'}
+                {isEditing ? <Check size={18} /> : <Edit2 size={18} />}
               </button>
             </div>
           )}

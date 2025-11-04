@@ -152,9 +152,9 @@ const confirmApprove = () => {
   };
 
   return (
-    <div className="min-h-80 font-sans text-[#0D305B] rtl bg-[#fffaf1]">
+    <div className=" font-sans text-[#0D305B] rtl bg-[#fffaf1]">
       <Header />
-      <main className="px-10 pt-7 md:px-5  relative pb-4">
+      <main className="px-7 md:px-5  relative pb-4">
         {/* Header Section */}
         <div className="flex justify-between items-center mb-8">
           <div className="text-right flex-1">
