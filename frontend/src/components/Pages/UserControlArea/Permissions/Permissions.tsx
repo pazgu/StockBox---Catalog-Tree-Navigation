@@ -505,7 +505,7 @@ const Permissions: React.FC = () => {
             </>
           )}
 
-          {/* Action Buttons */}
+        
           <div className="flex flex-col md:flex-row md:justify-end gap-3 mt-6">
             <Button
               variant="outline"
