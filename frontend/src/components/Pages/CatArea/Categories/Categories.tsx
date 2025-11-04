@@ -1,4 +1,4 @@
-import React, { FC, useState, ChangeEvent } from "react";
+import React, { FC, useState} from "react";
 import {
   Pen,
   Trash,
@@ -12,7 +12,6 @@ import video from "../../../../assets/video.png";
 import { useUser } from "../../../../context/UserContext";
 import {useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { clampOffsetToCircle, getBaseCoverScale } from "./cropMath/cropMath";
 import AddCategoryModal,{AddCategoryResult} from "./AddCategoryModal/AddCategoryModal/AddCategoryModal";
 import EditCategoryModal from "./EditCategoryModal/EditCategoryModal/EditCategoryModal";
 interface CategoriesProps {}
@@ -76,18 +75,6 @@ const [editRawImage, setEditRawImage] = useState<HTMLImageElement | null>(null);
 const [editZoom, setEditZoom] = useState(1);
 const [editOffset, setEditOffset] = useState({ x: 0, y: 0 });
 const [isEditPanning, setIsEditPanning] = useState(false);
-
-
-
-
-
-
-
-
-
-
-
-
 
 
   const toggleFavorite = (id: number) => {

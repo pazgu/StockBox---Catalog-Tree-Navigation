@@ -8,8 +8,7 @@ import { useUser } from '../../../../context/UserContext';
 import { toast } from 'sonner';
 import isEqual from "lodash/isEqual";
 import {
-   CheckCircle2, Compass, Edit2, X, Plus, GripVertical,
-  Upload, 
+    Compass, Edit2
 } from 'lucide-react';
 
 
@@ -79,7 +78,6 @@ const visionInputRefs = React.useRef<HTMLInputElement[]>([]);
 
 // Add near other hooks in About
 const imageWrapRef = React.useRef<HTMLDivElement | null>(null);
-const touchStartXRef = React.useRef<number | null>(null);
 
 // Keyboard arrows (←/→)
 React.useEffect(() => {
@@ -101,18 +99,6 @@ React.useEffect(() => {
   window.addEventListener("keydown", onKeyDown);
   return () => window.removeEventListener("keydown", onKeyDown);
 }, [goPrev, goNext]);
-
-// Touch swipe
-const onTouchStart = (e: React.TouchEvent) => {
-  touchStartXRef.current = e.touches[0].clientX;
-};
-const onTouchEnd = (e: React.TouchEvent) => {
-  if (touchStartXRef.current == null) return;
-  const dx = e.changedTouches[0].clientX - touchStartXRef.current;
-  touchStartXRef.current = null;
-  if (dx > 40) goPrev();
-  if (dx < -40) goNext();
-};
 
 
  const [editableFeatures, setEditableFeatures] = useState([
@@ -137,7 +123,6 @@ useEffect(() => {
     "גדלה יחד עם הצוות והצרכים שלו"
   ]);
 
-  const [draggedFeatureIndex, setDraggedFeatureIndex] = useState<number | null>(null);
   const [draggedVisionIndex, setDraggedVisionIndex] = useState<number | null>(null);
 
   const handleNavigateToCategories = () => {
@@ -337,27 +322,6 @@ const handleFeaturesReorder = (next: typeof editableFeatures) => {
 
 
 
-  // Drag and drop handlers for vision points
-  const handleVisionDragStart = (index: number) => {
-    setDraggedVisionIndex(index);
-  };
-
-  const handleVisionDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    if (draggedVisionIndex === null || draggedVisionIndex === index) return;
-
-    const newVisionPoints = [...editableVisionPoints];
-    const draggedItem = newVisionPoints[draggedVisionIndex];
-    newVisionPoints.splice(draggedVisionIndex, 1);
-    newVisionPoints.splice(index, 0, draggedItem);
-
-    setEditableVisionPoints(newVisionPoints);
-    setDraggedVisionIndex(index);
-  };
-
-  const handleVisionDragEnd = () => {
-    setDraggedVisionIndex(null);
-  };
 
   
 
