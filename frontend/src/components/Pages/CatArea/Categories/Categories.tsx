@@ -14,6 +14,8 @@ import {useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import AddCategoryModal,{AddCategoryResult} from "./AddCategoryModal/AddCategoryModal/AddCategoryModal";
 import EditCategoryModal from "./EditCategoryModal/EditCategoryModal/EditCategoryModal";
+import Breadcrumbs from "../../../LayoutArea/Breadcrumbs/Breadcrumbs";
+
 interface CategoriesProps {}
 
 export interface Category {
@@ -58,8 +60,10 @@ export const Categories: FC<CategoriesProps> = () => {
   );
   const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
   const [categoryToType, setCategoryToType] = useState<Category | null>(null);
-const [categories, setCategories] = useState<Category[]>(initialCategories);  const { role } = useUser();
+  const [categories, setCategories] = useState<Category[]>(initialCategories);
+  const { role } = useUser();
   const navigate = useNavigate();
+  const path: string[] = ["categories"];
 
   // cropper state
 const [isCropperOpen, setIsCropperOpen] = useState(false);
@@ -144,10 +148,12 @@ const [isEditPanning, setIsEditPanning] = useState(false);
 
   return (
     <div
-      className="p-4 font-system direction-rtl text-right"
+      className="mt-12 p-4 font-system direction-rtl text-right"
       style={{ direction: "rtl" }}
     >
-      <div className="mt-20 text-right">
+            <Breadcrumbs path={path} />
+
+      <div className="text-right">
         <h2 className="text-5xl font-light text-slate-700 mb-2 tracking-tight">
           קטגוריות
         </h2>
@@ -165,7 +171,7 @@ const [isEditPanning, setIsEditPanning] = useState(false);
                   if (category.type === null) {
                     setCategoryToType(category);
                   } else if (category.type === "prodparent") {
-                    navigate("/single-cat");
+                    navigate("/categories/single-cat");
                   } else if (category.type === "catparent") {
                     navigate(`/subcat/${encodeURIComponent(category.name)}`);
                   }

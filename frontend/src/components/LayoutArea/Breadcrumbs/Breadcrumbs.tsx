@@ -1,7 +1,13 @@
+import { FC } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import catIcon from "../../../assets/newcat.png";
+import { FolderOpen } from "lucide-react";
 
-const Breadcrumbs = () => {
+interface BreadcrumbsProps {
+  path?: string[]; // Optional path for dynamic pages (e.g., products)
+}
+
+const Breadcrumbs: FC<BreadcrumbsProps> = ({ path }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -18,78 +24,88 @@ const Breadcrumbs = () => {
     login: "התחברות",
   };
 
+  const pathSegments = path || location.pathname.split("/").filter(Boolean);
+
   const getDisplayName = (
     segment: string,
     index: number,
     segments: string[]
   ) => {
-    if (index > 0 && segments[index - 1].toLowerCase() === "subcat") {
-      try {
-        return decodeURIComponent(segment);
-      } catch (e) {
-        return segment;
-      }
+    // If last segment and dynamic, show as-is (e.g., product title)
+    if (index === segments.length - 1) return segment;
+
+    // If subcategory, decode URI
+    // If this is a dynamic product title (identifier-like segment), leave as-is
+    const isDynamic =
+      !segmentMap[segment.toLowerCase()] && /\d+|-/g.test(segment);
+    if (isDynamic && index === segments.length) {
+      return decodeURIComponent(segment);
     }
 
     return segmentMap[segment.toLowerCase()] || segment;
   };
 
-  const pathSegments = location.pathname.split("/").filter(Boolean);
-
   return (
-    <div className="relative group">
-      <span
-        role="img"
-        aria-label="Cute cat peeking"
-        className="
-                    absolute
-                    left-5 
-                    translate-y-[80%] 
-                    opacity-0
-                    transition-transform duration-300 ease-out
-                    group-hover:translate-y-0
-                    top-[-17px] 
-                    group-hover:opacity-100
-                "
-      >
-        <img
-          src={catIcon}
-          alt="Cute cat peeking"
-          className="w-8 h-8 object-cover"
-        />
-      </span>
-      
+    <div className="relative group mb-4 mt-14">
+      {/* Breadcrumbs */}
       <div
         className="text-sm text-gray-700 flex gap-1 items-center relative z-20"
         dir="rtl"
       >
-        <span
-          className="cursor-pointer hover:underline"
-          onClick={() => navigate("/")}
-        >
-          דף הבית
-        </span>
+        <FolderOpen className="size-8 fill-[#e7d6ba]"></FolderOpen>
         {pathSegments.map((segment, index) => {
           const pathToHere = "/" + pathSegments.slice(0, index + 1).join("/");
+          const getDisplayName = (
+            segment: string,
+            index: number,
+            segments: string[]
+          ) => {
+            const decoded = decodeURIComponent(segment);
+            const lower = decoded.toLowerCase();
 
-          const displayName = getDisplayName(segment, index, pathSegments);
+            if (segmentMap[lower]) return segmentMap[lower];
+
+            if (index === segments.length - 1) return decoded;
+
+            return decoded;
+          };
           const isLast = index === pathSegments.length - 1;
+
           return (
-            <span key={index} className="flex items-center gap-1">
-              <span>{">"}</span>{""}
+            <span className="flex items-center gap-1">
               <span
-                className={`
-                ${
+                role="img"
+                aria-label="Cute cat peeking"
+                className="
+          absolute
+          right-1.5
+          translate-y-[20%] 
+          opacity-0
+          transition-transform duration-100 ease-out
+          group-hover:translate-y-0
+          top-[-3px] 
+          group-hover:opacity-100
+          z-2000
+        "
+              >
+                <img
+                  src={catIcon}
+                  alt="Cute cat peeking"
+                  className="w-4 h-4 object-cover"
+                />
+              </span>
+
+              <span
+                className={`${
                   !isLast
                     ? "cursor-pointer hover:underline"
                     : "font-semibold text-gray-700"
-                }
-                transition-colors duration-200
-              `}
+                } transition-colors duration-200`}
                 onClick={() => !isLast && navigate(pathToHere)}
               >
-                {displayName}
+                {getDisplayName(segment, index, pathSegments)}
               </span>
+              {!isLast && <span className="mx-1">{">"}</span>}
             </span>
           );
         })}
@@ -97,4 +113,5 @@ const Breadcrumbs = () => {
     </div>
   );
 };
+
 export default Breadcrumbs;

@@ -14,7 +14,6 @@ import GroupControl from "../../Pages/UserControlArea/GroupControl/GroupControl"
 import Favorites from "../../Pages/CatArea/Favorites/Favorites";
 import { Toaster } from "sonner";
 import SubCat from "../../../components/Pages/CatArea/SubCats/SubCat/SubCat";
-import Breadcrumbs from "../Breadcrumbs/Breadcrumbs";
 import Footer from "../Footer/Footer";
 interface LayoutProps {}
 
@@ -23,17 +22,16 @@ const Layout: FC<LayoutProps> = () => {
     <div className="Layout">
       <Header></Header>
 
-<div className="container mx-auto pt-5 pb-0 mb-0">
-  <Breadcrumbs />
-</div>
-
-<main className="-mt-12">
+      <main className="-mt-12">
         <Routes>
           <Route path="/" element={<About></About>} />
           <Route path="/login" element={<Login></Login>} />
           <Route path="/product" element={<SingleProd></SingleProd>} />
           <Route path="/categories" element={<Categories></Categories>} />
-          <Route path="/single-cat" element={<SingleCat></SingleCat>} />
+          <Route
+            path="/categories/single-cat"
+            element={<SingleCat></SingleCat>}
+          />
           <Route
             path="/subcat/:subcatName"
             element={<SubCat initialCategories={[]} SubCatName=""></SubCat>}

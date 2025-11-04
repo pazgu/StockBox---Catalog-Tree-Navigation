@@ -13,6 +13,7 @@ import {
   Plus,
   GripVertical,
   MailQuestionIcon,
+  Check,
 } from "lucide-react";
 import { useUser } from "../../../../context/UserContext";
 import { Link } from "react-router-dom";
@@ -35,8 +36,9 @@ import {
 } from "../../../../types/types";
 import AccordionSection from "../AccordionSection/AccordionSection/AccordionSection";
 import ImageCarousel from "../ImageCarousel/ImageCarousel/ImageCarousel";
-interface SingleProdProps {}
+import Breadcrumbs from "../../../LayoutArea/Breadcrumbs/Breadcrumbs";
 
+interface SingleProdProps {}
 // Helper function to generate a unique ID (simple timestamp for this example)
 const generateUniqueId = () =>
   `accordion-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
@@ -44,8 +46,8 @@ const generateUniqueId = () =>
 const SingleProd: FC<SingleProdProps> = () => {
   const { role } = useUser();
   const [isEditing, setIsEditing] = useState(false);
-
   const [title, setTitle] = useState("מצלמת DSLR קלאסית עם עדשה אדומה");
+  const path: string[] = ["categories", "single-cat", title];
   const [description, setDescription] = useState(
     "פתרון מקצועי לצילום איכותי עם עיצוב רטרו ועמידות גבוהה."
   );
@@ -239,7 +241,7 @@ const SingleProd: FC<SingleProdProps> = () => {
 
   const handleSaveClick = () => {
     if (isEditing) {
-      toast.success("השינויים נישמרו בהצלחה!");
+      toast.success("השינויים נשמרו בהצלחה!");
     }
     setIsEditing(!isEditing);
   };
@@ -317,7 +319,8 @@ const SingleProd: FC<SingleProdProps> = () => {
     setFolders((prev) => prev.filter((f) => f.id !== folderId));
   };
   return (
-    <div className="pt-32 px-6 pb-10 font-sans-['Noto_Sans_Hebrew'] rtl">
+    <div className="pt-16 px-6 pb-10 font-sans-['Noto_Sans_Hebrew'] rtl">
+      <Breadcrumbs path={path} />
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-4 text-right">
@@ -337,14 +340,14 @@ const SingleProd: FC<SingleProdProps> = () => {
           </div>
 
           {role === "admin" && (
-            <button
-              className="flex items-center gap-2 px-5 py-2.5 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300"
-              onClick={handleSaveClick}
-              aria-label={isEditing ? "סיום עריכה" : "עריכת דף"}
-            >
-              <PencilLine size={18} />
-              {isEditing ? "סיום עריכה" : "עריכת דף"}
-            </button>
+           <button
+            onClick={handleSaveClick}
+            aria-label={isEditing ? "סיום עריכה" : "עריכת דף"}
+            className="fixed top-44 left-6 flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300"
+          >
+            {isEditing ? <Check size={22} /> : <PencilLine size={22} />}
+          </button>
+
           )}
         </div>
 
@@ -399,7 +402,7 @@ const SingleProd: FC<SingleProdProps> = () => {
                     }}
                   >
                     <MailQuestionIcon size={24} />
-                  </button> <h3 className="pt-2">|</h3>
+                  </button> <h3 className="pt-1">|</h3>
 
                   <button
                     title="הוסף למועדפים"
@@ -410,7 +413,7 @@ const SingleProd: FC<SingleProdProps> = () => {
                     <Heart
                       size={24}
                       fill={isFavorite ? "currentColor" : "none"}
-                      className="transition-all duration-300 mb-3.5 text-red-700"
+                      className="transition-all duration-300 mb-3.5 text-red-700 size-6"
                     />
                   </button>
                 </div>

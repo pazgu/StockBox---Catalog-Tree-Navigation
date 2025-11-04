@@ -3,7 +3,7 @@ import Header from "../../../LayoutArea/Header/Header";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
-import { Lock, Unlock } from "lucide-react";
+import {  Ban } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 
 
@@ -122,7 +122,7 @@ const AllUsers: FC<AllUsersProps> = () => {
         isBlocked ? prev.filter((id) => id !== userId) : [...prev, userId]
       );
 
-      toast.success(isBlocked ? "המשתמש שוחרר" : "המשתמש נחסם בהצלחה");
+      toast.success(isBlocked ? "המשתמש שוחרר מהחסימה" : "המשתמש נחסם בהצלחה");
 
       setBlockUserIndex(null);
     }
@@ -171,9 +171,9 @@ const confirmApprove = () => {
   };
 
   return (
-    <div className="min-h-80 font-sans text-[#0D305B] rtl bg-[#fffaf1]">
+    <div className=" font-sans text-[#0D305B] rtl bg-[#fffaf1]">
       <Header />
-      <main className="px-10 pt-7 md:px-5  relative pb-4">
+      <main className="px-7 md:px-5  relative pb-4">
         {/* Header Section */}
         <div className="flex justify-between items-center mb-8">
           <div className="text-right flex-1">
@@ -293,17 +293,14 @@ const confirmApprove = () => {
                 <button
                   className={`p-1 w-6 h-6 rounded transition ${
                     blockedUsers.includes(Number(user.id))
-                      ? "bg-green-600/70 text-white hover:bg-green-600"
+                      ? "bg-red-600 text-white hover:bg-red-700"
                       : "hover:bg-gray-100 opacity-60 hover:opacity-100"
                   }`}
                   onClick={() => setBlockUserIndex(index)}
                 >
-                  {blockedUsers.includes(Number(user.id)) ? (
-                    <Unlock size={14} />
-                  ) : (
-                    <Lock size={14} />
-                  )}
+                  <Ban size={14} />
                 </button>
+
               </div>
 
               {/* Avatar */}
@@ -338,9 +335,16 @@ const confirmApprove = () => {
   <div className="font-semibold text-[#0D305B]">{user.name}</div>
   <div className="text-sm text-gray-600">{user.email}</div>
 
-  <div className="inline-block mt-2 text-xs px-2 py-1 rounded-full bg-[#0D305B]/10 text-[#0D305B]">
-    {roleLabel(user.role)}
-  </div>
+  <div
+  className={`inline-block mt-2 text-xs px-2 py-1 rounded-full font-semibold ${
+    blockedUsers.includes(Number(user.id))
+      ? "bg-red-200 text-red-700"
+      : "bg-[#0D305B]/10 text-[#0D305B]"
+  }`}
+>
+  {blockedUsers.includes(Number(user.id)) ? "משתמש חסום" : roleLabel(user.role)}
+</div>
+
 </div>
       </div>
 
@@ -443,7 +447,7 @@ const confirmApprove = () => {
               <p className="mb-6 text-gray-600">
                 {blockedUsers.includes(Number(currentUsers[blockUserIndex].id))
                   ? "האם אתה בטוח שברצונך לבטל את חסימת המשתמש ולאפשר לו גישה מחדש לאתר?"
-                  : "האם אתה בטוח שברצונך לחסום משתמש זה מגישה לאתר?"}
+                  : "האם אתה בטוח שברצונך לחסום משתמש זה מצפייה במוצרים?"}
               </p>
               <div className="flex justify-end gap-3">
                 <button

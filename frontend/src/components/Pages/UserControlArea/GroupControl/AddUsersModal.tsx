@@ -73,7 +73,7 @@ const AddUsersModal: React.FC<AddUsersModalProps> = ({ group, allUsers, onClose,
             onClick={handleSelectAll}
             className="px-4 py-2 mb-3 text-sm font-medium bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-all shadow-sm hover:shadow-md"
           >
-            {selectedUserIds.length === usersNotInGroup.length ? 'בטל בחירת הכל' : 'בחר את כל המשתמשים'}
+            {selectedUserIds.length === usersNotInGroup.length ? 'בטל בחירה' : 'בחר את כל המשתמשים'}
           </button>
         )}
 
