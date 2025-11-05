@@ -223,7 +223,7 @@ const SingleCat: FC = () => {
   };
 
   return (
-    <div className="max-w-290 mx-auto rtl mt-16 mr-4">
+    <div className="max-w-290 mx-auto rtl mt-28 mr-4">
       <Breadcrumbs path={path} />
       <header className="flex flex-col items-start mb-10">
         <h1 className="text-[48px] font-light font-alef text-[#0D305B] border-b-4 border-gray-400 pb-1 mb-5 tracking-tight">

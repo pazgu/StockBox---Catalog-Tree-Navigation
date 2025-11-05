@@ -200,11 +200,11 @@ const GroupControl: React.FC = () => {
   const handleRemoveUsersFromGroup = () => {
     if (selectedUsers.size === 0) return;
 
-    setUsers((prevUsers) =>
-      prevUsers.map((u) => {
-        if (!selectedUsers.has(u.id)) return u; // לא השתנה
-        const newGroups = u.groups.filter((gid) => gid !== selectedGroup);
-        if (newGroups.length === u.groups.length) return u; // לא השתנה
+    setUsers(prevUsers =>
+      prevUsers.map(u => {
+        if (!selectedUsers.has(u.id)) return u;
+        const newGroups = u.groups.filter(gid => gid !== selectedGroup);
+        if (newGroups.length === u.groups.length) return u;
         return { ...u, groups: newGroups };
       })
     );
@@ -213,11 +213,11 @@ const GroupControl: React.FC = () => {
     setSelectedUsers(new Set());
   };
 
-  const handleAddUsers = (groupId: string, userIds: string[]) => {
-    setUsers((prevUsers) =>
-      prevUsers.map((u) => {
-        if (!userIds.includes(u.id)) return u; // לא השתנה
-        if (u.groups.includes(groupId)) return u; // כבר בקבוצה
+   const handleAddUsers = (groupId: string, userIds: string[]) => {
+    setUsers(prevUsers =>
+      prevUsers.map(u => {
+        if (!userIds.includes(u.id)) return u;
+        if (u.groups.includes(groupId)) return u;
         return { ...u, groups: [...u.groups, groupId] };
       })
     );
@@ -353,6 +353,7 @@ const GroupControl: React.FC = () => {
             onSelectAll={handleSelectAll}
             onAddUsers={() => setShowAddUsersModal(true)}
             onSearchChange={setSearchQuery}
+            onRemoveUsers={handleRemoveUsersFromGroup}
           />
           <BannedItems
             currentGroupName={currentGroup?.name || ""}
@@ -366,22 +367,7 @@ const GroupControl: React.FC = () => {
         {/* Footer */}
         <div className="bg-white border-t border-gray-200 px-4 sm:px-8 py-6">
           <div className="flex flex-col items-center gap-4">
-            <span className="text-gray-700 text-base font-medium">
-              {selectedUsers.size === 0
-                ? "לא נבחרו משתמשים"
-                : `${selectedUsers.size} משתמשים נבחרו`}
-            </span>
-
             <div className="flex gap-4 w-full sm:w-auto justify-center">
-              <button
-                className="px-8 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed text-sm font-medium flex items-center justify-center gap-2 shadow-sm hover:shadow-md disabled:shadow-none"
-                onClick={handleRemoveUsersFromGroup}
-                disabled={selectedUsers.size === 0}
-              >
-                <UserMinus className="w-4 h-4" />
-                הסר מהקבוצה
-              </button>
-
               <button
                 className="px-8 py-3 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-all text-sm font-medium flex items-center justify-center gap-2 shadow-sm hover:shadow-md disabled:bg-gray-300 disabled:cursor-not-allowed disabled:shadow-none"
                 onClick={handleSaveChanges}
