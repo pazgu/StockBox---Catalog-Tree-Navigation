@@ -78,7 +78,7 @@ const NewUser: React.FC = () => {
   };
 
   return (
-    <div className="flex justify-center items-start pt-36 w-full box-border fixed top-16">
+    <div className="flex justify-center items-start pt-36 w-full box-border top-16">
       <motion.div
         className="bg-white scale-90 origin-top transform-gpu border border-gray-200 rounded-lg shadow-2xl px-5 py-3 h-auto w-[90%] flex flex-col relative max-w-4xl"
         initial={{ opacity: 0, y: 20 }}
