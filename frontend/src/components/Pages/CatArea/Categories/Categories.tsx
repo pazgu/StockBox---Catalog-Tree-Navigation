@@ -320,8 +320,7 @@ const [isEditPanning, setIsEditPanning] = useState(false);
                 </h4>
 
                 <p className="text-slate-700 mb-3">
-                  האם את/ה בטוח/ה שברצונך למחוק את הקטגוריה "
-                  {categoryToDelete.name}"?
+                  האם ברצונך למחוק את הקטגוריה "{categoryToDelete.name}"?
                 </p>
                 <small className="text-gray-500">
                   לא ניתן לבטל פעולה זו לאחר מכן
