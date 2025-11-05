@@ -7,7 +7,6 @@ import { useUser } from '../../../../context/UserContext';
 import { toast } from 'sonner';
 import isEqual from "lodash/isEqual";
 import { CheckCircle2, Compass, Edit2, Check, GripVertical, Trash2 } from 'lucide-react';
-
 import { ICONS_HE } from '../../../../mockdata/icons';
 import FeaturesSection from './FeaturesSection/FeaturesSection';
 import VisionSection from './VisionSection/VisionSection';
@@ -39,10 +38,11 @@ const About: FC<AboutProps> = () => {
   const navigate = useNavigate();
   const { role } = useUser();
 
+  // refs for file inputs
   const replaceInputRef = React.useRef<HTMLInputElement>(null);
   const addInputRef = React.useRef<HTMLInputElement>(null);
 
-  // MAIN STATE: sections array
+  // MAIN STATE: dynamic sections
   const [sections, setSections] = useState<SectionType[]>([
     {
       id: 'intro-1',
@@ -81,21 +81,73 @@ const About: FC<AboutProps> = () => {
   const sectionRefs = React.useRef<(HTMLDivElement | null)[]>([]);
   const dragCounterRef = React.useRef(0);
 
-  // Add new section
+  // Image wrapping
+  const imageWrapRef = React.useRef<HTMLDivElement | null>(null);
+  const goPrev = () => setCurrentImageIndex(i => (i - 1 + images.length) % images.length);
+  const goNext = () => setCurrentImageIndex(i => (i + 1) % images.length);
+
+  // Keyboard navigation between images
+  React.useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const el = imageWrapRef.current;
+      if (!el) return;
+      const within = el.contains(document.activeElement) || document.activeElement === document.body;
+      if (!within) return;
+
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        goPrev();
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        goNext();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [goPrev, goNext]);
+
+  // Editable features (legacy compatibility for child components)
+  const [editableFeatures, setEditableFeatures] = useState([
+    { icon: "כוכב", title: "איחוד מידע במקום אחד", description: "דפים, קבצים, החלטות, הערות ושיתופים." },
+    { icon: "חיפוש", title: "חיפוש חכם ומהיר", description: "לפי כותרת, תגיות, תיאור ותוכן." },
+    { icon: "הגדרות", title: "הרשאות ותפקידים", description: "מסך מותאם לכל משתמש. שמירה על סדר ואיכות." },
+    { icon: "מגמה", title: "תיעוד שינויים", description: "היסטוריית עדכונים והקשר סביב כל פריט." },
+  ]);
+
+  useEffect(() => {
+    setEditableFeatures(prev =>
+      prev.map(f => (EN_TO_HE[f.icon] ? { ...f, icon: EN_TO_HE[f.icon] } : f))
+    );
+  }, []);
+
+  const [editableVisionPoints, setEditableVisionPoints] = useState([
+    "מידע ברור, עדכני ונגיש",
+    "צמצום זמן חיפוש",
+    "חיזוק שקיפות ושיתופיות בצוות",
+    "מערכת נעימה, יציבה ומתאימה לזרימות עבודה יומיומיות.",
+    "גדלה יחד עם הצוות והצרכים שלו"
+  ]);
+
+  const [draggedVisionIndex, setDraggedVisionIndex] = useState<number | null>(null);
+
+  const handleNavigateToCategories = () => navigate("/categories");
+
+  // Add section
   const handleAddSection = (afterIndex: number, type: "features" | "vision") => {
-    const newSection: SectionType = type === 'features' 
+    const newSection: SectionType = type === 'features'
       ? {
-          id: `features-${Date.now()}`,
-          type: 'features',
-          title: 'פיצ\'רים חדשים',
-          features: [{ icon: "כוכב", title: "כותרת חדשה", description: "תיאור חדש" }]
-        }
+        id: `features-${Date.now()}`,
+        type: 'features',
+        title: 'פיצ׳רים חדשים',
+        features: [{ icon: "כוכב", title: "כותרת חדשה", description: "תיאור חדש" }]
+      }
       : {
-          id: `vision-${Date.now()}`,
-          type: 'vision',
-          title: 'חזון חדש',
-          visionPoints: ["נקודה חדשה"]
-        };
+        id: `vision-${Date.now()}`,
+        type: 'vision',
+        title: 'חזון חדש',
+        visionPoints: ["נקודה חדשה"]
+      };
 
     setSections(prev => [
       ...prev.slice(0, afterIndex + 1),

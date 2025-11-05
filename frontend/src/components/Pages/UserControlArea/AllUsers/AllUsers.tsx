@@ -28,25 +28,11 @@ const roleLabel = (r: User["role"]) =>
 
 
 interface AllUsersProps {}
-const usersData: User[] = [
-  { id: 1,  name: "ליאלי עמנואלי", email: "lali@outlook.com",  isApproved: false, role: "admin" },
-  { id: 2,  name: "משתמש 2",       email: "user2@domain.com", isApproved: false, role: "user" },
-  { id: 3,  name: "משתמש 3",       email: "user3@domain.com", isApproved: false, role: "user" },
-  { id: 4,  name: "משתמש 4",       email: "user4@domain.com", isApproved: true,  role: "user" },
-  { id: 5,  name: "משתמש 5",       email: "user5@domain.com", isApproved: true,  role: "user" },
-  { id: 6,  name: "משתמש 6",       email: "user6@domain.com", isApproved: true,  role: "user" },
-  { id: 7,  name: "משתמש 7",       email: "user7@domain.com", isApproved: true,  role: "user" },
-  { id: 8,  name: "משתמש 8",       email: "user8@domain.com", isApproved: true,  role: "user" },
-  { id: 9,  name: "משתמש 9",       email: "user9@domain.com", isApproved: true,  role: "user" },
-  { id: 10, name: "משתמש 10",      email: "user10@domain.com",isApproved: true,  role: "user" },
-  { id: 11, name: "משתמש 11",      email: "user11@domain.com",isApproved: true,  role: "user" },
-];
-
-
 
 const AllUsers: FC<AllUsersProps> = () => {
   const navigate = useNavigate();
-  const [users, setUsers] = useState(usersData);
+  const { users, deleteUser, updateUser, role } = useUser(); // get from usercontext 
+
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [deleteUserIndex, setDeleteUserIndex] = useState<number | null>(null);
@@ -55,11 +41,10 @@ const AllUsers: FC<AllUsersProps> = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [userToEdit, setUserToEdit] = useState<User | null>(null);
   const [blockUserIndex, setBlockUserIndex] = useState<number | null>(null);
-  const [blockedUsers, setBlockedUsers] = useState<number[]>([]); // store blocked user IDs
+  const [blockedUsers, setBlockedUsers] = useState<number[]>([]);
   const [approveUserIndex, setApproveUserIndex] = useState<number | null>(null);
 
   const usersPerPage = 8;
-  const { role } = useUser();
 
   useEffect(() => {
     const query = searchParams.get("search");
@@ -96,14 +81,12 @@ const AllUsers: FC<AllUsersProps> = () => {
 
   const confirmDelete = () => {
     if (deleteUserIndex !== null) {
-      const globalIndex = (currentPage - 1) * usersPerPage + deleteUserIndex;
-      const newUsers = [...users];
-      newUsers.splice(globalIndex, 1);
-
-      setUsers(newUsers);
+      const userIdToDelete = currentUsers[deleteUserIndex].id;
+      
+      deleteUser(userIdToDelete);
 
       if (
-        currentPage > Math.ceil(newUsers.length / usersPerPage) &&
+        currentPage > Math.ceil((users.length - 1) / usersPerPage) &&
         currentPage > 1
       ) {
         setCurrentPage(currentPage - 1);
@@ -131,9 +114,7 @@ const AllUsers: FC<AllUsersProps> = () => {
 const confirmApprove = () => {
     if (approveUserIndex !== null) {
       const userId = currentUsers[approveUserIndex].id;
-      setUsers((prev) =>
-        prev.map((u) => (u.id === userId ? { ...u, isApproved: true } : u))
-      );
+      updateUser(userId, { isApproved: true });
       toast.success("המשתמש אושר בהצלחה!");
       setApproveUserIndex(null);
     }
@@ -142,7 +123,7 @@ const confirmApprove = () => {
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
-    setCurrentPage(1); // Reset to page 1 when searching
+    setCurrentPage(1);
   };
 
   const handleEditClick = (user: User) => {
@@ -158,7 +139,7 @@ const confirmApprove = () => {
 
   const handleSaveEdit = () => {
     if (userToEdit) {
-      setUsers(users.map((u) => (u.id === userToEdit.id ? userToEdit : u)));
+      updateUser(userToEdit.id, userToEdit);
       toast.success("המשתמש עודכן בהצלחה!");
       setShowEditModal(false);
       setUserToEdit(null);
@@ -230,9 +211,9 @@ const confirmApprove = () => {
         )}
 
         <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                    {currentUsers.map((user, index) => (
+          {currentUsers.map((user, index) => (
             <div
-              key={index}
+              key={user.id}
               className={`rounded-xl p-4 text-center shadow-sm relative min-h-[110px] transition-transform hover:-translate-y-1 hover:shadow-md border-gray-100 ${
                 user.isApproved ? "bg-[#fffdf8]" : "bg-gray-100"
               }`}
@@ -331,23 +312,23 @@ const confirmApprove = () => {
               </div>
 
               <div>
-  <div className="text-sm text-gray-600">שם:</div>
-  <div className="font-semibold text-[#0D305B]">{user.name}</div>
-  <div className="text-sm text-gray-600">{user.email}</div>
+                <div className="text-sm text-gray-600">שם:</div>
+                <div className="font-semibold text-[#0D305B]">{user.name}</div>
+                <div className="text-sm text-gray-600">{user.email}</div>
 
-  <div
-  className={`inline-block mt-2 text-xs px-2 py-1 rounded-full font-semibold ${
-    blockedUsers.includes(Number(user.id))
-      ? "bg-red-200 text-red-700"
-      : "bg-[#0D305B]/10 text-[#0D305B]"
-  }`}
->
-  {blockedUsers.includes(Number(user.id)) ? "משתמש חסום" : roleLabel(user.role)}
-</div>
-
-</div>
-      </div>
-
+                <div
+                  className={`inline-block mt-2 text-xs px-2 py-1 rounded-full font-semibold ${
+                    blockedUsers.includes(Number(user.id))
+                      ? "bg-red-200 text-red-700"
+                      : "bg-[#0D305B]/10 text-[#0D305B]"
+                  }`}
+                >
+                  {blockedUsers.includes(Number(user.id))
+                    ? "משתמש חסום"
+                    : roleLabel(user.role)}
+                </div>
+              </div>
+            </div>
           ))}
         </div>
 
@@ -417,7 +398,7 @@ const confirmApprove = () => {
             <div className="bg-white rounded-xl p-6 w-80 text-right shadow-lg">
               <h2 className="text-xl font-semibold mb-4">למחוק משתמש זה?</h2>
               <p className="mb-6 text-gray-600">
-                פעולה זו לא ניתנת לביטול. האם אתה בטוח שברצונך למחוק את המשתמש?
+                פעולה זו לא ניתנת לביטול. האם ברצונך למחוק את המשתמש?
               </p>
               <div className="flex justify-end gap-3">
                 <button
@@ -500,18 +481,19 @@ const confirmApprove = () => {
               />
 
               <label className="block text-sm mb-1">תפקיד:</label>
-<select
-  value={userToEdit.role}
-  onChange={(e) => handleEditChange("role", e.target.value as User["role"])}
-  className="w-full border rounded px-3 py-2 mb-6 focus:outline-none focus:ring-2 focus:ring-[#0D305B]"
->
-  {ROLE_OPTIONS.map((opt) => (
-    <option key={opt.value} value={opt.value}>
-      {opt.label}
-    </option>
-  ))}
-</select>
-
+              <select
+                value={userToEdit.role}
+                onChange={(e) =>
+                  handleEditChange("role", e.target.value as User["role"])
+                }
+                className="w-full border rounded px-3 py-2 mb-6 focus:outline-none focus:ring-2 focus:ring-[#0D305B]"
+              >
+                {ROLE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
 
               <div className="flex justify-end gap-3">
                 <button

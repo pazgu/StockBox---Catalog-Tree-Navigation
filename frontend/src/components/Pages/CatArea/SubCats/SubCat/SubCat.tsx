@@ -390,7 +390,7 @@ const SubCat: FC<SubCatProps> = ({ initialCategories = [] }) => {
                 </h4>
 
                 <p className="text-slate-700 mb-3">
-                  האם את/ה בטוח/ה שברצונך למחוק את הקטגוריה "
+                  האם ברצונך למחוק את הקטגוריה "
                   <strong className="font-bold">{categoryToDelete.name}</strong>
                   "?
                 </p>

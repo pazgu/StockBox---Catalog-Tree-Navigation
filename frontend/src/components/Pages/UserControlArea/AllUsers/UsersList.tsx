@@ -1,5 +1,5 @@
 import React from "react";
-import { Search, Users, Plus } from "lucide-react";
+import { Search, Users, Plus, UserMinus } from "lucide-react";
 import { User, Group } from "../../../../types/types";
 
 interface UsersListProps {
@@ -14,6 +14,7 @@ interface UsersListProps {
   onSelectAll: () => void;
   onAddUsers: () => void;
   onSearchChange: (query: string) => void;
+  onRemoveUsers: () => void;
 }
 
 const UsersList: React.FC<UsersListProps> = ({
@@ -28,6 +29,7 @@ const UsersList: React.FC<UsersListProps> = ({
   onSelectAll,
   onAddUsers,
   onSearchChange,
+  onRemoveUsers,
 }) => {
   return (
     <div className="col-span-12 lg:col-span-5 p-2 border-r border-gray-200 text-right">
@@ -60,18 +62,32 @@ const UsersList: React.FC<UsersListProps> = ({
             : "בחר הכל"}
         </button>
         <span className="text-sm text-gray-600">
-          נמצאו {filteredUsers.length} משתמשים
+          {selectedUsers.size > 0 
+            ? `${selectedUsers.size} נבחרו מתוך ${filteredUsers.length}`
+            : `נמצאו ${filteredUsers.length} משתמשים`
+          }
         </span>
       </div>
 
-      <button
-        onClick={onAddUsers}
-        disabled={!selectedGroup}
-        className="w-full mb-4 flex items-center justify-center gap-2 px-4 py-3 bg-blue-900 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-md text-sm font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
-      >
-        <Plus className="w-4 h-4" />
-        הוסף משתמשים לקבוצה
-      </button>
+      <div className="flex gap-3 mb-4">
+        <button
+          onClick={onAddUsers}
+          disabled={!selectedGroup}
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-900 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-md text-sm font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
+        >
+          <Plus className="w-4 h-4" />
+          הוסף משתמשים
+        </button>
+
+        <button
+          onClick={onRemoveUsers}
+          disabled={selectedUsers.size === 0}
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 shadow-md text-sm font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
+        >
+          <UserMinus className="w-4 h-4" />
+          הסר מהקבוצה
+        </button>
+      </div>
 
       {filteredUsers.length === 0 ? (
         <div className="text-center py-12 text-gray-400">

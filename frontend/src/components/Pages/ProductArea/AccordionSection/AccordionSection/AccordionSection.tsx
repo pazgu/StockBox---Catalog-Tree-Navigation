@@ -73,6 +73,7 @@ const AccordionSection: FC<AccordionSectionProps> = ({
   setNewFolderName,
   handleCreateFolder,
 }) => {
+  const [openFolders, setOpenFolders] = useState<Set<string>>(new Set());
   return (
     <div className="lg:col-span-2 order-1 lg:order-2">
       <Accordion type="single" collapsible className="w-full space-y-2">
@@ -245,7 +246,10 @@ const AccordionSection: FC<AccordionSectionProps> = ({
               key={folder.id}
               className="border border-gray-200 rounded-lg bg-gray-50 hover:bg-gray-100 transition-all duration-300 overflow-hidden"
             >
-              <summary className="flex items-center justify-between p-4 cursor-pointer list-none">
+              <summary 
+              className="flex items-center justify-between p-4 cursor-pointer list-none"
+              onClick={(e) => e.preventDefault()}
+            >
                 <div className="flex items-center gap-3">
                   <Folder size={24} className="text-stockblue" />
                   <h3 className="font-semibold text-lg text-gray-800">
@@ -256,20 +260,44 @@ const AccordionSection: FC<AccordionSectionProps> = ({
                   </span>
                 </div>
                 {isEditing && (
-                  <div className="flex items-center gap-2">
-                    <label
-                      onClick={(e) => e.stopPropagation()}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-stockblue text-white rounded-lg hover:bg-stockblue/90 cursor-pointer transition-all text-sm"
-                    >
-                      <Upload size={16} />
-                      העלה קבצים
-                      <input
-                        type="file"
-                        multiple
-                        onChange={(e) => handleFileUpload(folder.id, e)}
-                        className="hidden"
-                      />
-                    </label>
+              <div className="flex items-center gap-2">
+                <label
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-stockblue text-white rounded-lg hover:bg-stockblue/90 cursor-pointer transition-all text-sm"
+                >
+                  <Upload size={16} />
+                  העלה קבצים
+                  <input
+                    type="file"
+                    multiple
+                    onChange={(e) => handleFileUpload(folder.id, e)}
+                    className="hidden"
+                  />
+                </label>
+                
+                {folder.files.length > 0 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const detailsElement = e.currentTarget.closest('details');
+                    if (detailsElement) {
+                      detailsElement.open = !detailsElement.open;
+                      setOpenFolders(prev => {
+                        const newSet = new Set(prev);
+                        if (newSet.has(folder.id)) {
+                          newSet.delete(folder.id);
+                        } else {
+                          newSet.add(folder.id);
+                        }
+                        return newSet;
+                      });
+                    }
+                  }}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-stockblue text-white rounded-lg hover:bg-stockblue/90 cursor-pointer transition-all text-sm"
+                >
+                  {openFolders.has(folder.id) ? 'הסתר קבצים' : 'צפה בקבצים'}
+                </button>
+              )}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();

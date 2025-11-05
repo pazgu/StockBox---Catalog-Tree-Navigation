@@ -1,13 +1,18 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Users, Save, UserMinus, CheckCircle2 } from 'lucide-react';
-import GroupList from './GroupList';
-import UsersList from '../AllUsers/UsersList';
-import BannedItems from './BannedItems';
-import AddUsersModal from './AddUsersModal';
-import { BannedItem, Group, User, mockBannedItems } from '../../../../types/types';
-import { useNavigate } from 'react-router-dom';
-import { useUser } from '../../../../context/UserContext';
-import { toast } from 'sonner';
+import React, { useState, useMemo, useEffect, useRef } from "react";
+import { Users, Save, UserMinus, CheckCircle2 } from "lucide-react";
+import GroupList from "./GroupList";
+import UsersList from "../AllUsers/UsersList";
+import BannedItems from "./BannedItems";
+import AddUsersModal from "./AddUsersModal";
+import {
+  BannedItem,
+  Group,
+  User,
+  mockBannedItems,
+} from "../../../../types/types";
+import { useNavigate } from "react-router-dom";
+import { useUser } from "../../../../context/UserContext";
+import { toast } from "sonner";
 
 const GroupControl: React.FC = () => {
   const [selectedGroup, setSelectedGroup] = useState("group1");
@@ -26,7 +31,6 @@ const GroupControl: React.FC = () => {
 
   const [groupToEdit, setGroupToEdit] = useState<Group | null>(null);
   const [editedGroupName, setEditedGroupName] = useState("");
-
 
   // Redirect non-admins
   useEffect(() => {
@@ -47,7 +51,7 @@ const GroupControl: React.FC = () => {
       permissions: [],
       bannedItems: [
         { id: 1, name: "מצלמה דיגיטלית Canon EOS 250D DSLR", type: "product" },
-        { id: "cat_2", name: "הקלטה", type: "category" }
+        { id: "cat_2", name: "הקלטה", type: "category" },
       ],
     },
     {
@@ -55,9 +59,13 @@ const GroupControl: React.FC = () => {
       name: "קבוצה 2",
       permissions: [],
       bannedItems: [
-        { id: 4, name: "מצלמה דיגיטלית ללא מראה Canon EOS R100", type: "product" },
+        {
+          id: 4,
+          name: "מצלמה דיגיטלית ללא מראה Canon EOS R100",
+          type: "product",
+        },
         { id: "sub_cat_7", name: "עדשות EF", type: "subcategory" },
-        { id: "cat_2", name: "הקלטה", type: "category" }
+        { id: "cat_2", name: "הקלטה", type: "category" },
       ],
     },
     {
@@ -69,66 +77,74 @@ const GroupControl: React.FC = () => {
   ]);
 
   const initialUsersData = [
-  {
-    id: "1",
-    name: "ג׳ון סמית׳",
-    email: "john.smith@system.com",
-    avatar: "JS",
-    groups: ["group1", "group2"],
-  },
-  {
-    id: "2",
-    name: "שרה מילר",
-    email: "sarah.miller@system.com",
-    avatar: "SM",
-    groups: ["group1"],
-  },
-  {
-    id: "3",
-    name: "רוברט ג׳ונסון",
-    email: "robert.j@system.com",
-    avatar: "RJ",
-    groups: ["group1"],
-  },
-  {
-    id: "4",
-    name: "אמה וילסון",
-    email: "emma.w@system.com",
-    avatar: "EW",
-    groups: ["group1"],
-  },
-  {
-    id: "5",
-    name: "מייקל בראון",
-    email: "michael.b@system.com",
-    avatar: "MB",
-    groups: ["group1", "group3"],
-  },
-];
+    {
+      id: "1",
+      name: "ג׳ון סמית׳",
+      email: "john.smith@system.com",
+      avatar: "JS",
+      groups: ["group1", "group2"],
+    },
+    {
+      id: "2",
+      name: "שרה מילר",
+      email: "sarah.miller@system.com",
+      avatar: "SM",
+      groups: ["group1"],
+    },
+    {
+      id: "3",
+      name: "רוברט ג׳ונסון",
+      email: "robert.j@system.com",
+      avatar: "RJ",
+      groups: ["group1"],
+    },
+    {
+      id: "4",
+      name: "אמה וילסון",
+      email: "emma.w@system.com",
+      avatar: "EW",
+      groups: ["group1"],
+    },
+    {
+      id: "5",
+      name: "מייקל בראון",
+      email: "michael.b@system.com",
+      avatar: "MB",
+      groups: ["group1", "group3"],
+    },
+  ];
 
-const [users, setUsers] = useState<User[]>(initialUsersData);
-useEffect(() => {
-  setInitialUsers(JSON.parse(JSON.stringify(initialUsersData)));
-}, []);
+  const [users, setUsers] = useState<User[]>(initialUsersData);
+  useEffect(() => {
+    setInitialUsers(JSON.parse(JSON.stringify(initialUsersData)));
+  }, []);
 
-  const currentGroup = useMemo(() => groups.find((g) => g.id === selectedGroup), [groups, selectedGroup]);
-const openAddGroupModal = () => setShowAddGroupModal(true);
+  const currentGroup = useMemo(
+    () => groups.find((g) => g.id === selectedGroup),
+    [groups, selectedGroup]
+  );
+  const openAddGroupModal = () => setShowAddGroupModal(true);
   const closeAddGroupModal = () => {
     setShowAddGroupModal(false);
     setNewGroupName("");
   };
 
-const saveNewGroup = () => {
+  const saveNewGroup = () => {
     const trimmedName = newGroupName.trim();
     if (!trimmedName) return;
 
-    if (groups.some(g => g.name === trimmedName)) { 
+    if (groups.some((g) => g.name === trimmedName)) {
       toast.error("כבר קיימת קבוצה עם שם זה. אנא בחר שם אחר.");
       return;
     }
 
-    const newGroup: Group = { id: `group${Date.now()}`, name: trimmedName, permissions: [], bannedItems: [] };
-    setGroups(prev => {
+    const newGroup: Group = {
+      id: `group${Date.now()}`,
+      name: trimmedName,
+      permissions: [],
+      bannedItems: [],
+    };
+    setGroups((prev) => {
       const newGroups = [...prev, newGroup];
       setSelectedGroup(newGroup.id);
       return newGroups;
@@ -149,16 +165,15 @@ const saveNewGroup = () => {
     });
   }, [users, selectedGroup, searchQuery]);
 
-
   const totalUsers = useMemo(
     () => new Set(users.map((u) => u.id)).size,
     [users]
   );
 
   const hasChanges = useMemo(() => {
-  if (initialUsers.length === 0) return false;
-  return JSON.stringify(users) !== JSON.stringify(initialUsers);
-}, [users, initialUsers]);
+    if (initialUsers.length === 0) return false;
+    return JSON.stringify(users) !== JSON.stringify(initialUsers);
+  }, [users, initialUsers]);
 
   const handleSelectGroup = (id: string) => {
     setSelectedGroup(id);
@@ -166,7 +181,7 @@ const saveNewGroup = () => {
   };
 
   const toggleUserSelection = (userId: string) => {
-    setSelectedUsers(prev => {
+    setSelectedUsers((prev) => {
       const newSelection = new Set(prev);
       if (newSelection.has(userId)) newSelection.delete(userId);
       else newSelection.add(userId);
@@ -175,8 +190,10 @@ const saveNewGroup = () => {
   };
 
   const handleSelectAll = () => {
-    setSelectedUsers(prev =>
-      prev.size === filteredUsers.length ? new Set() : new Set(filteredUsers.map(u => u.id))
+    setSelectedUsers((prev) =>
+      prev.size === filteredUsers.length
+        ? new Set()
+        : new Set(filteredUsers.map((u) => u.id))
     );
   };
 
@@ -185,9 +202,9 @@ const saveNewGroup = () => {
 
     setUsers(prevUsers =>
       prevUsers.map(u => {
-        if (!selectedUsers.has(u.id)) return u; // לא השתנה
+        if (!selectedUsers.has(u.id)) return u;
         const newGroups = u.groups.filter(gid => gid !== selectedGroup);
-        if (newGroups.length === u.groups.length) return u; // לא השתנה
+        if (newGroups.length === u.groups.length) return u;
         return { ...u, groups: newGroups };
       })
     );
@@ -199,13 +216,12 @@ const saveNewGroup = () => {
    const handleAddUsers = (groupId: string, userIds: string[]) => {
     setUsers(prevUsers =>
       prevUsers.map(u => {
-        if (!userIds.includes(u.id)) return u; // לא השתנה
-        if (u.groups.includes(groupId)) return u; // כבר בקבוצה
+        if (!userIds.includes(u.id)) return u;
+        if (u.groups.includes(groupId)) return u;
         return { ...u, groups: [...u.groups, groupId] };
       })
     );
     toast.success(`${userIds.length} משתמשים נוספו בהצלחה לקבוצה`);
-
   };
 
   const handleUpdateBannedItems = (groupId: string, items: BannedItem[]) => {
@@ -220,21 +236,18 @@ const saveNewGroup = () => {
         return g;
       })
     );
-        toast.info("פריטים חסומים עודכנו בהצלחה");
-
+    toast.info("פריטים חסומים עודכנו בהצלחה");
   };
 
   const handleSaveChanges = () => {
-  setInitialUsers(JSON.parse(JSON.stringify(users)));
-     toast.success("השינויים נשמרו בהצלחה");
-
-};
-
+    setInitialUsers(JSON.parse(JSON.stringify(users)));
+    toast.success("השינויים נשמרו בהצלחה");
+  };
 
   const handleEditGroup = (group: Group) => {
-  setGroupToEdit(group);
-  setEditedGroupName(group.name);
-};
+    setGroupToEdit(group);
+    setEditedGroupName(group.name);
+  };
 
   const saveEditedGroup = () => {
     if (!groupToEdit) return;
@@ -248,7 +261,9 @@ const saveNewGroup = () => {
       return;
     }
     setGroups((prev) =>
-      prev.map((g) => (g.id === groupToEdit.id ? { ...g, name: trimmedName } : g))
+      prev.map((g) =>
+        g.id === groupToEdit.id ? { ...g, name: trimmedName } : g
+      )
     );
     toast.success("שם הקבוצה עודכן בהצלחה");
     setGroupToEdit(null);
@@ -261,26 +276,31 @@ const saveNewGroup = () => {
   const confirmDeleteGroup = () => {
     if (!groupToDelete) return;
 
-    setGroups(prevGroups => {
-      const newGroups = prevGroups.filter(g => g.id !== groupToDelete.id);
-      setSelectedGroup(prev => prev === groupToDelete.id ? (newGroups[0]?.id || "") : prev);
+    setGroups((prevGroups) => {
+      const newGroups = prevGroups.filter((g) => g.id !== groupToDelete.id);
+      setSelectedGroup((prev) =>
+        prev === groupToDelete.id ? newGroups[0]?.id || "" : prev
+      );
       return newGroups;
     });
 
-    setUsers(prev => prev.map(u => ({ ...u, groups: u.groups.filter(gid => gid !== groupToDelete.id) })));
+    setUsers((prev) =>
+      prev.map((u) => ({
+        ...u,
+        groups: u.groups.filter((gid) => gid !== groupToDelete.id),
+      }))
+    );
 
     toast.info(`הקבוצה "${groupToDelete.name}" נמחקה בהצלחה`);
 
     setGroupToDelete(null);
   };
-  
 
   return (
     <div
       dir="rtl"
       className="min-h-screen bg-[#fffaf1] p-4 sm:p-8 md:p-12 lg:p-16 pt-28 font-sans"
     >
-
       <div className="mb-8 text-right mt-10">
         <h2 className="text-4xl sm:text-5xl font-light text-slate-700 mb-2 tracking-tight">
           ניהול קבוצות והרשאות
@@ -333,36 +353,25 @@ const saveNewGroup = () => {
             onSelectAll={handleSelectAll}
             onAddUsers={() => setShowAddUsersModal(true)}
             onSearchChange={setSearchQuery}
+            onRemoveUsers={handleRemoveUsersFromGroup}
           />
           <BannedItems
             currentGroupName={currentGroup?.name || ""}
             bannedItems={currentGroup?.bannedItems || []}
-            onUpdateBannedItems={(items: BannedItem[]) => handleUpdateBannedItems(selectedGroup, items)}
+            onUpdateBannedItems={(items: BannedItem[]) =>
+              handleUpdateBannedItems(selectedGroup, items)
+            }
           />
         </div>
 
         {/* Footer */}
         <div className="bg-white border-t border-gray-200 px-4 sm:px-8 py-6">
           <div className="flex flex-col items-center gap-4">
-            <span className="text-gray-700 text-base font-medium">
-              {selectedUsers.size === 0 ? "לא נבחרו משתמשים" : `${selectedUsers.size} משתמשים נבחרו`}
-            </span>
-
             <div className="flex gap-4 w-full sm:w-auto justify-center">
               <button
-                className="px-8 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed text-sm font-medium flex items-center justify-center gap-2 shadow-sm hover:shadow-md disabled:shadow-none"
-                onClick={handleRemoveUsersFromGroup}
-                disabled={selectedUsers.size === 0}
-              >
-                <UserMinus className="w-4 h-4" />
-                הסר מהקבוצה
-              </button>
-
-              <button
-               className="px-8 py-3 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-all text-sm font-medium flex items-center justify-center gap-2 shadow-sm hover:shadow-md disabled:bg-gray-300 disabled:cursor-not-allowed disabled:shadow-none"
+                className="px-8 py-3 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-all text-sm font-medium flex items-center justify-center gap-2 shadow-sm hover:shadow-md disabled:bg-gray-300 disabled:cursor-not-allowed disabled:shadow-none"
                 onClick={handleSaveChanges}
                 disabled={!hasChanges}
-                
               >
                 <Save className="w-4 h-4" />
                 שמור שינויים
@@ -400,10 +409,16 @@ const saveNewGroup = () => {
               aria-label="שם הקבוצה החדשה"
             />
             <div className="flex justify-between gap-3">
-              <button onClick={closeAddGroupModal} className="flex-1 p-3 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+              <button
+                onClick={closeAddGroupModal}
+                className="flex-1 p-3 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
                 ביטול
               </button>
-              <button onClick={saveNewGroup} className="flex-1 p-3 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors">
+              <button
+                onClick={saveNewGroup}
+                className="flex-1 p-3 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
+              >
                 הוסף קבוצה
               </button>
             </div>
@@ -415,9 +430,11 @@ const saveNewGroup = () => {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-96 text-center shadow-lg">
             <p className="text-slate-700 mb-3">
-              האם את/ה בטוח/ה שברצונך למחוק את הקבוצה "{groupToDelete.name}"?
+              האם ברצונך למחוק את הקבוצה "{groupToDelete.name}"?
             </p>
-            <small className="text-gray-500">לא ניתן לבטל פעולה זו לאחר מכן</small>
+            <small className="text-gray-500">
+              לא ניתן לבטל פעולה זו לאחר מכן
+            </small>
             <div className="flex justify-between gap-3 mt-5">
               <button
                 onClick={closeDeleteModal}

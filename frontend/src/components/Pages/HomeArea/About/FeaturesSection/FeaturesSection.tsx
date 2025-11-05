@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useMemo, useRef, useState } from "react";
+import React, { FC, useEffect, useRef, useState } from "react";
 import { Plus, X } from "lucide-react";
 
 type Feature = {
@@ -126,7 +126,7 @@ const FeaturesSection: FC<FeaturesSectionProps> = ({
             type="text"
             value={title}
             onChange={(e) => onChangeTitle(e.target.value)}
-            className="text-[1.8rem] text-stockblue my-6 mb-4 font-bold border-b-2 border-stockblue/15 pb-1.5 inline-block w-full border border-stockblue/30 rounded px-3 py-1 focus:outline-none focus:border-stockblue"
+            className="text-[1.8rem] text-stockblue my-6 mb-4 font-bold border-b-2 pb-1.5 inline-block w-full border border-stockblue/30 rounded px-3 py-1 focus:outline-none focus:border-stockblue"
           />
         ) : (
           <h2 className="text-[1.8rem] text-stockblue my-6 mb-4 font-bold border-b-2 border-stockblue/15 pb-1.5 inline-block">
