@@ -13,6 +13,15 @@ import VisionSection from './VisionSection/VisionSection';
 import AboutImagesPanel from './AboutImagesPanel/AboutImagesPanel';
 import AddSectionButton from './AddSectionButton/AddSectionButton/AddSectionButton';
 
+// Add this mapping if you need to convert English icon names to Hebrew
+const EN_TO_HE: { [key: string]: string } = {
+  "star": "כוכב",
+  "search": "חיפוש",
+  "settings": "הגדרות",
+  "trend": "מגמה",
+};
+
+
 const IconMap: { [key: string]: FC<any> } = Object.fromEntries(
   ICONS_HE.map(i => [i.value, i.component])
 );
@@ -85,6 +94,7 @@ const About: FC<AboutProps> = () => {
   const imageWrapRef = React.useRef<HTMLDivElement | null>(null);
   const goPrev = () => setCurrentImageIndex(i => (i - 1 + images.length) % images.length);
   const goNext = () => setCurrentImageIndex(i => (i + 1) % images.length);
+  const touchStartXRef = React.useRef<number | null>(null);
 
   // Keyboard navigation between images
   React.useEffect(() => {
@@ -131,7 +141,6 @@ const About: FC<AboutProps> = () => {
 
   const [draggedVisionIndex, setDraggedVisionIndex] = useState<number | null>(null);
 
-  const handleNavigateToCategories = () => navigate("/categories");
 
   // Add section
   const handleAddSection = (afterIndex: number, type: "features" | "vision") => {
@@ -233,11 +242,8 @@ const About: FC<AboutProps> = () => {
   };
 
   // Image navigation
-  const goPrev = () => setCurrentImageIndex((i) => (i - 1 + images.length) % images.length);
-  const goNext = () => setCurrentImageIndex((i) => (i + 1) % images.length);
-
-  const imageWrapRef = React.useRef<HTMLDivElement | null>(null);
-  const touchStartXRef = React.useRef<number | null>(null);
+  
+  
 
   React.useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
