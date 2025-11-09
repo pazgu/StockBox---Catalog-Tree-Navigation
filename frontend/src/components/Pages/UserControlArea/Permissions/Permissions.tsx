@@ -11,6 +11,8 @@ import camera from "../../../../assets/camera.png";
 import AddGroup from "../AddGroup/AddGroup/AddGroup";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
+import BackButton from "../../../ui/BackButton";
+
 
 
 
@@ -158,18 +160,14 @@ const Permissions: React.FC = () => {
 
   return (
     <div className="rtl px-5 md:px-16 py-20 flex justify-center font-sans">
-    <Card className="w-full max-w-4xl bg-gray-100 border border-gray-200 rounded-xl shadow-md">
+    <Card className="w-full max-w-4xl bg-gray-100 border border-gray-200 rounded-xl shadow-md mt-8">
+
       <CardContent className="p-4 md:p-4">
-        {/* BACK BUTTON */}
-        <div className="flex justify-start mb-3" dir="ltr">
-          <Button
-            variant="ghost"
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-1 text-gray-700 hover:text-black"
-          >
-            ← חזרה
-          </Button>
-        </div>
+       {/* BACK BUTTON */}
+      <div className="flex justify-start mb-3" dir="ltr">
+        <BackButton />
+      </div>
+
 
         {/* Header */}
         <div className="flex flex-col md:flex-row items-center md:items-start gap-3 mb-4">
