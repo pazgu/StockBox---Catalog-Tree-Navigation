@@ -398,7 +398,7 @@ const confirmApprove = () => {
             <div className="bg-white rounded-xl p-6 w-80 text-right shadow-lg">
               <h2 className="text-xl font-semibold mb-4">למחוק משתמש זה?</h2>
               <p className="mb-6 text-gray-600">
-                פעולה זו לא ניתנת לביטול. האם אתה בטוח שברצונך למחוק את המשתמש?
+                פעולה זו לא ניתנת לביטול. האם ברצונך למחוק את המשתמש?
               </p>
               <div className="flex justify-end gap-3">
                 <button

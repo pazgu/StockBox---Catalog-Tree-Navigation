@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronUp } from "lucide-react";
@@ -57,7 +56,10 @@ const Permissions: React.FC = () => {
     { name: "Dana", enabled: false, exception: false },
   ]);
 
-  const [isExpandedExceptions, setIsExpandedExceptions] = useState(false);
+  const [isExpandedExceptionUsers, setIsExpandedExceptionUsers] =
+    useState(false);
+  const [isExpandedExceptionGroups, setIsExpandedExceptionGroups] =
+    useState(false);
   const [exceptionSearch, setExceptionSearch] = useState("");
   const [userPermissions, setUserPermissions] = useState<UserPermissions>({
     generalAccess: false,
@@ -148,7 +150,8 @@ const Permissions: React.FC = () => {
     }));
     setIsExpandedUsers(false);
     setIsExpandedGroups(false);
-    setIsExpandedExceptions(false);
+    setIsExpandedExceptionUsers(false);
+    setIsExpandedExceptionGroups(false);
   };
 
   const handleOnlyRegisteredToggle = () => {
@@ -169,19 +172,19 @@ const Permissions: React.FC = () => {
       </div>
 
 
-        {/* Header */}
-        <div className="flex flex-col md:flex-row items-center md:items-start gap-3 mb-4">
-          <div className="flex-shrink-0">
-            <img
-              src={camera}
-              alt="User permissions"
-              className="w-16 h-16 md:w-16 md:h-16 rounded-full object-cover border-2 border-white shadow-md"
-            />
-          </div>
-          <div className="flex-1 text-right">
-            <h2 className="text-lg md:text-xl font-semibold text-gray-800 mb-3">
-              ניהול הרשאות עבור: קטגורית שמע
-            </h2>
+          {/* Header */}
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-3 mb-4">
+            <div className="flex-shrink-0">
+              <img
+                src={camera}
+                alt="User permissions"
+                className="w-16 h-16 md:w-16 md:h-16 rounded-full object-cover border-2 border-white shadow-md"
+              />
+            </div>
+            <div className="flex-1 text-right">
+              <h2 className="text-lg md:text-xl font-semibold text-gray-800 mb-3">
+                ניהול הרשאות עבור: קטגורית שמע
+              </h2>
               <Label className="block mb-3 font-bold text-gray-800 text-base">
                 מוסתרת מ:
               </Label>
@@ -203,125 +206,179 @@ const Permissions: React.FC = () => {
           </div>
 
           {userPermissions.generalAccess && (
-            <div className="mb-4">
-              <Button
-                variant="ghost"
-                onClick={() => setIsExpandedExceptions(!isExpandedExceptions)}
-                className="flex justify-between items-center w-full p-3 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                <span>למעט משתמשים וקבוצות:</span>
-                {isExpandedExceptions ? (
-                  <ChevronUp className="w-4 h-4" />
-                ) : (
-                  <ChevronDown className="w-4 h-4" />
-                )}
-              </Button>
-              <AnimatePresence>
-                {isExpandedExceptions && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="mt-2"
-                  >
-                    {/* Exception Users */}
-                    <Label className="block mb-2 text-sm font-medium text-gray-700">
-                      חפש משתמש:
-                    </Label>
-                    <input
-                      type="text"
-                      placeholder="הקלד שם..."
-                      value={exceptionSearch}
-                      onChange={(e) => setExceptionSearch(e.target.value)}
-                      className="w-full p-2 mb-3 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-900 focus:border-indigo-900"
-                    />
-                    <Label className="block mb-2 text-sm font-medium text-gray-700">
-                      לא חסום מהמשתמשים:
-                    </Label>
-                    <div
-                      className="bg-white border border-gray-200 rounded-lg max-h-48 overflow-y-auto mb-4"
-                      dir="ltr"
+            <>
+              {/* Exception Users Section */}
+              <div className="mb-4">
+                <Button
+                  variant="ghost"
+                  onClick={() =>
+                    setIsExpandedExceptionUsers(!isExpandedExceptionUsers)
+                  }
+                  className="flex justify-between items-center w-full p-3 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  <span>למעט משתמשים ספציפיים:</span>
+                  {isExpandedExceptionUsers ? (
+                    <ChevronUp className="w-4 h-4" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4" />
+                  )}
+                </Button>
+                <AnimatePresence>
+                  {isExpandedExceptionUsers && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="mt-2"
                     >
-                      <div dir="rtl">
-                        {filteredExceptionUsers.map((user) => (
-                          <div
-                            key={user.name}
-                            className="flex justify-between items-center px-4 py-3 border-b last:border-b-0"
-                          >
-                            <Label
-                              htmlFor={`exception-${user.name}`}
-                              className="text-sm font-medium text-gray-700"
+                      <Label className="block mb-2 text-sm font-medium text-gray-700">
+                        חפש משתמש:
+                      </Label>
+                      <input
+                        type="text"
+                        placeholder="הקלד שם..."
+                        value={exceptionSearch}
+                        onChange={(e) => setExceptionSearch(e.target.value)}
+                        className="w-full p-2 mb-3 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-900 focus:border-indigo-900"
+                      />
+                      <Label className="block mb-2 text-sm font-medium text-gray-700">
+                        זמין למשתמשים:
+                      </Label>
+                      <div
+                        className="bg-white border border-gray-200 rounded-lg max-h-48 overflow-y-auto"
+                        dir="ltr"
+                      >
+                        <div dir="rtl">
+                          {filteredExceptionUsers.map((user) => (
+                            <div
+                              key={user.name}
+                              className="flex justify-between items-center px-4 py-3 border-b last:border-b-0"
                             >
-                              {user.name}
-                            </Label>
-                            <Switch
-                              id={`exception-${user.name}`}
-                              checked={user.exception || false}
-                              onCheckedChange={() =>
-                                handleUserExceptionToggle(user.name)
-                              }
-                            />
-                          </div>
-                        ))}
+                              <Label
+                                htmlFor={`exception-${user.name}`}
+                                className="text-sm font-medium text-gray-700"
+                              >
+                                {user.name}
+                              </Label>
+                              <Switch
+                                id={`exception-${user.name}`}
+                                checked={user.exception || false}
+                                onCheckedChange={() =>
+                                  handleUserExceptionToggle(user.name)
+                                }
+                              />
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
-                    {/* Exception Groups */}
-                    <Label className="block mb-2 text-sm font-medium text-gray-700">
-                      לא חסום מהקבוצות:
-                    </Label>
-                    <div
-                      className="bg-white border border-gray-200 rounded-lg max-h-32 overflow-y-auto"
-                      dir="ltr"
+              {/* Exception Groups Section */}
+              <div className="mb-4">
+                <Button
+                  variant="ghost"
+                  onClick={() =>
+                    setIsExpandedExceptionGroups(!isExpandedExceptionGroups)
+                  }
+                  className="flex justify-between items-center w-full p-3 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  <span>למעט קבוצות ספציפיות:</span>
+                  {isExpandedExceptionGroups ? (
+                    <ChevronUp className="w-4 h-4" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4" />
+                  )}
+                </Button>
+                <AnimatePresence>
+                  {isExpandedExceptionGroups && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="mt-2"
                     >
-                      <div dir="rtl">
-                        {userPermissions.permissions.map((permission) => (
-                          <div
-                            key={permission.id}
-                            className="flex justify-between items-center px-4 py-3 border-b last:border-b-0"
-                          >
-                            <Label
-                              htmlFor={`exception-${permission.id}`}
-                              className="text-sm font-medium text-gray-700"
+                      <Label className="block mb-2 text-sm font-medium text-gray-700">
+                        זמין לקבוצות:
+                      </Label>
+                      <div
+                        className="bg-white border border-gray-200 rounded-lg max-h-32 overflow-y-auto"
+                        dir="ltr"
+                      >
+                        <div dir="rtl">
+                          {userPermissions.permissions.map((permission) => (
+                            <div
+                              key={permission.id}
+                              className="flex justify-between items-center px-4 py-3 border-b last:border-b-0"
                             >
-                              {permission.label}
-                            </Label>
-                            <Switch
-                              id={`exception-${permission.id}`}
-                              checked={permission.exception || false}
-                              onCheckedChange={() =>
-                                handlePermissionExceptionToggle(permission.id)
-                              }
-                            />
-                          </div>
-                        ))}
-                        {groups.map((group, index) => (
-                          <div
-                            key={index}
-                            className="flex justify-between items-center px-4 py-3 border-b last:border-b-0"
-                          >
-                            <Label
-                              htmlFor={`exception-group-${index}`}
-                              className="text-sm font-medium text-gray-700"
+                              <Label
+                                htmlFor={`exception-${permission.id}`}
+                                className="text-sm font-medium text-gray-700"
+                              >
+                                {permission.label}
+                              </Label>
+                              <Switch
+                                id={`exception-${permission.id}`}
+                                checked={permission.exception || false}
+                                onCheckedChange={() =>
+                                  handlePermissionExceptionToggle(permission.id)
+                                }
+                              />
+                            </div>
+                          ))}
+                          {groups.map((group, index) => (
+                            <div
+                              key={index}
+                              className="flex justify-between items-center px-4 py-3 border-b last:border-b-0"
                             >
-                              {group.name}
-                            </Label>
-                            <Switch
-                              id={`exception-group-${index}`}
-                              checked={group.exception || false}
-                              onCheckedChange={() =>
-                                handleGroupExceptionToggle(group.name)
-                              }
-                            />
-                          </div>
-                        ))}
+                              <Label
+                                htmlFor={`exception-group-${index}`}
+                                className="text-sm font-medium text-gray-700"
+                              >
+                                {group.name}
+                              </Label>
+                              <Switch
+                                id={`exception-group-${index}`}
+                                checked={group.exception || false}
+                                onCheckedChange={() =>
+                                  handleGroupExceptionToggle(group.name)
+                                }
+                              />
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+
+                      {/* Add Group Button */}
+                      <div className="flex justify-center mt-4">
+                        <button
+                          className="px-2 py-1 bg-indigo-900 text-white text-sm rounded-sm hover:bg-indigo-800 transition"
+                          onClick={() => setIsOpen(true)}
+                        >
+                          לחץ להוסיף קבוצה
+                        </button>
+                        {isOpen && (
+                          <AddGroup
+                            onClose={() => setIsOpen(false)}
+                            onSave={(newGroup: Group) => {
+                              setGroups((prev) => [
+                                ...prev,
+                                { ...newGroup, enabled: false },
+                              ]);
+                              setIsOpen(false);
+                            }}
+                          />
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </>
           )}
 
           {!userPermissions.generalAccess && (
@@ -503,7 +560,6 @@ const Permissions: React.FC = () => {
             </>
           )}
 
-        
           <div className="flex flex-col md:flex-row md:justify-end gap-3 mt-6">
             <Button
               variant="outline"
@@ -513,13 +569,13 @@ const Permissions: React.FC = () => {
               ביטול
             </Button>
             <Button
-            className="px-6 py-2 w-full md:w-auto bg-green-500 text-white rounded hover:bg-green-600"
-            onClick={() => {
-              toast.success("השינויים בהרשאות נשמרו בהצלחה!");
-            }}
-          >
-            שמירה
-          </Button>
+              className="px-6 py-2 w-full md:w-auto bg-green-500 text-white rounded hover:bg-green-600"
+              onClick={() => {
+                toast.success("השינויים בהרשאות נשמרו בהצלחה!");
+              }}
+            >
+              שמירה
+            </Button>
           </div>
         </CardContent>
       </Card>
