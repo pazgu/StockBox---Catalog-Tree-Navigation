@@ -12,6 +12,13 @@ import FeaturesSection from './FeaturesSection/FeaturesSection';
 import VisionSection from './VisionSection/VisionSection';
 import AboutImagesPanel from './AboutImagesPanel/AboutImagesPanel';
 import AddSectionButton from './AddSectionButton/AddSectionButton/AddSectionButton';
+const EN_TO_HE: { [key: string]: string } = {
+  "star": "כוכב",
+  "search": "חיפוש",
+  "settings": "הגדרות",
+  "trend": "מגמה",
+};
+
 
 const IconMap: { [key: string]: FC<any> } = Object.fromEntries(
   ICONS_HE.map(i => [i.value, i.component])
@@ -42,7 +49,6 @@ const About: FC<AboutProps> = () => {
   const replaceInputRef = React.useRef<HTMLInputElement>(null);
   const addInputRef = React.useRef<HTMLInputElement>(null);
 
-  // MAIN STATE: dynamic sections
   const [sections, setSections] = useState<SectionType[]>([
     {
       id: 'intro-1',
@@ -85,6 +91,7 @@ const About: FC<AboutProps> = () => {
   const imageWrapRef = React.useRef<HTMLDivElement | null>(null);
   const goPrev = () => setCurrentImageIndex(i => (i - 1 + images.length) % images.length);
   const goNext = () => setCurrentImageIndex(i => (i + 1) % images.length);
+  const touchStartXRef = React.useRef<number | null>(null);
 
   // Keyboard navigation between images
   React.useEffect(() => {
@@ -131,7 +138,6 @@ const About: FC<AboutProps> = () => {
 
   const [draggedVisionIndex, setDraggedVisionIndex] = useState<number | null>(null);
 
-  const handleNavigateToCategories = () => navigate("/categories");
 
   // Add section
   const handleAddSection = (afterIndex: number, type: "features" | "vision") => {
@@ -231,13 +237,6 @@ const About: FC<AboutProps> = () => {
   const handleSectionDragLeave = () => {
     setDragOverIndex(null);
   };
-
-  // Image navigation
-  const goPrev = () => setCurrentImageIndex((i) => (i - 1 + images.length) % images.length);
-  const goNext = () => setCurrentImageIndex((i) => (i + 1) % images.length);
-
-  const imageWrapRef = React.useRef<HTMLDivElement | null>(null);
-  const touchStartXRef = React.useRef<number | null>(null);
 
   React.useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -556,20 +555,20 @@ const About: FC<AboutProps> = () => {
 
           
         <div className="flex justify-center my-10">
-            <button
-              onClick={handleNavigateToCategories}
-              className="group inline-flex items-center gap-3 rounded-2xl border border-stockblue/20 bg-gradient-to-r from-white/90 via-white/80 to-blue-50/60 px-10 py-4 text-[1.15rem] font-bold text-stockblue backdrop-blur-sm shadow-[0_8px_28px_rgba(13,48,91,0.18)] hover:shadow-[0_12px_38px_rgba(13,48,91,0.3)] hover:scale-105 active:scale-95 transition-all duration-300 ease-out"
-            >
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-stockblue text-white shadow-[0_4px_14px_rgba(13,48,91,0.35)] group-hover:rotate-12 transition-transform duration-300">
-                <Compass size={22} />
-              </span>
-              גלו את התכולות והאמצעים
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-[22px] w-[22px] -scale-x-100 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 12h14" />
-                <path d="m12 5 7 7-7 7" />
-              </svg>
-            </button>
-          </div>
+            <button
+              onClick={handleNavigateToCategories}
+              className="group inline-flex items-center gap-3 rounded-2xl border border-stockblue/20 bg-gradient-to-r from-white/90 via-white/80 to-blue-50/60 px-10 py-4 text-[1.15rem] font-bold text-stockblue backdrop-blur-sm shadow-[0_8px_28px_rgba(13,48,91,0.18)] hover:shadow-[0_12px_38px_rgba(13,48,91,0.3)] hover:scale-105 active:scale-95 transition-all duration-300 ease-out"
+            >
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-stockblue text-white shadow-[0_4px_14px_rgba(13,48,91,0.35)] group-hover:rotate-12 transition-transform duration-300">
+                <Compass size={22} />
+              </span>
+              גלו את התכולות והאמצעים
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-[22px] w-[22px] -scale-x-100 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14" />
+                <path d="m12 5 7 7-7 7" />
+              </svg>
+            </button>
+          </div>
         </div>
 
 
