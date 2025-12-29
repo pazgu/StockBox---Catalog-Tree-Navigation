@@ -15,7 +15,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 
 @Module({
   imports: [
-    MongooseModule.forRoot('mongodb://localhost/stockbox'),
+    MongooseModule.forRoot("mongodb+srv://admin_db_user:O9cveW7MOHCJv04F@cluster0.qtxzytq.mongodb.net/"),
     ProductsModule,
     PermissionsModule,
     GroupsModule,
