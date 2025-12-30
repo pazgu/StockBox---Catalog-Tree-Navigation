@@ -3,25 +3,14 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 @Schema({ timestamps: true })
 export class Category {
   @Prop({ required: true })
-  catName: string;
+  categoryName: string;
 
   @Prop({ required: true })
-  catPath: string;
+  categoryPath: string;
 
   @Prop({ required: true })
-  catImage: string;
+  categoryImage: string;
 
-  @Prop({ required: false })
-  hiddenAll?: boolean;
-
-  @Prop({ required: false })
-  hiddenGroups?: string[];
-
-  @Prop({ required: false })
-  hiddenUsers?: string[];
-
-  @Prop({ type: Object, default: {} })
-  customFields?: Record<string, any>;
 }
 
 export const CategorySchema = SchemaFactory.createForClass(Category);
