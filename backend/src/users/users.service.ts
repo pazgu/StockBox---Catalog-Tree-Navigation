@@ -14,4 +14,14 @@ export class UsersService {
     const newUser = new this.userModel(createUserDto);
     return newUser.save();
   }
+
+  deleteUser(id: string) {
+    return this.userModel.findByIdAndDelete(id).exec();
+  }
+
+  updateUser(id: string, updateUserDto: Partial<CreateUserDto>) {
+    return this.userModel
+      .findByIdAndUpdate(id, updateUserDto, { new: true })
+      .exec();
+  }
 }
