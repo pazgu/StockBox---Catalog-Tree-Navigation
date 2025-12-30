@@ -1,11 +1,11 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-
-@Schema()
+import mongoose from 'mongoose'
+@Schema({ timestamps: true })
 export class Group {
   @Prop({ required: true, unique: true })
   groupName: string;
 
-  @Prop({ required: false, default: [] })
+  @Prop({ type:[{type:mongoose.Schema.Types.ObjectId,ref:'User'}]})
   members: string[];
 }
 
