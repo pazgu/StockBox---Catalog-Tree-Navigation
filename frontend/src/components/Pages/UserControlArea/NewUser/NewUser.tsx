@@ -7,7 +7,7 @@ import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
 import { User } from "../../../../types/types"
 import { useNavigate } from "react-router-dom";
-import { LucideX } from "lucide-react";
+import { X } from "lucide-react";
 
 const userSchema = z.object({
   userName: z
@@ -107,7 +107,7 @@ const NewUser: React.FC = () => {
             הוספת משתמש חדש
           </h2>
         </div>
-        <LucideX
+        <X
           onClick={goToAllUsers}
           className="absolute top-4 right-4 cursor-pointer text-gray-500 hover:text-gray-700"
         />
