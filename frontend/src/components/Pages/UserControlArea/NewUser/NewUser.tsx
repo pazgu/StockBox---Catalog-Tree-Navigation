@@ -3,12 +3,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
-import { User } from "../../../../context/UserContext";
+import { User } from "../../../../types/types"
+
 const userSchema = z.object({
-  username: z
+  userName: z
     .string()
     .min(1, "שם משתמש הוא שדה חובה")
     .min(2, "שם משתמש חייב להכיל לפחות 2 תווים")
@@ -37,9 +37,11 @@ const userSchema = z.object({
 type UserFormData = z.infer<typeof userSchema>;
 
 const NewUser: React.FC = () => {
-  const navigate = useNavigate();
   const { role, addUser } = useUser();
-
+  const navigate = useNavigate();
+  const goToAllUsers = () => {
+    navigate("/AllUsers");
+  };
   useEffect(() => {
     if (role !== "editor") {
       navigate("/");
@@ -59,8 +61,9 @@ const NewUser: React.FC = () => {
   const onSubmit = async (data: UserFormData) => {
     try {
       const newUser: User = {
-        firstName: data.username,
+        firstName: "",
         lastName: "",
+        userName: data.userName,
         email: data.email,
         role: data.role as "editor" | "viewer",
         approved: false,
@@ -102,7 +105,10 @@ const NewUser: React.FC = () => {
             הוספת משתמש חדש
           </h2>
         </div>
-
+        <LucideX
+          onClick={goToAllUsers}
+          className="absolute top-4 right-4 cursor-pointer text-gray-500 hover:text-gray-700"
+        />
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="w-full flex flex-row rtl text-right gap-12 justify-center"
@@ -110,28 +116,28 @@ const NewUser: React.FC = () => {
           <div className="flex flex-col gap-3">
             <div className="flex flex-col min-w-[320px] max-w-[380px]">
               <label
-                htmlFor="username"
+                htmlFor="userName"
                 className="mb-2 text-sm font-semibold text-gray-700 rtl text-right"
               >
                 שם משתמש
               </label>
               <input
-                {...register("username")}
+                {...register("userName")}
                 type="text"
-                id="username"
+                id="userName"
                 className={`py-3 px-4 border rounded-lg text-base outline-none transition-all duration-200 rtl text-right bg-white min-h-6 leading-6 ${
-                  errors.username
+                  errors.userName
                     ? "border-red-500 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]"
                     : "border-gray-300 focus:border-[#0D305B] focus:shadow-[0_0_0_3px_rgba(13,48,91,0.1)]"
                 }`}
               />
-              {errors.username && (
+              {errors.userName && (
                 <motion.span
                   className="text-red-500 text-[13px] mt-1.5 block text-right rtl font-medium opacity-100 transition-opacity duration-200"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                 >
-                  {errors.username.message}
+                  {errors.userName.message}
                 </motion.span>
               )}
             </div>
