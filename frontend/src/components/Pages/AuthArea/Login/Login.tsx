@@ -91,7 +91,7 @@ const handleLogin = async () => {
   const { role } = useUser();
 
   useEffect(() => {
-    if (role === "admin") {
+    if (role === "editor") {
       navigate("/");
     }
   }, [navigate, role]);

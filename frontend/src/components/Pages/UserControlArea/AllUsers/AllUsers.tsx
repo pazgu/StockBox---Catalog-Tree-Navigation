@@ -3,35 +3,23 @@ import Header from "../../../LayoutArea/Header/Header";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
-import {  Ban } from "lucide-react";
+import { Ban } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
-
-
-
-interface User {
-  id: string | number;
-  name: string;
-  email: string;
-  isApproved?: boolean;
-  role: "admin" | "user"; 
-}
+import { User } from "../../../../types/types"
 
 const ROLE_OPTIONS: Array<{ value: User["role"]; label: string }> = [
-  { value: "admin", label: "מנהל" },  
-  { value: "user",  label: "משתמש" },  
+  { value: "editor", label: "עורך" },
+  { value: "viewer", label: "צופה" },
 ];
 
 const roleLabel = (r: User["role"]) =>
   ROLE_OPTIONS.find((o) => o.value === r)?.label ?? r;
 
-
-
-
 interface AllUsersProps {}
 
 const AllUsers: FC<AllUsersProps> = () => {
   const navigate = useNavigate();
-  const { users, deleteUser, updateUser, role } = useUser(); // get from usercontext 
+  const { users, deleteUser, updateUser, role } = useUser(); // get from usercontext
 
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
@@ -56,7 +44,7 @@ const AllUsers: FC<AllUsersProps> = () => {
 
   const filteredUsers = users.filter(
     (user) =>
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -81,8 +69,10 @@ const AllUsers: FC<AllUsersProps> = () => {
 
   const confirmDelete = () => {
     if (deleteUserIndex !== null) {
-      const userIdToDelete = currentUsers[deleteUserIndex].id;
-      
+      const userIdToDelete = currentUsers[deleteUserIndex]._id;
+      if (!userIdToDelete) {
+        return;
+      }
       deleteUser(userIdToDelete);
 
       if (
@@ -98,7 +88,7 @@ const AllUsers: FC<AllUsersProps> = () => {
   };
   const confirmBlock = () => {
     if (blockUserIndex !== null) {
-      const userId = Number(currentUsers[blockUserIndex].id);
+      const userId = Number(currentUsers[blockUserIndex]._id);
       const isBlocked = blockedUsers.includes(userId);
 
       setBlockedUsers((prev) =>
@@ -111,10 +101,13 @@ const AllUsers: FC<AllUsersProps> = () => {
     }
   };
   const handleApproveClick = (index: number) => setApproveUserIndex(index);
-const confirmApprove = () => {
+  const confirmApprove = () => {
     if (approveUserIndex !== null) {
-      const userId = currentUsers[approveUserIndex].id;
-      updateUser(userId, { isApproved: true });
+      const userId = currentUsers[approveUserIndex]._id;
+      if (!userId) {
+        return;
+      }
+      updateUser(userId, { approved: true });
       toast.success("המשתמש אושר בהצלחה!");
       setApproveUserIndex(null);
     }
@@ -139,7 +132,10 @@ const confirmApprove = () => {
 
   const handleSaveEdit = () => {
     if (userToEdit) {
-      updateUser(userToEdit.id, userToEdit);
+      if (!userToEdit._id) {
+        return;
+      }
+      updateUser(userToEdit._id, userToEdit);
       toast.success("המשתמש עודכן בהצלחה!");
       setShowEditModal(false);
       setUserToEdit(null);
@@ -213,12 +209,12 @@ const confirmApprove = () => {
         <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {currentUsers.map((user, index) => (
             <div
-              key={user.id}
+              key={user._id}
               className={`rounded-xl p-4 text-center shadow-sm relative min-h-[110px] transition-transform hover:-translate-y-1 hover:shadow-md border-gray-100 ${
-                user.isApproved ? "bg-[#fffdf8]" : "bg-gray-100"
+                user.approved ? "bg-[#fffdf8]" : "bg-gray-100"
               }`}
             >
-              {!user.isApproved && (
+              {!user.approved && (
                 <div
                   className="absolute top-2 left-2 text-red-600 bg-red-100 px-3 py-1 rounded-full text-xs font-medium cursor-pointer hover:bg-red-200 transition"
                   onClick={() => handleApproveClick(index)}
@@ -273,7 +269,7 @@ const confirmApprove = () => {
 
                 <button
                   className={`p-1 w-6 h-6 rounded transition ${
-                    blockedUsers.includes(Number(user.id))
+                    blockedUsers.includes(Number(user._id))
                       ? "bg-red-600 text-white hover:bg-red-700"
                       : "hover:bg-gray-100 opacity-60 hover:opacity-100"
                   }`}
@@ -281,7 +277,6 @@ const confirmApprove = () => {
                 >
                   <Ban size={14} />
                 </button>
-
               </div>
 
               {/* Avatar */}
@@ -313,17 +308,20 @@ const confirmApprove = () => {
 
               <div>
                 <div className="text-sm text-gray-600">שם:</div>
-                <div className="font-semibold text-[#0D305B]">{user.name}</div>
+                <div className="font-semibold text-[#0D305B]">
+                  {user.firstName}
+                </div>
+                
                 <div className="text-sm text-gray-600">{user.email}</div>
 
                 <div
                   className={`inline-block mt-2 text-xs px-2 py-1 rounded-full font-semibold ${
-                    blockedUsers.includes(Number(user.id))
+                    blockedUsers.includes(Number(user._id))
                       ? "bg-red-200 text-red-700"
                       : "bg-[#0D305B]/10 text-[#0D305B]"
                   }`}
                 >
-                  {blockedUsers.includes(Number(user.id))
+                  {blockedUsers.includes(Number(user._id))
                     ? "משתמש חסום"
                     : roleLabel(user.role)}
                 </div>
@@ -421,12 +419,12 @@ const confirmApprove = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-xl p-6 w-80 text-right shadow-lg">
               <h2 className="text-xl font-semibold mb-4">
-                {blockedUsers.includes(Number(currentUsers[blockUserIndex].id))
+                {blockedUsers.includes(Number(currentUsers[blockUserIndex]._id))
                   ? "לבטל חסימת משתמש זה?"
                   : "לחסום משתמש זה?"}
               </h2>
               <p className="mb-6 text-gray-600">
-                {blockedUsers.includes(Number(currentUsers[blockUserIndex].id))
+                {blockedUsers.includes(Number(currentUsers[blockUserIndex]._id))
                   ? "האם אתה בטוח שברצונך לבטל את חסימת המשתמש ולאפשר לו גישה מחדש לאתר?"
                   : "האם אתה בטוח שברצונך לחסום משתמש זה מצפייה במוצרים?"}
               </p>
@@ -440,7 +438,7 @@ const confirmApprove = () => {
                 <button
                   className={`px-4 py-2 rounded text-white ${
                     blockedUsers.includes(
-                      Number(currentUsers[blockUserIndex].id)
+                      Number(currentUsers[blockUserIndex]._id)
                     )
                       ? "bg-green-700 hover:bg-green-600"
                       : "bg-red-500 hover:bg-red-600"
@@ -448,7 +446,7 @@ const confirmApprove = () => {
                   onClick={() => confirmBlock()}
                 >
                   {blockedUsers.includes(
-                    Number(currentUsers[blockUserIndex].id)
+                    Number(currentUsers[blockUserIndex]._id)
                   )
                     ? "בטל חסימה"
                     : "חסום"}
@@ -464,11 +462,27 @@ const confirmApprove = () => {
             <div className="bg-white rounded-xl p-6 w-96 text-right shadow-lg">
               <h2 className="text-xl font-semibold mb-4">עריכת משתמש</h2>
 
-              <label className="block text-sm mb-1">שם:</label>
+              <label className="block text-sm mb-1">שם פרטי:</label>
               <input
                 type="text"
-                value={userToEdit.name}
-                onChange={(e) => handleEditChange("name", e.target.value)}
+                value={userToEdit.firstName}
+                onChange={(e) => handleEditChange("firstName", e.target.value)}
+                className="w-full border rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-[#0D305B]"
+              />
+
+              <label className="block text-sm mb-1">שם משפחה:</label>
+              <input
+                type="text"
+                value={userToEdit.lastName}
+                onChange={(e) => handleEditChange("lastName", e.target.value)}
+                className="w-full border rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-[#0D305B]"
+              />
+
+              <label className="block text-sm mb-1">שם משתמש:</label>
+              <input
+                type="text"
+                value={userToEdit.userName}
+                onChange={(e) => handleEditChange("userName", e.target.value)}
                 className="w-full border rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-[#0D305B]"
               />
 
