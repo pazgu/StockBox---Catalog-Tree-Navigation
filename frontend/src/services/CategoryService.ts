@@ -1,6 +1,5 @@
+import { environment } from "./../environments/environment.development";
 import axios from "axios";
-
-const API_BASE_URL = "http://localhost:4000"; // Update with your backend URL
 
 export interface CategoryDTO {
   _id: string;
@@ -30,7 +29,7 @@ export interface UpdateCategoryDTO {
 }
 
 class CategoriesService {
-  private baseUrl = `${API_BASE_URL}/categories`;
+  private baseUrl = `${environment.API_URL}/categories`;
 
   async getCategories(): Promise<CategoryDTO[]> {
     try {
