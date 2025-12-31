@@ -119,7 +119,7 @@ const Header: React.FC<HeaderProps> = ({
                 <NavLink to="/" className={navLinkClass}>
                   אודות
                 </NavLink>
-                {role !== "admin" && (
+                {role !== "editor" && (
                   <>
                     <span className="text-white/30 animate-pulse">|</span>
                     <NavLink to="/login" className={navLinkClass}>
@@ -179,7 +179,7 @@ const Header: React.FC<HeaderProps> = ({
               )}
 
               {/* All Users */}
-              {role === "admin" && (
+              {role === "editor" && (
                 <div className="relative group">
                   <button
                     aria-label="User Profile"
@@ -209,7 +209,6 @@ const Header: React.FC<HeaderProps> = ({
                   </div>
                 </div>
               )}
-
 
               {/* Mobile Menu Toggle */}
               <button
@@ -289,7 +288,7 @@ const Header: React.FC<HeaderProps> = ({
               >
                 תכולות ואמצעים
               </NavLink>
-              {role !== "admin" && (
+              {role !== "editor" && (
                 <NavLink
                   to="/login"
                   className={navLinkClass}
@@ -308,7 +307,7 @@ const Header: React.FC<HeaderProps> = ({
                   <span className="text-xs">מועדפים</span>
                 </button>
               }
-              {role === "admin" && (
+              {role === "editor" && (
                 <button className="flex flex-col items-center gap-1 text-white/80 hover:text-white transition-colors">
                   <User size={20} />
                   <span className="text-xs">כל המשתמשים</span>
@@ -317,7 +316,6 @@ const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
         </div>
-       
       </header>
 
       {/* Spacer to prevent content from going under fixed header */}
