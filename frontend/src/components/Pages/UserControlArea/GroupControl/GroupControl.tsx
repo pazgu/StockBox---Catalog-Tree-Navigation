@@ -13,7 +13,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
-
+import { UserRole } from "../../../../types/types";
 const GroupControl: React.FC = () => {
   const [selectedGroup, setSelectedGroup] = useState("group1");
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
@@ -34,7 +34,7 @@ const GroupControl: React.FC = () => {
 
   // Redirect non-admins
   useEffect(() => {
-    if (role !== "admin") {
+    if (role !== "editor") {
       navigate("/");
     }
   }, [navigate, role]);
@@ -79,38 +79,14 @@ const GroupControl: React.FC = () => {
   const initialUsersData = [
     {
       id: "1",
-      name: "ג׳ון סמית׳",
+      firstName: "ג׳ון סמית׳",
+      lastName: "",
+      userName: "johnsmith",
       email: "john.smith@system.com",
-      avatar: "JS",
       groups: ["group1", "group2"],
-    },
-    {
-      id: "2",
-      name: "שרה מילר",
-      email: "sarah.miller@system.com",
-      avatar: "SM",
-      groups: ["group1"],
-    },
-    {
-      id: "3",
-      name: "רוברט ג׳ונסון",
-      email: "robert.j@system.com",
-      avatar: "RJ",
-      groups: ["group1"],
-    },
-    {
-      id: "4",
-      name: "אמה וילסון",
-      email: "emma.w@system.com",
-      avatar: "EW",
-      groups: ["group1"],
-    },
-    {
-      id: "5",
-      name: "מייקל בראון",
-      email: "michael.b@system.com",
-      avatar: "MB",
-      groups: ["group1", "group3"],
+      role: "editor" as UserRole,
+      approved: true,
+      requestSent: false,
     },
   ];
 
@@ -156,10 +132,13 @@ const GroupControl: React.FC = () => {
 
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
+      if (!user.groups) {
+        return;
+      }
       const inGroup = user.groups.includes(selectedGroup);
       const matchesSearch =
         searchQuery === "" ||
-        user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         user.email.toLowerCase().includes(searchQuery.toLowerCase());
       return inGroup && matchesSearch;
     });
@@ -200,10 +179,11 @@ const GroupControl: React.FC = () => {
   const handleRemoveUsersFromGroup = () => {
     if (selectedUsers.size === 0) return;
 
-    setUsers(prevUsers =>
-      prevUsers.map(u => {
+    setUsers((prevUsers) =>
+      prevUsers.map((u) => {
         if (!selectedUsers.has(u.id)) return u;
-        const newGroups = u.groups.filter(gid => gid !== selectedGroup);
+        if (!u.groups) return u;
+        const newGroups = u.groups.filter((gid) => gid !== selectedGroup);
         if (newGroups.length === u.groups.length) return u;
         return { ...u, groups: newGroups };
       })
@@ -213,10 +193,11 @@ const GroupControl: React.FC = () => {
     setSelectedUsers(new Set());
   };
 
-   const handleAddUsers = (groupId: string, userIds: string[]) => {
-    setUsers(prevUsers =>
-      prevUsers.map(u => {
+  const handleAddUsers = (groupId: string, userIds: string[]) => {
+    setUsers((prevUsers) =>
+      prevUsers.map((u) => {
         if (!userIds.includes(u.id)) return u;
+        if (!u.groups) return { ...u, groups: [groupId] };
         if (u.groups.includes(groupId)) return u;
         return { ...u, groups: [...u.groups, groupId] };
       })
@@ -287,7 +268,7 @@ const GroupControl: React.FC = () => {
     setUsers((prev) =>
       prev.map((u) => ({
         ...u,
-        groups: u.groups.filter((gid) => gid !== groupToDelete.id),
+        groups: u.groups?.filter((gid) => gid !== groupToDelete.id),
       }))
     );
 

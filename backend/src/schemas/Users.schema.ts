@@ -13,7 +13,7 @@ export class User {
   @Prop({ required: true })
   lastName: string;
 
-  @Prop({ required: true ,unique:true})
+  @Prop({ required: true, unique: true })
   username: string;
 
   @Prop({ required: true, unique: true })
@@ -33,9 +33,8 @@ export class User {
   approved: boolean;
 
   @Prop({ required: true, default: false })
-  requestSent: boolean
+  requestSent: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
 UserSchema.index({ approved: 1 });
-

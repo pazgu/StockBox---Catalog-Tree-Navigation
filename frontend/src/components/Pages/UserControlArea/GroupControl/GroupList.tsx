@@ -76,7 +76,7 @@ const GroupList: React.FC<GroupListProps> = ({
             <div className="flex items-center gap-2">
               <h4 className="font-semibold text-gray-800 w-16">{group.name}</h4>
               <span className="px-2 py-1 bg-slate-100 text-slate-700 text-xs rounded-full whitespace-nowrap">
-                {users.filter((u) => u.groups.includes(group.id)).length} משתמשים
+                {users.filter((u) => u.groups?.includes(group.id)).length} משתמשים
               </span>
             </div>
 

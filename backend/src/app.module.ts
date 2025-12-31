@@ -13,13 +13,12 @@ import { CommonService } from './common/common.service';
 import { CommonModule } from './common/common.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { AuthController } from './auth/auth.controller';
 import { AuthModule } from './auth/auth.module';
-import { AuthService } from './auth/auth.service';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
-       ConfigModule.forRoot({
+    ConfigModule.forRoot({
       isGlobal: true,
     }),
     MongooseModule.forRootAsync({
@@ -34,14 +33,14 @@ import { AuthService } from './auth/auth.service';
     GroupsModule,
     CategoriesModule,
     CommonModule,
-    AuthModule
+    AuthModule,
+    UsersModule,
   ],
   controllers: [
     ProductsController,
     PermissionsController,
     GroupsController,
     CommonController,
-    
   ],
   providers: [ProductsService, GroupsService, CommonService],
 })

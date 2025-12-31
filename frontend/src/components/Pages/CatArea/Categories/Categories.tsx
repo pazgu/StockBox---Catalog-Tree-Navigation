@@ -125,6 +125,7 @@ export const Categories: FC<CategoriesProps> = () => {
       style={{ direction: "rtl" }}
     >
       <Breadcrumbs path={path} />
+      <Breadcrumbs path={path} />
 
       <div className="text-right">
         <h2 className="text-5xl font-light text-slate-700 mb-2 tracking-tight">
@@ -181,7 +182,7 @@ export const Categories: FC<CategoriesProps> = () => {
                     className="w-44 h-44 object-cover rounded-full shadow-md mt-2"
                   />
 
-                  {role === "admin" && (
+                  {role === "editor" && (
                     <div className="w-60 absolute inset-0 flex mr-16 gap-3 mb-4">
                       {/* Delete Button */}
                       <div className="relative">
@@ -245,7 +246,7 @@ export const Categories: FC<CategoriesProps> = () => {
         </div>
       )}
 
-      {role === "admin" && (
+      {role === "editor" && (
         <div
           className="fixed bottom-8 right-8 w-16 h-16 bg-slate-700 rounded-full flex items-center justify-center text-3xl text-white cursor-pointer transition-all duration-200 hover:scale-105 hover:bg-slate-600"
           onClick={() => setShowAddCatModal(true)}
@@ -266,7 +267,7 @@ export const Categories: FC<CategoriesProps> = () => {
         </div>
       )}
 
-      {role === "admin" && (
+      {role === "editor" && (
         <>
           <AddCategoryModal
             isOpen={showAddCatModal}
