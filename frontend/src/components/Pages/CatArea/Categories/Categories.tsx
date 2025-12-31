@@ -110,6 +110,17 @@ export const Categories: FC<CategoriesProps> = () => {
       console.error("Error adding category:", error);
     }
   };
+  const handleCategoryClick = (category: Category) => {
+    const type = categoryTypes[category._id];
+    
+    if (!type) {
+      setCategoryToType(category);
+    } else if (type === "prodparent") {
+      navigate(category.categoryPath);
+    } else if (type === "catparent") {
+      navigate(`/subcat/${encodeURIComponent(category.categoryName)}`);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -124,7 +135,6 @@ export const Categories: FC<CategoriesProps> = () => {
       className="mt-12 p-4 font-system direction-rtl text-right"
       style={{ direction: "rtl" }}
     >
-      <Breadcrumbs path={path} />
       <Breadcrumbs path={path} />
 
       <div className="text-right">
@@ -145,18 +155,7 @@ export const Categories: FC<CategoriesProps> = () => {
               className="flex flex-col items-center cursor-pointer transition-transform duration-200 hover:translate-y-[-2px] relative group"
             >
               <div className="flex items-center justify-center relative">
-                <div
-                  onClick={() => {
-                    const type = categoryTypes[category._id];
-                    if (!type) {
-                      setCategoryToType(category);
-                    } else if (type === "prodparent") {
-                      navigate("/categories/single-cat");
-                    } else if (type === "catparent") {
-                      navigate(`/subcat/${encodeURIComponent(category.categoryName)}`);
-                    }
-                  }}
-                >
+                <div onClick={() => handleCategoryClick(category)}>
                   <button
                     onClick={(e) => {
                       e.preventDefault();
@@ -358,6 +357,7 @@ export const Categories: FC<CategoriesProps> = () => {
                     ...prev,
                     [categoryToType._id]: "prodparent"
                   }));
+                  navigate(categoryToType.categoryPath);
                   setCategoryToType(null);
                 }}
                 className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all w-64"
@@ -371,6 +371,7 @@ export const Categories: FC<CategoriesProps> = () => {
                     ...prev,
                     [categoryToType._id]: "catparent"
                   }));
+                  navigate(`/subcat/${encodeURIComponent(categoryToType.categoryName)}`);
                   setCategoryToType(null);
                 }}
                 className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all w-64 shadow-md hover:shadow-lg"

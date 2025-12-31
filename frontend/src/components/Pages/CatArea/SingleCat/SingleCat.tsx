@@ -1,10 +1,11 @@
 import React, { FC, useState, ChangeEvent, useEffect } from "react";
 import { Heart, Pen, Trash } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
 import Breadcrumbs from "../../../LayoutArea/Breadcrumbs/Breadcrumbs";
 import { productsApi, ProductDto } from "../../../../services2/ProductService";
+import { categoriesService, CategoryDTO } from "../../../../services/CategoryService";
 
 export interface CameraProduct {
   id: string;
@@ -19,6 +20,7 @@ const SingleCat: FC = () => {
   const [showAddCatModal, setShowAddCatModal] = useState(false);
   const [cameras, setCameras] = useState<CameraProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const [categoryInfo, setCategoryInfo] = useState<CategoryDTO | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
   const [showMoveModal, setShowMoveModal] = useState(false);
@@ -26,25 +28,63 @@ const SingleCat: FC = () => {
   const [newProductLens, setNewProductLens] = useState("");
   const [newProductColor, setNewProductColor] = useState("");
   const [newProductImage, setNewProductImage] = useState<string | null>(null);
-  const [productToDelete, setProductToDelete] = useState<CameraProduct | null>(
-    null
-  );
+  const [productToDelete, setProductToDelete] = useState<CameraProduct | null>(null);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const path: string[] = ["categories", "single-cat"];
+  
+  const location = useLocation();
+  const params = useParams();
   const { role } = useUser();
-
   const navigate = useNavigate();
+  
+  // ✅ חילוץ ה-categoryPath מה-URL
+  const getCategoryPathFromUrl = () => {
+    const wildcardPath = params['*'];
+    if (wildcardPath) {
+      return `/categories/${wildcardPath}`;
+    }
+    
+    const pathParts = location.pathname.split('/').filter(Boolean);
+    const categoryIndex = pathParts.indexOf('categories');
+    if (categoryIndex !== -1 && categoryIndex < pathParts.length - 1) {
+      return `/categories/${pathParts.slice(categoryIndex + 1).join('/')}`;
+    }
+    
+    return '/categories/photography/cameras';
+  };
+  
+  const categoryPath = getCategoryPathFromUrl();
+  
+  // ✅ בניית ה-breadcrumbs דינמית
+  const pathParts = categoryPath.replace('/categories/', '').split('/').filter(Boolean);
+  const breadcrumbPath = ["categories", ...pathParts];
 
-  // טעינת מוצרים מהשרת
+  // ✅ טעינת מוצרים ומידע על הקטגוריה מהשרת
   useEffect(() => {
-    loadProducts();
-  }, []);
+    loadCategoryAndProducts();
+  }, [categoryPath]);
 
-  const loadProducts = async () => {
+  const loadCategoryAndProducts = async () => {
     try {
       setLoading(true);
-      const products = await productsApi.getAllProducts();
+      
+      console.log('🔍 Category Path:', categoryPath);
+      
+      // שליפת כל הקטגוריות ומציאת הקטגוריה הנוכחית לפי path
+      const allCategories = await categoriesService.getCategories();
+      console.log('📦 All Categories:', allCategories);
+      
+      const currentCategory = allCategories.find(cat => cat.categoryPath === categoryPath);
+      console.log('🎯 Current Category:', currentCategory);
+      
+      if (currentCategory) {
+        setCategoryInfo(currentCategory);
+      }
+      
+      // שליפת מוצרים לפי path ספציפי
+      console.log('🔎 Fetching products for path:', categoryPath);
+      const products = await productsApi.getProductsByPath(categoryPath);
+      console.log('📦 Products found:', products);
       
       // המרה מהפורמט של השרת לפורמט של הקומפוננטה
       const mappedProducts: CameraProduct[] = products.map((p) => ({
@@ -56,10 +96,11 @@ const SingleCat: FC = () => {
         favorite: p.customFields?.favorite || false,
       }));
       
+      console.log('✅ Mapped Products:', mappedProducts);
       setCameras(mappedProducts);
     } catch (error) {
+      console.error('❌ Error:', error);
       toast.error("שגיאה בטעינת המוצרים");
-      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -113,11 +154,13 @@ const SingleCat: FC = () => {
     }
 
     try {
+      console.log('💾 Saving product with path:', categoryPath);
+      
       const newProduct: Omit<ProductDto, '_id' | 'createdAt' | 'updatedAt'> = {
         productName: newProductName,
         productImage: newProductImage,
         productDescription: newProductLens,
-        productPath: "photography/cameras", // ניתן לשנות לפי הצורך
+        productPath: categoryPath, // ✅ שימוש ב-path הנוכחי
         customFields: {
           lens: newProductLens,
           color: newProductColor,
@@ -125,7 +168,9 @@ const SingleCat: FC = () => {
         },
       };
 
+      console.log('📤 Creating product:', newProduct);
       const createdProduct = await productsApi.createProduct(newProduct);
+      console.log('✅ Product created:', createdProduct);
       
       // הוספה למערך המקומי
       const mappedProduct: CameraProduct = {
@@ -145,8 +190,8 @@ const SingleCat: FC = () => {
       setNewProductColor("");
       setNewProductImage(null);
     } catch (error) {
+      console.error('❌ Error creating product:', error);
       toast.error("שגיאה בהוספת המוצר");
-      console.error(error);
     }
   };
 
@@ -229,10 +274,10 @@ const SingleCat: FC = () => {
 
   return (
     <div className="max-w-290 mx-auto rtl mt-28 mr-4">
-      <Breadcrumbs path={path} />
+      <Breadcrumbs path={breadcrumbPath} />
       <header className="flex flex-col items-start mb-10">
         <h1 className="text-[48px] font-light font-alef text-[#0D305B] border-b-4 border-gray-400 pb-1 mb-5 tracking-tight">
-          קטגוריה: צילום
+          {categoryInfo ? categoryInfo.categoryName : 'קטגוריה'}
         </h1>
         <div className="flex items-center gap-4">
           <span className="text-base">סך הכל פריטים: {cameras.length}</span>

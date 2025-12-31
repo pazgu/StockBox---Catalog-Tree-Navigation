@@ -28,10 +28,7 @@ const Layout: FC<LayoutProps> = () => {
           <Route path="/login" element={<Login></Login>} />
           <Route path="/product" element={<SingleProd></SingleProd>} />
           <Route path="/categories" element={<Categories></Categories>} />
-          <Route
-            path="/categories/single-cat"
-            element={<SingleCat></SingleCat>}
-          />
+          <Route path="/categories/*" element={<SingleCat />} />
           <Route
             path="/subcat/:subcatName"
             element={<SubCat initialCategories={[]} SubCatName=""></SubCat>}
