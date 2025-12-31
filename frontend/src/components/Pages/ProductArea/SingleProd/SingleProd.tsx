@@ -339,15 +339,14 @@ const SingleProd: FC<SingleProdProps> = () => {
             )}
           </div>
 
-          {role === "admin" && (
-           <button
-            onClick={handleSaveClick}
-            aria-label={isEditing ? "סיום עריכה" : "עריכת דף"}
-            className="fixed top-44 left-6 flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300"
-          >
-            {isEditing ? <Check size={22} /> : <PencilLine size={22} />}
-          </button>
-
+          {role === "editor" && (
+            <button
+              onClick={handleSaveClick}
+              aria-label={isEditing ? "סיום עריכה" : "עריכת דף"}
+              className="fixed top-44 left-6 flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300"
+            >
+              {isEditing ? <Check size={22} /> : <PencilLine size={22} />}
+            </button>
           )}
         </div>
 
@@ -385,7 +384,7 @@ const SingleProd: FC<SingleProdProps> = () => {
               />
 
               {/* Buttons */}
-              {role === "user" ? (
+              {role === "viewer" ? (
                 <div className="space-y-2 relative z-10 flex flex-row justify-center gap-12">
                   <button
                     title="צור קשר"
@@ -402,8 +401,8 @@ const SingleProd: FC<SingleProdProps> = () => {
                     }}
                   >
                     <MailQuestionIcon size={24} />
-                  </button> <h3 className="pt-1">|</h3>
-
+                  </button>{" "}
+                  <h3 className="pt-1">|</h3>
                   <button
                     title="הוסף למועדפים"
                     onClick={toggleFavorite}
@@ -417,7 +416,7 @@ const SingleProd: FC<SingleProdProps> = () => {
                     />
                   </button>
                 </div>
-              ) : role === "admin" ? (
+              ) : role === "editor" ? (
                 <div className="relative z-10">
                   <Link
                     to="/permissions"
