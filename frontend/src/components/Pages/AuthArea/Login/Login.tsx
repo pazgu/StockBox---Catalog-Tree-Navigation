@@ -13,7 +13,7 @@ const Login: FC<LoginProps> = () => {
   const { role } = useUser();
 
   useEffect(() => {
-    if (role === "admin") {
+    if (role === "editor") {
       navigate("/");
     }
   }, [navigate, role]);

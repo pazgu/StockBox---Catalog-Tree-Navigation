@@ -1,4 +1,4 @@
-export type UserRole = "admin" | "user";
+export type UserRole = "editor" | "viewer";
 
 export type BannedEntityType = "product" | "category" | "subcategory";
 
@@ -18,17 +18,21 @@ export const mockBannedItems: BannedItem[] = [
 
 export interface User {
   id: string;
-  name: string;
+  userName: string;
+  firstName: string;
+  lastName: string;
   email: string;
-  avatar: string;
-  groups: string[];
+  role: UserRole;
+  approved: boolean;
+  requestSent: boolean;
+  groups?: string[];
 }
 
 export interface Group {
   id: string;
-   name: string;
+  name: string;
   permissions: string[];
-  bannedItems: BannedItem[]; 
+  bannedItems: BannedItem[];
 }
 
 export interface Permission {
@@ -50,9 +54,8 @@ export interface BannedItem {
   id: string | number;
   name: string;
   type: "product" | "category" | "subcategory";
-  image?: string; 
+  image?: string;
 }
-
 
 export interface AccordionData {
   id: string; // Unique ID for key and manipulation

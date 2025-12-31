@@ -1,80 +1,108 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import axios from "axios";
 import { UserRole } from "../types/types";
 
-interface User {
-  id: string | number;
-  name: string;
+export interface User {
+  _id?: string;
+  firstName: string;
+  lastName: string;
+  userName: string;
   email: string;
-  isApproved?: boolean;
-  role: "admin" | "user";
+  approved?: boolean;
+  role: "editor" | "viewer";
+  requestSent?: boolean;
 }
 
 interface UserContextType {
   role: UserRole | null;
   setRole: (role: UserRole | null) => void;
   users: User[];
-  addUser: (user: User) => void;
-  updateUser: (id: string | number, updates: Partial<User>) => void;
-  deleteUser: (id: string | number) => void;
-  setUsers: React.Dispatch<React.SetStateAction<User[]>>;
+  addUser: (user: User) => Promise<void>;
+  updateUser: (id: string, updates: Partial<User>) => Promise<void>;
+  deleteUser: (id: string) => Promise<void>;
+  refreshUsers: () => Promise<void>;
 }
 
-const UserContext = createContext<UserContextType | undefined>(undefined);
-// Initial mock data
-const initialUsers: User[] = [
-  { id: 1, name: "ליאלי עמנואלי", email: "lali@outlook.com", isApproved: false, role: "admin" },
-  { id: 2, name: "משתמש 2", email: "user2@domain.com", isApproved: false, role: "user" },
-  { id: 3, name: "משתמש 3", email: "user3@domain.com", isApproved: false, role: "user" },
-  { id: 4, name: "משתמש 4", email: "user4@domain.com", isApproved: true, role: "user" },
-  { id: 5, name: "משתמש 5", email: "user5@domain.com", isApproved: true, role: "user" },
-  { id: 6, name: "משתמש 6", email: "user6@domain.com", isApproved: true, role: "user" },
-  { id: 7, name: "משתמש 7", email: "user7@domain.com", isApproved: true, role: "user" },
-  { id: 8, name: "משתמש 8", email: "user8@domain.com", isApproved: true, role: "user" },
-  { id: 9, name: "משתמש 9", email: "user9@domain.com", isApproved: true, role: "user" },
-  { id: 10, name: "משתמש 10", email: "user10@domain.com", isApproved: true, role: "user" },
-  { id: 11, name: "משתמש 11", email: "user11@domain.com", isApproved: true, role: "user" },
-];
+const UserContext = createContext<UserContextType>(null!);
 
-export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const API_URL = "http://localhost:4000/users";
+
+export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [role, setRole] = useState<UserRole | null>(null);
-  const [users, setUsers] = useState<User[]>(() => {
-    const stored = localStorage.getItem("users");
-    return stored ? JSON.parse(stored) : initialUsers;
-  });
+  const [users, setUsers] = useState<User[]>([]);
+
+  // Fetch users from backend
+  const refreshUsers = async () => {
+    try {
+      const response = await axios.get<User[]>(API_URL);
+      console.log("Fetched users:", response.data);
+      setUsers(response.data);
+    } catch (err) {
+      console.error("Error fetching users:", err);
+    }
+  };
 
   useEffect(() => {
+    refreshUsers();
+  }, []);
+
+  // Persist role in localStorage
+  useEffect(() => {
     const storedRole = localStorage.getItem("role");
-    if (storedRole === "admin" || storedRole === "user") {
+    if (storedRole === "editor" || storedRole === "viewer") {
       setRole(storedRole as UserRole);
     }
   }, []);
 
   useEffect(() => {
-    if (role) {
-      localStorage.setItem("role", role);
-    } else {
-      localStorage.removeItem("role");
-    }
+    if (role) localStorage.setItem("role", role);
+    else localStorage.removeItem("role");
   }, [role]);
 
-  useEffect(() => {
-    localStorage.setItem("users", JSON.stringify(users));
-  }, [users]);
-
-  const addUser = (user: User) => {
-    setUsers(prev => [...prev, user]);
+  // Add a user via POST
+  const addUser = async (user: User) => {
+    try {
+      const response = await axios.post<User>(API_URL, user);
+      setUsers((prev) => [...prev, response.data]);
+    } catch (err) {
+      console.error("Error adding user:", err);
+    }
   };
 
-  const updateUser = (id: string | number, updates: Partial<User>) => {
-    setUsers(prev => prev.map(u => u.id === id ? { ...u, ...updates } : u));
+  // Update a user via PATCH
+  const updateUser = async (id: string, updates: Partial<User>) => {
+    try {
+      const response = await axios.patch<User>(`${API_URL}/${id}`, updates);
+      setUsers((prev) => prev.map((u) => (u._id === id ? response.data : u)));
+    } catch (err) {
+      console.error("Error updating user:", err);
+    }
   };
 
-  const deleteUser = (id: string | number) => {
-    setUsers(prev => prev.filter(u => u.id !== id));
+  // Delete a user via DELETE
+  const deleteUser = async (id: string) => {
+    try {
+      await axios.delete(`${API_URL}/${id}`);
+      setUsers((prev) => prev.filter((u) => u._id !== id));
+    } catch (err) {
+      console.error("Error deleting user:", err);
+    }
   };
 
   return (
-    <UserContext.Provider value={{ role, setRole, users, addUser, updateUser, deleteUser, setUsers }}>
+    <UserContext.Provider
+      value={{
+        role,
+        setRole,
+        users,
+        addUser,
+        updateUser,
+        deleteUser,
+        refreshUsers,
+      }}
+    >
       {children}
     </UserContext.Provider>
   );
@@ -82,8 +110,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useUser = () => {
   const context = useContext(UserContext);
-  if (!context) {
-    throw new Error("useUser must be used within UserProvider");
-  }
+  if (!context) throw new Error("useUser must be used within UserProvider");
   return context;
 };

@@ -13,7 +13,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
-import axios from "axios";
+import { UserRole } from "../../../../types/types";import axios from "axios";
 const api = axios.create({
   baseURL: "http://localhost:4000",
 });
@@ -42,7 +42,7 @@ const GroupControl: React.FC = () => {
 
   // Redirect non-admins
   useEffect(() => {
-    if (role !== "admin") {
+    if (role !== "editor") {
       navigate("/");
     }
   }, [navigate, role]);
@@ -128,10 +128,13 @@ const GroupControl: React.FC = () => {
 
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
+      if (!user.groups) {
+        return;
+      }
       const inGroup = user.groups.includes(selectedGroup);
       const matchesSearch =
         searchQuery === "" ||
-        user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         user.email.toLowerCase().includes(searchQuery.toLowerCase());
       return inGroup && matchesSearch;
     });
@@ -189,6 +192,7 @@ const GroupControl: React.FC = () => {
     setUsers((prevUsers) =>
       prevUsers.map((u) => {
         if (!userIds.includes(u.id)) return u;
+        if (!u.groups) return { ...u, groups: [groupId] };
         if (u.groups.includes(groupId)) return u;
         return { ...u, groups: [...u.groups, groupId] };
       })
@@ -279,7 +283,7 @@ const GroupControl: React.FC = () => {
       setUsers((prev) =>
         prev.map((u) => ({
           ...u,
-          groups: u.groups.filter((gid) => gid !== groupToDelete.id),
+          groups: u.groups?.filter((gid) => gid !== groupToDelete.id),
         }))
       );
 
