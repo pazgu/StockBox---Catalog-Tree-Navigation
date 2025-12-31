@@ -1,17 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
-import { UserRole } from "../types/types";
-
-export interface User {
-  _id?: string;
-  firstName: string;
-  lastName: string;
-  userName: string;
-  email: string;
-  approved?: boolean;
-  role: "editor" | "viewer";
-  requestSent?: boolean;
-}
+import { UserRole, User } from "../types/types"; 
 
 interface UserContextType {
   role: UserRole | null;
@@ -42,6 +31,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (err) {
       console.error("Error fetching users:", err);
     }
+  };
+  const useUser = () => {
+    const context = useContext(UserContext);
+    if (!context) throw new Error("useUser must be used within UserProvider");
+    return context;
   };
 
   useEffect(() => {

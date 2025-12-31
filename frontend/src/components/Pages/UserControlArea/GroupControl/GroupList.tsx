@@ -61,51 +61,49 @@ const GroupList: React.FC<GroupListProps> = ({
         <div className="space-y-3 max-h-[calc(5*64px)] overflow-y-auto px-0">
 
           {filteredGroups.map((group) => (
-          <div
-          key={group.id}
-          onClick={() => onSelectGroup(group.id)}
-          className={`w-full box-border p-4 rounded-xl cursor-pointer transition-all relative group text-right shadow-sm ${
-            selectedGroup === group.id
-              ? "bg-gradient-to-l from-slate-100 to-gray-100 border-2 border-slate-400"
-              : "bg-white border border-gray-100 hover:shadow-md hover:-translate-x-1"
-          }`}
-          title="לצפייה ועריכה"
-        >
-          <div className="flex justify-between items-center">
-            {/* שם הקבוצה ומספר משתמשים */}
-            <div className="flex items-center gap-2">
-              <h4 className="font-semibold text-gray-800 w-16">{group.name}</h4>
-              <span className="px-2 py-1 bg-slate-100 text-slate-700 text-xs rounded-full whitespace-nowrap">
-                {users.filter((u) => u.groups?.includes(group.id)).length} משתמשים
-              </span>
-            </div>
+            <div
+              key={group.id}
+              onClick={() => onSelectGroup(group.id)}
+              className={`w-full box-border p-4 rounded-xl cursor-pointer transition-all relative group text-right shadow-sm ${
+                selectedGroup === group.id
+                  ? "bg-gradient-to-l from-slate-100 to-gray-100 border-2 border-slate-400"
+                  : "bg-white border border-gray-100 hover:shadow-md hover:-translate-x-1"
+              }`}
+              title="לצפייה ועריכה"
+            >
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <h4 className="font-semibold text-gray-800 w-16">{group.name}</h4>
+                  <span className="px-2 py-1 bg-slate-100 text-slate-700 text-xs rounded-full whitespace-nowrap">
+                    {group.members.length} משתמשים
+                  </span>
+                </div>
 
-            {/* כפתורי עריכה ומחיקה בצד שמאל */}
-            <div className="flex items-center gap-">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEditGroup(group);
-                }}
-                className="p-1 rounded-full bg-white hover:bg-gray-300 hover:text-white transition-colors"
-                title="עריכת שם קבוצה"
-              >
-                <Pen size={14} className="text-slate-600" />
-              </button>
+                <div className="flex items-center gap-">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEditGroup(group);
+                    }}
+                    className="p-1 rounded-full bg-white hover:bg-gray-300 hover:text-white transition-colors"
+                    title="עריכת שם קבוצה"
+                  >
+                    <Pen size={14} className="text-slate-600" />
+                  </button>
 
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDeleteGroup(group);
-                }}
-                className="p-1.5 rounded-full bg-white hover:bg-red-600 hover:text-white transition-colors"
-                title="מחק קבוצה"
-              >
-                <Trash2 size={14} />
-              </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteGroup(group);
+                    }}
+                    className="p-1.5 rounded-full bg-white hover:bg-red-600 hover:text-white transition-colors"
+                    title="מחק קבוצה"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
           ))}
         </div>
