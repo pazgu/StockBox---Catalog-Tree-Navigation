@@ -15,7 +15,7 @@ export class UsersService {
     return newUser.save();
   }
 
-  deleteUser(id: string) {
+  async deleteUser(id: string) {
     return this.userModel.findByIdAndDelete(id).exec();
   }
 
