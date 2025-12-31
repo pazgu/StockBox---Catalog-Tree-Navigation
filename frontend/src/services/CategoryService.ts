@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:4000"; // Update with your backend URL
+const API_BASE_URL = "http://localhost:4000"; 
 
 export interface CategoryDTO {
   _id: string;
