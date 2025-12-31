@@ -19,8 +19,12 @@ export class UsersController {
   }
 
   @Delete(':id')
-  deleteUser(@Body('id') id: string) {
-    return this.usersService.deleteUser(id);
+  async deleteUser(@Param('id') id: string) {
+    const deleted = await this.usersService.deleteUser(id);
+    if (!deleted) {
+      return { status: 'fail', message: 'User not found' };
+    }
+    return { status: 'ok', deleted };
   }
 
   @Patch(':id')
