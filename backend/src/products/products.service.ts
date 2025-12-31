@@ -13,6 +13,9 @@ export class ProductsService {
   async findAll(): Promise<Product[]> {
     return this.productModel.find().exec();
   }
+  async findByPath(path: string): Promise<Product[]> {
+    return this.productModel.find({ productPath: path }).exec();
+  }
   async create(createProductDto: CreateProductDto): Promise<Product> {
     const createdProduct = new this.productModel(createProductDto);
     return createdProduct.save();

@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Body,
+  Param,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
@@ -16,6 +17,11 @@ export class ProductsController {
   @Get()
   findAll() {
     return this.productsService.findAll();
+  }
+  @Get('by-path/*')
+  findByPath(@Param('0') pathPart: string) {
+    const fullPath = `/categories/${pathPart}`;
+    return this.productsService.findByPath(fullPath);
   }
 
   @Post()
