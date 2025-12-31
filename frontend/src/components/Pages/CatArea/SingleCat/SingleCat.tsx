@@ -132,7 +132,6 @@ const SingleCat: FC = () => {
     toast.success(`המוצר "${productToDelete?.name}" נמחק בהצלחה!`);
   };
 
-
   const handleSave = () => {
     if (newProductName && newProductImage) {
       const newProduct: CameraProduct = {
@@ -235,7 +234,7 @@ const SingleCat: FC = () => {
       </header>
 
       {/* Selection toolbar */}
-      {role === "admin" && cameras.length !== 0 && (
+      {role === "editor" && cameras.length !== 0 && (
         <div className="mb-6">
           {!isSelectionMode ? (
             <button
@@ -299,7 +298,7 @@ const SingleCat: FC = () => {
             }`}
           >
             {/* Selection checkbox */}
-            {isSelectionMode && role === "admin" && (
+            {isSelectionMode && role === "editor" && (
               <div className="absolute top-3 left-3 z-10">
                 <input
                   type="checkbox"
@@ -311,7 +310,7 @@ const SingleCat: FC = () => {
             )}
 
             {/* Delete button */}
-            {role === "admin" && !isSelectionMode && (
+            {role === "editor" && !isSelectionMode && (
               <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-48 pointer-events-none">
                 <button
                   onClick={() => handleDelete(camera)}
@@ -362,8 +361,8 @@ const SingleCat: FC = () => {
                 <strong className="text-gray-800">צבע:</strong> {camera.color}
               </p>
 
-              {/* Manage permissions button - only for admin*/}
-              {role === "admin" && !isSelectionMode && (
+              {/* Manage permissions button - only for editor*/}
+              {role === "editor" && !isSelectionMode && (
                 <div className="mt-2 flex justify-center">
                   <button
                     onClick={handleManagePermissions}
@@ -380,7 +379,7 @@ const SingleCat: FC = () => {
       </main>
 
       {/* Add product button */}
-      {role === "admin" && !isSelectionMode && (
+      {role === "editor" && !isSelectionMode && (
         <div
           className="fixed bottom-10 right-10 w-12 h-12 bg-[#0D305B] flex items-center justify-center rounded-full cursor-pointer hover:bg-[#1e3a5f] transition-colors"
           onClick={() => setShowAddCatModal(true)}
@@ -402,7 +401,7 @@ const SingleCat: FC = () => {
       )}
 
       {/* Add modal */}
-      {role === "admin" && showAddCatModal && (
+      {role === "editor" && showAddCatModal && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
           onClick={closeAllModals}
@@ -458,7 +457,7 @@ const SingleCat: FC = () => {
       )}
 
       {/* Delete modal */}
-      {role === "admin" && showDeleteModal && productToDelete && (
+      {role === "editor" && showDeleteModal && productToDelete && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
           onClick={closeAllModals}
@@ -491,7 +490,7 @@ const SingleCat: FC = () => {
       )}
 
       {/* Delete selected modal */}
-      {role === "admin" && showDeleteAllModal && isSelectionMode && (
+      {role === "editor" && showDeleteAllModal && isSelectionMode && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
           onClick={closeAllModals}
@@ -527,7 +526,7 @@ const SingleCat: FC = () => {
       )}
 
       {/* Move modal */}
-      {role === "admin" && showMoveModal && (
+      {role === "editor" && showMoveModal && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
           onClick={closeAllModals}

@@ -116,33 +116,16 @@ const UsersList: React.FC<UsersListProps> = ({
               />
 
               <div className="w-12 h-12 bg-gradient-to-br from-slate-600 to-slate-700 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                {user.avatar}
               </div>
 
               <div className="flex-1 text-right min-w-0">
                 <h4 className="font-semibold text-gray-800 truncate">
-                  {user.name}
+                  {user.firstName} {user.lastName}
                 </h4>
                 <p className="text-sm text-gray-600 truncate">{user.email}</p>
               </div>
 
-              <div className="flex flex-wrap justify-end gap-2">
-                {user.groups.map((groupId) => {
-                  const group = groups.find((g) => g.id === groupId);
-                  return group ? (
-                    <span
-                      key={groupId}
-                      className={`px-2 py-1 text-xs rounded-md whitespace-nowrap ${
-                        groupId === selectedGroup
-                          ? "bg-slate-700 text-white font-medium"
-                          : "bg-gray-100 text-gray-700"
-                      }`}
-                    >
-                      {group.name}
-                    </span>
-                  ) : null;
-                })}
-              </div>
+            
             </div>
           ))}
         </div>
