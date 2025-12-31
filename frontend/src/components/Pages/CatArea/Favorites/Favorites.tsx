@@ -1,12 +1,12 @@
-// import React, { useEffect, useState } from "react";
+// // import React, { useEffect, useState } from "react";
 // // import { initialCameraData, type CameraProduct } from "../SingleCat/SingleCat";
-// import { Heart } from "lucide-react";
-// import { useUser } from "../../../../context/UserContext";
-// import { Categories as CategoriesData } from "../Categories/Categories";
-// import { initialCategories, type Category } from "../Categories/Categories";
-// import { Navigate } from "react-router-dom";
-// import { Link } from "react-router-dom";
-// import { toast } from "sonner";
+// // import { Heart } from "lucide-react";
+// // import { useUser } from "../../../../context/UserContext";
+// // import { Categories as CategoriesData } from "../Categories/Categories";
+// // import { initialCategories, type Category } from "../Categories/Categories";
+// // import { Navigate } from "react-router-dom";
+// // import { Link } from "react-router-dom";
+// // import { toast } from "sonner";
 
 // //MISSING SUBCATS LOGIC HERE AFTER BACKEND EXISTS IT MAY BE ADDED
 // type FilterType = "all" | "products" | "categories" | "subcategories";
@@ -215,6 +215,19 @@
 //     </div>
 //   );
 // };
+
+// export default Favorites;
+
+import React, { FC } from "react";
+
+const Favorites: FC = () => {
+  return (
+    <div>
+      <h1>Favorites</h1>
+      <p>This is your Favorites component!</p>
+    </div>
+  );
+};
 
 // export default Favorites;
 
