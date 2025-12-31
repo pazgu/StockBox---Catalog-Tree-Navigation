@@ -23,11 +23,15 @@ export const Categories: FC<CategoriesProps> = () => {
   const [showAddCatModal, setShowAddCatModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(
+    null
+  );
   const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
   const [categoryToType, setCategoryToType] = useState<Category | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [categoryTypes, setCategoryTypes] = useState<Record<string, "catparent" | "prodparent" | null>>({});
+  const [categoryTypes, setCategoryTypes] = useState<
+    Record<string, "catparent" | "prodparent" | null>
+  >({});
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(true);
   const { role } = useUser();
@@ -69,13 +73,26 @@ export const Categories: FC<CategoriesProps> = () => {
     setShowDeleteModal(true);
   };
 
-  const confirmDelete = () => {
-    if (categoryToDelete) {
-      setCategories(categories.filter((cat) => cat._id !== categoryToDelete._id));
-      toast.success(`הקטגוריה "${categoryToDelete?.categoryName}" נמחקה בהצלחה!`);
+  const confirmDelete = async () => {
+    if (!categoryToDelete) return;
+
+    try {
+      await categoriesService.deleteCategory(categoryToDelete._id);
+
+      setCategories(
+        categories.filter((cat) => cat._id !== categoryToDelete._id)
+      );
+
+      toast.success(
+        `הקטגוריה "${categoryToDelete.categoryName}" וכל התכנים שבה נמחקו בהצלחה!`
+      );
+    } catch (error) {
+      toast.error("שגיאה במחיקת הקטגוריה");
+      console.error("Error deleting category:", error);
+    } finally {
+      setShowDeleteModal(false);
+      setCategoryToDelete(null);
     }
-    setShowDeleteModal(false);
-    setCategoryToDelete(null);
   };
 
   const handleEdit = (category: Category) => {
@@ -94,20 +111,46 @@ export const Categories: FC<CategoriesProps> = () => {
   const handleAddCategory = async ({ name, image }: AddCategoryResult) => {
     try {
       // Generate the category path based on name
-      const categoryPath = `/categories/${name.toLowerCase().replace(/\s+/g, '-')}`;
-      
+      const categoryPath = `/categories/${name
+        .toLowerCase()
+        .replace(/\s+/g, "-")}`;
+
       const newCategory = await categoriesService.createCategory({
         categoryName: name,
         categoryPath,
         categoryImage: image,
       });
-      
+
       setCategories((prev) => [...prev, newCategory]);
       setShowAddCatModal(false);
       toast.success(`הקטגוריה "${name}" נוספה בהצלחה!`);
     } catch (error) {
       toast.error("שגיאה בהוספת קטגוריה");
       console.error("Error adding category:", error);
+    }
+  };
+
+  const handleSaveEdit = async (updatedCategory: Category) => {
+    try {
+      const result = await categoriesService.updateCategory(
+        updatedCategory._id,
+        {
+          categoryName: updatedCategory.categoryName,
+          categoryImage: updatedCategory.categoryImage,
+          categoryPath: updatedCategory.categoryPath,
+        }
+      );
+
+      setCategories((prev) =>
+        prev.map((c) => (c._id === result._id ? result : c))
+      );
+
+      setShowEditModal(false);
+      setCategoryToEdit(null);
+      toast.success(`הקטגוריה "${result.categoryName}" עודכנה בהצלחה!`);
+    } catch (error) {
+      console.error("Error updating category:", error);
+      toast.error("שגיאה בעדכון הקטגוריה");
     }
   };
 
@@ -124,7 +167,6 @@ export const Categories: FC<CategoriesProps> = () => {
       className="mt-12 p-4 font-system direction-rtl text-right"
       style={{ direction: "rtl" }}
     >
-      <Breadcrumbs path={path} />
       <Breadcrumbs path={path} />
 
       <div className="text-right">
@@ -153,7 +195,9 @@ export const Categories: FC<CategoriesProps> = () => {
                     } else if (type === "prodparent") {
                       navigate("/categories/single-cat");
                     } else if (type === "catparent") {
-                      navigate(`/subcat/${encodeURIComponent(category.categoryName)}`);
+                      navigate(
+                        `/subcat/${encodeURIComponent(category.categoryName)}`
+                      );
                     }
                   }}
                 >
@@ -289,7 +333,8 @@ export const Categories: FC<CategoriesProps> = () => {
                 </h4>
 
                 <p className="text-slate-700 mb-3">
-                  האם ברצונך למחוק את הקטגוריה "{categoryToDelete.categoryName}"?
+                  האם ברצונך למחוק את הקטגוריה "{categoryToDelete.categoryName}
+                  "?
                 </p>
                 <small className="text-gray-500">
                   לא ניתן לבטל פעולה זו לאחר מכן
@@ -322,19 +367,11 @@ export const Categories: FC<CategoriesProps> = () => {
                 setShowEditModal(false);
                 setCategoryToEdit(null);
               }}
-              onSave={(updated) => {
-                setCategories((prev) =>
-                  prev.map((c) => (c._id === updated._id ? updated : c))
-                );
-                setShowEditModal(false);
-                setCategoryToEdit(null);
-                toast.success(`הקטגוריה "${updated.categoryName}" עודכנה בהצלחה!`);
-              }}
+              onSave={handleSaveEdit}
             />
           )}
         </>
       )}
-
       {categoryToType && (
         <div
           className="fixed inset-0 bg-slate-900 bg-opacity-70 backdrop-blur-md flex items-center justify-center z-50"
@@ -356,7 +393,7 @@ export const Categories: FC<CategoriesProps> = () => {
                 onClick={() => {
                   setCategoryTypes((prev) => ({
                     ...prev,
-                    [categoryToType._id]: "prodparent"
+                    [categoryToType._id]: "prodparent",
                   }));
                   setCategoryToType(null);
                 }}
@@ -369,7 +406,7 @@ export const Categories: FC<CategoriesProps> = () => {
                 onClick={() => {
                   setCategoryTypes((prev) => ({
                     ...prev,
-                    [categoryToType._id]: "catparent"
+                    [categoryToType._id]: "catparent",
                   }));
                   setCategoryToType(null);
                 }}
