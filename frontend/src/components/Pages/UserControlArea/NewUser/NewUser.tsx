@@ -3,10 +3,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
 import { User } from "../../../../context/UserContext";
+import { LucideX } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 const userSchema = z.object({
   userName: z
     .string()
@@ -37,9 +38,11 @@ const userSchema = z.object({
 type UserFormData = z.infer<typeof userSchema>;
 
 const NewUser: React.FC = () => {
-  const navigate = useNavigate();
   const { role, addUser } = useUser();
-
+  const navigate = useNavigate();
+  const goToAllUsers = () => {
+    navigate("/AllUsers");
+  };
   useEffect(() => {
     if (role !== "editor") {
       navigate("/");
@@ -103,7 +106,10 @@ const NewUser: React.FC = () => {
             הוספת משתמש חדש
           </h2>
         </div>
-
+        <LucideX
+          onClick={goToAllUsers}
+          className="absolute top-4 right-4 cursor-pointer text-gray-500 hover:text-gray-700"
+        />
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="w-full flex flex-row rtl text-right gap-12 justify-center"
