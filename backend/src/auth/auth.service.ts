@@ -19,25 +19,24 @@ export class AuthService {
   async login(dto: LoginDto) {
     const user = await this.userModel.findOne({
       email: dto.email,
-      username: dto.username,
+      userName: dto.userName,
     });
 
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
 
-   if (!user.approved) {
-    if (!user.requestSent) {
+    if (!user.approved) {
+      if (!user.requestSent) {
         throw new ForbiddenException({
-        code: 'USER_NOT_APPROVED_REQUEST_NOT_SENT',
+          code: 'USER_NOT_APPROVED_REQUEST_NOT_SENT',
         });
-    }
+      }
 
-    throw new ForbiddenException({
+      throw new ForbiddenException({
         code: 'USER_NOT_APPROVED_REQUEST_SENT',
-    });
+      });
     }
-
 
     const payload = {
       sub: user._id,
