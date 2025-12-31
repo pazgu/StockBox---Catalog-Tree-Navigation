@@ -1,18 +1,13 @@
 import React, { FC, useState, ChangeEvent, useEffect } from "react";
-import canoneos2000d from "../../../../assets/canon-eos2000d.png";
-import canoneos4000d from "../../../../assets/canon-eos4000d.png";
-import canoneos250d from "../../../../assets/canon-eos250d.png";
-import canoneosr10 from "../../../../assets/canon-eosr10.png";
-import canoneosr50 from "../../../../assets/canon-eosr50.png";
-import canoneosr100 from "../../../../assets/canon-eosr100.png";
-import { Heart, Pen, Trash, MoveRight } from "lucide-react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Heart, Pen, Trash } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
 import Breadcrumbs from "../../../LayoutArea/Breadcrumbs/Breadcrumbs";
+import { productsApi, ProductDto } from "../../../../services2/ProductService";
 
 export interface CameraProduct {
-  id: number;
+  id: string;
   name: string;
   lens: string;
   color: string;
@@ -20,60 +15,10 @@ export interface CameraProduct {
   favorite: boolean;
 }
 
-export const initialCameraData: CameraProduct[] = [
-  {
-    id: 1,
-    name: "מצלמה דיגיטלית Canon EOS 250D DSLR",
-    lens: "EF-S 18-55mm f/4-5.6 IS",
-    color: "צבע שחור",
-    imageUrl: canoneos2000d,
-    favorite: true,
-  },
-  {
-    id: 2,
-    name: "מצלמה דיגיטלית Canon EOS 4000D DSLR",
-    lens: "EF-S 18-55mm f/3.5-5.6 III",
-    color: "צבע שחור",
-    imageUrl: canoneos4000d,
-    favorite: true,
-  },
-  {
-    id: 3,
-    name: "מצלמה דיגיטלית Canon EOS 250D DSLR",
-    lens: "EF-S 18-55mm f/3.5-5.6 III",
-    color: "צבע שחור",
-    imageUrl: canoneos250d,
-    favorite: true,
-  },
-  {
-    id: 4,
-    name: "מצלמה דיגיטלית ללא מראה Canon EOS R100",
-    lens: "RF-S 18-45mm F4.5-6.3 IS",
-    color: "צבע שחור",
-    imageUrl: canoneosr100,
-    favorite: true,
-  },
-  {
-    id: 5,
-    name: "מצלמה דיגיטלית ללא מראה Canon EOS R10",
-    lens: "RF-S 18-45mm F4.5-6.3 IS",
-    color: "צבע שחור",
-    imageUrl: canoneosr10,
-    favorite: false,
-  },
-  {
-    id: 6,
-    name: "מצלמה דיגיטלית ללא מראה Canon EOS R50",
-    lens: "RF-S 18-45mm F4.5-6.3 IS",
-    color: "צבע שחור",
-    imageUrl: canoneosr50,
-    favorite: true,
-  },
-];
-
 const SingleCat: FC = () => {
   const [showAddCatModal, setShowAddCatModal] = useState(false);
-  const [cameras, setCameras] = useState<CameraProduct[]>(initialCameraData);
+  const [cameras, setCameras] = useState<CameraProduct[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
   const [showMoveModal, setShowMoveModal] = useState(false);
@@ -84,12 +29,41 @@ const SingleCat: FC = () => {
   const [productToDelete, setProductToDelete] = useState<CameraProduct | null>(
     null
   );
-  const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const path: string[] = ["categories", "single-cat"];
   const { role } = useUser();
 
   const navigate = useNavigate();
+
+  // טעינת מוצרים מהשרת
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  const loadProducts = async () => {
+    try {
+      setLoading(true);
+      const products = await productsApi.getAllProducts();
+      
+      // המרה מהפורמט של השרת לפורמט של הקומפוננטה
+      const mappedProducts: CameraProduct[] = products.map((p) => ({
+        id: p._id!,
+        name: p.productName,
+        lens: p.customFields?.lens || "",
+        color: p.customFields?.color || "",
+        imageUrl: p.productImage,
+        favorite: p.customFields?.favorite || false,
+      }));
+      
+      setCameras(mappedProducts);
+    } catch (error) {
+      toast.error("שגיאה בטעינת המוצרים");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleClick = () => {
     navigate(`/product`);
@@ -104,7 +78,7 @@ const SingleCat: FC = () => {
     }
   };
 
-  const toggleFavorite = (id: number) => {
+  const toggleFavorite = (id: string) => {
     const cam = cameras.find((c) => c.id === id);
     if (!cam) return;
 
@@ -132,23 +106,48 @@ const SingleCat: FC = () => {
     toast.success(`המוצר "${productToDelete?.name}" נמחק בהצלחה!`);
   };
 
+  const handleSave = async () => {
+    if (!newProductName || !newProductImage) {
+      toast.error("אנא מלא את כל השדות החובה");
+      return;
+    }
 
-  const handleSave = () => {
-    if (newProductName && newProductImage) {
-      const newProduct: CameraProduct = {
-        id: Date.now(),
-        name: newProductName,
-        lens: newProductLens,
-        color: newProductColor,
-        imageUrl: newProductImage,
+    try {
+      const newProduct: Omit<ProductDto, '_id' | 'createdAt' | 'updatedAt'> = {
+        productName: newProductName,
+        productImage: newProductImage,
+        productDescription: newProductLens,
+        productPath: "photography/cameras", // ניתן לשנות לפי הצורך
+        customFields: {
+          lens: newProductLens,
+          color: newProductColor,
+          favorite: false,
+        },
+      };
+
+      const createdProduct = await productsApi.createProduct(newProduct);
+      
+      // הוספה למערך המקומי
+      const mappedProduct: CameraProduct = {
+        id: createdProduct._id!,
+        name: createdProduct.productName,
+        lens: createdProduct.customFields?.lens || "",
+        color: createdProduct.customFields?.color || "",
+        imageUrl: createdProduct.productImage,
         favorite: false,
       };
-      setCameras([newProduct, ...cameras]);
+
+      setCameras([mappedProduct, ...cameras]);
+      toast.success(`המוצר "${newProductName}" נוסף בהצלחה!`);
+      setShowAddCatModal(false);
+      setNewProductName("");
+      setNewProductLens("");
+      setNewProductColor("");
+      setNewProductImage(null);
+    } catch (error) {
+      toast.error("שגיאה בהוספת המוצר");
+      console.error(error);
     }
-    setShowAddCatModal(false);
-    setNewProductName("");
-    setNewProductImage(null);
-    toast.success(`המוצר "${newProductName}" נוסף בהצלחה!`);
   };
 
   const closeAllModals = () => {
@@ -163,13 +162,12 @@ const SingleCat: FC = () => {
     navigate("/permissions");
   };
 
-  // Selection mode functions
   const toggleSelectionMode = () => {
     setIsSelectionMode(!isSelectionMode);
     setSelectedProducts([]);
   };
 
-  const toggleProductSelection = (id: number) => {
+  const toggleProductSelection = (id: string) => {
     setSelectedProducts((prev) =>
       prev.includes(id) ? prev.filter((pId) => pId !== id) : [...prev, id]
     );
@@ -210,7 +208,6 @@ const SingleCat: FC = () => {
   };
 
   const confirmMove = (destination: string) => {
-    // מסיר את המוצרים שנבחרו מהמערך
     setCameras((prev) =>
       prev.filter((cam) => !selectedProducts.includes(cam.id))
     );
@@ -221,6 +218,14 @@ const SingleCat: FC = () => {
     setIsSelectionMode(false);
     setShowMoveModal(false);
   };
+
+  if (loading) {
+    return (
+      <div className="max-w-290 mx-auto rtl mt-28 mr-4 flex items-center justify-center h-96">
+        <div className="text-xl text-gray-600">טוען מוצרים...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-290 mx-auto rtl mt-28 mr-4">
@@ -298,7 +303,6 @@ const SingleCat: FC = () => {
                 : "border-gray-200"
             }`}
           >
-            {/* Selection checkbox */}
             {isSelectionMode && role === "admin" && (
               <div className="absolute top-3 left-3 z-10">
                 <input
@@ -310,7 +314,6 @@ const SingleCat: FC = () => {
               </div>
             )}
 
-            {/* Delete button */}
             {role === "admin" && !isSelectionMode && (
               <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-48 pointer-events-none">
                 <button
@@ -322,7 +325,6 @@ const SingleCat: FC = () => {
               </div>
             )}
 
-            {/* Favorite */}
             {!isSelectionMode && (
               <button
                 onClick={() => toggleFavorite(camera.id)}
@@ -338,7 +340,6 @@ const SingleCat: FC = () => {
               </button>
             )}
 
-            {/* Product image */}
             <div
               className="h-[140px] w-full flex justify-center items-center p-5"
               onClick={() => !isSelectionMode && handleClick()}
@@ -350,7 +351,6 @@ const SingleCat: FC = () => {
               />
             </div>
 
-            {/* Product details */}
             <div className="w-full text-center pt-4 border-t border-gray-200">
               <h2 className="text-[1.1rem] text-[#0D305B] mb-2">
                 {camera.name}
@@ -362,7 +362,6 @@ const SingleCat: FC = () => {
                 <strong className="text-gray-800">צבע:</strong> {camera.color}
               </p>
 
-              {/* Manage permissions button - only for admin*/}
               {role === "admin" && !isSelectionMode && (
                 <div className="mt-2 flex justify-center">
                   <button
@@ -424,6 +423,13 @@ const SingleCat: FC = () => {
               placeholder="תיאור מוצר"
               value={newProductLens}
               onChange={(e) => setNewProductLens(e.target.value)}
+              className="w-full mb-3 p-2 border rounded"
+            />
+            <input
+              type="text"
+              placeholder="צבע"
+              value={newProductColor}
+              onChange={(e) => setNewProductColor(e.target.value)}
               className="w-full mb-3 p-2 border rounded"
             />
             <input
