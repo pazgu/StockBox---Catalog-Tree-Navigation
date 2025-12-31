@@ -15,14 +15,14 @@ const AddUsersModal: React.FC<AddUsersModalProps> = ({ group, allUsers, onClose,
 
   const usersNotInGroup = useMemo(() => {
     return allUsers
-      .filter((user) => !user.groups?.includes(group.id))
+      .filter((user) => !group.members.includes(user._id!))
       .filter(
         (user) =>
           modalSearch === '' ||
           user.userName.toLowerCase().includes(modalSearch.toLowerCase()) ||
           user.email.toLowerCase().includes(modalSearch.toLowerCase())
       );
-  }, [allUsers, group.id, modalSearch]);
+  }, [allUsers, group.members, modalSearch]);
 
   const handleCheckboxChange = (userId: string) => {
     setSelectedUserIds((prev) =>
@@ -31,14 +31,14 @@ const AddUsersModal: React.FC<AddUsersModalProps> = ({ group, allUsers, onClose,
   };
 
   const handleSelectAll = () => {
-  if (selectedUserIds.length === usersNotInGroup.length) {
+    if (selectedUserIds.length === usersNotInGroup.length) {
     // אם כולם נבחרו, בטל את הבחירה
-    setSelectedUserIds([]);
-  } else {
+      setSelectedUserIds([]);
+    } else {
     // בחר את כולם
-    setSelectedUserIds(usersNotInGroup.map((user) => user.id));
-  }
-};
+      setSelectedUserIds(usersNotInGroup.map((user) => user._id!));
+    }
+  };
   const handleAdd = () => {
     onAddUsers(group.id, selectedUserIds);
     onClose();
@@ -90,15 +90,15 @@ const AddUsersModal: React.FC<AddUsersModalProps> = ({ group, allUsers, onClose,
           ) : (
             usersNotInGroup.map((user) => (
               <div
-                key={user.id}
+                key={user._id}
                 className="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:bg-gray-50 cursor-pointer"
-                onClick={() => handleCheckboxChange(user.id)}
+                onClick={() => handleCheckboxChange(user._id!)}
               >
                 <div className="flex items-center gap-3">
                   <input
                     type="checkbox"
-                    checked={selectedUserIds.includes(user.id)}
-                    onChange={() => handleCheckboxChange(user.id)}
+                    checked={selectedUserIds.includes(user._id!)}
+                    onChange={() => handleCheckboxChange(user._id!)}
                     onClick={(e) => e.stopPropagation()}
                     className="w-5 h-5 text-slate-700 rounded focus:ring-slate-700"
                   />

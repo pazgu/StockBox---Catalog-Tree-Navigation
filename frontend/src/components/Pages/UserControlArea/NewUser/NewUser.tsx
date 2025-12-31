@@ -5,9 +5,8 @@ import { z } from "zod";
 import { motion } from "framer-motion";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
-import { User } from "../../../../context/UserContext";
-import { LucideX } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { User } from "../../../../types/types"
+
 const userSchema = z.object({
   userName: z
     .string()

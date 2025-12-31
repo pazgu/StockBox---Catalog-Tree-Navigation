@@ -5,7 +5,7 @@ import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
 import { Ban } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
-import { User } from "../../../../context/UserContext";
+import { User } from "../../../../types/types"
 
 const ROLE_OPTIONS: Array<{ value: User["role"]; label: string }> = [
   { value: "editor", label: "עורך" },
