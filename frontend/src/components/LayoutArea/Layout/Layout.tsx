@@ -10,7 +10,7 @@ import Permissions from "../../Pages/UserControlArea/Permissions/Permissions";
 import NewUser from "../../Pages/UserControlArea/NewUser/NewUser";
 import SingleProd from "../../Pages/ProductArea/SingleProd/SingleProd";
 import Page404 from "../../Pages/Page404/Page404";
-// import GroupControl from "../../Pages/UserControlArea/GroupControl/GroupControl";
+import GroupControl from "../../Pages/UserControlArea/GroupControl/GroupControl";
 import Favorites from "../../Pages/CatArea/Favorites/Favorites";
 import { Toaster } from "sonner";
 import SubCat from "../../../components/Pages/CatArea/SubCats/SubCat/SubCat";
@@ -41,7 +41,7 @@ const Layout: FC<LayoutProps> = () => {
           <Route path="/allUsers" element={<AllUsers></AllUsers>} />
           <Route path="/Permissions" element={<Permissions></Permissions>} />
           <Route path="/Favorites" element={<Favorites></Favorites>} />
-          {/* <Route path="/GroupControl" element={<GroupControl></GroupControl>} /> */}
+          <Route path="/GroupControl" element={<GroupControl></GroupControl>} />
           <Route path="*" element={<Page404 />} />
         </Routes>
       </main>

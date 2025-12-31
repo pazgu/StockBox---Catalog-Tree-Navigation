@@ -6,7 +6,8 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
-import { User } from "../../../../context/UserContext";
+import { User } from "../../../../types/types"
+
 const userSchema = z.object({
   username: z
     .string()

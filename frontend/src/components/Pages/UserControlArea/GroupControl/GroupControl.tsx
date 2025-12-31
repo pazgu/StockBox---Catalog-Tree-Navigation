@@ -1,19 +1,14 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { Users, Save, UserMinus, CheckCircle2 } from "lucide-react";
+import { Users, Save } from "lucide-react";
 import GroupList from "./GroupList";
 import UsersList from "../AllUsers/UsersList";
 import BannedItems from "./BannedItems";
 import AddUsersModal from "./AddUsersModal";
-import {
-  BannedItem,
-  Group,
-  User,
-  mockBannedItems,
-} from "../../../../types/types";
+import { BannedItem, Group } from "../../../../types/types";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
-import { UserRole } from "../../../../types/types";import axios from "axios";
+import axios from "axios";
 const api = axios.create({
   baseURL: "http://localhost:4000",
 });
@@ -23,7 +18,6 @@ const GroupControl: React.FC = () => {
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddUsersModal, setShowAddUsersModal] = useState(false);
-  const [initialUsers, setInitialUsers] = useState<User[]>([]);
 
   const [groupToDelete, setGroupToDelete] = useState<Group | null>(null);
   const [showAddGroupModal, setShowAddGroupModal] = useState(false);
@@ -31,14 +25,13 @@ const GroupControl: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
-  const { role } = useUser();
+  const { role, users } = useUser();
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [groupToEdit, setGroupToEdit] = useState<Group | null>(null);
   const [editedGroupName, setEditedGroupName] = useState("");
 
   const [groups, setGroups] = useState<Group[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
 
   // Redirect non-admins
   useEffect(() => {
@@ -60,9 +53,12 @@ const GroupControl: React.FC = () => {
       setIsLoading(true);
       const response = await api.get("/groups");
 
-      const transformedGroups = response.data.map((g: any) => ({
+      const transformedGroups: Group[] = response.data.map((g: any) => ({
         id: g._id || g.id,
         name: g.groupName,
+        members: g.members?.map((m: any) => 
+          typeof m === 'string' ? m : (m._id || m.id)
+        ) || [],
         permissions: [],
         bannedItems: [],
       }));
@@ -108,6 +104,7 @@ const GroupControl: React.FC = () => {
       const newGroup: Group = {
         id: response.data._id || response.data.id,
         name: response.data.groupName,
+        members: [],
         permissions: [],
         bannedItems: [],
       };
@@ -127,28 +124,20 @@ const GroupControl: React.FC = () => {
   };
 
   const filteredUsers = useMemo(() => {
+    const group = groups.find((g) => g.id === selectedGroup);
+    if (!group) return [];
+
     return users.filter((user) => {
-      if (!user.groups) {
-        return;
-      }
-      const inGroup = user.groups.includes(selectedGroup);
+      const inGroup = group.members.includes(user._id!);
       const matchesSearch =
         searchQuery === "" ||
         user.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         user.email.toLowerCase().includes(searchQuery.toLowerCase());
       return inGroup && matchesSearch;
     });
-  }, [users, selectedGroup, searchQuery]);
+  }, [users, groups, selectedGroup, searchQuery]);
 
-  const totalUsers = useMemo(
-    () => new Set(users.map((u) => u.id)).size,
-    [users]
-  );
-
-  const hasChanges = useMemo(() => {
-    if (initialUsers.length === 0) return false;
-    return JSON.stringify(users) !== JSON.stringify(initialUsers);
-  }, [users, initialUsers]);
+  const totalUsers = useMemo(() => users.length, [users]);
 
   const handleSelectGroup = (id: string) => {
     setSelectedGroup(id);
@@ -168,56 +157,70 @@ const GroupControl: React.FC = () => {
     setSelectedUsers((prev) =>
       prev.size === filteredUsers.length
         ? new Set()
-        : new Set(filteredUsers.map((u) => u.id))
+        : new Set(filteredUsers.map((u) => u._id!))
     );
   };
 
-  const handleRemoveUsersFromGroup = () => {
-    if (selectedUsers.size === 0) return;
+  const handleRemoveUsersFromGroup = async () => {
+    if (selectedUsers.size === 0 || !currentGroup) return;
 
-    setUsers((prevUsers) =>
-      prevUsers.map((u) => {
-        if (!selectedUsers.has(u.id)) return u;
-        const newGroups = u.groups.filter((gid) => gid !== selectedGroup);
-        if (newGroups.length === u.groups.length) return u;
-        return { ...u, groups: newGroups };
-      })
-    );
+    try {
+      const userIdsArray = Array.from(selectedUsers);
+      const newMembers = currentGroup.members.filter(
+        (memberId) => !userIdsArray.includes(memberId)
+      );
 
-    toast.info(`${selectedUsers.size} משתמשים הוסרו מהקבוצה`);
-    setSelectedUsers(new Set());
+      await api.patch(`/groups/${selectedGroup}`, { members: newMembers });
+
+      setGroups((prev) =>
+        prev.map((g) =>
+          g.id === selectedGroup ? { ...g, members: newMembers } : g
+        )
+      );
+
+      toast.info(`${selectedUsers.size} משתמשים הוסרו מהקבוצה`);
+      setSelectedUsers(new Set());
+    } catch (error) {
+      console.error("Error removing users:", error);
+      toast.error("שגיאה בהסרת משתמשים");
+    }
   };
 
-  const handleAddUsers = (groupId: string, userIds: string[]) => {
-    setUsers((prevUsers) =>
-      prevUsers.map((u) => {
-        if (!userIds.includes(u.id)) return u;
-        if (!u.groups) return { ...u, groups: [groupId] };
-        if (u.groups.includes(groupId)) return u;
-        return { ...u, groups: [...u.groups, groupId] };
-      })
-    );
-    toast.success(`${userIds.length} משתמשים נוספו בהצלחה לקבוצה`);
+  const handleAddUsers = async (groupId: string, userIds: string[]) => {
+    try {
+      const group = groups.find((g) => g.id === groupId);
+      if (!group) return;
+
+      const newMembers = Array.from(new Set([...group.members, ...userIds]));
+      const response = await api.patch(`/groups/${groupId}`, { members: newMembers });
+      const updatedMembers = response.data.members?.map((m: any) => 
+        
+        typeof m === 'string' ? m : (m._id || m.id)
+      ) || [];
+
+      setGroups((prev) =>
+        prev.map((g) =>
+          g.id === groupId ? { ...g, members: updatedMembers } : g
+        )
+      );
+
+      toast.success(`${userIds.length} משתמשים נוספו בהצלחה לקבוצה`);
+    } catch (error) {
+      console.error("Error adding users:", error);
+      toast.error("שגיאה בהוספת משתמשים");
+    }
   };
 
   const handleUpdateBannedItems = (groupId: string, items: BannedItem[]) => {
     setGroups((prevGroups) =>
       prevGroups.map((g) => {
         if (g.id === groupId) {
-          return {
-            ...g,
-            bannedItems: items,
-          };
+          return { ...g, bannedItems: items };
         }
         return g;
       })
     );
     toast.info("פריטים חסומים עודכנו בהצלחה");
-  };
-
-  const handleSaveChanges = () => {
-    setInitialUsers(JSON.parse(JSON.stringify(users)));
-    toast.success("השינויים נשמרו בהצלחה");
   };
 
   const handleEditGroup = (group: Group) => {
@@ -279,13 +282,6 @@ const GroupControl: React.FC = () => {
         );
         return newGroups;
       });
-
-      setUsers((prev) =>
-        prev.map((u) => ({
-          ...u,
-          groups: u.groups?.filter((gid) => gid !== groupToDelete.id),
-        }))
-      );
 
       toast.info(`הקבוצה "${groupToDelete.name}" נמחקה בהצלחה`);
       setGroupToDelete(null);
@@ -369,22 +365,6 @@ const GroupControl: React.FC = () => {
               handleUpdateBannedItems(selectedGroup, items)
             }
           />
-        </div>
-
-        {/* Footer */}
-        <div className="bg-white border-t border-gray-200 px-4 sm:px-8 py-6">
-          <div className="flex flex-col items-center gap-4">
-            <div className="flex gap-4 w-full sm:w-auto justify-center">
-              <button
-                className="px-8 py-3 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-all text-sm font-medium flex items-center justify-center gap-2 shadow-sm hover:shadow-md disabled:bg-gray-300 disabled:cursor-not-allowed disabled:shadow-none"
-                onClick={handleSaveChanges}
-                disabled={!hasChanges}
-              >
-                <Save className="w-4 h-4" />
-                שמור שינויים
-              </button>
-            </div>
-          </div>
         </div>
       </div>
 
