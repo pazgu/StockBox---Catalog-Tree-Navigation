@@ -112,10 +112,10 @@ const sectionsToBlocks = (sections: SectionType[]): AboutBlock[] => {
 };
 
 const IconMap: { [key: string]: FC<any> } = Object.fromEntries(
-  ICONS_HE.map(i => [i.value, i.component])
+  ICONS_HE.map((i) => [i.value, i.component])
 );
 
-const iconOptions = ICONS_HE.map(i => ({ value: i.value, label: i.label }));
+const iconOptions = ICONS_HE.map((i) => ({ value: i.value, label: i.label }));
 
 type FieldKind =
   | "sectionTitle"
@@ -205,16 +205,22 @@ const toastErrorOnce = (msg: string) => {
   }, 1200);
 };
 
-  const [draggedSectionIndex, setDraggedSectionIndex] = useState<number | null>(null);
+  const [draggedSectionIndex, setDraggedSectionIndex] = useState<number | null>(
+    null
+  );
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-  const [originalData, setOriginalData] = useState({ sections, images: editableImages });
+  const [originalData, setOriginalData] = useState({
+    sections,
+    images: editableImages,
+  });
   const sectionRefs = React.useRef<(HTMLDivElement | null)[]>([]);
   const dragCounterRef = React.useRef(0);
 
   // Image wrapping
   const imageWrapRef = React.useRef<HTMLDivElement | null>(null);
-  const goPrev = () => setCurrentImageIndex(i => (i - 1 + images.length) % images.length);
-  const goNext = () => setCurrentImageIndex(i => (i + 1) % images.length);
+  const goPrev = () =>
+    setCurrentImageIndex((i) => (i - 1 + images.length) % images.length);
+  const goNext = () => setCurrentImageIndex((i) => (i + 1) % images.length);
   const touchStartXRef = React.useRef<number | null>(null);
 
   // Keyboard navigation between images
@@ -222,7 +228,9 @@ const toastErrorOnce = (msg: string) => {
     const onKeyDown = (e: KeyboardEvent) => {
       const el = imageWrapRef.current;
       if (!el) return;
-      const within = el.contains(document.activeElement) || document.activeElement === document.body;
+      const within =
+        el.contains(document.activeElement) ||
+        document.activeElement === document.body;
       if (!within) return;
 
       if (e.key === "ArrowLeft") {
@@ -331,15 +339,17 @@ const handleAddSection = (afterIndex: number, type: "features" | "bullets" | "pa
   // Remove section
   const removeSection = (index: number) => {
     if (sections.length <= 1) {
-      toast.error('לא ניתן למחוק את כל המקטעים');
+      toast.error("לא ניתן למחוק את כל המקטעים");
       return;
     }
-    setSections(prev => prev.filter((_, i) => i !== index));
+    setSections((prev) => prev.filter((_, i) => i !== index));
   };
 
   // Update section title
   const updateSectionTitle = (index: number, title: string) => {
-    setSections(prev => prev.map((s, i) => i === index ? { ...s, title } : s));
+    setSections((prev) =>
+      prev.map((s, i) => (i === index ? { ...s, title } : s))
+    );
   };
 
   // Update intro content
@@ -370,12 +380,12 @@ const handleSectionDragStart = (index: number) => {
     if (draggedSectionIndex === null || draggedSectionIndex === index) return;
 
     setDragOverIndex(index);
-    
+
     // Only reorder every 5th call to reduce jankiness
     dragCounterRef.current++;
     if (dragCounterRef.current % 5 !== 0) return;
 
-    setSections(prev => {
+    setSections((prev) => {
       const arr = [...prev];
       const [moved] = arr.splice(draggedSectionIndex, 1);
       arr.splice(index, 0, moved);
@@ -388,14 +398,14 @@ const handleSectionDragStart = (index: number) => {
     if (element) {
       const rect = element.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
-      
+
       // Scroll up if near top
       if (rect.top < 200) {
-        window.scrollBy({ top: -30, behavior: 'auto' });
+        window.scrollBy({ top: -30, behavior: "auto" });
       }
       // Scroll down if near bottom
       else if (rect.bottom > viewportHeight - 200) {
-        window.scrollBy({ top: 30, behavior: 'auto' });
+        window.scrollBy({ top: 30, behavior: "auto" });
       }
     }
   };
@@ -502,7 +512,10 @@ toast.success(TOAST.saveSuccess);
   }, [sections.length]);
 
   // Image handlers
-  const handleReplaceImage = (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleReplaceImage = (
+    index: number,
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -518,7 +531,7 @@ toast.success(TOAST.saveSuccess);
         }
         return arr;
       });
-      event.target.value = '';
+      event.target.value = "";
     };
     reader.readAsDataURL(file);
   };
@@ -541,7 +554,7 @@ toast.success(TOAST.saveSuccess);
         setCurrentImageIndex(startIndex > 0 ? startIndex : 0);
         return merged;
       });
-      event.target.value = '';
+      event.target.value = "";
     });
   };
 
@@ -566,7 +579,7 @@ toast.success(TOAST.saveSuccess);
     <div className="pt-8 min-h-screen font-['Arial'] direction-rtl" dir="rtl">
       <div className="max-w-6xl mx-auto flex items-start gap-15 py-10 flex-wrap lg:flex-nowrap">
         <div className="flex-1 p-5 lg:ml-[400px] order-2 lg:order-1">
-          {role === 'admin' && (
+          {role === "editor" && (
             <button
 onClick={() => {
   if (isEditing) {
@@ -596,17 +609,18 @@ onClick={() => {
               onDragLeave={handleSectionDragLeave}
               onDragEnd={handleSectionDragEnd}
               className={`relative my-6 transition-all duration-200 ${
-                isEditing 
-                  ? 'border-2 border-dashed border-stockblue/30 rounded-xl p-4 cursor-move hover:border-stockblue/50' 
-                  : ''
+                isEditing
+                  ? "border-2 border-dashed border-stockblue/30 rounded-xl p-4 cursor-move hover:border-stockblue/50"
+                  : ""
               } ${
-                draggedSectionIndex === sectionIndex 
-                  ? 'opacity-40 scale-95 rotate-1' 
-                  : ''
+                draggedSectionIndex === sectionIndex
+                  ? "opacity-40 scale-95 rotate-1"
+                  : ""
               } ${
-                dragOverIndex === sectionIndex && draggedSectionIndex !== sectionIndex
-                  ? 'border-stockblue border-solid bg-stockblue/5 scale-[1.02]'
-                  : ''
+                dragOverIndex === sectionIndex &&
+                draggedSectionIndex !== sectionIndex
+                  ? "border-stockblue border-solid bg-stockblue/5 scale-[1.02]"
+                  : ""
               }`}
             >
               {/* Section Controls */}
@@ -629,7 +643,6 @@ onClick={() => {
 
                   )}
                 </div>
-                
               )}
 
               {/* INTRO SECTION */}

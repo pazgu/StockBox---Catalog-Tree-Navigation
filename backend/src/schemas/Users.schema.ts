@@ -5,7 +5,7 @@ export enum UserRole {
   VIEWER = 'viewer',
 }
 
-@Schema()
+@Schema({ timestamps: true })
 export class User {
   @Prop({ required: true })
   firstName: string;
@@ -13,8 +13,8 @@ export class User {
   @Prop({ required: true })
   lastName: string;
 
-  @Prop({ required: true })
-  password: string;
+  @Prop({ required: true, unique: true })
+  userName: string;
 
   @Prop({ required: true, unique: true })
   email: string;
@@ -26,14 +26,15 @@ export class User {
   })
   role: UserRole;
 
-  @Prop({ type: [String], default: [] })
-  favorites: string[];
+  // @Prop({ type: [String], default: [] })
+  // favorites: string[];
 
   @Prop({ required: true, default: false })
   approved: boolean;
 
-  @Prop({ type: Date, default: null })
-  requestSentAt: Date | null;
+  @Prop({ required: true, default: false })
+  requestSent: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
+UserSchema.index({ approved: 1 });

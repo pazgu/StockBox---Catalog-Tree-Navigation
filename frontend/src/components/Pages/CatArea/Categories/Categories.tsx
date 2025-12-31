@@ -1,18 +1,15 @@
-import React, { FC, useState} from "react";
-import {
-  Pen,
-  Trash,
-  Lock,
-  Heart,
-} from "lucide-react";
+import React, { FC, useState } from "react";
+import { Pen, Trash, Lock, Heart } from "lucide-react";
 import headphones from "../../../../assets/headphones.png";
 import audio from "../../../../assets/audio.png";
 import camera from "../../../../assets/camera.png";
 import video from "../../../../assets/video.png";
 import { useUser } from "../../../../context/UserContext";
-import {useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import AddCategoryModal,{AddCategoryResult} from "./AddCategoryModal/AddCategoryModal/AddCategoryModal";
+import AddCategoryModal, {
+  AddCategoryResult,
+} from "./AddCategoryModal/AddCategoryModal/AddCategoryModal";
 import EditCategoryModal from "./EditCategoryModal/EditCategoryModal/EditCategoryModal";
 import Breadcrumbs from "../../../LayoutArea/Breadcrumbs/Breadcrumbs";
 
@@ -47,8 +44,6 @@ export const initialCategories: Category[] = [
   },
 ];
 
-
-
 export const Categories: FC<CategoriesProps> = () => {
   const [showAddCatModal, setShowAddCatModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -66,20 +61,21 @@ export const Categories: FC<CategoriesProps> = () => {
   const path: string[] = ["categories"];
 
   // cropper state
-const [isCropperOpen, setIsCropperOpen] = useState(false);
-const [rawImage, setRawImage] = useState<HTMLImageElement | null>(null);
-const [zoom, setZoom] = useState(1);            // 1..4
-const [offset, setOffset] = useState({ x: 0, y: 0 }); // pan (px)
-const [isPanning, setIsPanning] = useState(false);
-const cropBoxSize = 256; // px visible crop square
+  const [isCropperOpen, setIsCropperOpen] = useState(false);
+  const [rawImage, setRawImage] = useState<HTMLImageElement | null>(null);
+  const [zoom, setZoom] = useState(1); // 1..4
+  const [offset, setOffset] = useState({ x: 0, y: 0 }); // pan (px)
+  const [isPanning, setIsPanning] = useState(false);
+  const cropBoxSize = 256; // px visible crop square
 
-// EDIT cropper state
-const [isEditCropperOpen, setIsEditCropperOpen] = useState(false);
-const [editRawImage, setEditRawImage] = useState<HTMLImageElement | null>(null);
-const [editZoom, setEditZoom] = useState(1);
-const [editOffset, setEditOffset] = useState({ x: 0, y: 0 });
-const [isEditPanning, setIsEditPanning] = useState(false);
-
+  // EDIT cropper state
+  const [isEditCropperOpen, setIsEditCropperOpen] = useState(false);
+  const [editRawImage, setEditRawImage] = useState<HTMLImageElement | null>(
+    null
+  );
+  const [editZoom, setEditZoom] = useState(1);
+  const [editOffset, setEditOffset] = useState({ x: 0, y: 0 });
+  const [isEditPanning, setIsEditPanning] = useState(false);
 
   const toggleFavorite = (id: number) => {
     const cam = categories.find((c) => c.id === id);
@@ -94,12 +90,6 @@ const [isEditPanning, setIsEditPanning] = useState(false);
       prev.map((c) => (c.id === id ? { ...c, favorite: !c.favorite } : c))
     );
   };
-
-  
-
-
-
-
 
   const handleDelete = (category: Category) => {
     setCategoryToDelete(category);
@@ -120,38 +110,34 @@ const [isEditPanning, setIsEditPanning] = useState(false);
     setShowEditModal(true);
   };
 
-  
-
   const closeAllModals = () => {
-  setShowAddCatModal(false);
-  setShowDeleteModal(false);
-  setShowEditModal(false);
-  setNewCatName("");
-  setNewCatImage(null);
-  setCategoryToDelete(null);
-  setCategoryToEdit(null);
+    setShowAddCatModal(false);
+    setShowDeleteModal(false);
+    setShowEditModal(false);
+    setNewCatName("");
+    setNewCatImage(null);
+    setCategoryToDelete(null);
+    setCategoryToEdit(null);
 
-  // cropper resets
-  setRawImage(null);
-  setIsCropperOpen(false);
-  setZoom(1);
-  setOffset({ x: 0, y: 0 });
-  setIsPanning(false);
-  setIsEditCropperOpen(false);
-  setEditRawImage(null);
-  setEditZoom(1);
-  setEditOffset({ x: 0, y: 0 });
-  setIsEditPanning(false);
-
-};
-
+    // cropper resets
+    setRawImage(null);
+    setIsCropperOpen(false);
+    setZoom(1);
+    setOffset({ x: 0, y: 0 });
+    setIsPanning(false);
+    setIsEditCropperOpen(false);
+    setEditRawImage(null);
+    setEditZoom(1);
+    setEditOffset({ x: 0, y: 0 });
+    setIsEditPanning(false);
+  };
 
   return (
     <div
       className="mt-12 p-4 font-system direction-rtl text-right"
       style={{ direction: "rtl" }}
     >
-            <Breadcrumbs path={path} />
+      <Breadcrumbs path={path} />
 
       <div className="text-right">
         <h2 className="text-5xl font-light text-slate-700 mb-2 tracking-tight">
@@ -203,7 +189,7 @@ const [isEditPanning, setIsEditPanning] = useState(false);
                   className="w-44 h-44 object-cover rounded-full shadow-md mt-2"
                 />
 
-                {role === "admin" && (
+                {role === "editor" && (
                   <div className="w-60 absolute inset-0 flex mr-16 gap-3 mb-4">
                     {/* Delete Button */}
                     <div className="relative">
@@ -266,7 +252,7 @@ const [isEditPanning, setIsEditPanning] = useState(false);
           </div>
         ))}
       </div>
-      {role === "admin" && (
+      {role === "editor" && (
         <div
           className="fixed bottom-8 right-8 w-16 h-16 bg-slate-700 rounded-full flex items-center justify-center text-3xl text-white cursor-pointer transition-all duration-200 hover:scale-105 hover:bg-slate-600"
           onClick={() => setShowAddCatModal(true)}
@@ -287,25 +273,25 @@ const [isEditPanning, setIsEditPanning] = useState(false);
         </div>
       )}
 
-      {role === "admin" && (
+      {role === "editor" && (
         <>
           {" "}
-             <AddCategoryModal
-  isOpen={showAddCatModal}
-  onClose={() => setShowAddCatModal(false)}
-  onSave={({ name, image }: AddCategoryResult) => {
-    const newCategory = {
-      id: Date.now(),
-      name,
-      image,
-      type: null,
-      favorite: false,
-    };
-    setCategories((prev) => [...prev, newCategory]);
-    setShowAddCatModal(false);
-    toast.success(`הקטגוריה "${name}" נוספה בהצלחה!`);
-  }}
-/>
+          <AddCategoryModal
+            isOpen={showAddCatModal}
+            onClose={() => setShowAddCatModal(false)}
+            onSave={({ name, image }: AddCategoryResult) => {
+              const newCategory = {
+                id: Date.now(),
+                name,
+                image,
+                type: null,
+                favorite: false,
+              };
+              setCategories((prev) => [...prev, newCategory]);
+              setShowAddCatModal(false);
+              toast.success(`הקטגוריה "${name}" נוספה בהצלחה!`);
+            }}
+          />
           {showDeleteModal && categoryToDelete && (
             <div
               className="fixed inset-0 bg-slate-800 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 transition-all duration-300"
@@ -344,33 +330,31 @@ const [isEditPanning, setIsEditPanning] = useState(false);
               </div>
             </div>
           )}
-                  {showEditModal && categoryToEdit && (
-  <EditCategoryModal
-  isOpen={showEditModal && !!categoryToEdit}
-  category={categoryToEdit as Category}
-  onClose={() => {
-    setShowEditModal(false);
-    setCategoryToEdit(null);
-    setIsEditCropperOpen(false);
-    setEditRawImage(null);
-    setEditZoom(1);
-    setEditOffset({ x: 0, y: 0 });
-    setIsEditPanning(false);
-  }}
-  onSave={(updated) => {
-    setCategories((prev) =>
-      prev.map((c) => (c.id === updated.id ? updated : c))
-    );
-    setShowEditModal(false);
-    setCategoryToEdit(null);
-    toast.success(`הקטגוריה "${updated.name}" עודכנה בהצלחה!`);
-  }}
-/>
-)}
+          {showEditModal && categoryToEdit && (
+            <EditCategoryModal
+              isOpen={showEditModal && !!categoryToEdit}
+              category={categoryToEdit as Category}
+              onClose={() => {
+                setShowEditModal(false);
+                setCategoryToEdit(null);
+                setIsEditCropperOpen(false);
+                setEditRawImage(null);
+                setEditZoom(1);
+                setEditOffset({ x: 0, y: 0 });
+                setIsEditPanning(false);
+              }}
+              onSave={(updated) => {
+                setCategories((prev) =>
+                  prev.map((c) => (c.id === updated.id ? updated : c))
+                );
+                setShowEditModal(false);
+                setCategoryToEdit(null);
+                toast.success(`הקטגוריה "${updated.name}" עודכנה בהצלחה!`);
+              }}
+            />
+          )}
         </>
       )}
-
-
 
       {categoryToType && (
         <div

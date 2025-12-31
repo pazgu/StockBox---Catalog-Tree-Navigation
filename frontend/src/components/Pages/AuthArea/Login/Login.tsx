@@ -7,13 +7,13 @@ import { MailQuestionIcon, UserPen, Lock } from "lucide-react";
 interface LoginProps {}
 
 const Login: FC<LoginProps> = () => {
-  const [username, setUsername] = useState("");
+  const [userName, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
   const { role } = useUser();
 
   useEffect(() => {
-    if (role === "admin") {
+    if (role === "editor") {
       navigate("/");
     }
   }, [navigate, role]);
@@ -34,7 +34,7 @@ const Login: FC<LoginProps> = () => {
             <div className="relative w-full">
               <input
                 type="text"
-                value={username}
+                value={userName}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full py-3 px-4 pl-11 border-2 border-gray-300 rounded-lg text-right text-sm transition-all duration-200 bg-gray-50 h-11 focus:outline-none focus:border-indigo-600 focus:shadow-lg focus:shadow-indigo-100 hover:border-gray-400 placeholder-gray-400"
                 placeholder="הכנס שם משתמש..."
@@ -72,15 +72,15 @@ const Login: FC<LoginProps> = () => {
             type="button"
             onClick={(e) => {
               e.preventDefault();
-              console.log("Login attempt:", { username, password });
+              console.log("Login attempt:", { userName, password });
 
               const emailTo = "Superstockbox@outlook.com";
               const subject = encodeURIComponent(
-                `בקשה להפעלת משתמש - ${username}`
+                `בקשה להפעלת משתמש - ${userName}`
               );
 
               const body = encodeURIComponent(
-                `שלום StockBox,\n\nאשמח להפעיל את המשתמש החדש שלי במערכת.\n\nשם המשתמש באתר: ${username}\nסיסמה: ${password}\n\nתודה רבה!`
+                `שלום StockBox,\n\nאשמח להפעיל את המשתמש החדש שלי במערכת.\n\nשם המשתמש באתר: ${userName}\nסיסמה: ${password}\n\nתודה רבה!`
               );
 
               window.location.href = `mailto:${emailTo}?subject=${subject}&body=${body}`;

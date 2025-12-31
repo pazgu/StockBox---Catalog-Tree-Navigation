@@ -13,6 +13,8 @@ import { CommonService } from './common/common.service';
 import { CommonModule } from './common/common.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
 import { AboutModule } from './about/about.module';
 
 @Module({
@@ -32,6 +34,8 @@ import { AboutModule } from './about/about.module';
     GroupsModule,
     CategoriesModule,
     CommonModule,
+    AuthModule,
+    UsersModule,
     AboutModule,
   ],
   controllers: [
