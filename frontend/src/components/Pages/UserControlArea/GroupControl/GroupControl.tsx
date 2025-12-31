@@ -13,9 +13,13 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
+import axios from "axios";
+const api = axios.create({
+  baseURL: "http://localhost:4000",
+});
 
 const GroupControl: React.FC = () => {
-  const [selectedGroup, setSelectedGroup] = useState("group1");
+  const [selectedGroup, setSelectedGroup] = useState("");
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddUsersModal, setShowAddUsersModal] = useState(false);
@@ -24,6 +28,7 @@ const GroupControl: React.FC = () => {
   const [groupToDelete, setGroupToDelete] = useState<Group | null>(null);
   const [showAddGroupModal, setShowAddGroupModal] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
   const { role } = useUser();
@@ -31,6 +36,9 @@ const GroupControl: React.FC = () => {
 
   const [groupToEdit, setGroupToEdit] = useState<Group | null>(null);
   const [editedGroupName, setEditedGroupName] = useState("");
+
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
 
   // Redirect non-admins
   useEffect(() => {
@@ -44,80 +52,33 @@ const GroupControl: React.FC = () => {
     if (showAddGroupModal && inputRef.current) inputRef.current.focus();
   }, [showAddGroupModal]);
 
-  const [groups, setGroups] = useState<Group[]>([
-    {
-      id: "group1",
-      name: "קבוצה 1",
-      permissions: [],
-      bannedItems: [
-        { id: 1, name: "מצלמה דיגיטלית Canon EOS 250D DSLR", type: "product" },
-        { id: "cat_2", name: "הקלטה", type: "category" },
-      ],
-    },
-    {
-      id: "group2",
-      name: "קבוצה 2",
-      permissions: [],
-      bannedItems: [
-        {
-          id: 4,
-          name: "מצלמה דיגיטלית ללא מראה Canon EOS R100",
-          type: "product",
-        },
-        { id: "sub_cat_7", name: "עדשות EF", type: "subcategory" },
-        { id: "cat_2", name: "הקלטה", type: "category" },
-      ],
-    },
-    {
-      id: "group3",
-      name: "קבוצה 3",
-      permissions: [],
-      bannedItems: [],
-    },
-  ]);
-
-  const initialUsersData = [
-    {
-      id: "1",
-      name: "ג׳ון סמית׳",
-      email: "john.smith@system.com",
-      avatar: "JS",
-      groups: ["group1", "group2"],
-    },
-    {
-      id: "2",
-      name: "שרה מילר",
-      email: "sarah.miller@system.com",
-      avatar: "SM",
-      groups: ["group1"],
-    },
-    {
-      id: "3",
-      name: "רוברט ג׳ונסון",
-      email: "robert.j@system.com",
-      avatar: "RJ",
-      groups: ["group1"],
-    },
-    {
-      id: "4",
-      name: "אמה וילסון",
-      email: "emma.w@system.com",
-      avatar: "EW",
-      groups: ["group1"],
-    },
-    {
-      id: "5",
-      name: "מייקל בראון",
-      email: "michael.b@system.com",
-      avatar: "MB",
-      groups: ["group1", "group3"],
-    },
-  ];
-
-  const [users, setUsers] = useState<User[]>(initialUsersData);
   useEffect(() => {
-    setInitialUsers(JSON.parse(JSON.stringify(initialUsersData)));
+    fetchGroups();
   }, []);
+  const fetchGroups = async () => {
+    try {
+      setIsLoading(true);
+      const response = await api.get("/groups");
+
+      const transformedGroups = response.data.map((g: any) => ({
+        id: g._id || g.id,
+        name: g.groupName,
+        permissions: [],
+        bannedItems: [],
+      }));
+      
+      setGroups(transformedGroups);
+      
+      if (transformedGroups.length > 0 && !selectedGroup) {
+        setSelectedGroup(transformedGroups[0].id);
+      }
+    } catch (error) {
+      console.error("Error fetching groups:", error);
+      toast.error("שגיאה בטעינת קבוצות");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const currentGroup = useMemo(
     () => groups.find((g) => g.id === selectedGroup),
@@ -129,7 +90,7 @@ const GroupControl: React.FC = () => {
     setNewGroupName("");
   };
 
-  const saveNewGroup = () => {
+  const saveNewGroup = async () => {
     const trimmedName = newGroupName.trim();
     if (!trimmedName) return;
 
@@ -138,20 +99,31 @@ const GroupControl: React.FC = () => {
       return;
     }
 
-    const newGroup: Group = {
-      id: `group${Date.now()}`,
-      name: trimmedName,
-      permissions: [],
-      bannedItems: [],
-    };
-    setGroups((prev) => {
-      const newGroups = [...prev, newGroup];
-      setSelectedGroup(newGroup.id);
-      return newGroups;
-    });
+    try {
+      const response = await api.post("/groups", {
+        groupName: trimmedName,
+        members: [],
+      });
 
-    toast.success(`הקבוצה "${trimmedName}" נוצרה בהצלחה`);
-    closeAddGroupModal();
+      const newGroup: Group = {
+        id: response.data._id || response.data.id,
+        name: response.data.groupName,
+        permissions: [],
+        bannedItems: [],
+      };
+
+      setGroups((prev) => [...prev, newGroup]);
+      setSelectedGroup(newGroup.id);
+      toast.success(`הקבוצה "${trimmedName}" נוצרה בהצלחה`);
+      closeAddGroupModal();
+    } catch (error: any) {
+      console.error("Error creating group:", error);
+      if (error.response?.status === 409) {
+        toast.error("הקבוצה כבר קיימת במערכת");
+      } else {
+        toast.error("שגיאה ביצירת קבוצה");
+      }
+    }
   };
 
   const filteredUsers = useMemo(() => {
@@ -200,10 +172,10 @@ const GroupControl: React.FC = () => {
   const handleRemoveUsersFromGroup = () => {
     if (selectedUsers.size === 0) return;
 
-    setUsers(prevUsers =>
-      prevUsers.map(u => {
+    setUsers((prevUsers) =>
+      prevUsers.map((u) => {
         if (!selectedUsers.has(u.id)) return u;
-        const newGroups = u.groups.filter(gid => gid !== selectedGroup);
+        const newGroups = u.groups.filter((gid) => gid !== selectedGroup);
         if (newGroups.length === u.groups.length) return u;
         return { ...u, groups: newGroups };
       })
@@ -213,9 +185,9 @@ const GroupControl: React.FC = () => {
     setSelectedUsers(new Set());
   };
 
-   const handleAddUsers = (groupId: string, userIds: string[]) => {
-    setUsers(prevUsers =>
-      prevUsers.map(u => {
+  const handleAddUsers = (groupId: string, userIds: string[]) => {
+    setUsers((prevUsers) =>
+      prevUsers.map((u) => {
         if (!userIds.includes(u.id)) return u;
         if (u.groups.includes(groupId)) return u;
         return { ...u, groups: [...u.groups, groupId] };
@@ -249,52 +221,83 @@ const GroupControl: React.FC = () => {
     setEditedGroupName(group.name);
   };
 
-  const saveEditedGroup = () => {
+  const saveEditedGroup = async () => {
     if (!groupToEdit) return;
     const trimmedName = editedGroupName.trim();
+
     if (!trimmedName) {
       toast.error("שם הקבוצה לא יכול להיות ריק");
       return;
     }
+    
     if (groups.some((g) => g.name === trimmedName && g.id !== groupToEdit.id)) {
       toast.error("כבר קיימת קבוצה עם שם זה");
       return;
     }
-    setGroups((prev) =>
-      prev.map((g) =>
-        g.id === groupToEdit.id ? { ...g, name: trimmedName } : g
-      )
-    );
-    toast.success("שם הקבוצה עודכן בהצלחה");
-    setGroupToEdit(null);
-    setEditedGroupName("");
+
+    try {
+      await api.patch(`/groups/${groupToEdit.id}`, {
+        groupName: trimmedName,
+      });
+
+      setGroups((prev) =>
+        prev.map((g) =>
+          g.id === groupToEdit.id ? { ...g, name: trimmedName } : g
+        )
+      );
+      
+      toast.success("שם הקבוצה עודכן בהצלחה");
+      setGroupToEdit(null);
+      setEditedGroupName("");
+    } catch (error: any) {
+      console.error("Error updating group:", error);
+      if (error.response?.status === 409) {
+        toast.error("הקבוצה כבר קיימת במערכת");
+      } else {
+        toast.error("שגיאה בעדכון שם הקבוצה");
+      }
+    }
   };
 
   const handleDeleteGroup = (group: Group) => setGroupToDelete(group);
   const closeDeleteModal = () => setGroupToDelete(null);
 
-  const confirmDeleteGroup = () => {
+  const confirmDeleteGroup = async () => {
     if (!groupToDelete) return;
 
-    setGroups((prevGroups) => {
-      const newGroups = prevGroups.filter((g) => g.id !== groupToDelete.id);
-      setSelectedGroup((prev) =>
-        prev === groupToDelete.id ? newGroups[0]?.id || "" : prev
+    try {
+      await api.delete(`/groups/${groupToDelete.id}`);
+
+      setGroups((prevGroups) => {
+        const newGroups = prevGroups.filter((g) => g.id !== groupToDelete.id);
+        setSelectedGroup((prev) =>
+          prev === groupToDelete.id ? newGroups[0]?.id || "" : prev
+        );
+        return newGroups;
+      });
+
+      setUsers((prev) =>
+        prev.map((u) => ({
+          ...u,
+          groups: u.groups.filter((gid) => gid !== groupToDelete.id),
+        }))
       );
-      return newGroups;
-    });
 
-    setUsers((prev) =>
-      prev.map((u) => ({
-        ...u,
-        groups: u.groups.filter((gid) => gid !== groupToDelete.id),
-      }))
-    );
-
-    toast.info(`הקבוצה "${groupToDelete.name}" נמחקה בהצלחה`);
-
-    setGroupToDelete(null);
+      toast.info(`הקבוצה "${groupToDelete.name}" נמחקה בהצלחה`);
+      setGroupToDelete(null);
+    } catch (error) {
+      console.error("Error deleting group:", error);
+      toast.error("שגיאה במחיקת הקבוצה");
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#fffaf1] flex items-center justify-center">
+        <div className="text-slate-700 text-xl">טוען קבוצות...</div>
+      </div>
+    );
+  }
 
   return (
     <div

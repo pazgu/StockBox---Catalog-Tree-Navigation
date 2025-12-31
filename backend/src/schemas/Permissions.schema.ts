@@ -1,5 +1,5 @@
-import { Prop, Schema } from "@nestjs/mongoose";
-import mongoose from "mongoose";
+import { Prop, Schema } from '@nestjs/mongoose';
+import mongoose from 'mongoose';
 
 export enum EntityType {
   PRODUCT = 'product',

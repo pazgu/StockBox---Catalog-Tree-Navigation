@@ -4,8 +4,6 @@ import { ProductsService } from './products/products.service';
 import { ProductsModule } from './products/products.module';
 import { PermissionsController } from './permissions/permissions.controller';
 import { PermissionsModule } from './permissions/permissions.module';
-import { GroupsController } from './groups/groups.controller';
-import { GroupsService } from './groups/groups.service';
 import { GroupsModule } from './groups/groups.module';
 import { CategoriesModule } from './categories/categories.module';
 import { CommonController } from './common/common.controller';
@@ -16,7 +14,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
-       ConfigModule.forRoot({
+    ConfigModule.forRoot({
       isGlobal: true,
     }),
     MongooseModule.forRootAsync({
@@ -32,12 +30,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     CategoriesModule,
     CommonModule,
   ],
-  controllers: [
-    ProductsController,
-    PermissionsController,
-    GroupsController,
-    CommonController,
-  ],
-  providers: [ProductsService, GroupsService, CommonService],
+  controllers: [ProductsController, PermissionsController, CommonController],
+  providers: [ProductsService, CommonService],
 })
 export class AppModule {}
