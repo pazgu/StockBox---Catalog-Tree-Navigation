@@ -6,6 +6,7 @@ export interface User {
   _id?: string;
   firstName: string;
   lastName: string;
+  userName: string;
   email: string;
   approved?: boolean;
   role: "editor" | "viewer";

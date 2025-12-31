@@ -59,8 +59,9 @@ const NewUser: React.FC = () => {
   const onSubmit = async (data: UserFormData) => {
     try {
       const newUser: User = {
-        firstName: data.username,
+        firstName: "",
         lastName: "",
+        userName: data.username,
         email: data.email,
         role: data.role as "editor" | "viewer",
         approved: false,

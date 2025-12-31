@@ -311,6 +311,7 @@ const AllUsers: FC<AllUsersProps> = () => {
                 <div className="font-semibold text-[#0D305B]">
                   {user.firstName}
                 </div>
+                
                 <div className="text-sm text-gray-600">{user.email}</div>
 
                 <div
@@ -461,11 +462,27 @@ const AllUsers: FC<AllUsersProps> = () => {
             <div className="bg-white rounded-xl p-6 w-96 text-right shadow-lg">
               <h2 className="text-xl font-semibold mb-4">עריכת משתמש</h2>
 
-              <label className="block text-sm mb-1">שם:</label>
+              <label className="block text-sm mb-1">שם פרטי:</label>
               <input
                 type="text"
                 value={userToEdit.firstName}
                 onChange={(e) => handleEditChange("firstName", e.target.value)}
+                className="w-full border rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-[#0D305B]"
+              />
+
+              <label className="block text-sm mb-1">שם משפחה:</label>
+              <input
+                type="text"
+                value={userToEdit.lastName}
+                onChange={(e) => handleEditChange("lastName", e.target.value)}
+                className="w-full border rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-[#0D305B]"
+              />
+
+              <label className="block text-sm mb-1">שם משתמש:</label>
+              <input
+                type="text"
+                value={userToEdit.userName}
+                onChange={(e) => handleEditChange("userName", e.target.value)}
                 className="w-full border rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-[#0D305B]"
               />
 
