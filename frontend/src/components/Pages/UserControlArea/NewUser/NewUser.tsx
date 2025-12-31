@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
-
+import { User } from "../../../../context/UserContext";
 const userSchema = z.object({
   username: z
     .string()
@@ -29,7 +29,7 @@ const userSchema = z.object({
   role: z
     .string()
     .min(1, "סוג משתמש הוא שדה חובה")
-    .refine((val) => val === "user" || val === "admin", {
+    .refine((val) => val === "viewer" || val === "editor", {
       message: "סוג משתמש לא חוקי",
     }),
 });
@@ -41,7 +41,7 @@ const NewUser: React.FC = () => {
   const { role, addUser } = useUser();
 
   useEffect(() => {
-    if (role !== "admin") {
+    if (role !== "editor") {
       navigate("/");
     }
   }, [navigate, role]);
@@ -58,12 +58,13 @@ const NewUser: React.FC = () => {
 
   const onSubmit = async (data: UserFormData) => {
     try {
-      const newUser = {
-        id: Date.now(),
-        name: data.username,
+      const newUser: User = {
+        firstName: data.username,
+        lastName: "",
         email: data.email,
-        role: data.role as "admin" | "user",
-        isApproved: false,
+        role: data.role as "editor" | "viewer",
+        approved: false,
+        requestSent: false,
       };
 
       addUser(newUser);
@@ -106,63 +107,63 @@ const NewUser: React.FC = () => {
           onSubmit={handleSubmit(onSubmit)}
           className="w-full flex flex-row rtl text-right gap-12 justify-center"
         >
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-col min-w-[320px] max-w-[380px]">
-            <label
-              htmlFor="username"
-              className="mb-2 text-sm font-semibold text-gray-700 rtl text-right"
-            >
-              שם משתמש
-            </label>
-            <input
-              {...register("username")}
-              type="text"
-              id="username"
-              className={`py-3 px-4 border rounded-lg text-base outline-none transition-all duration-200 rtl text-right bg-white min-h-6 leading-6 ${
-                errors.username
-                  ? "border-red-500 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]"
-                  : "border-gray-300 focus:border-[#0D305B] focus:shadow-[0_0_0_3px_rgba(13,48,91,0.1)]"
-              }`}
-            />
-            {errors.username && (
-              <motion.span
-                className="text-red-500 text-[13px] mt-1.5 block text-right rtl font-medium opacity-100 transition-opacity duration-200"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col min-w-[320px] max-w-[380px]">
+              <label
+                htmlFor="username"
+                className="mb-2 text-sm font-semibold text-gray-700 rtl text-right"
               >
-                {errors.username.message}
-              </motion.span>
-            )}
-          </div>
+                שם משתמש
+              </label>
+              <input
+                {...register("username")}
+                type="text"
+                id="username"
+                className={`py-3 px-4 border rounded-lg text-base outline-none transition-all duration-200 rtl text-right bg-white min-h-6 leading-6 ${
+                  errors.username
+                    ? "border-red-500 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]"
+                    : "border-gray-300 focus:border-[#0D305B] focus:shadow-[0_0_0_3px_rgba(13,48,91,0.1)]"
+                }`}
+              />
+              {errors.username && (
+                <motion.span
+                  className="text-red-500 text-[13px] mt-1.5 block text-right rtl font-medium opacity-100 transition-opacity duration-200"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  {errors.username.message}
+                </motion.span>
+              )}
+            </div>
 
-          <div className="flex flex-col min-w-[320px] max-w-[380px]">
-            <label
-              htmlFor="email"
-              className="mb-2 text-sm font-semibold text-gray-700 rtl text-right"
-            >
-              כתובת מייל
-            </label>
-            <input
-              {...register("email")}
-              type="email"
-              id="email"
-              placeholder="yourname@gmail.com"
-              className={`py-3 px-4 border rounded-lg text-base outline-none transition-all duration-200 rtl text-right bg-white min-h-6 leading-6 placeholder:text-gray-400 placeholder:rtl placeholder:text-right placeholder:text-base ${
-                errors.email
-                  ? "border-red-500 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]"
-                  : "border-gray-300 focus:border-[#0D305B] focus:shadow-[0_0_0_3px_rgba(13,48,91,0.1)]"
-              }`}
-            />
-            {errors.email && (
-              <motion.span
-                className="text-red-500 text-[13px] mt-1.5 block text-right rtl font-medium opacity-100 transition-opacity duration-200"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+            <div className="flex flex-col min-w-[320px] max-w-[380px]">
+              <label
+                htmlFor="email"
+                className="mb-2 text-sm font-semibold text-gray-700 rtl text-right"
               >
-                {errors.email.message}
-              </motion.span>
-            )}
-          </div>
+                כתובת מייל
+              </label>
+              <input
+                {...register("email")}
+                type="email"
+                id="email"
+                placeholder="yourname@gmail.com"
+                className={`py-3 px-4 border rounded-lg text-base outline-none transition-all duration-200 rtl text-right bg-white min-h-6 leading-6 placeholder:text-gray-400 placeholder:rtl placeholder:text-right placeholder:text-base ${
+                  errors.email
+                    ? "border-red-500 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]"
+                    : "border-gray-300 focus:border-[#0D305B] focus:shadow-[0_0_0_3px_rgba(13,48,91,0.1)]"
+                }`}
+              />
+              {errors.email && (
+                <motion.span
+                  className="text-red-500 text-[13px] mt-1.5 block text-right rtl font-medium opacity-100 transition-opacity duration-200"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  {errors.email.message}
+                </motion.span>
+              )}
+            </div>
           </div>
 
           <div className="flex flex-col gap-3">
@@ -190,8 +191,8 @@ const NewUser: React.FC = () => {
                   }}
                 >
                   <option value="">בחר סוג</option>
-                  <option value="admin">מנהל</option>
-                  <option value="user">משתמש</option>
+                  <option value="editor">מנהל</option>
+                  <option value="viewer">משתמש</option>
                 </select>
               </div>
               {errors.role && (

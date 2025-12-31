@@ -15,11 +15,11 @@ const AddUsersModal: React.FC<AddUsersModalProps> = ({ group, allUsers, onClose,
 
   const usersNotInGroup = useMemo(() => {
     return allUsers
-      .filter((user) => !user.groups.includes(group.id))
+      .filter((user) => !user.groups?.includes(group.id))
       .filter(
         (user) =>
           modalSearch === '' ||
-          user.name.toLowerCase().includes(modalSearch.toLowerCase()) ||
+          user.userName.toLowerCase().includes(modalSearch.toLowerCase()) ||
           user.email.toLowerCase().includes(modalSearch.toLowerCase())
       );
   }, [allUsers, group.id, modalSearch]);
@@ -103,10 +103,9 @@ const AddUsersModal: React.FC<AddUsersModalProps> = ({ group, allUsers, onClose,
                     className="w-5 h-5 text-slate-700 rounded focus:ring-slate-700"
                   />
                   <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 font-bold text-xs">
-                    {user.avatar}
                   </div>
                   <div className="text-sm text-gray-700">
-                    <h4 className="font-medium">{user.name}</h4>
+                    <h4 className="font-medium">{user.userName}</h4>
                     <p className="text-xs text-gray-500">{user.email}</p>
                   </div>
                 </div>
