@@ -17,20 +17,19 @@ export const mockBannedItems: BannedItem[] = [
 ];
 
 export interface User {
-  id: string;
-  userName: string;
+  _id?: string;
   firstName: string;
   lastName: string;
+  userName: string;
   email: string;
-  role: UserRole;
-  approved: boolean;
-  requestSent: boolean;
-  groups?: string[];
+  approved?: boolean;
+  role: "editor" | "viewer";
+  requestSent?: boolean;
 }
-
 export interface Group {
   id: string;
   name: string;
+  members: string[];
   permissions: string[];
   bannedItems: BannedItem[];
 }
