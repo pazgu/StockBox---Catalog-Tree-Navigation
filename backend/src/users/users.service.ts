@@ -15,6 +15,12 @@ export class UsersService {
     return newUser.save();
   }
 
+   async createUserFromLogin(createUserFromLoginDto: CreateUserDto) {
+    
+    const newUser = new this.userModel(createUserFromLoginDto);
+    return newUser.save();
+  }
+
   async deleteUser(id: string) {
     return this.userModel.findByIdAndDelete(id).exec();
   }

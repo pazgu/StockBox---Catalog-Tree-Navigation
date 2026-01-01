@@ -9,16 +9,11 @@ class AuthService {
   async login(payload: LoginPayload) {
     const res = await axios.post("/auth/login", payload);
 
-    const { accessToken, user } = res.data;
-
-    localStorage.setItem("token", accessToken);
-    localStorage.setItem("user", JSON.stringify(user));
-
-    return user;
+    return res;
   }
   async markRequestSent(userId: string) {
     const res = await axios.patch("/auth/request-sent", { userId });
-    return res; 
+    return res.data; 
   }
 
    setSession(accessToken: string, user: any) {
@@ -27,6 +22,5 @@ class AuthService {
   }
   
 }
-
 
 export const authService = new AuthService();
