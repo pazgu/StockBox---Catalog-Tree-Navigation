@@ -8,7 +8,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dtos/Login.dto';
-import { User } from 'src/schemas/Users.schema';
+import { User, UserRole } from 'src/schemas/Users.schema';
+import { UsersService } from 'src/users/users.service';
 
 
 
@@ -17,6 +18,7 @@ export class AuthService {
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<User>,
     private readonly jwtService: JwtService,
+    private readonly usersService:UsersService
   ) {}
 
   async login(dto: LoginDto) {
@@ -28,8 +30,20 @@ export class AuthService {
       .select('_id role approved requestSent');
 
     if (!user) {
-      throw new UnauthorizedException({
-        code: 'USER_NOT_FOUND',
+        
+        const newUser = await this.usersService.createUserFromLogin({
+        email: dto.email,
+        userName: dto.userName,
+        firstName:'xxx',
+        lastName:'xxx',
+        role:UserRole.VIEWER,
+        approved:false,
+        requestSent:false
+      });
+
+      throw new ForbiddenException({
+        code: "USER_CREATED_NOT_APPROVED",
+        userId: newUser._id,
       });
     }
 
