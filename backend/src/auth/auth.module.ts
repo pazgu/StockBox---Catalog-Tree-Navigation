@@ -7,9 +7,10 @@ import { AuthService } from './auth.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
-imports: [
+  imports: [
     ConfigModule, // needed for DI
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -23,5 +24,4 @@ imports: [
   providers: [AuthService],
   exports: [AuthService],
 })
-
 export class AuthModule {}
