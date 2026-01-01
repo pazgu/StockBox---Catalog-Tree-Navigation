@@ -45,7 +45,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const refreshUsers = async () => {
     try {
-      const response = await axios.get<User[]>(API_URL);
+      const response = await axios.get<User[]>(`${API_URL}/users`);
       setUsers(response.data);
     } catch (err) {
       console.error("Error fetching users:", err);

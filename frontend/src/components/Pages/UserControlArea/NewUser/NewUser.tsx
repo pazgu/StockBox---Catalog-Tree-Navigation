@@ -1,16 +1,22 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion } from "framer-motion";
 import { userService } from "../../../../services/UserService";
 import { toast } from "sonner";
-import { User } from "../../../../types/types";
+import { User, Group } from "../../../../types/types";
 import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
 import { USER_ROLES } from "../../../../types/types";
+import axios from "axios";
 
 import { useUser } from "../../../../context/UserContext";
+import { environment } from "../../../../environments/environment.development";
+const api = axios.create({
+  baseURL: environment.API_URL,
+});
+
 const userSchema = z.object({
   userName: z
     .string()
@@ -32,23 +38,57 @@ const userSchema = z.object({
     ),
   companyName: z.string().optional(),
 
-role: z.string().refine((val) => USER_ROLES.includes(val as any), {
+  role: z.string().refine((val) => USER_ROLES.includes(val as any), {
     message: "סוג משתמש לא חוקי",
-  }),});
+  }),
+});
 
 type UserFormData = z.infer<typeof userSchema>;
 
 const NewUser: React.FC = () => {
   const { role, refreshUsers } = useUser();
   const navigate = useNavigate();
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [isLoadingGroups, setIsLoadingGroups] = useState(false);
+
   const goToAllUsers = () => {
     navigate("/AllUsers");
   };
+
   useEffect(() => {
     if (role !== "editor") {
       navigate("/");
     }
   }, [navigate, role]);
+
+  useEffect(() => {
+    fetchGroups();
+  }, []);
+
+  const fetchGroups = async () => {
+    try {
+      setIsLoadingGroups(true);
+      const response = await api.get("/groups");
+
+      const transformedGroups: Group[] = response.data.map((g: any) => ({
+        id: g._id || g.id,
+        name: g.groupName,
+        members:
+          g.members?.map((m: any) =>
+            typeof m === "string" ? m : m._id || m.id
+          ) || [],
+        permissions: [],
+        bannedItems: [],
+      }));
+
+      setGroups(transformedGroups);
+    } catch (error) {
+      console.error("Error fetching groups:", error);
+      toast.error("שגיאה בטעינת קבוצות");
+    } finally {
+      setIsLoadingGroups(false);
+    }
+  };
 
   const {
     register,
@@ -73,7 +113,17 @@ const NewUser: React.FC = () => {
         isBlocked: false,
       };
 
-      await userService.create(newUser);
+      const createdUser = await userService.create(newUser);
+
+      if (data.companyName && createdUser._id) {
+        const group = groups.find((g) => g.id === data.companyName);
+        if (group) {
+          const newMembers = [...group.members, createdUser._id];
+          await api.patch(`/groups/${data.companyName}`, { members: newMembers });
+        }
+      }
+
+      await refreshUsers();
 
       reset();
       toast.success("משתמש נוסף בהצלחה!");
@@ -292,7 +342,8 @@ const NewUser: React.FC = () => {
               <select
                 {...register("companyName")}
                 id="companyName"
-                className="cursor-pointer py-3 px-4 pl-10 border border-gray-300 rounded-lg text-base outline-none transition-all duration-200 rtl text-right bg-white min-h-6 leading-6 appearance-none focus:border-[#0D305B] focus:shadow-[0_0_0_3px_rgba(13,48,91,0.1)]"
+                disabled={isLoadingGroups}
+                className="cursor-pointer py-3 px-4 pl-10 border border-gray-300 rounded-lg text-base outline-none transition-all duration-200 rtl text-right bg-white min-h-6 leading-6 appearance-none focus:border-[#0D305B] focus:shadow-[0_0_0_3px_rgba(13,48,91,0.1)] disabled:bg-gray-100 disabled:cursor-not-allowed"
                 style={{
                   backgroundImage: `url('data:image/svg+xml;utf8,<svg fill="%23374151" height="20" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>')`,
                   backgroundRepeat: "no-repeat",
@@ -300,10 +351,14 @@ const NewUser: React.FC = () => {
                   backgroundSize: "20px",
                 }}
               >
-                <option value="">בחר קבוצה</option>
-                <option value="company1">קבוצה 1</option>
-                <option value="company2">קבוצה 2</option>
-                <option value="company3">קבוצה 3</option>
+                <option value="">
+                  {isLoadingGroups ? "טוען קבוצות..." : "בחר קבוצה"}
+                </option>
+                {groups.map((group) => (
+                  <option key={group.id} value={group.id}>
+                    {group.name}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
