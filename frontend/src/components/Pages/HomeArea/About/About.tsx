@@ -443,7 +443,7 @@ const handleSectionDragStart = (index: number) => {
 
   useEffect(() => {
   if (isEditing) return;
-  if (images.length === 0) return; // ✅ SUPER IMPORTANT
+  if (images.length === 0) return; 
 
   const interval = setInterval(() => {
     setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
