@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-catch */
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -14,7 +15,20 @@ export class ProductsService {
     return this.productModel.find().exec();
   }
   async findByPath(path: string): Promise<Product[]> {
-    return this.productModel.find({ productPath: path }).exec();
+    try {
+      const allProducts = await this.productModel.find().exec();
+      const filteredProducts = allProducts.filter((p) => {
+        if (!p.productPath || !p.productPath.startsWith(path)) {
+          return false;
+        }
+        const remainingPath = p.productPath.substring(path.length);
+        const slashCount = (remainingPath.match(/\//g) || []).length;
+        return slashCount <= 1;
+      });
+      return filteredProducts;
+    } catch (error) {
+      throw error;
+    }
   }
   async create(createProductDto: CreateProductDto): Promise<Product> {
     const createdProduct = new this.productModel(createProductDto);

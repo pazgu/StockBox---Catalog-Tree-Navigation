@@ -3,12 +3,13 @@ import {
   Get,
   Post,
   Body,
-  Param,
   HttpCode,
   HttpStatus,
+  Req,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dtos/CreateProduct.dto';
+import express from 'express';
 
 @Controller('products')
 export class ProductsController {
@@ -19,8 +20,10 @@ export class ProductsController {
     return this.productsService.findAll();
   }
   @Get('by-path/*')
-  findByPath(@Param('0') pathPart: string) {
-    const fullPath = `/categories/${pathPart}`;
+  findByPath(@Req() request: express.Request) {
+    const fullUrl = request.url;
+    const pathPart = fullUrl.split('by-path/')[1];
+    const fullPath = `/${pathPart}`;
     return this.productsService.findByPath(fullPath);
   }
 

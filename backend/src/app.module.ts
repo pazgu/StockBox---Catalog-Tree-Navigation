@@ -3,8 +3,6 @@ import { ProductsModule } from './products/products.module';
 import { PermissionsController } from './permissions/permissions.controller';
 import { PermissionsModule } from './permissions/permissions.module';
 import { GroupsModule } from './groups/groups.module';
-import { GroupsService } from './groups/groups.service';
-import { GroupsController } from './groups/groups.controller';
 import { CategoriesModule } from './categories/categories.module';
 import { CommonController } from './common/common.controller';
 import { CommonService } from './common/common.service';
@@ -34,7 +32,7 @@ import { UsersModule } from './users/users.module';
     AuthModule,
     UsersModule,
   ],
-  controllers: [PermissionsController, GroupsController, CommonController],
-  providers: [GroupsService, CommonService],
+  controllers: [PermissionsController, CommonController],
+  providers: [CommonService],
 })
 export class AppModule {}

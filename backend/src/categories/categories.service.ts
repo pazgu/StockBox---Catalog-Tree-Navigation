@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable no-useless-escape */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -25,7 +27,7 @@ export class CategoriesService {
     return categories;
   }
 
-   async getSubCategories(parentCategory: string) {
+  async getSubCategories(parentCategory: string) {
     const regex = new RegExp(`^/categories/${parentCategory}/[^/]+$`);
     const subCategories = await this.categoryModel.find({
       categoryPath: regex,
@@ -57,7 +59,6 @@ export class CategoriesService {
       deletedCategoryPath: categoryPath,
     };
   }
-
 
   async updateCategory(id: string, updateCategoryDto: UpdateCategoryDto) {
     // Find the category by ID
