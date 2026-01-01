@@ -4,7 +4,7 @@ import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
 import Breadcrumbs from "../../../LayoutArea/Breadcrumbs/Breadcrumbs";
-import { productsApi, ProductDto } from "../../../../services2/ProductService";
+import { ProductsService, ProductDto } from "../../../../services/ProductService";
 import { categoriesService, CategoryDTO } from "../../../../services/CategoryService";
 
 interface DisplayItem {
@@ -79,7 +79,7 @@ const SingleCat: FC = () => {
       }
       let products: ProductDto[] = [];
       try {
-        products = await productsApi.getProductsByPath(categoryPath);
+        products = await ProductsService.getProductsByPath(categoryPath);
       } catch (error) {
         products = [];
       }
@@ -189,7 +189,7 @@ const SingleCat: FC = () => {
         },
       };
 
-      const createdProduct = await productsApi.createProduct(newProduct);
+      const createdProduct = await ProductsService.createProduct(newProduct);
       
       const newItem: DisplayItem = {
         id: createdProduct._id!,
