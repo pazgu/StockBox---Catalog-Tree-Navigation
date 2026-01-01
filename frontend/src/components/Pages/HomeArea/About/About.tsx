@@ -63,7 +63,6 @@ const blocksToSections = (blocks: AboutBlock[]): SectionType[] => {
 }
 
 
-    // bullets
     return {
       id: b.id,
       type: "bullets",
@@ -148,10 +147,8 @@ const About: FC<AboutProps> = () => {
 
 const [sections, setSections] = useState<SectionType[]>([]);
 
-// ✅ Track fields that changed but were NOT confirmed (pressed ✓)
 const [dirtyKeys, setDirtyKeys] = useState<Set<string>>(new Set());
 
-// ✅ Snapshot of last confirmed value per key (used to detect changes)
 const [confirmedSnapshot, setConfirmedSnapshot] = useState<Record<string, string>>({});
 
 const isDirty = (key: string) => dirtyKeys.has(key);
@@ -243,69 +240,87 @@ const toastErrorOnce = (msg: string) => {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [goPrev, goNext]);
 
-  // Editable features (legacy compatibility for child components)
-  const [editableFeatures, setEditableFeatures] = useState([
-    {
-      icon: "כוכב",
-      title: "איחוד מידע במקום אחד",
-      description: "דפים, קבצים, החלטות, הערות ושיתופים.",
-    },
-    {
-      icon: "חיפוש",
-      title: "חיפוש חכם ומהיר",
-      description: "לפי כותרת, תגיות, תיאור ותוכן.",
-    },
-    {
-      icon: "הגדרות",
-      title: "הרשאות ותפקידים",
-      description: "מסך מותאם לכל משתמש. שמירה על סדר ואיכות.",
-    },
-    {
-      icon: "מגמה",
-      title: "תיעוד שינויים",
-      description: "היסטוריית עדכונים והקשר סביב כל פריט.",
-    },
-  ]);
+useEffect(() => {
+  (async () => {
+    try {
+      const res = await aboutApi.get();
 
-  useEffect(() => {
-    setEditableFeatures((prev) =>
-      prev.map((f) => (EN_TO_HE[f.icon] ? { ...f, icon: EN_TO_HE[f.icon] } : f))
-    );
-  }, []);
+const loadedSections = blocksToSections(res.blocks ?? []);
+setSections(loadedSections);
 
-  const [editableVisionPoints, setEditableVisionPoints] = useState([
-    "מידע ברור, עדכני ונגיש",
-    "צמצום זמן חיפוש",
-    "חיזוק שקיפות ושיתופיות בצוות",
-    "מערכת נעימה, יציבה ומתאימה לזרימות עבודה יומיומיות.",
-    "גדלה יחד עם הצוות והצרכים שלו",
-  ]);
+setEditableImages(res.images ?? []);
 
-  const [draggedVisionIndex, setDraggedVisionIndex] = useState<number | null>(
-    null
-  );
+setOriginalData({
+  sections: loadedSections,
+  images: res.images ?? [],
+});
 
-  // Add section
-  const handleAddSection = (
-    afterIndex: number,
-    type: "features" | "vision"
-  ) => {
-    const newSection: SectionType =
-      type === "features"
-        ? {
-            id: `features-${Date.now()}`,
-            type: "features",
-            title: "פיצ׳רים חדשים",
-            features: [
-              { icon: "כוכב", title: "כותרת חדשה", description: "תיאור חדש" },
-            ],
-          }
-        : {
-            id: `vision-${Date.now()}`,
-            type: "vision",
-            title: "חזון חדש",
-            visionPoints: ["נקודה חדשה"],
-          };
+const snap: Record<string, string> = {};
+
+loadedSections.forEach((s) => {
+  snap[mkKey("sectionTitle", s.id)] = s.title ?? "";
+
+  if (s.type === "intro") snap[mkKey("introContent", s.id)] = s.content ?? "";
+  if (s.type === "paragraph") snap[mkKey("paragraphContent", s.id)] = s.content ?? "";
+
+  if (s.type === "features") {
+    snap[mkKey("featuresTitle", s.id)] = s.title ?? "";
+    (s.features ?? []).forEach((f) => {
+      snap[mkKey("featureCard", s.id, f.id)] = JSON.stringify({
+        title: f.title ?? "",
+        description: f.description ?? "",
+        icon: f.icon ?? "",
+      });
+    });
+  }
+
+  if (s.type === "bullets") {
+    snap[mkKey("bulletsTitle", s.id)] = s.title ?? "";
+    (s.bullets ?? []).forEach((b) => {
+      snap[mkKey("bulletText", s.id, b.id)] = b.text ?? "";
+    });
+  }
+});
+
+
+setConfirmedSnapshot(snap);
+setDirtyKeys(new Set());
+
+
+    } catch (e) {
+      toast.error(TOAST.loadError);
+    }
+  })();
+}, []);
+
+
+const handleAddSection = (afterIndex: number, type: "features" | "bullets" | "paragraph") => {
+  if (hasUnconfirmedChanges) {
+    toastErrorOnce(TOAST.unconfirmedChangesBlocked);
+    return;
+  }
+
+  const newSection: SectionType =
+    type === "features"
+      ? {
+          id: `features-${Date.now()}`,
+          type: "features",
+          title: "פיצ׳רים חדשים",
+          features: [{ id: uid(), icon: "star", title: "כותרת חדשה", description: "תיאור חדש" }],
+        }
+      : type === "bullets"
+      ? {
+          id: `bullets-${Date.now()}`,
+          type: "bullets",
+          title: "מקטע חדש",
+          bullets: [{ id: uid(), text: "נקודה חדשה" }],
+        }
+      : {
+          id: `paragraph-${Date.now()}`,
+          type: "paragraph",
+          title: "מקטע טקסט חדש",
+          content: "טקסט חדש...",
+        };
 
   setSections((prev) => [
     ...prev.slice(0, afterIndex + 1),
@@ -329,20 +344,27 @@ const toastErrorOnce = (msg: string) => {
     );
   };
 
-  // Update intro content
-  const updateIntroContent = (index: number, content: string) => {
-    setSections((prev) =>
-      prev.map((s, i) =>
-        i === index && s.type === "intro" ? { ...s, content } : s
-      )
-    );
-  };
+  const updateTextContent = (index: number, content: string) => {
+  setSections((prev) =>
+    prev.map((s, i) =>
+      i === index && (s.type === "intro" || s.type === "paragraph")
+        ? { ...s, content }
+        : s
+    )
+  );
+};
 
-  // Section drag handlers
-  const handleSectionDragStart = (index: number) => {
-    setDraggedSectionIndex(index);
-    dragCounterRef.current = 0;
-  };
+
+const handleSectionDragStart = (index: number) => {
+  if (hasUnconfirmedChanges) {
+    toastErrorOnce(TOAST.unconfirmedChangesBlocked);
+    return;
+  }
+  setDraggedSectionIndex(index);
+  dragCounterRef.current = 0;
+};
+
+
 
   const handleSectionDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault();
@@ -475,13 +497,12 @@ toast.success(TOAST.saveSuccess);
     sectionRefs.current = sectionRefs.current.slice(0, sections.length);
   }, [sections.length]);
 
-  // Image handlers
-  const handleReplaceImage = (
-    index: number,
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const handleReplaceImage = async (
+  index: number,
+  event: React.ChangeEvent<HTMLInputElement>
+) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
 
   try {
     const res = await aboutApi.replaceImageAt(index, file);
@@ -699,7 +720,6 @@ onClick={() => {
         )
       );
 
-      // ✅ Mark as dirty immediately so user must confirm before adding another
       const cardKey = mkKey("featureCard", section.id, newFeature.id);
       
       setDirtyKeys((prev) => {
@@ -774,7 +794,6 @@ onClick={() => {
         )
       );
 
-      // ✅ Mark as dirty immediately so user must confirm before adding another
       const bulletKey = mkKey("bulletText", section.id, newBullet.id);
       
       setDirtyKeys((prev) => {

@@ -36,9 +36,7 @@ interface FeaturesSectionProps {
   features: Feature[];
   onAdd: () => void;
   onRemove: (index: number) => void;
-  onChange: (index: number, field: "title" | "description", value: string) => void;
-
-  // Reorder callback: receives the entire, newly-ordered array
+  onChange: (index: number, field: "title" | "description" | "icon", value: string) => void;
   onReorder: (next: Feature[]) => void;
 
   iconOptions: IconOption[];
