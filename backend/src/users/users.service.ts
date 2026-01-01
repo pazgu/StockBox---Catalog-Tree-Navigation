@@ -30,4 +30,10 @@ export class UsersService {
       .findByIdAndUpdate(id, updateUserDto, { new: true })
       .exec();
   }
+
+  toggleBlockUser(id: string, isBlocked: boolean) {
+    return this.userModel
+      .findByIdAndUpdate(id, { isBlocked }, { new: true })
+      .exec();
+  }
 }

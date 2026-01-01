@@ -27,6 +27,7 @@ export class AuthService {
       .select('_id role approved requestSent');
 
     if (!user) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
       const newUser = await this.usersService.createUserFromLogin({
         email: dto.email,
         userName: dto.userName,
@@ -39,6 +40,7 @@ export class AuthService {
       });
 
       throw new ForbiddenException({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         code: 'USER_CREATED_NOT_APPROVED',
         userId: newUser._id,
       });

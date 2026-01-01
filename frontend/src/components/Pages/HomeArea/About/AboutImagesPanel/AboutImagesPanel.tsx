@@ -126,7 +126,6 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
 
           {images.length > 0 ? (
             <>
-              {/* image */}
               <img
   src={toFullUrl(images[currentIndex])}
   alt="StockBox preview"
@@ -136,7 +135,6 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
 />
 
 
-              {/* arrows (edit only) */}
               {isEditing && images.length > 1 && (
                 <>
                   <button
@@ -304,7 +302,7 @@ const API_BASE = "http://localhost:4000";
 const toFullUrl = (u: string) => {
   if (!u) return "";
   if (u.startsWith("http://") || u.startsWith("https://")) return u;
-  return `${API_BASE}${u}`; // "/about-uploads/..." -> "http://localhost:4000/about-uploads/..."
+  return `${API_BASE}${u}`; 
 };
 
 

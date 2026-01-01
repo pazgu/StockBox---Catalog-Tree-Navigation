@@ -9,6 +9,7 @@ export interface BannedItem {
   name: string;
   type: BannedEntityType;
   groupId?: string;
+  image?: string; 
 }
 
 export const mockBannedItems: BannedItem[] = [
@@ -28,6 +29,7 @@ export interface User {
   role: UserRole;
   requestSent?: boolean;
   isBlocked?: boolean;
+
 }
 export interface Group {
   id: string;
@@ -52,12 +54,6 @@ export interface PermissionCategory {
   permissions: Permission[];
 }
 
-export interface BannedItem {
-  id: string | number;
-  name: string;
-  type: "product" | "category" | "subcategory";
-  image?: string;
-}
 
 export interface AccordionData {
   id: string; 

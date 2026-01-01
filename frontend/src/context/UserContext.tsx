@@ -3,6 +3,7 @@ import axios from "axios";
 import { UserRole, User } from "../types/types";
 import { environment } from "../environments/environment.development";
 
+
 interface UserContextType {
   user: User | null;
   role: UserRole | null;
@@ -11,6 +12,7 @@ interface UserContextType {
   users: User[];
   setUsers: React.Dispatch<React.SetStateAction<User[]>>;
   refreshUsers: () => Promise<void>;
+  blockUser: (id: string, isBlocked: boolean) => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType>(null!);
@@ -22,6 +24,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [user, setUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
+  const [role, setRole] = useState<UserRole | null>(null);
+
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -37,6 +41,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       localStorage.removeItem("user");
     }
   }, [user]);
+
 
   const refreshUsers = async () => {
     try {
@@ -61,6 +66,38 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 }, []);
 
 
+
+  const blockUser = async (id: string, isBlocked: boolean) => {
+  try {
+    const response = await axios.patch<User>(`${API_URL}/${id}/block`, { 
+      isBlocked 
+    });
+    setUsers((prev) => prev.map((u) => (u._id === id ? response.data : u)));
+  } catch (err) {
+    console.error("Error blocking user:", err);
+    throw err;
+  }
+};
+
+  useEffect(() => {
+    refreshUsers();
+  }, []);
+
+
+  useEffect(() => {
+    const storedRole = localStorage.getItem("role");
+    if (storedRole === "editor" || storedRole === "viewer") {
+      setRole(storedRole as UserRole);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (role) localStorage.setItem("role", role);
+    else localStorage.removeItem("role");
+  }, [role]);
+
+ 
+
   return (
     <UserContext.Provider
       value={{
@@ -70,6 +107,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         users,
         setUsers,
         refreshUsers,
+        blockUser,
       }}
     >
       {children}
