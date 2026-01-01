@@ -180,7 +180,7 @@ const NewUser: React.FC = () => {
                 htmlFor="lastName"
                 className="mb-2 text-sm font-semibold text-gray-700 rtl text-right"
               >
-                שם משתמש
+                שם משפחה
               </label>
               <input
                 {...register("lastName")}
