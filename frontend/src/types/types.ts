@@ -49,12 +49,6 @@ export interface PermissionCategory {
   permissions: Permission[];
 }
 
-export interface BannedItem {
-  id: string | number;
-  name: string;
-  type: "product" | "category" | "subcategory";
-  image?: string;
-}
 
 export interface AccordionData {
   id: string; // Unique ID for key and manipulation
