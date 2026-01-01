@@ -10,8 +10,6 @@ import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dtos/Login.dto';
 import { User } from 'src/schemas/Users.schema';
 
-
-
 @Injectable()
 export class AuthService {
   constructor(
@@ -37,7 +35,7 @@ export class AuthService {
       if (!user.requestSent) {
         throw new ForbiddenException({
           code: 'USER_NOT_APPROVED_REQUEST_NOT_SENT',
-          userId: user._id, 
+          userId: user._id,
         });
       }
 
@@ -62,17 +60,17 @@ export class AuthService {
   }
 
   async markRequestSent(userId: string) {
-  const user = await this.userModel.findById(userId);
-  if (!user) {
-    throw new NotFoundException('User not found');
-  }
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
 
-  if (user.requestSent) {
-    return { message: 'Request already sent' };
-  }
+    if (user.requestSent) {
+      return { message: 'Request already sent' };
+    }
 
-  user.requestSent = true;
-  await user.save();
-  return { message: 'Request marked as sent' };
-}
+    user.requestSent = true;
+    await user.save();
+    return { message: 'Request marked as sent' };
+  }
 }
