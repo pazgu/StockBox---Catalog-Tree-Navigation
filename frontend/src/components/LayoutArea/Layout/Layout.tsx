@@ -3,17 +3,16 @@ import { Routes, Route } from "react-router-dom";
 import About from "../../Pages/HomeArea/About/About";
 import Login from "../../Pages/AuthArea/Login/Login";
 import Header from "../Header/Header";
-import Categories from "../../Pages/CatArea/Categories/Categories";
 import AllUsers from "../../Pages/UserControlArea/AllUsers/AllUsers";
 import SingleCat from "../../Pages/CatArea/SingleCat/SingleCat";
 import Permissions from "../../Pages/UserControlArea/Permissions/Permissions";
 import NewUser from "../../Pages/UserControlArea/NewUser/NewUser";
 import SingleProd from "../../Pages/ProductArea/SingleProd/SingleProd";
 import Page404 from "../../Pages/Page404/Page404";
+import { Categories } from "../../Pages/CatArea/Categories/Categories";
 // import GroupControl from "../../Pages/UserControlArea/GroupControl/GroupControl";
 // import Favorites from "../../Pages/CatArea/Favorites/Favorites";
 import { Toaster } from "sonner";
-import SubCat from "../../../components/Pages/CatArea/SubCats/SubCat/SubCat";
 import Footer from "../Footer/Footer";
 interface LayoutProps {}
 
@@ -32,7 +31,6 @@ const Layout: FC<LayoutProps> = () => {
             path="/categories/single-cat"
             element={<SingleCat></SingleCat>}
           />
-          <Route path="/subcat/:subcatName" element={<SubCat />} />
           <Route path="/categories/*" element={<SingleCat />} />
 
           <Route path="/new-user" element={<NewUser></NewUser>} />
