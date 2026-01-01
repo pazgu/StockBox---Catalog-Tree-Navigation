@@ -33,14 +33,12 @@ const GroupControl: React.FC = () => {
 
   const [groups, setGroups] = useState<Group[]>([]);
 
-  // Redirect non-admins
   useEffect(() => {
     if (role !== "editor") {
       navigate("/");
     }
   }, [navigate, role]);
 
-  // Focus input when modal opens
   useEffect(() => {
     if (showAddGroupModal && inputRef.current) inputRef.current.focus();
   }, [showAddGroupModal]);

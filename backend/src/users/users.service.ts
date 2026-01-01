@@ -3,6 +3,7 @@ import { Model } from 'mongoose';
 import { User } from 'src/schemas/Users.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { CreateUserDto } from './dto/createUser.dto';
+
 @Injectable()
 export class UsersService {
   constructor(@InjectModel(User.name) private userModel: Model<User>) {}

@@ -25,7 +25,7 @@ export class CategoriesService {
     return categories;
   }
 
-   async getSubCategories(parentCategory: string) {
+  async getSubCategories(parentCategory: string) {
     const regex = new RegExp(`^/categories/${parentCategory}/[^/]+$`);
     const subCategories = await this.categoryModel.find({
       categoryPath: regex,
@@ -36,7 +36,7 @@ export class CategoriesService {
   async deleteCategory(id: string) {
     const category = await this.categoryModel.findById(id);
     if (!category) {
-      throw new NotFoundException ('Category not found');
+      throw new NotFoundException('Category not found');
     }
 
     const categoryPath = category.categoryPath;
@@ -57,7 +57,6 @@ export class CategoriesService {
       deletedCategoryPath: categoryPath,
     };
   }
-
 
   async updateCategory(id: string, updateCategoryDto: UpdateCategoryDto) {
     // Find the category by ID

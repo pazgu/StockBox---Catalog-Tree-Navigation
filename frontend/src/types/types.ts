@@ -60,10 +60,10 @@ export interface BannedItem {
 }
 
 export interface AccordionData {
-  id: string; // Unique ID for key and manipulation
+  id: string; 
   title: string;
   content: string;
-  isEditable: boolean; // Flag to indicate if content is editable (like the default ones)
+  isEditable: boolean; 
 }
 export interface UploadedFile {
   id: string;
@@ -73,9 +73,15 @@ export interface UploadedFile {
   size: number;
 }
 
-// Folder interface
 export interface FileFolder {
   id: string;
   name: string;
   files: UploadedFile[];
 }
+
+export type AddCategoryResult = {
+  name: string;
+  image: string;
+};
+
+export type Point = { x: number; y: number };

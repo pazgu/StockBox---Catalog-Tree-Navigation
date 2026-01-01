@@ -1,12 +1,12 @@
-import React, { FC, useState, ChangeEvent, useEffect } from "react";
+import React, { FC, useState, ChangeEvent } from "react";
 import canoneos2000d from "../../../../assets/canon-eos2000d.png";
 import canoneos4000d from "../../../../assets/canon-eos4000d.png";
 import canoneos250d from "../../../../assets/canon-eos250d.png";
 import canoneosr10 from "../../../../assets/canon-eosr10.png";
 import canoneosr50 from "../../../../assets/canon-eosr50.png";
 import canoneosr100 from "../../../../assets/canon-eosr100.png";
-import { Heart, Pen, Trash, MoveRight } from "lucide-react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Heart, Pen, Trash } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
 import Breadcrumbs from "../../../LayoutArea/Breadcrumbs/Breadcrumbs";
@@ -162,7 +162,6 @@ const SingleCat: FC = () => {
     navigate("/permissions");
   };
 
-  // Selection mode functions
   const toggleSelectionMode = () => {
     setIsSelectionMode(!isSelectionMode);
     setSelectedProducts([]);
@@ -209,7 +208,6 @@ const SingleCat: FC = () => {
   };
 
   const confirmMove = (destination: string) => {
-    // מסיר את המוצרים שנבחרו מהמערך
     setCameras((prev) =>
       prev.filter((cam) => !selectedProducts.includes(cam.id))
     );
