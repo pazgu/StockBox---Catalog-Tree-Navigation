@@ -1,6 +1,6 @@
 import React from "react";
 import { toast } from "sonner";
-import { Category } from "../../Categories"; // or wherever your Category type lives
+import { Category } from "../../Categories";
 import {
   getBaseCoverScale,
   clampOffsetToCircle,
@@ -10,9 +10,9 @@ import useBlockBrowserZoom from "../../useBlockBrowserZoom";
 
 type Props = {
   isOpen: boolean;
-  category: Category; // incoming category to edit
-  onClose: () => void; // close without saving
-  onSave: (updated: Category) => void; // called with updated category
+  category: Category; 
+  onClose: () => void;
+  onSave: (updated: Category) => void;
 };
 
 const CROP_BOX = 256;
@@ -23,12 +23,11 @@ const EditCategoryModal: React.FC<Props> = ({
   onClose,
   onSave,
 }) => {
-  const [name, setName] = React.useState(category.categoryName); // not category.name
+  const [name, setName] = React.useState(category.categoryName);
   const [previewImage, setPreviewImage] = React.useState<string>(
     category.categoryImage
-  ); // not category.image
+  );
 
-  // cropper state
   const [isEditCropperOpen, setIsEditCropperOpen] = React.useState(false);
   const [editRawImage, setEditRawImage] =
     React.useState<HTMLImageElement | null>(null);
@@ -155,8 +154,8 @@ const EditCategoryModal: React.FC<Props> = ({
   const handleSave = () => {
     const updated: Category = {
       ...category,
-      categoryName: name.trim(), // not name
-      categoryImage: previewImage, // not image
+      categoryName: name.trim(), 
+      categoryImage: previewImage, 
     };
     onSave(updated);
   };

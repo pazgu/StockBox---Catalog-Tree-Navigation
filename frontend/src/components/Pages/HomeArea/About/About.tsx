@@ -7,7 +7,6 @@ import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
 import isEqual from "lodash/isEqual";
 import {
-  CheckCircle2,
   Compass,
   Edit2,
   Check,
@@ -51,7 +50,6 @@ const About: FC<AboutProps> = () => {
   const navigate = useNavigate();
   const { role } = useUser();
 
-  // refs for file inputs
   const replaceInputRef = React.useRef<HTMLInputElement>(null);
   const addInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -115,14 +113,12 @@ const About: FC<AboutProps> = () => {
   const sectionRefs = React.useRef<(HTMLDivElement | null)[]>([]);
   const dragCounterRef = React.useRef(0);
 
-  // Image wrapping
   const imageWrapRef = React.useRef<HTMLDivElement | null>(null);
   const goPrev = () =>
     setCurrentImageIndex((i) => (i - 1 + images.length) % images.length);
   const goNext = () => setCurrentImageIndex((i) => (i + 1) % images.length);
   const touchStartXRef = React.useRef<number | null>(null);
 
-  // Keyboard navigation between images
   React.useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const el = imageWrapRef.current;
@@ -145,7 +141,6 @@ const About: FC<AboutProps> = () => {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [goPrev, goNext]);
 
-  // Editable features (legacy compatibility for child components)
   const [editableFeatures, setEditableFeatures] = useState([
     {
       icon: "כוכב",
@@ -187,7 +182,6 @@ const About: FC<AboutProps> = () => {
     null
   );
 
-  // Add section
   const handleAddSection = (
     afterIndex: number,
     type: "features" | "vision"
@@ -216,7 +210,6 @@ const About: FC<AboutProps> = () => {
     ]);
   };
 
-  // Remove section
   const removeSection = (index: number) => {
     if (sections.length <= 1) {
       toast.error("לא ניתן למחוק את כל המקטעים");
@@ -225,14 +218,12 @@ const About: FC<AboutProps> = () => {
     setSections((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // Update section title
   const updateSectionTitle = (index: number, title: string) => {
     setSections((prev) =>
       prev.map((s, i) => (i === index ? { ...s, title } : s))
     );
   };
 
-  // Update intro content
   const updateIntroContent = (index: number, content: string) => {
     setSections((prev) =>
       prev.map((s, i) =>
@@ -241,7 +232,6 @@ const About: FC<AboutProps> = () => {
     );
   };
 
-  // Section drag handlers
   const handleSectionDragStart = (index: number) => {
     setDraggedSectionIndex(index);
     dragCounterRef.current = 0;
@@ -253,7 +243,6 @@ const About: FC<AboutProps> = () => {
 
     setDragOverIndex(index);
 
-    // Only reorder every 5th call to reduce jankiness
     dragCounterRef.current++;
     if (dragCounterRef.current % 5 !== 0) return;
 
@@ -265,17 +254,14 @@ const About: FC<AboutProps> = () => {
     });
     setDraggedSectionIndex(index);
 
-    // Auto-scroll when dragging near edges
     const element = sectionRefs.current[index];
     if (element) {
       const rect = element.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
 
-      // Scroll up if near top
       if (rect.top < 200) {
         window.scrollBy({ top: -30, behavior: "auto" });
       }
-      // Scroll down if near bottom
       else if (rect.bottom > viewportHeight - 200) {
         window.scrollBy({ top: 30, behavior: "auto" });
       }
@@ -356,12 +342,10 @@ const About: FC<AboutProps> = () => {
     setOriginalData({ sections, images: editableImages });
   }, []);
 
-  // Keep refs array in sync with sections length
   useEffect(() => {
     sectionRefs.current = sectionRefs.current.slice(0, sections.length);
   }, [sections.length]);
 
-  // Image handlers
   const handleReplaceImage = (
     index: number,
     event: React.ChangeEvent<HTMLInputElement>

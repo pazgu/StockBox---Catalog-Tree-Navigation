@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, X, Plus, Trash2, Package, FolderTree, Tag, AlertCircle, Settings } from 'lucide-react';
+import { Search, X, Plus, Trash2, Package, FolderTree, Tag, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { BannedItem } from '../../../../types/types';
 import canoneos2000d from "../../../../assets/canon-eos2000d.png";
@@ -15,7 +15,6 @@ interface ManageBannedItemsModalProps {
   onUpdateBannedItems: (items: BannedItem[]) => void;
 }
 
-// Mock data לכל הפריטים האפשריים במערכת
 const allAvailableItems: BannedItem[] = [
   { id: 1, name: "מצלמה דיגיטלית Canon EOS 250D DSLR", type: "product", image: canoneos2000d },
   { id: 2, name: "מצלמה Sony Alpha A6400", type: "product", image: "/assets/images/camera-sony-a6400.jpg" },

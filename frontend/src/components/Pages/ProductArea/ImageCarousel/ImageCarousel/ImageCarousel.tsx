@@ -31,14 +31,12 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
   const replaceId = useId();
   const addId = useId();
 
-  // Keep index valid if the list size changes
   useEffect(() => {
     if (currentImageIndex > productImages.length - 1) {
       setCurrentImageIndex(Math.max(0, productImages.length - 1));
     }
   }, [productImages.length, currentImageIndex, setCurrentImageIndex]);
 
-  // Keyboard navigation (left/right)
   const onKeyDown = useCallback(
     (e: KeyboardEvent) => {
       const within =
@@ -63,7 +61,6 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [onKeyDown]);
 
-  // Touch swipe
   const onTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
   };
@@ -71,7 +68,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
     if (touchStartX.current == null) return;
     const delta = e.changedTouches[0].clientX - touchStartX.current;
     touchStartX.current = null;
-    const threshold = 40; // px
+    const threshold = 40;
     if (delta > threshold) prevImage();
     if (delta < -threshold) nextImage();
   };
@@ -82,7 +79,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
     <div
       ref={containerRef}
       className="relative bg-gray-50 p-6 rounded-xl mb-4 overflow-hidden group"
-      tabIndex={0}               // focusable for keyboard navigation
+      tabIndex={0}
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
       aria-label={`${title || "גלריה"} - גלריית תמונות`}
@@ -137,7 +134,6 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
       )}
 
       {isEditing && (
-        // IMPORTANT: overlay no longer blocks clicks (pointer-events-none)
         <div className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-t from-black/70 via-black/30 to-transparent flex items-end justify-center pb-3 z-20 transition-all duration-300">
           <div className="pointer-events-auto flex gap-2 flex-wrap justify-center">
             {/* Replace */}

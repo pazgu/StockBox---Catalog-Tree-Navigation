@@ -26,16 +26,13 @@ const VisionSection: React.FC<VisionSectionProps> = ({
 }) => {
   const draggedIndexRef = React.useRef<number | null>(null);
 
-  // Refs for each row + its input
   const itemRefs = React.useRef<HTMLLIElement[]>([]);
   const inputRefs = React.useRef<HTMLInputElement[]>([]);
   const prevLen = React.useRef<number>(points.length);
 
-  // Keep arrays in sync with points length
   itemRefs.current.length = points.length;
   inputRefs.current.length = points.length;
 
-  // When a new point is added (length grew), scroll to it + focus its input
   React.useEffect(() => {
     if (!isEditing) {
       prevLen.current = points.length;
@@ -48,7 +45,6 @@ const VisionSection: React.FC<VisionSectionProps> = ({
 
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
-        // quick highlight pulse
         el.classList.add(
           "ring-2",
           "ring-stockblue",

@@ -9,7 +9,6 @@ type Feature = {
 
 type IconOption = { value: string; label: string };
 
-// IconMap is a map from your Hebrew icon value to a React component (Lucide)
 type IconMapType = { [key: string]: FC<{ size?: number }> };
 
 interface FeaturesSectionProps {
@@ -18,11 +17,10 @@ interface FeaturesSectionProps {
   onChangeTitle: (val: string) => void;
 
   features: Feature[];
-  onAdd: () => void; // parent will push a default feature
+  onAdd: () => void;
   onRemove: (index: number) => void;
   onChange: (index: number, field: "title" | "description", value: string) => void;
 
-  // Reorder callback: receives the entire, newly-ordered array
   onReorder: (next: Feature[]) => void;
 
   iconOptions: IconOption[];
@@ -44,31 +42,25 @@ const FeaturesSection: FC<FeaturesSectionProps> = ({
   iconOptions,
   IconMap,
 }) => {
-  // for DnD
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
-  // for scroll & focus after add
   const itemRefs = useRef<HTMLDivElement[]>([]);
   const titleInputRefs = useRef<HTMLInputElement[]>([]);
   const prevLenRef = useRef<number>(features.length);
 
-  // keep refs sized to features length
   useEffect(() => {
     itemRefs.current.length = features.length;
     titleInputRefs.current.length = features.length;
   }, [features.length]);
 
-  // detect "added item" and scroll + focus + highlight
   useEffect(() => {
     if (features.length > prevLenRef.current) {
       const newIndex = features.length - 1;
       const itemEl = itemRefs.current[newIndex];
       const inputEl = titleInputRefs.current[newIndex];
 
-      // scroll into view
       if (itemEl) {
         itemEl.scrollIntoView({ behavior: "smooth", block: "center" });
-        // temporary highlight ring
         itemEl.classList.add(
           "ring-2",
           "ring-stockblue",
@@ -85,7 +77,6 @@ const FeaturesSection: FC<FeaturesSectionProps> = ({
         }, 1200);
       }
 
-      // focus the title input
       if (inputEl) {
         inputEl.focus();
         inputEl.select();
@@ -95,12 +86,10 @@ const FeaturesSection: FC<FeaturesSectionProps> = ({
   }, [features.length]);
 
   const handleIconChange = (index: number, nextIcon: string) => {
-    // We only change the icon field; parent keeps the source of truth
     const next = features.map((f, i) => (i === index ? { ...f, icon: nextIcon } : f));
     onReorder(next);
   };
 
-  // DnD handlers
   const handleDragStart = (index: number) => setDraggedIndex(index);
 
   const handleDragOver = (e: React.DragEvent, overIndex: number) => {

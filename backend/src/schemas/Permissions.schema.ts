@@ -7,27 +7,24 @@ export enum EntityType {
 }
 
 @Schema({ timestamps: true })
-export class Permission{
-
-    @Prop({
+export class Permission {
+  @Prop({
     type: String,
     enum: EntityType,
-    })
-    entityType: EntityType;
+  })
+  entityType: EntityType;
 
-    @Prop({
+  @Prop({
     type: mongoose.Schema.Types.ObjectId,
     required: true,
     refPath: 'entityType',
-    })
-    entityId: mongoose.Types.ObjectId;
+  })
+  entityId: mongoose.Types.ObjectId;
 
-    @Prop({
+  @Prop({
     type: mongoose.Schema.Types.ObjectId,
     required: true,
     index: true,
-    })
-    allowed: mongoose.Types.ObjectId; 
-
-
+  })
+  allowed: mongoose.Types.ObjectId;
 }

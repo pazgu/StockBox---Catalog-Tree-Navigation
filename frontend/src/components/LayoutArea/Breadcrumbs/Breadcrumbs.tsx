@@ -4,7 +4,7 @@ import catIcon from "../../../assets/newcat.png";
 import { FolderOpen } from "lucide-react";
 
 interface BreadcrumbsProps {
-  path?: string[]; // Optional path for dynamic pages (e.g., products)
+  path?: string[];
 }
 
 const Breadcrumbs: FC<BreadcrumbsProps> = ({ path }) => {
@@ -31,11 +31,8 @@ const Breadcrumbs: FC<BreadcrumbsProps> = ({ path }) => {
     index: number,
     segments: string[]
   ) => {
-    // If last segment and dynamic, show as-is (e.g., product title)
     if (index === segments.length - 1) return segment;
 
-    // If subcategory, decode URI
-    // If this is a dynamic product title (identifier-like segment), leave as-is
     const isDynamic =
       !segmentMap[segment.toLowerCase()] && /\d+|-/g.test(segment);
     if (isDynamic && index === segments.length) {
