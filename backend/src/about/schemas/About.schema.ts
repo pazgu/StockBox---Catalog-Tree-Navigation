@@ -20,8 +20,17 @@ export class AboutBlock {
   @Prop({ type: MongooseSchema.Types.Mixed, required: true })
   data: any;
 }
+export const AboutBlockSchema = SchemaFactory.createForClass(AboutBlock);
 
-const AboutBlockSchema = SchemaFactory.createForClass(AboutBlock);
+@Schema({ _id: false })
+export class AboutImage {
+  @Prop({ required: true })
+  url: string;
+
+  @Prop({ required: true })
+  public_id: string;
+}
+export const AboutImageSchema = SchemaFactory.createForClass(AboutImage);
 
 @Schema({ timestamps: true, collection: 'about' })
 export class About {
@@ -31,8 +40,8 @@ export class About {
   @Prop({ type: [AboutBlockSchema], default: [] })
   blocks: AboutBlock[];
 
-  @Prop({ type: [String], default: [] })
-  images: string[];
+  @Prop({ type: [AboutImageSchema], default: [] })
+  images: AboutImage[];
 }
 
 export const AboutSchema = SchemaFactory.createForClass(About);
