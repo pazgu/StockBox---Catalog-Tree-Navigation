@@ -99,16 +99,21 @@ const confirmBlock = async () => {
     const currentBlockStatus = user.isBlocked || false;
 
     try {
-      await blockUser(userId, !currentBlockStatus);
+
+      const updatedUser = await userService.block(userId, !currentBlockStatus);
+      
+
+      setUsers((prev) => prev.map((u) => (u._id === userId ? updatedUser : u)));
+      
       toast.success(currentBlockStatus ? "המשתמש שוחרר מהחסימה" : "המשתמש נחסם בהצלחה");
     } catch (error) {
       toast.error("אירעה שגיאה בעדכון סטטוס החסימה");
       console.error('Block error:', error);
     }
 
-      setBlockUserIndex(null);
-    }
-  };
+    setBlockUserIndex(null);
+  }
+};
   const handleApproveClick = (index: number) => setApproveUserIndex(index);
   const confirmApprove = () => {
     if (approveUserIndex !== null) {
