@@ -7,7 +7,6 @@ import { CreateUserDto } from './dto/createUser.dto';
 export class UsersController {
   constructor(private usersService: UsersService) {}
   @Post()
-  // method specified validation
   @UsePipes(new ValidationPipe())
   createUser(@Body() createUserDto: CreateUserDto) {
     return this.usersService.createUser(createUserDto);
@@ -29,5 +28,13 @@ export class UsersController {
     @Body() updateUserDto: Partial<CreateUserDto>,
   ) {
     return this.usersService.updateUser(id, updateUserDto);
+  }
+
+  @Patch(':id/block')
+  toggleBlockUser(
+    @Param('id') id: string,
+    @Body('isBlocked') isBlocked: boolean,
+  ) {
+    return this.usersService.toggleBlockUser(id, isBlocked);
   }
 }
