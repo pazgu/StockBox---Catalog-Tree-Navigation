@@ -128,14 +128,13 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
             <>
               {/* image */}
               <img
-                src={images[currentIndex]}
-                alt="StockBox preview"
-                className={`w-full h-full object-cover scale-105 ${
-                  isEditing
-                    ? ""
-                    : "transition-all duration-1000 ease-out hover:scale-110"
-                } pointer-events-none`}
-              />
+  src={toFullUrl(images[currentIndex])}
+  alt="StockBox preview"
+  className={`w-full h-full object-cover scale-105 ${
+    isEditing ? "" : "transition-all duration-1000 ease-out hover:scale-110"
+  } pointer-events-none`}
+/>
+
 
               {/* arrows (edit only) */}
               {isEditing && images.length > 1 && (
@@ -299,5 +298,14 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
     </aside>
   );
 };
+
+const API_BASE = "http://localhost:4000";
+
+const toFullUrl = (u: string) => {
+  if (!u) return "";
+  if (u.startsWith("http://") || u.startsWith("https://")) return u;
+  return `${API_BASE}${u}`; // "/about-uploads/..." -> "http://localhost:4000/about-uploads/..."
+};
+
 
 export default AboutImagesPanel;
