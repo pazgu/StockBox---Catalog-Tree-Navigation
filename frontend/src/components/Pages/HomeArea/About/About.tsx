@@ -63,7 +63,6 @@ const blocksToSections = (blocks: AboutBlock[]): SectionType[] => {
 }
 
 
-    // bullets
     return {
       id: b.id,
       type: "bullets",
@@ -143,16 +142,13 @@ const About: FC<AboutProps> = () => {
   const navigate = useNavigate();
   const { role } = useUser();
 
-  // refs for file inputs
   const replaceInputRef = React.useRef<HTMLInputElement>(null);
   const addInputRef = React.useRef<HTMLInputElement>(null);
 
 const [sections, setSections] = useState<SectionType[]>([]);
 
-// ✅ Track fields that changed but were NOT confirmed (pressed ✓)
 const [dirtyKeys, setDirtyKeys] = useState<Set<string>>(new Set());
 
-// ✅ Snapshot of last confirmed value per key (used to detect changes)
 const [confirmedSnapshot, setConfirmedSnapshot] = useState<Record<string, string>>({});
 
 const isDirty = (key: string) => dirtyKeys.has(key);
@@ -216,14 +212,12 @@ const toastErrorOnce = (msg: string) => {
   const sectionRefs = React.useRef<(HTMLDivElement | null)[]>([]);
   const dragCounterRef = React.useRef(0);
 
-  // Image wrapping
   const imageWrapRef = React.useRef<HTMLDivElement | null>(null);
   const goPrev = () =>
     setCurrentImageIndex((i) => (i - 1 + images.length) % images.length);
   const goNext = () => setCurrentImageIndex((i) => (i + 1) % images.length);
   const touchStartXRef = React.useRef<number | null>(null);
 
-  // Keyboard navigation between images
   React.useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const el = imageWrapRef.current;
@@ -336,7 +330,6 @@ const handleAddSection = (afterIndex: number, type: "features" | "bullets" | "pa
 };
 
 
-  // Remove section
   const removeSection = (index: number) => {
     if (sections.length <= 1) {
       toast.error("לא ניתן למחוק את כל המקטעים");
@@ -345,14 +338,12 @@ const handleAddSection = (afterIndex: number, type: "features" | "bullets" | "pa
     setSections((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // Update section title
   const updateSectionTitle = (index: number, title: string) => {
     setSections((prev) =>
       prev.map((s, i) => (i === index ? { ...s, title } : s))
     );
   };
 
-  // Update intro content
   const updateTextContent = (index: number, content: string) => {
   setSections((prev) =>
     prev.map((s, i) =>
@@ -381,7 +372,6 @@ const handleSectionDragStart = (index: number) => {
 
     setDragOverIndex(index);
 
-    // Only reorder every 5th call to reduce jankiness
     dragCounterRef.current++;
     if (dragCounterRef.current % 5 !== 0) return;
 
@@ -393,17 +383,14 @@ const handleSectionDragStart = (index: number) => {
     });
     setDraggedSectionIndex(index);
 
-    // Auto-scroll when dragging near edges
     const element = sectionRefs.current[index];
     if (element) {
       const rect = element.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
 
-      // Scroll up if near top
       if (rect.top < 200) {
         window.scrollBy({ top: -30, behavior: "auto" });
       }
-      // Scroll down if near bottom
       else if (rect.bottom > viewportHeight - 200) {
         window.scrollBy({ top: 30, behavior: "auto" });
       }
@@ -506,12 +493,10 @@ toast.success(TOAST.saveSuccess);
 
 
 
-  // Keep refs array in sync with sections length
   useEffect(() => {
     sectionRefs.current = sectionRefs.current.slice(0, sections.length);
   }, [sections.length]);
 
-  // Image handlers
   const handleReplaceImage = async (
   index: number,
   event: React.ChangeEvent<HTMLInputElement>
@@ -735,7 +720,6 @@ onClick={() => {
         )
       );
 
-      // ✅ Mark as dirty immediately so user must confirm before adding another
       const cardKey = mkKey("featureCard", section.id, newFeature.id);
       
       setDirtyKeys((prev) => {
@@ -810,7 +794,6 @@ onClick={() => {
         )
       );
 
-      // ✅ Mark as dirty immediately so user must confirm before adding another
       const bulletKey = mkKey("bulletText", section.id, newBullet.id);
       
       setDirtyKeys((prev) => {

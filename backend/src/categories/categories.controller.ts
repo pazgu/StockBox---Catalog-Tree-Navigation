@@ -28,7 +28,6 @@ export class CategoriesController {
     return await this.categoriesService.createCategory(createCategoryDto);
   }
 
-
   @Delete(':id')
   async deleteCategory(@Param('id') id: string) {
     return await this.categoriesService.deleteCategory(id);

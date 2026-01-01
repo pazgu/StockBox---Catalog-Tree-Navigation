@@ -52,6 +52,20 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  useEffect(() => {
+  const storedUser = localStorage.getItem("user");
+
+  if (storedUser) {
+    try {
+      setUser(JSON.parse(storedUser));
+    } catch {
+      localStorage.removeItem("user");
+      setUser(null);
+    }
+  }
+}, []);
+
+
 
   const blockUser = async (id: string, isBlocked: boolean) => {
   try {

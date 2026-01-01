@@ -1,5 +1,5 @@
 import React, { FC, useRef, useState } from 'react';
-import { X, Users, ChevronDown } from 'lucide-react';
+import { X, Users } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Group {
@@ -46,7 +46,6 @@ const AddGroup: FC<AddGroupProps> = ({ onClose, onSave }) => {
 
   };
 
-  // close dropdown slightly after blur so click can register
   const closeDropdownDelayed = () => setTimeout(() => setIsOpen(false), 120);
 
   return (
@@ -135,7 +134,7 @@ const AddGroup: FC<AddGroupProps> = ({ onClose, onSave }) => {
                           key={option}
                           type="button"
                           className="w-full text-right p-3 hover:bg-[#E8DFD2] transition-colors duration-150 border-b border-gray-100 last:border-b-0"
-                          onMouseDown={(e) => e.preventDefault()} // keep focus for onBlur delay
+                          onMouseDown={(e) => e.preventDefault()}
                           onClick={() => addUser(option)}
                         >
                           {option}
