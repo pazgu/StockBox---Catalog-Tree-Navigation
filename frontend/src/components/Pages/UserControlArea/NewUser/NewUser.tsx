@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { User } from "../../../../types/types"
 import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
+import { LucideX } from "lucide-react";
 
 const userSchema = z.object({
   userName: z
