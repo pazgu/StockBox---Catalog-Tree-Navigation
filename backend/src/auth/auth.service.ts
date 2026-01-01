@@ -36,11 +36,12 @@ export class AuthService {
         role: UserRole.VIEWER,
         approved: false,
         requestSent: false,
+        isBlocked: false,
       });
 
       throw new ForbiddenException({
-        code: 'USER_CREATED_NOT_APPROVED',
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+        code: 'USER_CREATED_NOT_APPROVED',
         userId: newUser._id,
       });
     }

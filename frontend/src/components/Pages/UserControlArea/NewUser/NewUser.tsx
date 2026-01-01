@@ -5,9 +5,10 @@ import { z } from "zod";
 import { motion } from "framer-motion";
 import { userService } from "../../../../services/UserService";
 import { toast } from "sonner";
-import { User } from "../../../../types/types"
+import { User } from "../../../../types/types";
 import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
+import { USER_ROLES } from "../../../../types/types";
 
 import { useUser } from "../../../../context/UserContext";
 const userSchema = z.object({
@@ -19,8 +20,8 @@ const userSchema = z.object({
       /^[א-תa-zA-Z\s]+$/,
       "שם משתמש יכול להכיל רק אותיות, מספרים וקו תחתון"
     ),
-    
-
+  firstName: z.string().min(1, "שם פרטי הוא שדה חובה"),
+  lastName: z.string().min(1, "שם משפחה הוא שדה חובה"),
   email: z
     .string()
     .min(1, "כתובת מייל היא שדה חובה")
@@ -30,18 +31,15 @@ const userSchema = z.object({
       "כתובת מייל לא תקינה"
     ),
   companyName: z.string().optional(),
-  role: z
-    .string()
-    .min(1, "סוג משתמש הוא שדה חובה")
-    .refine((val) => val === "viewer" || val === "editor", {
-      message: "סוג משתמש לא חוקי",
-    }),
-});
+
+role: z.string().refine((val) => USER_ROLES.includes(val as any), {
+    message: "סוג משתמש לא חוקי",
+  }),});
 
 type UserFormData = z.infer<typeof userSchema>;
 
 const NewUser: React.FC = () => {
-const { role, refreshUsers } = useUser();
+  const { role, refreshUsers } = useUser();
   const navigate = useNavigate();
   const goToAllUsers = () => {
     navigate("/AllUsers");
@@ -64,17 +62,18 @@ const { role, refreshUsers } = useUser();
 
   const onSubmit = async (data: UserFormData) => {
     try {
-      const newUser: User = {
-        firstName: "",
-        lastName: "",
+      const newUser: Omit<User, "_id"> = {
+        firstName: data.firstName,
+        lastName: data.lastName,
         userName: data.userName,
         email: data.email,
-        role: data.role as "editor" | "viewer",
-        approved: false,
-        requestSent: false,
+        role: data.role as User["role"],
+        approved: true,
+        requestSent: true,
+        isBlocked: false,
       };
 
-      userService.create(newUser);
+      await userService.create(newUser);
 
       reset();
       toast.success("משתמש נוסף בהצלחה!");
@@ -148,6 +147,62 @@ const { role, refreshUsers } = useUser();
 
             <div className="flex flex-col min-w-[320px] max-w-[380px]">
               <label
+                htmlFor="firstName"
+                className="mb-2 text-sm font-semibold text-gray-700 rtl text-right"
+              >
+                שם פרטי
+              </label>
+              <input
+                {...register("firstName")}
+                type="text"
+                id="firstName"
+                className={`py-3 px-4 border rounded-lg text-base outline-none transition-all duration-200 rtl text-right bg-white min-h-6 leading-6 ${
+                  errors.firstName
+                    ? "border-red-500 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]"
+                    : "border-gray-300 focus:border-[#0D305B] focus:shadow-[0_0_0_3px_rgba(13,48,91,0.1)]"
+                }`}
+              />
+              {errors.firstName && (
+                <motion.span
+                  className="text-red-500 text-[13px] mt-1.5 block text-right rtl font-medium opacity-100 transition-opacity duration-200"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  {errors.firstName.message}
+                </motion.span>
+              )}
+            </div>
+
+            <div className="flex flex-col min-w-[320px] max-w-[380px]">
+              <label
+                htmlFor="lastName"
+                className="mb-2 text-sm font-semibold text-gray-700 rtl text-right"
+              >
+                שם משפחה
+              </label>
+              <input
+                {...register("lastName")}
+                type="text"
+                id="lastName"
+                className={`py-3 px-4 border rounded-lg text-base outline-none transition-all duration-200 rtl text-right bg-white min-h-6 leading-6 ${
+                  errors.lastName
+                    ? "border-red-500 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]"
+                    : "border-gray-300 focus:border-[#0D305B] focus:shadow-[0_0_0_3px_rgba(13,48,91,0.1)]"
+                }`}
+              />
+              {errors.lastName && (
+                <motion.span
+                  className="text-red-500 text-[13px] mt-1.5 block text-right rtl font-medium opacity-100 transition-opacity duration-200"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  {errors.lastName.message}
+                </motion.span>
+              )}
+            </div>
+
+            <div className="flex flex-col min-w-[320px] max-w-[380px]">
+              <label
                 htmlFor="email"
                 className="mb-2 text-sm font-semibold text-gray-700 rtl text-right"
               >
@@ -186,8 +241,9 @@ const { role, refreshUsers } = useUser();
               </label>
               <div className="relative">
                 <select
-                  {...register("role")}
                   id="role"
+                  {...register("role")}
+                  defaultValue=""
                   className={`cursor-pointer py-3 px-4 pl-10 border rounded-lg text-base outline-none transition-all duration-200 rtl text-right bg-white min-h-6 leading-6 appearance-none w-full ${
                     errors.role
                       ? "border-red-500 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]"
@@ -200,7 +256,9 @@ const { role, refreshUsers } = useUser();
                     backgroundSize: "20px",
                   }}
                 >
-                  <option value="">בחר סוג</option>
+                  <option value="" disabled>
+                    בחר סוג
+                  </option>
                   <option value="editor">מנהל</option>
                   <option value="viewer">משתמש</option>
                 </select>
@@ -211,7 +269,15 @@ const { role, refreshUsers } = useUser();
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                 >
-                  {errors.role.message}
+                  {errors.role?.message && (
+                    <motion.span
+                      className="text-red-500 text-xs mt-1 font-medium"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                    >
+                      {String(errors.role.message)}
+                    </motion.span>
+                  )}
                 </motion.span>
               )}
             </div>

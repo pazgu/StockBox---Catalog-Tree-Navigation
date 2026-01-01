@@ -10,9 +10,15 @@ export const userService = {
   },
 
   create: async (user: User): Promise<User> => {
+  try {
     const { data } = await axios.post<User>(API_URL, user);
     return data;
-  },
+  } catch (err) {
+    console.error("Error creating user:", err);
+    throw err; 
+  }
+},
+
 
   update: async (id: string, updates: Partial<User>): Promise<User> => {
     const { data } = await axios.patch<User>(`${API_URL}/${id}`, updates);

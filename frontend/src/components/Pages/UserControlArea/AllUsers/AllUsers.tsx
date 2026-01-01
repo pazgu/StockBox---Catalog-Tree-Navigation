@@ -20,7 +20,6 @@ interface AllUsersProps {}
 const AllUsers: FC<AllUsersProps> = () => {
   const navigate = useNavigate();
   const [users, setUsers] = useState<User[]>([]);
-  const role = localStorage.getItem("role") as "editor" | "viewer" | null;
   useEffect(() => {
     userService.getAll().then(setUsers);
   }, []);

@@ -1,4 +1,6 @@
-export type UserRole = "editor" | "viewer";
+export const USER_ROLES = ["editor", "viewer"] as const;
+
+export type UserRole = (typeof USER_ROLES)[number];
 
 export type BannedEntityType = "product" | "category" | "subcategory";
 
@@ -24,7 +26,7 @@ export interface User {
   userName: string;
   email: string;
   approved?: boolean;
-  role: "editor" | "viewer";
+  role: UserRole;
   requestSent?: boolean;
   isBlocked?: boolean;
 
