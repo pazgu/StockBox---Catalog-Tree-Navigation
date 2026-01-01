@@ -9,7 +9,8 @@ import { toast } from "sonner";
 interface LoginProps {}
 
 const Login: FC<LoginProps> = () => {
- 
+ const { setUser } = useUser();
+
 const handleLogin = async () => {
 
   if (!userName.trim()) {
@@ -34,34 +35,30 @@ const handleLogin = async () => {
           authService.setSession(accessToken, user);
 
           toast.success("התחברת בהצלחה");
+          setUser(user);
           navigate("/"); 
         }
   } catch (error: any) {
     const code = error.response?.data?.code;
+    const userId = error.response?.data?.userId;
 
     
-    if (code === "USER_NOT_FOUND") {
-      toast.error("משתמש לא קיים");
+    if (code === "USER_CREATED_NOT_APPROVED") {
+       toast.info("משתמש חדש נוצר – נשלחת בקשת אישור");
+
+    openApprovalMail(); 
+
+    await authService.markRequestSent(userId);
+
+    setuserName("");
+    setEmail("");
     } 
     else if (code === "USER_NOT_APPROVED_REQUEST_SENT") {
       toast.info("משתמש לא מאושר – בקשתך כבר נשלחה");
     } 
     else if (code === "USER_NOT_APPROVED_REQUEST_NOT_SENT") {
 
-      const userId = error.response?.data?.userId;
-
-      const emailTo = "Superstockbox@outlook.com";
-      const subject = encodeURIComponent("בקשה לאישור משתמש");
-      const body = encodeURIComponent(
-        `שלום,
-
-          אני מבקש אישור משתמש למערכת StockBox.
-
-          תודה`
-                );
-
-      window.location.href = `mailto:${emailTo}?subject=${subject}&body=${body}`;
-     
+        openApprovalMail();
 
       if (userId) {
         authService
@@ -77,6 +74,17 @@ const handleLogin = async () => {
   }
 };
 
+const openApprovalMail = () => {
+  const emailTo = "Superstockbox@outlook.com";
+  const subject = encodeURIComponent("בקשה לאישור משתמש");
+  const body = encodeURIComponent(`שלום,
+
+אני מבקש אישור משתמש למערכת StockBox.
+
+תודה`);
+
+  window.location.href = `mailto:${emailTo}?subject=${subject}&body=${body}`;
+};
 
  const navigate = useNavigate();
 
@@ -92,6 +100,7 @@ const handleLogin = async () => {
 
   useEffect(() => {
     if (role === "editor") {
+
       navigate("/");
     }
   }, [navigate, role]);

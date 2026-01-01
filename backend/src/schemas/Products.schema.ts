@@ -2,7 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
 @Schema({ timestamps: true })
 export class Product {
-  @Prop({ required: true ,unique:true})
+  @Prop({ required: true, unique: true })
   productName: string;
 
   @Prop({ required: true })

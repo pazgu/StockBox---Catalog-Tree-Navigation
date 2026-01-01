@@ -28,12 +28,12 @@ const Header: React.FC<HeaderProps> = ({
   const location = useLocation();
   const navigate = useNavigate();
   const { role } = useUser();
-  // Close mobile menu on route change
+
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location]);
 
-  // Handle scroll effect
+
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
@@ -42,7 +42,6 @@ const Header: React.FC<HeaderProps> = ({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Close mobile menu on escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -93,8 +92,8 @@ const Header: React.FC<HeaderProps> = ({
       <header
         className={`fixed top-0 w-full transition-all duration-300 z-50 flex items-center justify-between px-6 ${
           isScrolled
-            ? "bg-[#0D305B]/95 backdrop-blur-md shadow-xl h-32" // taller on scroll
-            : "bg-[#0D305B] shadow-lg h-40" // taller when at top
+            ? "bg-[#0D305B]/95 backdrop-blur-md shadow-xl h-32" 
+            : "bg-[#0D305B] shadow-lg h-40" 
         }`}
       >
         <div className="container mx-auto px-4">

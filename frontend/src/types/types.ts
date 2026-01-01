@@ -1,4 +1,6 @@
-export type UserRole = "editor" | "viewer";
+export const USER_ROLES = ["editor", "viewer"] as const;
+
+export type UserRole = (typeof USER_ROLES)[number];
 
 export type BannedEntityType = "product" | "category" | "subcategory";
 
@@ -7,6 +9,7 @@ export interface BannedItem {
   name: string;
   type: BannedEntityType;
   groupId?: string;
+  image?: string; 
 }
 
 export const mockBannedItems: BannedItem[] = [
@@ -23,8 +26,10 @@ export interface User {
   userName: string;
   email: string;
   approved?: boolean;
-  role: "editor" | "viewer";
+  role: UserRole;
   requestSent?: boolean;
+  isBlocked?: boolean;
+
 }
 export interface Group {
   id: string;
@@ -49,18 +54,12 @@ export interface PermissionCategory {
   permissions: Permission[];
 }
 
-export interface BannedItem {
-  id: string | number;
-  name: string;
-  type: "product" | "category" | "subcategory";
-  image?: string;
-}
 
 export interface AccordionData {
-  id: string; // Unique ID for key and manipulation
+  id: string; 
   title: string;
   content: string;
-  isEditable: boolean; // Flag to indicate if content is editable (like the default ones)
+  isEditable: boolean; 
 }
 export interface UploadedFile {
   id: string;
@@ -70,9 +69,15 @@ export interface UploadedFile {
   size: number;
 }
 
-// Folder interface
 export interface FileFolder {
   id: string;
   name: string;
   files: UploadedFile[];
 }
+
+export type AddCategoryResult = {
+  name: string;
+  image: string;
+};
+
+export type Point = { x: number; y: number };
