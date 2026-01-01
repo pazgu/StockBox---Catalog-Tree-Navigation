@@ -73,8 +73,6 @@ const NewUser: React.FC = () => {
         isBlocked: false,
       };
 
-      console.log("Submitting new user:", newUser);
-
       await userService.create(newUser);
 
       reset();

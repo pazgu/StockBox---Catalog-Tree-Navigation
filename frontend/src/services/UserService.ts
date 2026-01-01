@@ -11,9 +11,7 @@ export const userService = {
 
   create: async (user: User): Promise<User> => {
   try {
-    console.log("Sending user to backend:", user); 
     const { data } = await axios.post<User>(API_URL, user);
-    console.log("Backend response:", data); 
     return data;
   } catch (err) {
     console.error("Error creating user:", err);
