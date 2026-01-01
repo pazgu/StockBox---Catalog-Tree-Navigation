@@ -15,8 +15,7 @@ export class UsersService {
     return newUser.save();
   }
 
-   async createUserFromLogin(createUserFromLoginDto: CreateUserDto) {
-    
+  async createUserFromLogin(createUserFromLoginDto: CreateUserDto) {
     const newUser = new this.userModel(createUserFromLoginDto);
     return newUser.save();
   }

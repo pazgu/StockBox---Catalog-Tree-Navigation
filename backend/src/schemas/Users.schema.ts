@@ -13,7 +13,7 @@ export class User {
   @Prop({ required: true })
   lastName: string;
 
-  @Prop({ required: true ,unique:true})
+  @Prop({ required: true, unique: true })
   userName: string;
 
   @Prop({ required: true, unique: true })
@@ -34,6 +34,8 @@ export class User {
 
   @Prop({ required: true, default: false })
   requestSent: boolean;
+  @Prop({ required: true, default: false })
+  isBlocked: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

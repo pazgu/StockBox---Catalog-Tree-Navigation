@@ -2,7 +2,6 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -16,7 +15,7 @@ export class AuthService {
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<User>,
     private readonly jwtService: JwtService,
-    private readonly usersService:UsersService
+    private readonly usersService: UsersService,
   ) {}
 
   async login(dto: LoginDto) {
@@ -28,19 +27,19 @@ export class AuthService {
       .select('_id role approved requestSent');
 
     if (!user) {
-        
-        const newUser = await this.usersService.createUserFromLogin({
+      const newUser = await this.usersService.createUserFromLogin({
         email: dto.email,
         userName: dto.userName,
-        firstName:'xxx',
-        lastName:'xxx',
-        role:UserRole.VIEWER,
-        approved:false,
-        requestSent:false
+        firstName: 'xxx',
+        lastName: 'xxx',
+        role: UserRole.VIEWER,
+        approved: false,
+        requestSent: false,
+        isBlocked: false,
       });
 
       throw new ForbiddenException({
-        code: "USER_CREATED_NOT_APPROVED",
+        code: 'USER_CREATED_NOT_APPROVED',
         userId: newUser._id,
       });
     }

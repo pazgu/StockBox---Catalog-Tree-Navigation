@@ -1,6 +1,7 @@
 export const USER_ROLES = ["editor", "viewer"] as const;
 
 export type UserRole = (typeof USER_ROLES)[number];
+
 export type BannedEntityType = "product" | "category" | "subcategory";
 
 export interface BannedItem {
@@ -26,6 +27,7 @@ export interface User {
   approved?: boolean;
   role: UserRole;
   requestSent?: boolean;
+  isBlocked?: boolean;
 }
 export interface Group {
   id: string;

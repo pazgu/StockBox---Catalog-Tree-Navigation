@@ -30,8 +30,10 @@ const userSchema = z.object({
       "כתובת מייל לא תקינה"
     ),
   companyName: z.string().optional(),
-  role: z.enum(USER_ROLES),
-});
+
+role: z.string().refine((val) => USER_ROLES.includes(val as any), {
+    message: "סוג משתמש לא חוקי",
+  }),});
 
 type UserFormData = z.infer<typeof userSchema>;
 
@@ -60,13 +62,14 @@ const NewUser: React.FC = () => {
   const onSubmit = async (data: UserFormData) => {
     try {
       const newUser: Omit<User, "_id"> = {
-        firstName: "",
-        lastName: "",
+        firstName: data.firstName,
+        lastName: data.lastName,
         userName: data.userName,
         email: data.email,
-        role: data.role,
+        role: data.role as User["role"],
         approved: true,
         requestSent: true,
+        isBlocked: false,
       };
 
       console.log("Submitting new user:", newUser);
