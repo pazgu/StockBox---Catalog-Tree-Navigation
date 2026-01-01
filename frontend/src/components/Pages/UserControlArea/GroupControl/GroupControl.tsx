@@ -9,8 +9,9 @@ import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
 import axios from "axios";
+import { environment } from "../../../../environments/environment.development";
 const api = axios.create({
-  baseURL: "http://localhost:4000",
+  baseURL: environment.API_URL,
 });
 
 const GroupControl: React.FC = () => {
