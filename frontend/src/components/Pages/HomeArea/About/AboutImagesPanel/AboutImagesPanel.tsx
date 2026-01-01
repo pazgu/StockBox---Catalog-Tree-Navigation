@@ -4,16 +4,14 @@ import { UserRole } from "@/types/types";
 
 type AboutImagesPanelProps = {
   isEditing: boolean;
-  role?: UserRole | null; // <-- accept null
+  role?: UserRole | null;
 
   images: string[];
   currentIndex: number;
 
-  // navigation
   onPrev: () => void;
   onNext: () => void;
 
-  // mutations
   onRemoveImage: (index: number) => void;
   onClearAll: () => void;
   onReplaceImage: (
@@ -22,7 +20,6 @@ type AboutImagesPanelProps = {
   ) => void;
   onAddImages: (e: React.ChangeEvent<HTMLInputElement>) => void;
 
-  // optional shared refs from parent (can be internal if you prefer)
   replaceInputRef?:
     | React.RefObject<HTMLInputElement>
     | React.MutableRefObject<HTMLInputElement | null>;
@@ -45,7 +42,6 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
   replaceInputRef,
   addInputRef,
 }) => {
-  // local refs for keyboard/swap & fallbacks for inputs
   const wrapRef = React.useRef<HTMLDivElement | null>(null);
   const touchStartXRef = React.useRef<number | null>(null);
   const localReplaceRef = React.useRef<HTMLInputElement>(null);
@@ -54,7 +50,6 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
   const replaceRef = replaceInputRef ?? localReplaceRef;
   const addRef = addInputRef ?? localAddRef;
 
-  // keyboard ← →
   React.useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const el = wrapRef.current;
@@ -76,7 +71,6 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [onPrev, onNext]);
 
-  // touch swipe
   const onTouchStart = (e: React.TouchEvent) => {
     touchStartXRef.current = e.touches[0].clientX;
   };
@@ -129,7 +123,6 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
 
           {images.length > 0 ? (
             <>
-              {/* image */}
               <img
   src={toFullUrl(images[currentIndex])}
   alt="StockBox preview"
@@ -139,7 +132,6 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
 />
 
 
-              {/* arrows (edit only) */}
               {isEditing && images.length > 1 && (
                 <>
                   <button
@@ -259,7 +251,6 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
               )}
             </>
           ) : (
-            // empty state
             <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-6">
               <button
                 onClick={() => addRef.current?.click()}
@@ -308,7 +299,7 @@ const API_BASE = "http://localhost:4000";
 const toFullUrl = (u: string) => {
   if (!u) return "";
   if (u.startsWith("http://") || u.startsWith("https://")) return u;
-  return `${API_BASE}${u}`; // "/about-uploads/..." -> "http://localhost:4000/about-uploads/..."
+  return `${API_BASE}${u}`; 
 };
 
 
