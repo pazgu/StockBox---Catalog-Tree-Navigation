@@ -1,17 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
-import { UserRole } from "../types/types";
+import { User, UserRole } from "../types/types";
 
-export interface User {
-  _id?: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  approved?: boolean;
-  role: "editor" | "viewer";
-  requestSent?: boolean;
-  isBlocked?: boolean;
-}
 
 interface UserContextType {
   role: UserRole | null;
@@ -43,6 +33,18 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       console.error("Error fetching users:", err);
     }
   };
+
+  const blockUser = async (id: string, isBlocked: boolean) => {
+  try {
+    const response = await axios.patch<User>(`${API_URL}/${id}/block`, { 
+      isBlocked 
+    });
+    setUsers((prev) => prev.map((u) => (u._id === id ? response.data : u)));
+  } catch (err) {
+    console.error("Error blocking user:", err);
+    throw err;
+  }
+};
 
   useEffect(() => {
     refreshUsers();
