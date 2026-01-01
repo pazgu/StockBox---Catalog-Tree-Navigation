@@ -6,11 +6,10 @@ interface UserContextType {
   role: UserRole | null;
   setRole: (role: UserRole | null) => void;
   users: User[];
-  addUser: (user: User) => Promise<void>;
-  updateUser: (id: string, updates: Partial<User>) => Promise<void>;
-  deleteUser: (id: string) => Promise<void>;
+  setUsers: React.Dispatch<React.SetStateAction<User[]>>;
   refreshUsers: () => Promise<void>;
 }
+
 
 const UserContext = createContext<UserContextType>(null!);
 
@@ -32,11 +31,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       console.error("Error fetching users:", err);
     }
   };
-  const useUser = () => {
-    const context = useContext(UserContext);
-    if (!context) throw new Error("useUser must be used within UserProvider");
-    return context;
-  };
 
   useEffect(() => {
     refreshUsers();
@@ -55,35 +49,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     else localStorage.removeItem("role");
   }, [role]);
 
-  // Add a user via POST
-  const addUser = async (user: User) => {
-    try {
-      const response = await axios.post<User>(API_URL, user);
-      setUsers((prev) => [...prev, response.data]);
-    } catch (err) {
-      console.error("Error adding user:", err);
-    }
-  };
-
-  // Update a user via PATCH
-  const updateUser = async (id: string, updates: Partial<User>) => {
-    try {
-      const response = await axios.patch<User>(`${API_URL}/${id}`, updates);
-      setUsers((prev) => prev.map((u) => (u._id === id ? response.data : u)));
-    } catch (err) {
-      console.error("Error updating user:", err);
-    }
-  };
-
-  // Delete a user via DELETE
-  const deleteUser = async (id: string) => {
-    try {
-      await axios.delete(`${API_URL}/${id}`);
-      setUsers((prev) => prev.filter((u) => u._id !== id));
-    } catch (err) {
-      console.error("Error deleting user:", err);
-    }
-  };
 
   return (
     <UserContext.Provider
@@ -91,9 +56,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         role,
         setRole,
         users,
-        addUser,
-        updateUser,
-        deleteUser,
+        setUsers,
         refreshUsers,
       }}
     >
