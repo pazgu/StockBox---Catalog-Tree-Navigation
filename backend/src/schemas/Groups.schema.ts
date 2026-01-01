@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import mongoose from 'mongoose';
+import mongoose, { HydratedDocument } from 'mongoose';
+;
 @Schema({ timestamps: true })
 export class Group {
   @Prop({ required: true, unique: true })
@@ -10,3 +11,4 @@ export class Group {
 }
 
 export const GroupSchema = SchemaFactory.createForClass(Group);
+export type GroupDocument = HydratedDocument<Group>;

@@ -1,11 +1,11 @@
 import React, { FC, useEffect, useState } from "react";
 import Header from "../../../LayoutArea/Header/Header";
 import { useNavigate } from "react-router-dom";
-import { useUser } from "../../../../context/UserContext";
+import { userService } from "../../../../services/UserService";
 import { toast } from "sonner";
 import { Ban } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
-import { User } from "../../../../context/UserContext";
+import { User } from "../../../../types/types";
 
 const ROLE_OPTIONS: Array<{ value: User["role"]; label: string }> = [
   { value: "editor", label: "עורך" },
@@ -19,7 +19,11 @@ interface AllUsersProps {}
 
 const AllUsers: FC<AllUsersProps> = () => {
   const navigate = useNavigate();
-  const { users, deleteUser, updateUser, role } = useUser(); // get from usercontext
+  const [users, setUsers] = useState<User[]>([]);
+  const role = localStorage.getItem("role") as "editor" | "viewer" | null;
+  useEffect(() => {
+    userService.getAll().then(setUsers);
+  }, []);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
@@ -67,13 +71,14 @@ const AllUsers: FC<AllUsersProps> = () => {
     setDeleteUserIndex(index);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (deleteUserIndex !== null) {
       const userIdToDelete = currentUsers[deleteUserIndex]._id;
-      if (!userIdToDelete) {
-        return;
-      }
-      deleteUser(userIdToDelete);
+      if (!userIdToDelete) return;
+
+      await userService.remove(userIdToDelete);
+
+      setUsers((prev) => prev.filter((u) => u._id !== userIdToDelete));
 
       if (
         currentPage > Math.ceil((users.length - 1) / usersPerPage) &&
@@ -83,9 +88,10 @@ const AllUsers: FC<AllUsersProps> = () => {
       }
 
       setDeleteUserIndex(null);
-      toast.info(`המשתמש נמחק בהצלחה!`);
+      toast.info("המשתמש נמחק בהצלחה!");
     }
   };
+
   const confirmBlock = () => {
     if (blockUserIndex !== null) {
       const userId = Number(currentUsers[blockUserIndex]._id);
@@ -107,7 +113,7 @@ const AllUsers: FC<AllUsersProps> = () => {
       if (!userId) {
         return;
       }
-      updateUser(userId, { approved: true });
+      userService.update(userId, { approved: true });
       toast.success("המשתמש אושר בהצלחה!");
       setApproveUserIndex(null);
     }
@@ -135,7 +141,7 @@ const AllUsers: FC<AllUsersProps> = () => {
       if (!userToEdit._id) {
         return;
       }
-      updateUser(userToEdit._id, userToEdit);
+      userService.update(userToEdit._id, userToEdit);
       toast.success("המשתמש עודכן בהצלחה!");
       setShowEditModal(false);
       setUserToEdit(null);
@@ -311,7 +317,7 @@ const AllUsers: FC<AllUsersProps> = () => {
                 <div className="font-semibold text-[#0D305B]">
                   {user.firstName}
                 </div>
-                
+
                 <div className="text-sm text-gray-600">{user.email}</div>
 
                 <div
