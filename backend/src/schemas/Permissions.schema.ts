@@ -1,6 +1,6 @@
 import { Prop, Schema } from '@nestjs/mongoose';
 import mongoose from 'mongoose';
-
+import { SchemaFactory } from '@nestjs/mongoose';
 export enum EntityType {
   PRODUCT = 'product',
   CATEGORY = 'category',
@@ -28,3 +28,4 @@ export class Permission {
   })
   allowed: mongoose.Types.ObjectId;
 }
+export const PermissionSchema = SchemaFactory.createForClass(Permission);
