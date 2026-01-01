@@ -28,7 +28,7 @@ const Header: React.FC<HeaderProps> = ({
   const location = useLocation();
   const navigate = useNavigate();
   const { role } = useUser();
-  // Close mobile menu on route change
+  
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location]);

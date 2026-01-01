@@ -9,7 +9,8 @@ import { toast } from "sonner";
 interface LoginProps {}
 
 const Login: FC<LoginProps> = () => {
- 
+ const { setUser } = useUser();
+
 const handleLogin = async () => {
 
   if (!userName.trim()) {
@@ -34,6 +35,7 @@ const handleLogin = async () => {
           authService.setSession(accessToken, user);
 
           toast.success("התחברת בהצלחה");
+          setUser(user);
           navigate("/"); 
         }
   } catch (error: any) {
@@ -98,6 +100,7 @@ const openApprovalMail = () => {
 
   useEffect(() => {
     if (role === "editor") {
+
       navigate("/");
     }
   }, [navigate, role]);
