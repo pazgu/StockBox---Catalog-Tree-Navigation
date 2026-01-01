@@ -22,4 +22,9 @@ export const userService = {
   remove: async (id: string): Promise<void> => {
     await axios.delete(`${API_URL}/${id}`);
   },
+
+  block: async (id: string, isBlocked: boolean): Promise<User> => {
+    const { data } = await axios.patch<User>(`${API_URL}/${id}/block`, { isBlocked });
+    return data;
+  },
 };

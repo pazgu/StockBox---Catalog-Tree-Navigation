@@ -34,4 +34,12 @@ export class UsersController {
   ) {
     return this.usersService.updateUser(id, updateUserDto);
   }
+
+  @Patch(':id/block')
+  toggleBlockUser(
+    @Param('id') id: string,
+    @Body('isBlocked') isBlocked: boolean,
+  ) {
+    return this.usersService.toggleBlockUser(id, isBlocked);
+  }
 }

@@ -26,6 +26,8 @@ export interface User {
   approved?: boolean;
   role: "editor" | "viewer";
   requestSent?: boolean;
+  isBlocked?: boolean;
+
 }
 export interface Group {
   id: string;
