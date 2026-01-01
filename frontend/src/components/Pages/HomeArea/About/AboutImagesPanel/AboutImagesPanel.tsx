@@ -298,19 +298,21 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
   );
 };
 
+
 const API_BASE = "http://localhost:4000";
 
 const toFullUrl = (raw: string) => {
   if (!raw) return "";
-  let u = raw.trim().replaceAll("\\", "/");
-  if (u.startsWith("http://") || u.startsWith("https://")) return u;
-  if (!u.startsWith("/")) u = `/${u}`;
-  if (u.startsWith("/about-uploads/") && !u.startsWith("/about-uploads/images/")) {
-    u = u.replace("/about-uploads/", "/about-uploads/images/");
-  }
 
-  return `${API_BASE}${u}`;
+  const u = raw.trim().replaceAll("\\", "/");
+
+  if (u.startsWith("http://") || u.startsWith("https://")) return u;
+
+  if (u.startsWith("/")) return `${API_BASE}${u}`;
+
+  return `${API_BASE}/${u}`;
 };
+
 
 
 
