@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:4000"; // Update with your backend URL
+const API_BASE_URL = "http://localhost:4000";
 
 export interface CategoryDTO {
   _id: string;
@@ -53,6 +53,26 @@ class CategoriesService {
       throw error;
     }
   }
+  async getDirectChildren(categoryPath: string): Promise<CategoryDTO[]> {
+    try {
+      let cleanPath = categoryPath.startsWith('/') 
+        ? categoryPath.substring(1) 
+        : categoryPath;
+      if (cleanPath.startsWith('categories/')) {
+        cleanPath = cleanPath.substring('categories/'.length);
+      }
+      const response = await fetch(
+        `${API_BASE_URL}/categories/children/${cleanPath}`
+      );
+      if (!response.ok) {
+        return [];
+      } 
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      return [];
+    }
+  }
 
   async createCategory(category: CreateCategoryDTO): Promise<CategoryDTO> {
     try {
@@ -60,26 +80,6 @@ class CategoriesService {
       return response.data;
     } catch (error) {
       console.error("Error creating category:", error);
-      throw error;
-    }
-  }
-
-  async createSubCategory(
-    parentCategory: string,
-    subCategory: Omit<CreateCategoryDTO, "categoryPath">
-  ): Promise<CategoryDTO> {
-    try {
-      const categoryWithPath: CreateCategoryDTO = {
-        ...subCategory,
-        categoryPath: `/categories/${parentCategory}/${subCategory.categoryName}`,
-      };
-      const response = await axios.post<CategoryDTO>(
-        this.baseUrl,
-        categoryWithPath
-      );
-      return response.data;
-    } catch (error) {
-      console.error("Error creating subcategory:", error);
       throw error;
     }
   }
