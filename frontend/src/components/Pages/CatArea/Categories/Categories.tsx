@@ -23,15 +23,9 @@ export const Categories: FC<CategoriesProps> = () => {
   const [showAddCatModal, setShowAddCatModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(
-    null
-  );
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
   const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
-  const [categoryToType, setCategoryToType] = useState<Category | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [categoryTypes, setCategoryTypes] = useState<
-    Record<string, "catparent" | "prodparent" | null>
-  >({});
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(true);
   const { role } = useUser();
@@ -110,7 +104,6 @@ export const Categories: FC<CategoriesProps> = () => {
 
   const handleAddCategory = async ({ name, image }: AddCategoryResult) => {
     try {
-      // Generate the category path based on name
       const categoryPath = `/categories/${name
         .toLowerCase()
         .replace(/\s+/g, "-")}`;
@@ -154,15 +147,7 @@ export const Categories: FC<CategoriesProps> = () => {
     }
   };
   const handleCategoryClick = (category: Category) => {
-    const type = categoryTypes[category._id];
-    
-    if (!type) {
-      setCategoryToType(category);
-    } else if (type === "prodparent") {
-      navigate(category.categoryPath);
-    } else if (type === "catparent") {
-      navigate(`/subcat/${encodeURIComponent(category.categoryName)}`);
-    }
+    navigate(category.categoryPath);
   };
 
   if (isLoading) {
@@ -198,20 +183,6 @@ export const Categories: FC<CategoriesProps> = () => {
               className="flex flex-col items-center cursor-pointer transition-transform duration-200 hover:translate-y-[-2px] relative group"
             >
               <div className="flex items-center justify-center relative">
-                <div
-                  onClick={() => {
-                    const type = categoryTypes[category._id];
-                    if (!type) {
-                      setCategoryToType(category);
-                    } else if (type === "prodparent") {
-                      navigate("/categories/single-cat");
-                    } else if (type === "catparent") {
-                      navigate(
-                        `/subcat/${encodeURIComponent(category.categoryName)}`
-                      );
-                    }
-                  }}
-                >
                 <div onClick={() => handleCategoryClick(category)}>
                   <button
                     onClick={(e) => {
@@ -383,61 +354,6 @@ export const Categories: FC<CategoriesProps> = () => {
             />
           )}
         </>
-      )}
-      {categoryToType && (
-        <div
-          className="fixed inset-0 bg-slate-900 bg-opacity-70 backdrop-blur-md flex items-center justify-center z-50"
-          onClick={() => setCategoryToType(null)}
-        >
-          <div
-            className="bg-white rounded-xl p-6 shadow-2xl w-80 text-center"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h4 className="text-xl font-semibold text-slate-700 mb-4">
-              בחר סוג קטגוריה
-            </h4>
-            <p className="text-gray-600 mb-6">
-              מה ברצונך שהקטגוריה {categoryToType?.categoryName} תכיל?
-            </p>
-
-            <div className="flex flex-col gap-3 justify-center items-center">
-              <button
-                onClick={() => {
-                  setCategoryTypes((prev) => ({
-                    ...prev,
-                    [categoryToType._id]: "prodparent",
-                  }));
-                  navigate(categoryToType.categoryPath);
-                  setCategoryToType(null);
-                }}
-                className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all w-64"
-              >
-                מוצרים בודדים
-              </button>
-
-              <button
-                onClick={() => {
-                  setCategoryTypes((prev) => ({
-                    ...prev,
-                    [categoryToType._id]: "catparent",
-                  }));
-                  navigate(`/subcat/${encodeURIComponent(categoryToType.categoryName)}`);
-                  setCategoryToType(null);
-                }}
-                className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all w-64 shadow-md hover:shadow-lg"
-              >
-                תתי-קטגוריות
-              </button>
-
-              <button
-                onClick={() => setCategoryToType(null)}
-                className="p-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all w-32"
-              >
-                ביטול
-              </button>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );
