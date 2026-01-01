@@ -5,12 +5,13 @@ import { User, UserSchema } from 'src/schemas/Users.schema';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { UsersModule } from 'src/users/users.module';
 
 @Module({
-  imports: [
-    ConfigModule, // needed for DI
+imports: [
+    ConfigModule, 
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    UsersModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
