@@ -7,6 +7,7 @@ export interface BannedItem {
   name: string;
   type: BannedEntityType;
   groupId?: string;
+  image?: string; 
 }
 
 export const mockBannedItems: BannedItem[] = [
