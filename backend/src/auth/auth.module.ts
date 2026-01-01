@@ -8,10 +8,11 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersModule } from 'src/users/users.module';
 
 @Module({
-imports: [
-    ConfigModule, 
+  imports: [
+    ConfigModule,
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
     UsersModule,
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

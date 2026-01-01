@@ -32,7 +32,8 @@ export class AboutService {
   }
 
   private filePathFromUrl(url: string) {
-    const filename = url.split('/').pop();
+    const filename = url.split('/').pop()?.split('?')[0];
+
     if (!filename) return null;
     return join(this.uploadsDir(), filename);
   }
@@ -59,23 +60,24 @@ export class AboutService {
   }
 
   async replaceAbout(dto: UpdateAboutDto) {
-    const updated = await this.aboutModel
-      .findByIdAndUpdate(
-        ABOUT_SINGLETON_ID,
-        {
-          $set: {
-            blocks: dto.blocks ?? [],
-            images: dto.images ?? [],
-          },
-        },
-        { new: true, upsert: true },
-      )
-      .exec();
+    const doc = await this.getOrCreateSingleton();
+
+    const oldImages = doc.images ?? [];
+    const newImages = dto.images ?? [];
+
+    const removed = oldImages.filter((url) => !newImages.includes(url));
+
+    doc.blocks = dto.blocks ?? [];
+    doc.images = newImages;
+
+    const saved = await doc.save();
+
+    await Promise.all(removed.map((u) => this.safeUnlinkByUrl(u)));
 
     return {
-      blocks: updated.blocks ?? [],
-      images: updated.images ?? [],
-      updatedAt: updated.updatedAt,
+      blocks: saved.blocks ?? [],
+      images: saved.images ?? [],
+      updatedAt: saved.updatedAt,
     };
   }
 
@@ -128,7 +130,6 @@ export class AboutService {
 
     const saved = await doc.save();
 
-    // ✅ delete old file from disk
     await this.safeUnlinkByUrl(oldUrl);
 
     return {
@@ -152,7 +153,6 @@ export class AboutService {
 
     const saved = await doc.save();
 
-    // ✅ delete removed file from disk
     await this.safeUnlinkByUrl(removedUrl);
 
     return {

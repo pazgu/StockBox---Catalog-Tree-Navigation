@@ -40,7 +40,7 @@ export const aboutApi = {
 
   uploadImages: async (files: File[]): Promise<AboutResponse> => {
   const form = new FormData();
-  files.forEach((f) => form.append("files", f)); // IMPORTANT: "files" matches FilesInterceptor
+  files.forEach((f) => form.append("files", f)); 
 
   const res = await axios.post(`${BASE_URL}/about/images`, form, {
     headers: { "Content-Type": "multipart/form-data" },
@@ -51,7 +51,7 @@ export const aboutApi = {
 
 replaceImageAt: async (index: number, file: File): Promise<AboutResponse> => {
   const form = new FormData();
-  form.append("file", file); // IMPORTANT: "file" matches FileInterceptor
+  form.append("file", file);
 
   const res = await axios.put(`${BASE_URL}/about/images/${index}`, form, {
     headers: { "Content-Type": "multipart/form-data" },
@@ -59,5 +59,16 @@ replaceImageAt: async (index: number, file: File): Promise<AboutResponse> => {
 
   return res.data;
 },
+
+deleteImageAt: async (index: number): Promise<AboutResponse> => {
+  const res = await axios.delete(`${BASE_URL}/about/images/${index}`);
+  return res.data;
+},
+
+clearImages: async (): Promise<AboutResponse> => {
+  const res = await axios.delete(`${BASE_URL}/about/images`);
+  return res.data;
+},
+
 
 };

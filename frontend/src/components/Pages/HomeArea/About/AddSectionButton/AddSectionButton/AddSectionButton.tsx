@@ -5,7 +5,6 @@ interface AddSectionButtonProps {
   index: number;
   handleAddSection: (index: number, type: "features" | "bullets" | "paragraph") => void;
 
-  // ✅ NEW
   disabled?: boolean;
   disabledReason?: string;
 }
@@ -18,7 +17,6 @@ const AddSectionButton: FC<AddSectionButtonProps> = ({
 }) => {
   const [showMenu, setShowMenu] = useState(false);
 
-  // ✅ if it becomes disabled while menu is open, close it
   useEffect(() => {
     if (disabled && showMenu) setShowMenu(false);
   }, [disabled, showMenu]);
