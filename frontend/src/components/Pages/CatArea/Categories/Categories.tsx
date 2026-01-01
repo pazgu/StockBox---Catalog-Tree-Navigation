@@ -3,12 +3,12 @@ import { Pen, Trash, Lock, Heart } from "lucide-react";
 import { useUser } from "../../../../context/UserContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import AddCategoryModal, {
-  AddCategoryResult,
-} from "./AddCategoryModal/AddCategoryModal/AddCategoryModal";
+import AddCategoryModal  from "./AddCategoryModal/AddCategoryModal/AddCategoryModal";
 import EditCategoryModal from "./EditCategoryModal/EditCategoryModal/EditCategoryModal";
 import Breadcrumbs from "../../../LayoutArea/Breadcrumbs/Breadcrumbs";
 import { categoriesService } from "../../../../services/CategoryService";
+import { AddCategoryResult } from "../../../../types/types";
+
 
 interface CategoriesProps {}
 

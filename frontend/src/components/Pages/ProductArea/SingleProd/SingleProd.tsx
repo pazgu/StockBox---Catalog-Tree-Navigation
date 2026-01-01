@@ -1,17 +1,8 @@
 import React, { FC, useState, useCallback, useMemo } from "react";
-import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from "../../../ui/accordion";
 import cam from "../../../../assets/red-lens-camera.png";
 import {
   Heart,
   PencilLine,
-  Upload,
-  Plus,
-  GripVertical,
   MailQuestionIcon,
   Check,
 } from "lucide-react";
@@ -19,15 +10,10 @@ import { useUser } from "../../../../context/UserContext";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import {
-  FolderPlus,
-  Folder,
   File,
   Video,
   Music,
   FileText,
-  Download,
-  Trash2,
-  X,
 } from "lucide-react";
 import {
   AccordionData,
@@ -39,7 +25,6 @@ import ImageCarousel from "../ImageCarousel/ImageCarousel/ImageCarousel";
 import Breadcrumbs from "../../../LayoutArea/Breadcrumbs/Breadcrumbs";
 
 interface SingleProdProps {}
-// Helper function to generate a unique ID (simple timestamp for this example)
 const generateUniqueId = () =>
   `accordion-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
@@ -52,7 +37,6 @@ const SingleProd: FC<SingleProdProps> = () => {
     "פתרון מקצועי לצילום איכותי עם עיצוב רטרו ועמידות גבוהה."
   );
 
-  // Consolidated state for product data that was previously separate states
   const [accordionData, setAccordionData] = useState<AccordionData[]>([
     {
       id: "description",
@@ -77,18 +61,16 @@ const SingleProd: FC<SingleProdProps> = () => {
         "צילום ווידאו 4K מקצועי",
         "עדשה מהירה לצילום בתאורה חלשה",
         "נוחות אחיזה ובקרה",
-      ]), // Storing features as JSON string to keep original logic contained
+      ]),
       isEditable: true,
     },
   ]);
 
-  // === IMAGE STATES (MODIFIED) ===
   const [productImages, setProductImages] = useState<string[]>([cam]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [originalImages] = useState<string[]>([cam]);
   const [hasImageChanged, setHasImageChanged] = useState(false);
 
-  // === IMAGE HANDLERS ===
   const nextImage = () => {
     setCurrentImageIndex((prev) =>
       prev === productImages.length - 1 ? 0 : prev + 1
@@ -101,7 +83,6 @@ const SingleProd: FC<SingleProdProps> = () => {
     );
   };
 
-  //This section is for the files upload
   const handleAddImages = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
@@ -124,7 +105,7 @@ const SingleProd: FC<SingleProdProps> = () => {
 
   const handleDeleteImage = () => {
     setProductImages((prev) => {
-      if (prev.length === 1) return prev; // keep at least one
+      if (prev.length === 1) return prev;
       const updated = prev.filter((_, i) => i !== currentImageIndex);
       setCurrentImageIndex((prevIndex) =>
         prevIndex === updated.length ? updated.length - 1 : prevIndex
@@ -171,22 +152,19 @@ const SingleProd: FC<SingleProdProps> = () => {
         id: generateUniqueId(),
         title: "כותרת אקורדיון חדש",
         content: "תוכן האקורדיון החדש...",
-        isEditable: false, // Custom accordions are initially not treated as the special hardcoded ones
+        isEditable: false,
       },
     ]);
   };
 
-  // Remove a custom accordion
   const removeAccordion = (id: string) => {
     setAccordionData((prevData) => prevData.filter((item) => item.id !== id));
   };
 
-  // Handle drag start
   const handleDragStart = (item: AccordionData) => {
     setDraggedItem(item);
   };
 
-  // Handle drag over
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
   };
@@ -211,7 +189,7 @@ const SingleProd: FC<SingleProdProps> = () => {
       return newItems;
     });
 
-    setDraggedItem(null); // Reset dragged item
+    setDraggedItem(null);
   };
 
   const features = useMemo(() => {

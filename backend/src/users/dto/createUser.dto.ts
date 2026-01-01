@@ -32,4 +32,6 @@ export class CreateUserDto {
 
   @IsBoolean()
   requestSent: boolean;
+  @IsBoolean()
+  isBlocked: boolean;
 }

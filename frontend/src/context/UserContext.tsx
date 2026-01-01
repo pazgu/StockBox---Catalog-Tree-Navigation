@@ -1,48 +1,89 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
-import { UserRole, User } from "../types/types"; 
+import { UserRole, User } from "../types/types";
+import { environment } from "../environments/environment.development";
+
 
 interface UserContextType {
+  user: User | null;
   role: UserRole | null;
-  setRole: (role: UserRole | null) => void;
+  setUser: (user: User | null) => void;
+
   users: User[];
-  addUser: (user: User) => Promise<void>;
-  updateUser: (id: string, updates: Partial<User>) => Promise<void>;
-  deleteUser: (id: string) => Promise<void>;
+  setUsers: React.Dispatch<React.SetStateAction<User[]>>;
   refreshUsers: () => Promise<void>;
+  blockUser: (id: string, isBlocked: boolean) => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType>(null!);
 
-const API_URL = "http://localhost:4000/users";
+const API_URL = environment.API_URL
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [role, setRole] = useState<UserRole | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
+  const [role, setRole] = useState<UserRole | null>(null);
 
-  // Fetch users from backend
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem("user", JSON.stringify(user));
+    } else {
+      localStorage.removeItem("user");
+    }
+  }, [user]);
+
+
   const refreshUsers = async () => {
     try {
-      const response = await axios.get<User[]>(API_URL);
-      console.log("Fetched users:", response.data);
+      const response = await axios.get<User[]>(`${API_URL}/users`);
       setUsers(response.data);
     } catch (err) {
       console.error("Error fetching users:", err);
     }
   };
-  const useUser = () => {
-    const context = useContext(UserContext);
-    if (!context) throw new Error("useUser must be used within UserProvider");
-    return context;
-  };
+
+  useEffect(() => {
+  const storedUser = localStorage.getItem("user");
+
+  if (storedUser) {
+    try {
+      setUser(JSON.parse(storedUser));
+    } catch {
+      localStorage.removeItem("user");
+      setUser(null);
+    }
+  }
+}, []);
+
+
+
+  const blockUser = async (id: string, isBlocked: boolean) => {
+  try {
+    const response = await axios.patch<User>(`${API_URL}/${id}/block`, { 
+      isBlocked 
+    });
+    setUsers((prev) => prev.map((u) => (u._id === id ? response.data : u)));
+  } catch (err) {
+    console.error("Error blocking user:", err);
+    throw err;
+  }
+};
 
   useEffect(() => {
     refreshUsers();
   }, []);
 
-  // Persist role in localStorage
+
   useEffect(() => {
     const storedRole = localStorage.getItem("role");
     if (storedRole === "editor" || storedRole === "viewer") {
@@ -55,46 +96,18 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     else localStorage.removeItem("role");
   }, [role]);
 
-  // Add a user via POST
-  const addUser = async (user: User) => {
-    try {
-      const response = await axios.post<User>(API_URL, user);
-      setUsers((prev) => [...prev, response.data]);
-    } catch (err) {
-      console.error("Error adding user:", err);
-    }
-  };
-
-  // Update a user via PATCH
-  const updateUser = async (id: string, updates: Partial<User>) => {
-    try {
-      const response = await axios.patch<User>(`${API_URL}/${id}`, updates);
-      setUsers((prev) => prev.map((u) => (u._id === id ? response.data : u)));
-    } catch (err) {
-      console.error("Error updating user:", err);
-    }
-  };
-
-  // Delete a user via DELETE
-  const deleteUser = async (id: string) => {
-    try {
-      await axios.delete(`${API_URL}/${id}`);
-      setUsers((prev) => prev.filter((u) => u._id !== id));
-    } catch (err) {
-      console.error("Error deleting user:", err);
-    }
-  };
+ 
 
   return (
     <UserContext.Provider
       value={{
-        role,
-        setRole,
+        user,
+        role: user?.role ?? null,
+        setUser,
         users,
-        addUser,
-        updateUser,
-        deleteUser,
+        setUsers,
         refreshUsers,
+        blockUser,
       }}
     >
       {children}
@@ -104,6 +117,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
 export const useUser = () => {
   const context = useContext(UserContext);
-  if (!context) throw new Error("useUser must be used within UserProvider");
+  if (!context) {
+    throw new Error("useUser must be used within UserProvider");
+  }
   return context;
 };
