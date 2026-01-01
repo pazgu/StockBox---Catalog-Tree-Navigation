@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   Controller,
   Get,
@@ -8,6 +11,7 @@ import {
   Delete,
   Param,
   Patch,
+  Req,
 } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dtos/CreateCategory.dto';
@@ -33,9 +37,14 @@ export class CategoriesController {
     return await this.categoriesService.deleteCategory(id);
   }
 
-  @Get('subcategories/:parentCategory')
-  async getSubCategories(@Param('parentCategory') parentCategory: string) {
-    return await this.categoriesService.getSubCategories(parentCategory);
+  @Get('children/*')
+  async getDirectChildren(@Req() request: any) {
+    const fullUrl = request.url;
+    const pathPart = fullUrl.split('children/')[1];
+    if (!pathPart) {
+      return [];
+    }
+    return await this.categoriesService.getDirectChildren(pathPart);
   }
 
   @Patch(':id')
