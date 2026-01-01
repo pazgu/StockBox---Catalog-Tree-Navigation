@@ -214,8 +214,17 @@ const toastErrorOnce = (msg: string) => {
 
   const imageWrapRef = React.useRef<HTMLDivElement | null>(null);
   const goPrev = () =>
-    setCurrentImageIndex((i) => (i - 1 + images.length) % images.length);
-  const goNext = () => setCurrentImageIndex((i) => (i + 1) % images.length);
+  setCurrentImageIndex((i) => {
+    if (images.length === 0) return 0;
+    return (i - 1 + images.length) % images.length;
+  });
+
+const goNext = () =>
+  setCurrentImageIndex((i) => {
+    if (images.length === 0) return 0;
+    return (i + 1) % images.length;
+  });
+
   const touchStartXRef = React.useRef<number | null>(null);
 
   React.useEffect(() => {
@@ -433,12 +442,30 @@ const handleSectionDragStart = (index: number) => {
   };
 
   useEffect(() => {
-    if (isEditing) return;
-    const interval = setInterval(() => {
-      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [images.length, isEditing]);
+  if (isEditing) return;
+  if (images.length === 0) return; 
+
+  const interval = setInterval(() => {
+    setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
+  }, 3000);
+
+  return () => clearInterval(interval);
+}, [images.length, isEditing]);
+useEffect(() => {
+  if (images.length === 0) {
+    setCurrentImageIndex(0);
+    return;
+  }
+
+  if (
+    Number.isNaN(currentImageIndex) ||
+    currentImageIndex < 0 ||
+    currentImageIndex >= images.length
+  ) {
+    setCurrentImageIndex(0);
+  }
+}, [images.length, currentImageIndex]);
+
 
   const handleSaveChanges = async () => {
   try {

@@ -42,6 +42,7 @@ export class AuthService {
       throw new ForbiddenException({
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         code: 'USER_CREATED_NOT_APPROVED',
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         userId: newUser._id,
       });
     }
