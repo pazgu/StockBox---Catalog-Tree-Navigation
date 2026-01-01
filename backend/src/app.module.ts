@@ -4,8 +4,6 @@ import { ProductsService } from './products/products.service';
 import { ProductsModule } from './products/products.module';
 import { PermissionsController } from './permissions/permissions.controller';
 import { PermissionsModule } from './permissions/permissions.module';
-import { GroupsController } from './groups/groups.controller';
-import { GroupsService } from './groups/groups.service';
 import { GroupsModule } from './groups/groups.module';
 import { CategoriesModule } from './categories/categories.module';
 import { CommonController } from './common/common.controller';
@@ -15,6 +13,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { AboutModule } from './about/about.module';
 
 @Module({
   imports: [
@@ -35,13 +34,9 @@ import { UsersModule } from './users/users.module';
     CommonModule,
     AuthModule,
     UsersModule,
+    AboutModule,
   ],
-  controllers: [
-    ProductsController,
-    PermissionsController,
-    GroupsController,
-    CommonController,
-  ],
-  providers: [ProductsService, GroupsService, CommonService],
+  controllers: [ProductsController, PermissionsController, CommonController],
+  providers: [ProductsService, CommonService],
 })
 export class AppModule {}

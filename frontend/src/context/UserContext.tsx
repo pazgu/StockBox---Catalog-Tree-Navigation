@@ -17,12 +17,11 @@ interface UserContextType {
   role: UserRole | null;
   setRole: (role: UserRole | null) => void;
   users: User[];
-  addUser: (user: User) => Promise<void>;
-  updateUser: (id: string, updates: Partial<User>) => Promise<void>;
-  deleteUser: (id: string) => Promise<void>;
+  setUsers: React.Dispatch<React.SetStateAction<User[]>>;
   refreshUsers: () => Promise<void>;
   blockUser: (id: string, isBlocked: boolean) => Promise<void>;
 }
+
 
 const UserContext = createContext<UserContextType>(null!);
 
@@ -62,46 +61,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     else localStorage.removeItem("role");
   }, [role]);
 
-
-  const addUser = async (user: User) => {
-    try {
-      const response = await axios.post<User>(API_URL, user);
-      setUsers((prev) => [...prev, response.data]);
-    } catch (err) {
-      console.error("Error adding user:", err);
-    }
-  };
-
-
-  const updateUser = async (id: string, updates: Partial<User>) => {
-    try {
-      const response = await axios.patch<User>(`${API_URL}/${id}`, updates);
-      setUsers((prev) => prev.map((u) => (u._id === id ? response.data : u)));
-    } catch (err) {
-      console.error("Error updating user:", err);
-    }
-  };
-
-
-  const deleteUser = async (id: string) => {
-    try {
-      await axios.delete(`${API_URL}/${id}`);
-      setUsers((prev) => prev.filter((u) => u._id !== id));
-    } catch (err) {
-      console.error("Error deleting user:", err);
-    }
-  };
-
-  
-  const blockUser = async (id: string, isBlocked: boolean) => {
-  try {
-    const response = await axios.patch<User>(`${API_URL}/${id}/block`, { isBlocked });
-    setUsers((prev) => prev.map((u) => (u._id === id ? response.data : u)));
-  } catch (err) {
-    console.error("Error blocking user:", err);
-    throw err;
-  }
-};
+ 
 
   return (
     <UserContext.Provider
@@ -109,9 +69,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         role,
         setRole,
         users,
-        addUser,
-        updateUser,
-        deleteUser,
+        setUsers,
         refreshUsers,
         blockUser,
       }}
