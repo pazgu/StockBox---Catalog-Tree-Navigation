@@ -1,7 +1,7 @@
 import { AboutService } from './about.service';
 import { UpdateAboutDto } from './dto/UpdateAbout.dto';
 import { UpdateAboutBlockDto } from './dto/UpdateAboutBlock.dto';
-import type { Multer } from 'multer';
+import type { Express } from 'express';
 import {
   BadRequestException,
   Body,
@@ -41,27 +41,21 @@ export class AboutController {
 
   @Post('images')
   @UseInterceptors(FilesInterceptor('files', 10, aboutUploadsOptions))
-  addImages(@UploadedFiles() files: Multer.File[]) {
+  addImages(@UploadedFiles() files: Express.Multer.File[]) {
     if (!files || files.length === 0) {
       throw new BadRequestException('No files uploaded');
     }
-
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    const urls = files.map((f) => `/about-uploads/images/${f.filename}`);
-    return this.aboutService.addImages(urls);
+    return this.aboutService.addImages(files);
   }
 
   @Put('images/:index')
   @UseInterceptors(FileInterceptor('file', aboutUploadsOptions))
   replaceImage(
     @Param('index', ParseIntPipe) index: number,
-    @UploadedFile() file: Multer.File,
+    @UploadedFile() file: Express.Multer.File,
   ) {
     if (!file) throw new BadRequestException('No file uploaded');
-
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    const url = `/about-uploads/images/${file.filename}`;
-    return this.aboutService.replaceImageAt(index, url);
+    return this.aboutService.replaceImageAt(index, file);
   }
 
   @Delete('images/:index')

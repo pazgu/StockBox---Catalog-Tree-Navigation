@@ -561,22 +561,33 @@ toast.success(TOAST.saveSuccess);
 };
 
 
-  const removeImage = (index: number) => {
-    setEditableImages((prev) => {
-      const arr = prev.filter((_, i) => i !== index);
-      setCurrentImageIndex((cur) => {
-        if (arr.length === 0) return 0;
-        const next = Math.min(cur, arr.length - 1);
-        return next;
-      });
-      return arr;
-    });
-  };
+  const removeImage = async (index: number) => {
+  try {
+    const res = await aboutApi.deleteImageAt(index);
 
-  const clearAllImages = () => {
-    setEditableImages([]);
+    setEditableImages(res.images ?? []);
+
+    setCurrentImageIndex((cur) => {
+      const len = res.images?.length ?? 0;
+      if (len === 0) return 0;
+      return Math.min(cur, len - 1);
+    });
+  } catch (e) {
+    toast.error("Failed to delete image");
+  }
+};
+
+
+  const clearAllImages = async () => {
+  try {
+    const res = await aboutApi.clearImages();
+    setEditableImages(res.images ?? []);
     setCurrentImageIndex(0);
-  };
+  } catch (e) {
+    toast.error("Failed to clear images");
+  }
+};
+
 
   return (
     <div className="pt-8 min-h-screen font-['Arial'] direction-rtl" dir="rtl">

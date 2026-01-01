@@ -1,6 +1,5 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { join } from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express';
 
 async function bootstrap() {
@@ -8,10 +7,6 @@ async function bootstrap() {
 
   app.useBodyParser('json', { limit: '5mb' });
   app.useBodyParser('urlencoded', { extended: true, limit: '5mb' });
-
-  app.useStaticAssets(join(process.cwd(), 'src', 'about', 'aboutUploads'), {
-    prefix: '/about-uploads',
-  });
 
   app.enableCors({
     origin: 'http://localhost:3000',
