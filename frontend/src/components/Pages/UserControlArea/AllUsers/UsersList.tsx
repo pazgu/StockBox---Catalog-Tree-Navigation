@@ -18,8 +18,6 @@ interface UsersListProps {
 }
 
 const UsersList: React.FC<UsersListProps> = ({
-  users,
-  groups,
   filteredUsers,
   selectedUsers,
   searchQuery,

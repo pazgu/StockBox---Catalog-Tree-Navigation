@@ -89,30 +89,35 @@ const AllUsers: FC<AllUsersProps> = () => {
       toast.info("המשתמש נמחק בהצלחה!");
     }
   };
-const confirmBlock = async () => {
-  if (blockUserIndex !== null) {
-    const user = currentUsers[blockUserIndex];
-    const userId = user._id;
-    if (!userId) return;
-    
-    const currentBlockStatus = user.isBlocked || false;
+  const confirmBlock = async () => {
+    if (blockUserIndex !== null) {
+      const user = currentUsers[blockUserIndex];
+      const userId = user._id;
+      if (!userId) return;
 
-    try {
+      const currentBlockStatus = user.isBlocked || false;
 
-      const updatedUser = await userService.block(userId, !currentBlockStatus);
-      
+      try {
+        const updatedUser = await userService.block(
+          userId,
+          !currentBlockStatus
+        );
 
-      setUsers((prev) => prev.map((u) => (u._id === userId ? updatedUser : u)));
-      
-      toast.success(currentBlockStatus ? "המשתמש שוחרר מהחסימה" : "המשתמש נחסם בהצלחה");
-    } catch (error) {
-      toast.error("אירעה שגיאה בעדכון סטטוס החסימה");
-      console.error('Block error:', error);
+        setUsers((prev) =>
+          prev.map((u) => (u._id === userId ? updatedUser : u))
+        );
+
+        toast.success(
+          currentBlockStatus ? "המשתמש שוחרר מהחסימה" : "המשתמש נחסם בהצלחה"
+        );
+      } catch (error) {
+        toast.error("אירעה שגיאה בעדכון סטטוס החסימה");
+        console.error("Block error:", error);
+      }
+
+      setBlockUserIndex(null);
     }
-
-    setBlockUserIndex(null);
-  }
-};
+  };
   const handleApproveClick = (index: number) => setApproveUserIndex(index);
   const confirmApprove = () => {
     if (approveUserIndex !== null) {
@@ -143,15 +148,20 @@ const confirmBlock = async () => {
     }
   };
 
-  const handleSaveEdit = () => {
-    if (userToEdit) {
-      if (!userToEdit._id) {
-        return;
-      }
-      userService.update(userToEdit._id, userToEdit);
+  const handleSaveEdit = async () => {
+    if (!userToEdit || !userToEdit._id) return;
+
+    try {
+      const updatedUser = await userService.update(userToEdit._id, userToEdit);
+      setUsers((prev) =>
+        prev.map((u) => (u._id === updatedUser._id ? updatedUser : u))
+      );
       toast.success("המשתמש עודכן בהצלחה!");
       setShowEditModal(false);
       setUserToEdit(null);
+    } catch (error) {
+      console.error("שגיאה בעדכון משתמש:", error);
+      toast.error("שגיאה בעדכון המשתמש");
     }
   };
 
@@ -277,18 +287,18 @@ const confirmBlock = async () => {
                   </svg>
                 </button>
 
-              {user.approved && (  
-                <button
-                  className={`p-1 w-6 h-6 rounded transition ${
-                    user.isBlocked
-                      ? "bg-red-600 text-white hover:bg-red-700"
-                      : "hover:bg-gray-100 opacity-60 hover:opacity-100"
-                  }`}
-                  onClick={() => setBlockUserIndex(index)}
-                >
-                  <Ban size={14} />
-                </button>
-              )}
+                {user.approved && (
+                  <button
+                    className={`p-1 w-6 h-6 rounded transition ${
+                      user.isBlocked
+                        ? "bg-red-600 text-white hover:bg-red-700"
+                        : "hover:bg-gray-100 opacity-60 hover:opacity-100"
+                    }`}
+                    onClick={() => setBlockUserIndex(index)}
+                  >
+                    <Ban size={14} />
+                  </button>
+                )}
               </div>
 
               {/* Avatar */}
@@ -331,11 +341,9 @@ const confirmBlock = async () => {
                     user.isBlocked
                       ? "bg-red-200 text-red-700"
                       : "bg-[#0D305B]/10 text-[#0D305B]"
-                  }`}>
-                    
-                {user.isBlocked
-                  ? "משתמש חסום"
-                  : roleLabel(user.role)}
+                  }`}
+                >
+                  {user.isBlocked ? "משתמש חסום" : roleLabel(user.role)}
                 </div>
               </div>
             </div>
@@ -463,7 +471,6 @@ const confirmBlock = async () => {
             </div>
           </div>
         )}
-
 
         {showEditModal && userToEdit && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
