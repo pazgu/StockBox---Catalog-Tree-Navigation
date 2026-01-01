@@ -37,4 +37,27 @@ export const aboutApi = {
     const res = await axios.patch(`${BASE_URL}/about/blocks/${blockId}`, payload);
     return res.data;
   },
+
+  uploadImages: async (files: File[]): Promise<AboutResponse> => {
+  const form = new FormData();
+  files.forEach((f) => form.append("files", f)); // IMPORTANT: "files" matches FilesInterceptor
+
+  const res = await axios.post(`${BASE_URL}/about/images`, form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+
+  return res.data;
+},
+
+replaceImageAt: async (index: number, file: File): Promise<AboutResponse> => {
+  const form = new FormData();
+  form.append("file", file); // IMPORTANT: "file" matches FileInterceptor
+
+  const res = await axios.put(`${BASE_URL}/about/images/${index}`, form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+
+  return res.data;
+},
+
 };
