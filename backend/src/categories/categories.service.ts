@@ -27,12 +27,26 @@ export class CategoriesService {
     return categories;
   }
 
-  async getSubCategories(parentCategory: string) {
-    const regex = new RegExp(`^/categories/${parentCategory}/[^/]+$`);
-    const subCategories = await this.categoryModel.find({
-      categoryPath: regex,
+  async getDirectChildren(categoryPath: string) {
+    if (!categoryPath) {
+      return [];
+    }
+    let cleanPath = categoryPath;
+    if (cleanPath.startsWith('/')) {
+      cleanPath = cleanPath.substring(1);
+    }
+    const fullPath = `/categories/${cleanPath}`;
+    const allChildren = await this.categoryModel.find({
+      categoryPath: new RegExp(
+        `^${fullPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/`,
+      ),
     });
-    return subCategories;
+    const directChildren = allChildren.filter((cat) => {
+      const remainingPath = cat.categoryPath.substring(fullPath.length + 1);
+      const slashCount = (remainingPath.match(/\//g) || []).length;
+      return slashCount === 0;
+    });
+    return directChildren;
   }
 
   async deleteCategory(id: string) {

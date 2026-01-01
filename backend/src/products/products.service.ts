@@ -10,22 +10,26 @@ export class ProductsService {
   constructor(
     @InjectModel(Product.name) private productModel: Model<Product>,
   ) {}
-
   async findAll(): Promise<Product[]> {
     return this.productModel.find().exec();
   }
   async findByPath(path: string): Promise<Product[]> {
     try {
-      const allProducts = await this.productModel.find().exec();
-      const filteredProducts = allProducts.filter((p) => {
-        if (!p.productPath || !p.productPath.startsWith(path)) {
+      const escapedPath = path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const matchingProducts = await this.productModel
+        .find({
+          productPath: new RegExp(`^${escapedPath}`),
+        })
+        .exec();
+      const directChildren = matchingProducts.filter((product) => {
+        if (!product.productPath || !product.productPath.startsWith(path)) {
           return false;
         }
-        const remainingPath = p.productPath.substring(path.length);
+        const remainingPath = product.productPath.substring(path.length);
         const slashCount = (remainingPath.match(/\//g) || []).length;
         return slashCount <= 1;
       });
-      return filteredProducts;
+      return directChildren;
     } catch (error) {
       throw error;
     }
