@@ -47,6 +47,20 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  useEffect(() => {
+  const storedUser = localStorage.getItem("user");
+
+  if (storedUser) {
+    try {
+      setUser(JSON.parse(storedUser));
+    } catch {
+      localStorage.removeItem("user");
+      setUser(null);
+    }
+  }
+}, []);
+
+
   return (
     <UserContext.Provider
       value={{

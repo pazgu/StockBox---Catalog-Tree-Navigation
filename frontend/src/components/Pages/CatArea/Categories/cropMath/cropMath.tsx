@@ -1,16 +1,13 @@
-// cropMath.ts — pure math for the circular cropper (no React/DOM)
+import { Point } from "../../../../../types/types";
 
-export type Point = { x: number; y: number };
 
 const clamp = (v: number, min: number, max: number) =>
   Math.min(max, Math.max(min, v));
 
-/** Cover scale so an image fully covers a square of size `box` (like object-fit: cover) */
 export function getBaseCoverScale(imgW: number, imgH: number, box: number): number {
   return Math.max(box / imgW, box / imgH);
 }
 
-/** Clamp pan offset so the image still fully covers the circle inside the square box */
 export function clampOffsetToCircle(
   offset: Point,
   imgW: number,
@@ -35,12 +32,11 @@ export function clampOffsetToCircle(
   };
 }
 
-/** Keep the same image point under the cursor when zooming */
 export function anchoredZoom(
   oldZoom: number,
   newZoom: number,
   offset: Point,
-  cursorInBox: Point, // {x,y} within [0..box]x[0..box]
+  cursorInBox: Point,
   imgW: number,
   imgH: number,
   box: number

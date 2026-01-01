@@ -42,6 +42,7 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
   replaceInputRef,
   addInputRef,
 }) => {
+
   const wrapRef = React.useRef<HTMLDivElement | null>(null);
   const touchStartXRef = React.useRef<number | null>(null);
   const localReplaceRef = React.useRef<HTMLInputElement>(null);
@@ -49,6 +50,7 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
 
   const replaceRef = replaceInputRef ?? localReplaceRef;
   const addRef = addInputRef ?? localAddRef;
+
 
   React.useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -70,6 +72,7 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [onPrev, onNext]);
+
 
   const onTouchStart = (e: React.TouchEvent) => {
     touchStartXRef.current = e.touches[0].clientX;
