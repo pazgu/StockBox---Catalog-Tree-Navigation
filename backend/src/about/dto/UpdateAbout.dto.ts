@@ -22,3 +22,9 @@ export class UpdateAboutDto {
   @IsString({ each: true })
   images?: string[];
 }
+
+export class AboutImagesDto {
+  @IsArray()
+  @IsString({ each: true })
+  images: string[];
+}

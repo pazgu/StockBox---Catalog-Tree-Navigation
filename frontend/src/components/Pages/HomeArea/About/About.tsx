@@ -512,51 +512,42 @@ toast.success(TOAST.saveSuccess);
   }, [sections.length]);
 
   // Image handlers
-  const handleReplaceImage = (
-    index: number,
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const handleReplaceImage = async (
+  index: number,
+  event: React.ChangeEvent<HTMLInputElement>
+) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setEditableImages((prev) => {
-        const arr = [...prev];
-        if (index >= arr.length) {
-          arr.push(reader.result as string);
-          setCurrentImageIndex(arr.length - 1);
-        } else {
-          arr[index] = reader.result as string;
-        }
-        return arr;
-      });
-      event.target.value = "";
-    };
-    reader.readAsDataURL(file);
-  };
+  try {
+    const res = await aboutApi.replaceImageAt(index, file);
 
-  const handleAddImages = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []);
-    if (!files.length) return;
+    setEditableImages(res.images ?? []);
+    setCurrentImageIndex(Math.min(index, (res.images?.length ?? 1) - 1));
+  } catch (e) {
+    toast.error("Failed to replace image");
+  } finally {
+    event.target.value = "";
+  }
+};
 
-    const toDataUrl = (file: File) =>
-      new Promise<string>((resolve) => {
-        const r = new FileReader();
-        r.onloadend = () => resolve(r.result as string);
-        r.readAsDataURL(file);
-      });
 
-    Promise.all(files.map(toDataUrl)).then((dataUrls) => {
-      setEditableImages((prev) => {
-        const startIndex = prev.length;
-        const merged = [...prev, ...dataUrls];
-        setCurrentImageIndex(startIndex > 0 ? startIndex : 0);
-        return merged;
-      });
-      event.target.value = "";
-    });
-  };
+  const handleAddImages = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const files = Array.from(event.target.files || []);
+  if (!files.length) return;
+
+  try {
+    const res = await aboutApi.uploadImages(files);
+
+    setEditableImages(res.images ?? []);
+    setCurrentImageIndex((res.images?.length ?? 1) - 1);
+  } catch (e) {
+    toast.error("Failed to upload images");
+  } finally {
+    event.target.value = "";
+  }
+};
+
 
   const removeImage = (index: number) => {
     setEditableImages((prev) => {
