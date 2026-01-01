@@ -5,6 +5,8 @@ import { Model } from 'mongoose';
 import { UpdateAboutDto } from './dto/UpdateAbout.dto';
 import { UpdateAboutBlockDto } from './dto/UpdateAboutBlock.dto';
 import { About, AboutDocument } from './schemas/About.schema';
+import { promises as fs } from 'fs';
+import { join } from 'path';
 
 const ABOUT_SINGLETON_ID = 'ABOUT_SINGLETON';
 
@@ -23,6 +25,28 @@ export class AboutService {
       blocks: [],
       images: [],
     });
+  }
+
+  private uploadsDir() {
+    return join(process.cwd(), 'src', 'about', 'aboutUploads', 'images');
+  }
+
+  private filePathFromUrl(url: string) {
+    const filename = url.split('/').pop();
+    if (!filename) return null;
+    return join(this.uploadsDir(), filename);
+  }
+
+  private async safeUnlinkByUrl(url?: string | null) {
+    if (!url) return;
+    const path = this.filePathFromUrl(url);
+    if (!path) return;
+
+    try {
+      await fs.unlink(path);
+    } catch {
+      /* empty */
+    }
   }
 
   async getAbout() {
@@ -68,6 +92,86 @@ export class AboutService {
     } as any;
 
     const saved = await doc.save();
+
+    return {
+      blocks: saved.blocks ?? [],
+      images: saved.images ?? [],
+      updatedAt: saved.updatedAt,
+    };
+  }
+
+  async addImages(images: string[]) {
+    const doc = await this.getOrCreateSingleton();
+
+    doc.images = [...(doc.images ?? []), ...(images ?? [])];
+    const saved = await doc.save();
+
+    return {
+      blocks: saved.blocks ?? [],
+      images: saved.images ?? [],
+      updatedAt: saved.updatedAt,
+    };
+  }
+
+  async replaceImageAt(index: number, image: string) {
+    const doc = await this.getOrCreateSingleton();
+
+    const arr = doc.images ?? [];
+    if (index < 0 || index >= arr.length) {
+      throw new NotFoundException('Image index out of range');
+    }
+
+    const oldUrl = arr[index];
+
+    arr[index] = image;
+    doc.images = arr;
+
+    const saved = await doc.save();
+
+    // ✅ delete old file from disk
+    await this.safeUnlinkByUrl(oldUrl);
+
+    return {
+      blocks: saved.blocks ?? [],
+      images: saved.images ?? [],
+      updatedAt: saved.updatedAt,
+    };
+  }
+
+  async deleteImageAt(index: number) {
+    const doc = await this.getOrCreateSingleton();
+
+    const arr = doc.images ?? [];
+    if (index < 0 || index >= arr.length) {
+      throw new NotFoundException('Image index out of range');
+    }
+
+    const removedUrl = arr[index];
+
+    doc.images = arr.filter((_, i) => i !== index);
+
+    const saved = await doc.save();
+
+    // ✅ delete removed file from disk
+    await this.safeUnlinkByUrl(removedUrl);
+
+    return {
+      blocks: saved.blocks ?? [],
+      images: saved.images ?? [],
+      updatedAt: saved.updatedAt,
+    };
+  }
+
+  async clearImages() {
+    const doc = await this.getOrCreateSingleton();
+
+    const urls = doc.images ?? [];
+    doc.images = [];
+
+    const saved = await doc.save();
+
+    // ✅ delete all files from disk
+    await Promise.all(urls.map((u) => this.safeUnlinkByUrl(u)));
 
     return {
       blocks: saved.blocks ?? [],
