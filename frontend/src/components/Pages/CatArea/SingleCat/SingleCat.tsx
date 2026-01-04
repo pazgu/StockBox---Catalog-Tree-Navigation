@@ -533,49 +533,54 @@ const SingleCat: FC = () => {
       </main>
 
       {role === "editor" && !isSelectionMode && (
-        <div className="fixed bottom-10 right-10 flex flex-col gap-3">
+        <div className="fixed bottom-10 left-10 flex flex-col-reverse gap-3 group">
+          {/* Main FAB button */}
+          <button
+            className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 z-10"
+            title="הוסף"
+          >
+            <span className="text-3xl font-light transition-transform duration-300 group-hover:rotate-45">+</span>
+          </button>
+
+          {/* Add Product button - appears on hover */}
           <button
             onClick={() => {
               setModalType("product");
               setShowAddModal(true);
             }}
-            className="w-14 h-14 bg-green-600 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-green-700 transition-all group relative"
+            className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 ease-in-out scale-0 group-hover:scale-100 -translate-y-14 group-hover:translate-y-0 pointer-events-none group-hover:pointer-events-auto relative"
             title="הוסף מוצר"
           >
-            <span className="text-2xl">
-              <FilePlus2Icon size={24} />
-            </span>
-            <span className="absolute left-16 bg-gray-800 text-white text-xs px-3 py-1 rounded opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap">
+            <FilePlus2Icon size={24} />
+            <span className="absolute left-16 bg-gray-800 text-white text-xs px-3 py-1 rounded opacity-0 hover:opacity-100 transition-all duration-200 whitespace-nowrap">
               הוסף מוצר
             </span>
           </button>
+
+          {/* Add Category button - appears on hover */}
           <button
             onClick={() => {
               setModalType("category");
               setShowAddModal(true);
             }}
-            className="w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-blue-700 transition-all group relative"
+            className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 ease-in-out scale-0 group-hover:scale-100 -translate-y-14 group-hover:translate-y-0 pointer-events-none group-hover:pointer-events-auto relative"
             title="הוסף תת-קטגוריה"
           >
-            <span className="text-2xl">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                width="24"
-                height="24"
-                fill="none"
-                stroke="#000000"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path
-                  fill="none"
-                  d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2zm-10-8v6m-3-3h6"
-                />
-              </svg>{" "}
-            </span>
-            <span className="absolute left-16 bg-gray-800 text-white text-xs px-3 py-1 rounded opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap">
+            <svg
+              color="white"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              width="24"
+              height="24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2zm-10-8v6m-3-3h6" />
+            </svg>
+            <span className="absolute left-16 bg-gray-800 text-white text-xs px-3 py-1 rounded opacity-0 hover:opacity-100 transition-all duration-200 whitespace-nowrap">
               הוסף תת-קטגוריה
             </span>
           </button>
