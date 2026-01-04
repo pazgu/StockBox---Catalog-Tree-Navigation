@@ -77,7 +77,8 @@ export interface FileFolder {
 
 export type AddCategoryResult = {
   name: string;
-  image: string;
+  imageFile: File;
 };
+
 
 export type Point = { x: number; y: number };
