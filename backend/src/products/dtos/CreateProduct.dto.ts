@@ -1,23 +1,31 @@
-import { IsString, IsNotEmpty, IsOptional, IsObject } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class CreateProductDto {
   @IsString()
-  @IsNotEmpty()
   productName: string;
 
   @IsString()
-  @IsNotEmpty()
-  productImage: string;
-
-  @IsString()
-  @IsOptional()
-  productDescription?: string;
-
-  @IsString()
-  @IsNotEmpty()
   productPath: string;
 
-  @IsObject()
   @IsOptional()
+  @IsString()
+  productDescription?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (!value) return undefined;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+      return typeof value === 'string' ? JSON.parse(value) : value;
+    } catch {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+      return value;
+    }
+  })
   customFields?: Record<string, any>;
+
+  @IsOptional()
+  @IsString()
+  productImage?: string;
 }

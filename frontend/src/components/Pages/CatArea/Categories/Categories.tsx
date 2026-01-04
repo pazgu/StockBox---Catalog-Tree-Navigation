@@ -3,14 +3,14 @@ import { Pen, Trash, Lock, Heart } from "lucide-react";
 import { useUser } from "../../../../context/UserContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import AddCategoryModal  from "./AddCategoryModal/AddCategoryModal/AddCategoryModal";
+import AddCategoryModal from "./AddCategoryModal/AddCategoryModal/AddCategoryModal";
 import EditCategoryModal from "./EditCategoryModal/EditCategoryModal/EditCategoryModal";
 import Breadcrumbs from "../../../LayoutArea/Breadcrumbs/Breadcrumbs";
 import { categoriesService } from "../../../../services/CategoryService";
 import { AddCategoryResult } from "../../../../types/types";
 
 
-interface CategoriesProps {}
+interface CategoriesProps { }
 
 export interface Category {
   _id: string;
@@ -18,6 +18,9 @@ export interface Category {
   categoryPath: string;
   categoryImage: string;
 }
+
+type CategoryEditPayload = Category & { imageFile?: File };
+
 
 export const Categories: FC<CategoriesProps> = () => {
   const [showAddCatModal, setShowAddCatModal] = useState(false);
@@ -102,50 +105,43 @@ export const Categories: FC<CategoriesProps> = () => {
     setCategoryToEdit(null);
   };
 
-  const handleAddCategory = async ({ name, image }: AddCategoryResult) => {
-    try {
-      const categoryPath = `/categories/${name
-        .toLowerCase()
-        .replace(/\s+/g, "-")}`;
+  const handleAddCategory = async ({ name, imageFile }: AddCategoryResult) => {
+    const categoryPath = `/categories/${name.toLowerCase().replace(/\s+/g, "-")}`;
 
-      const newCategory = await categoriesService.createCategory({
-        categoryName: name,
-        categoryPath,
-        categoryImage: image,
-      });
+    const newCategory = await categoriesService.createCategory({
+      categoryName: name,
+      categoryPath,
+      imageFile,
+    });
 
-      setCategories((prev) => [...prev, newCategory]);
-      setShowAddCatModal(false);
-      toast.success(`הקטגוריה "${name}" נוספה בהצלחה!`);
-    } catch (error) {
-      toast.error("שגיאה בהוספת קטגוריה");
-      console.error("Error adding category:", error);
-    }
+    setCategories((prev) => [...prev, newCategory]);
+    setShowAddCatModal(false);
+    toast.success(`הקטגוריה "${name}" נוספה בהצלחה!`);
   };
 
-  const handleSaveEdit = async (updatedCategory: Category) => {
-    try {
-      const result = await categoriesService.updateCategory(
-        updatedCategory._id,
-        {
-          categoryName: updatedCategory.categoryName,
-          categoryImage: updatedCategory.categoryImage,
-          categoryPath: updatedCategory.categoryPath,
-        }
-      );
 
-      setCategories((prev) =>
-        prev.map((c) => (c._id === result._id ? result : c))
-      );
+const handleSaveEdit = async (updatedCategory: CategoryEditPayload) => {
+  try {
+    const result = await categoriesService.updateCategory(updatedCategory._id, {
+      categoryName: updatedCategory.categoryName,
+      categoryPath: updatedCategory.categoryPath,
+      imageFile: updatedCategory.imageFile,
+    });
 
-      setShowEditModal(false);
-      setCategoryToEdit(null);
-      toast.success(`הקטגוריה "${result.categoryName}" עודכנה בהצלחה!`);
-    } catch (error) {
-      console.error("Error updating category:", error);
-      toast.error("שגיאה בעדכון הקטגוריה");
-    }
-  };
+    setCategories((prev) =>
+      prev.map((c) => (c._id === result._id ? result : c))
+    );
+
+    setShowEditModal(false);
+    setCategoryToEdit(null);
+    toast.success(`הקטגוריה "${result.categoryName}" עודכנה בהצלחה!`);
+  } catch (error) {
+    console.error("Error updating category:", error);
+    toast.error("שגיאה בעדכון הקטגוריה");
+  }
+};
+
+
   const handleCategoryClick = (category: Category) => {
     navigate(category.categoryPath);
   };

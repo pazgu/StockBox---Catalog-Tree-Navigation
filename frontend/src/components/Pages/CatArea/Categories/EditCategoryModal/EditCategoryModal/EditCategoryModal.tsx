@@ -16,6 +16,16 @@ type Props = {
 };
 
 const CROP_BOX = 256;
+function dataURLtoFile(dataUrl: string, filename: string) {
+  const arr = dataUrl.split(",");
+  const mimeMatch = arr[0].match(/:(.*?);/);
+  const mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) u8arr[n] = bstr.charCodeAt(n);
+  return new File([u8arr], filename, { type: mime });
+}
 
 const EditCategoryModal: React.FC<Props> = ({
   isOpen,
@@ -27,6 +37,9 @@ const EditCategoryModal: React.FC<Props> = ({
   const [previewImage, setPreviewImage] = React.useState<string>(
     category.categoryImage
   );
+
+  const [imageFile, setImageFile] = React.useState<File | undefined>(undefined); 
+
 
   const [isEditCropperOpen, setIsEditCropperOpen] = React.useState(false);
   const [editRawImage, setEditRawImage] =
@@ -41,6 +54,7 @@ const EditCategoryModal: React.FC<Props> = ({
 
   React.useEffect(() => {
     setName(category.categoryName);
+    setImageFile(undefined); 
     setPreviewImage(category.categoryImage);
   }, [category]);
 
@@ -71,45 +85,52 @@ const EditCategoryModal: React.FC<Props> = ({
   };
 
   const commitEditCrop = () => {
-    if (!editRawImage) return;
+  if (!editRawImage) return;
 
-    const OUT = 512;
-    const canvas = document.createElement("canvas");
-    canvas.width = OUT;
-    canvas.height = OUT;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+  const OUT = 512;
+  const canvas = document.createElement("canvas");
+  canvas.width = OUT;
+  canvas.height = OUT;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
 
-    const iw = editRawImage.naturalWidth;
-    const ih = editRawImage.naturalHeight;
+  const iw = editRawImage.naturalWidth;
+  const ih = editRawImage.naturalHeight;
 
-    const baseScale = getBaseCoverScale(iw, ih, CROP_BOX);
-    const displayScale = baseScale * editZoom;
-    const canvasScale = OUT / CROP_BOX;
+  const baseScale = getBaseCoverScale(iw, ih, CROP_BOX);
+  const displayScale = baseScale * editZoom;
+  const canvasScale = OUT / CROP_BOX;
 
-    ctx.clearRect(0, 0, OUT, OUT);
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, OUT, OUT);
+  ctx.clearRect(0, 0, OUT, OUT);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, OUT, OUT);
 
-    ctx.save();
-    ctx.scale(canvasScale, canvasScale);
-    ctx.beginPath();
-    ctx.arc(CROP_BOX / 2, CROP_BOX / 2, CROP_BOX / 2, 0, Math.PI * 2);
-    ctx.closePath();
-    ctx.clip();
+  ctx.save();
+  ctx.scale(canvasScale, canvasScale);
+  ctx.beginPath();
+  ctx.arc(CROP_BOX / 2, CROP_BOX / 2, CROP_BOX / 2, 0, Math.PI * 2);
+  ctx.closePath();
+  ctx.clip();
 
-    ctx.translate(CROP_BOX / 2, CROP_BOX / 2);
-    ctx.translate(editOffset.x, editOffset.y);
-    ctx.scale(displayScale, displayScale);
-    ctx.drawImage(editRawImage, -iw / 2, -ih / 2);
-    ctx.restore();
+  ctx.translate(CROP_BOX / 2, CROP_BOX / 2);
+  ctx.translate(editOffset.x, editOffset.y);
+  ctx.scale(displayScale, displayScale);
+  ctx.drawImage(editRawImage, -iw / 2, -ih / 2);
+  ctx.restore();
 
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
-    setPreviewImage(dataUrl);
-    setIsEditCropperOpen(false);
-    setEditRawImage(null);
-    toast.success("התמונה עודכנה לפי המסגור החדש");
-  };
+  const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+
+  const safe = name.trim().toLowerCase().replace(/\s+/g, "-") || "category";
+  const file = dataURLtoFile(dataUrl, `${safe}.jpg`);
+
+  setImageFile(file);        
+  setPreviewImage(dataUrl);  
+  setIsEditCropperOpen(false);
+  setEditRawImage(null);
+
+  toast.success("התמונה עודכנה לפי המסגור החדש");
+};
+
 
   const resetEditCrop = () => {
     setEditZoom(1);
@@ -129,6 +150,8 @@ const EditCategoryModal: React.FC<Props> = ({
       toast.error(`התמונה גדולה מדי (מעל ${MAX_MB}MB)`);
       return;
     }
+
+     setImageFile(file); 
 
     const reader = new FileReader();
     reader.onload = () => {
@@ -152,13 +175,14 @@ const EditCategoryModal: React.FC<Props> = ({
   };
 
   const handleSave = () => {
-    const updated: Category = {
-      ...category,
-      categoryName: name.trim(), 
-      categoryImage: previewImage, 
-    };
-    onSave(updated);
-  };
+  const updated = {
+    ...category,
+    categoryName: name.trim(),
+    imageFile,
+  } as any;
+  onSave(updated);
+};
+
 
   return (
     <div

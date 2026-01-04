@@ -25,6 +25,18 @@ interface DisplayItem {
   customFields?: any;
 }
 
+function dataURLtoFile(dataUrl: string, filename: string) {
+  const arr = dataUrl.split(",");
+  const mimeMatch = arr[0].match(/:(.*?);/);
+  const mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) u8arr[n] = bstr.charCodeAt(n);
+  return new File([u8arr], filename, { type: mime });
+}
+
+
 const SingleCat: FC = () => {
   const [items, setItems] = useState<DisplayItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,10 +56,12 @@ const SingleCat: FC = () => {
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryImage, setNewCategoryImage] = useState<string | null>(null);
 
+
   const location = useLocation();
   const params = useParams();
   const { role } = useUser();
   const navigate = useNavigate();
+
 
   const getCategoryPathFromUrl = () => {
     const wildcardPath = params["*"];
@@ -55,21 +69,19 @@ const SingleCat: FC = () => {
       return `/categories/${wildcardPath}`;
     }
 
-    const pathParts = location.pathname.split("/").filter(Boolean);
-    const categoryIndex = pathParts.indexOf("categories");
+    const pathParts = location.pathname.split('/').filter(Boolean);
+    const categoryIndex = pathParts.indexOf('categories');
     if (categoryIndex !== -1 && categoryIndex < pathParts.length - 1) {
       return `/categories/${pathParts.slice(categoryIndex + 1).join("/")}`;
     }
 
-    return "/categories/photography/cameras";
+    return '/categories/photography/cameras';
   };
+
 
   const categoryPath = getCategoryPathFromUrl();
 
-  const pathParts = categoryPath
-    .replace("/categories/", "")
-    .split("/")
-    .filter(Boolean);
+  const pathParts = categoryPath.replace('/categories/', '').split('/').filter(Boolean);
   const breadcrumbPath = ["categories", ...pathParts];
 
   useEffect(() => {
@@ -79,6 +91,7 @@ const SingleCat: FC = () => {
   const loadAllContent = async () => {
     try {
       setLoading(true);
+
 
       let subCategories: CategoryDTO[] = [];
       try {
@@ -105,8 +118,8 @@ const SingleCat: FC = () => {
       const productItems: DisplayItem[] = products.map((prod: ProductDto) => ({
         id: prod._id!,
         name: prod.productName,
-        image: prod.productImage,
-        type: "product",
+        image: prod.productImage ?? "/assets/images/placeholder.png",
+        type: 'product',
         path: prod.productPath,
         favorite: prod.customFields?.favorite || false,
         description: prod.productDescription,
@@ -186,47 +199,45 @@ const SingleCat: FC = () => {
   };
 
   const handleSaveProduct = async () => {
-    if (!newProductName || !newProductImage) {
-      toast.error("אנא מלא את כל השדות החובה");
-      return;
-    }
+  if (!newProductName || !newProductImage) {
+    toast.error("אנא מלא את כל השדות החובה");
+    return;
+  }
 
-    try {
-      const productSlug = newProductName.toLowerCase().replace(/\s+/g, "-");
-      const fullProductPath = `${categoryPath}/${productSlug}`;
+  try {
+    const safe = newProductName.trim().toLowerCase().replace(/\s+/g, "-") || "product";
+    const file = dataURLtoFile(newProductImage, `${safe}.jpg`);
 
-      const newProduct: Omit<ProductDto, "_id" | "createdAt" | "updatedAt"> = {
-        productName: newProductName,
-        productImage: newProductImage,
-        productDescription: newProductLens,
-        productPath: fullProductPath,
-        customFields: {
-          lens: newProductLens,
-          color: newProductColor,
-          favorite: false,
-        },
-      };
-
-      const createdProduct = await ProductsService.createProduct(newProduct);
-
-      const newItem: DisplayItem = {
-        id: createdProduct._id!,
-        name: createdProduct.productName,
-        image: createdProduct.productImage,
-        type: "product",
-        path: createdProduct.productPath,
+    const createdProduct = await ProductsService.createProduct({
+      productName: newProductName,
+      productPath: categoryPath,
+      productDescription: newProductLens,
+      customFields: {
+        lens: newProductLens,
+        color: newProductColor,
         favorite: false,
-        customFields: createdProduct.customFields,
-      };
+      },
+      imageFile: file,
+    });
 
-      setItems([...items, newItem]);
-      toast.success(`המוצר "${newProductName}" נוסף בהצלחה!`);
-      closeAllModals();
-      resetForm();
-    } catch (error) {
-      toast.error("שגיאה בהוספת המוצר");
-    }
-  };
+    const newItem: DisplayItem = {
+      id: createdProduct._id!,
+      name: createdProduct.productName,
+      image: createdProduct.productImage ?? "/assets/images/placeholder.png",
+      type: "product",
+      path: createdProduct.productPath,
+      favorite: false,
+      customFields: createdProduct.customFields,
+    };
+
+    setItems([...items, newItem]);
+    toast.success(`המוצר "${newProductName}" נוסף בהצלחה!`);
+    closeAllModals();
+    resetForm();
+  } catch (error) {
+    toast.error("שגיאה בהוספת המוצר");
+  }
+};
 
   const handleSaveCategory = async () => {
     if (!newCategoryName || !newCategoryImage) {
@@ -234,15 +245,17 @@ const SingleCat: FC = () => {
       return;
     }
     try {
-      const newCategoryPath = `${categoryPath}/${newCategoryName
-        .toLowerCase()
-        .replace(/\s+/g, "-")}`;
+      const newCategoryPath = `${categoryPath}/${newCategoryName.toLowerCase().replace(/\s+/g, '-')}`;
+
+      const safe = newCategoryName.trim().toLowerCase().replace(/\s+/g, "-") || "category";
+      const file = dataURLtoFile(newCategoryImage, `${safe}.jpg`);
 
       const newCategory = await categoriesService.createCategory({
         categoryName: newCategoryName,
         categoryPath: newCategoryPath,
-        categoryImage: newCategoryImage,
+        imageFile: file,
       });
+
       const newItem: DisplayItem = {
         id: newCategory._id,
         name: newCategory.categoryName,
@@ -423,25 +436,17 @@ const SingleCat: FC = () => {
         {items.map((item) => (
           <div
             key={item.id}
-            className={`group flex flex-col items-center p-6 text-center rounded-2xl relative transition-all duration-200 ${
-              selectedItems.includes(item.id)
-                ? "bg-[#0D305B]/5 ring-2 ring-[#0D305B]/40 "
-                : "bg-white/300 backdrop-blur-sm"
-            } ${!isSelectionMode ? "cursor-pointer" : ""}`}
+            className={`flex flex-col items-center p-5 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 ${selectedItems.includes(item.id)
+                ? "border-[#0D305B] ring-2 ring-[#0D305B] ring-opacity-30"
+                : "border-gray-200"
+              } ${!isSelectionMode ? 'cursor-pointer' : ''}`}
             onClick={() => !isSelectionMode && handleItemClick(item)}
           >
-            <div className="absolute top-4 left-2">
-              <div
-                className={`group px-3 py-1 pt-3 text-xs font-medium rounded-full ${
-                  item.type === "category" ? "text-blue-700" : "text-green-700"
-                }`}
-              >
-                {item.type === "category" ? <Boxes /> : <PackageCheck />}
-
-                <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-2 w-max -translate-x-1/2 rounded bg-gray-900 px-2 py-1 text-[10px] text-white opacity-0 transition-opacity group-hover:opacity-100">
-                  {item.type === "category" ? "תת-קטגוריה" : "מוצר"}
-                </span>
-              </div>
+            <div className={`absolute top-2 left-2 px-3 py-1 text-xs font-medium rounded-full ${item.type === 'category'
+                ? 'bg-blue-100 text-blue-700 border border-blue-300'
+                : 'bg-green-100 text-green-700 border border-green-300'
+              }`}>
+              {item.type === 'category' ? '📁 קטגוריה' : '📦 מוצר'}
             </div>
 
             {isSelectionMode && role === "editor" && (
@@ -490,9 +495,8 @@ const SingleCat: FC = () => {
               <img
                 src={item.image}
                 alt={item.name}
-                className={`max-h-full max-w-full object-contain transition-transform duration-300 ${
-                  item.type === "category" ? "rounded-full" : ""
-                }`}
+                className={`max-h-full max-w-full object-contain transition-transform duration-300 hover:scale-105 ${item.type === 'category' ? 'rounded-full' : ''
+                  }`}
               />
             </div>
 

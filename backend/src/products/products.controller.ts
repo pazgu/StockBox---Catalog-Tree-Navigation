@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   Controller,
   Get,
@@ -6,10 +7,16 @@ import {
   HttpCode,
   HttpStatus,
   Req,
+  UseInterceptors,
+  UploadedFile,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dtos/CreateProduct.dto';
 import express from 'express';
+import { productUploadsOptions } from './productUploads';
 
 @Controller('products')
 export class ProductsController {
@@ -19,6 +26,7 @@ export class ProductsController {
   findAll() {
     return this.productsService.findAll();
   }
+
   @Get('by-path/*')
   findByPath(@Req() request: express.Request) {
     const fullUrl = request.url;
@@ -29,7 +37,13 @@ export class ProductsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() createProductDto: CreateProductDto) {
-    return this.productsService.create(createProductDto);
+  @UsePipes(new ValidationPipe({ transform: true }))
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+  @UseInterceptors(FileInterceptor('productImageFile', productUploadsOptions))
+  create(
+    @Body() createProductDto: CreateProductDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    return this.productsService.create(createProductDto, file);
   }
 }
