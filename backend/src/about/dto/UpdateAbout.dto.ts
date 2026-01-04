@@ -1,6 +1,6 @@
 import { IsArray, IsOptional, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
-import { BlockType } from '../schemas/About.schema';
+import { BlockType } from '../../schemas/About.schema';
 
 export class AboutBlockDto {
   @IsString()
