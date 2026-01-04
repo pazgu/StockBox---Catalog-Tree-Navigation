@@ -1,5 +1,5 @@
 import React, { FC, useState, ChangeEvent, useEffect } from "react";
-import { Heart, Pen, Trash } from "lucide-react";
+import { Heart, Pen, Trash, PackageCheck, Boxes } from "lucide-react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
@@ -13,6 +13,7 @@ import {
   CategoryDTO,
 } from "../../../../services/CategoryService";
 import { FilePlus2Icon } from "lucide-react";
+import { title } from "process";
 interface DisplayItem {
   id: string;
   name: string;
@@ -418,29 +419,38 @@ const SingleCat: FC = () => {
         </div>
       )}
 
-      <main className="grid grid-cols-[repeat(auto-fill,minmax(290px,1fr))] gap-14">
+      <main className="grid grid-cols-[repeat(auto-fill,minmax(290px,1fr))] gap-24">
         {items.map((item) => (
           <div
             key={item.id}
             className={`flex flex-col items-center p-5 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 ${
               selectedItems.includes(item.id)
-                ? "border-[#0D305B] ring-2 ring-[#0D305B] ring-opacity-30"
+                ? "bg-[#0D305B]/5 shadow-lg"
                 : "border-gray-200"
             } ${!isSelectionMode ? "cursor-pointer" : ""}`}
             onClick={() => !isSelectionMode && handleItemClick(item)}
           >
             <div
-              className={`absolute top-2 left-2 px-3 py-1 text-xs font-medium rounded-full ${
+              className={`absolute top-4 left-2 px-3 py-1 pt-2 text-xs font-medium rounded-full ${
                 item.type === "category"
-                  ? "bg-blue-100 text-blue-700 border border-blue-300"
-                  : "bg-green-100 text-green-700 border border-green-300"
+                  ? " text-blue-700 "
+                  : " text-green-700 "
               }`}
             >
-              {item.type === "category" ? "📁 קטגוריה" : "📦 מוצר"}
+              {item.type === "category" ? (
+                <>
+                  <Boxes />
+                  <span className="sr-only">קטגוריה</span>
+                </>
+              ) : (
+                <>
+                  <PackageCheck />
+                  <span className="sr-only">מוצר</span>
+                </>
+              )}
             </div>
-            {/* Selection checkbox */}
             {isSelectionMode && role === "editor" && (
-              <div className="absolute top-3 left-3 z-10">
+              <div className="absolute top-3 right-3 z-10">
                 <input
                   type="checkbox"
                   checked={selectedItems.includes(item.id)}
@@ -450,19 +460,16 @@ const SingleCat: FC = () => {
               </div>
             )}
 
-            {/* Delete button */}
             {role === "editor" && !isSelectionMode && (
-              <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-48 pointer-events-none">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(item);
-                  }}
-                  className="absolute top-1 left-1 opacity-1 transform translate-x-3 scale-90 transition-all duration-300 ease-in-out pointer-events-auto h-8 w-8 rounded-full bg-[#e5e7eb] text-gray-800 flex items-center justify-center shadow-md hover:bg-red-600 hover:text-white hover:scale-110"
-                >
-                  <Trash size={20} />
-                </button>
-              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(item);
+                }}
+                className="absolute bottom-3 left-3 group-hover:opacity-100 transition-all duration-200 h-9 w-9  text-gray-700 flex items-center justify-center hover:text-red-500 hover:scale-110"
+              >
+                <Trash size={18} />
+              </button>
             )}
 
             {!isSelectionMode && (
@@ -471,23 +478,24 @@ const SingleCat: FC = () => {
                   e.stopPropagation();
                   toggleFavorite(item.id);
                 }}
-                className="absolute top-3 right-3 p-2 rounded-full bg-black/40 hover:bg-black/60 transition-colors"
+                className="absolute right-3 group-hover:opacity-100 transition-all duration-200 h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110"
               >
                 <Heart
                   size={22}
                   strokeWidth={2}
                   className={
-                    item.favorite ? "fill-red-500 text-red-500" : "text-white"
+                    item.favorite
+                      ? "fill-red-500 text-red-500"
+                      : "text-gray-700"
                   }
                 />
               </button>
             )}
-
             <div className="h-[140px] w-full flex justify-center items-center p-5">
               <img
                 src={item.image}
                 alt={item.name}
-                className={`max-h-full max-w-full object-contain transition-transform duration-300 hover:scale-105 ${
+                className={`max-h-full max-w-full object-contain transition-transform duration-300 ${
                   item.type === "category" ? "rounded-full" : ""
                 }`}
               />
@@ -520,7 +528,7 @@ const SingleCat: FC = () => {
                       e.stopPropagation();
                       handleManagePermissions();
                     }}
-                    className="flex items-center gap-2 text-sm font-medium text-white bg-[#0D305B] px-4 py-2 rounded-xl shadow-md transition-all duration-300 hover:bg-[#16447A] hover:shadow-lg hover:-translate-y-0.5 focus:ring-2 focus:ring-[#0D305B]/40"
+                    className="flex items-center gap-2 text-sm font-medium text-white bg-[#0D305B] px-4 py-2 rounded-xl shadow-md transition-all duration-300 hover:bg-[#16447A] hover:shadow-lg focus:ring-2 focus:ring-[#0D305B]/40"
                   >
                     <Pen size={16} className="text-white" />
                     ניהול הרשאות
@@ -534,15 +542,15 @@ const SingleCat: FC = () => {
 
       {role === "editor" && !isSelectionMode && (
         <div className="fixed bottom-10 left-10 flex flex-col-reverse gap-3 group">
-          {/* Main FAB button */}
           <button
             className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 z-10"
             title="הוסף"
           >
-            <span className="text-3xl font-light transition-transform duration-300 group-hover:rotate-45">+</span>
+            <span className="text-3xl font-light transition-transform duration-300 group-hover:rotate-45">
+              +
+            </span>
           </button>
 
-          {/* Add Product button - appears on hover */}
           <button
             onClick={() => {
               setModalType("product");
@@ -557,7 +565,6 @@ const SingleCat: FC = () => {
             </span>
           </button>
 
-          {/* Add Category button - appears on hover */}
           <button
             onClick={() => {
               setModalType("category");
