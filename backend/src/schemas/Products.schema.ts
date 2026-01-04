@@ -5,7 +5,7 @@ export class Product {
   @Prop({ required: true, unique: true })
   productName: string;
 
-  @Prop({ required: true })
+  @Prop({ required: false, default: '' })
   productImage: string;
 
   @Prop({ required: false })
