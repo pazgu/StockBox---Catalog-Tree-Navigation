@@ -18,6 +18,18 @@ interface DisplayItem {
   customFields?: any;
 }
 
+function dataURLtoFile(dataUrl: string, filename: string) {
+  const arr = dataUrl.split(",");
+  const mimeMatch = arr[0].match(/:(.*?);/);
+  const mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) u8arr[n] = bstr.charCodeAt(n);
+  return new File([u8arr], filename, { type: mime });
+}
+
+
 const SingleCat: FC = () => {
   const [items, setItems] = useState<DisplayItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,29 +48,29 @@ const SingleCat: FC = () => {
   const [newProductImage, setNewProductImage] = useState<string | null>(null);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryImage, setNewCategoryImage] = useState<string | null>(null);
-  
+
   const location = useLocation();
   const params = useParams();
   const { role } = useUser();
   const navigate = useNavigate();
-  
+
   const getCategoryPathFromUrl = () => {
     const wildcardPath = params['*'];
     if (wildcardPath) {
       return `/categories/${wildcardPath}`;
     }
-    
+
     const pathParts = location.pathname.split('/').filter(Boolean);
     const categoryIndex = pathParts.indexOf('categories');
     if (categoryIndex !== -1 && categoryIndex < pathParts.length - 1) {
       return `/categories/${pathParts.slice(categoryIndex + 1).join('/')}`;
     }
-    
+
     return '/categories/photography/cameras';
   };
-  
+
   const categoryPath = getCategoryPathFromUrl();
-  
+
   const pathParts = categoryPath.replace('/categories/', '').split('/').filter(Boolean);
   const breadcrumbPath = ["categories", ...pathParts];
 
@@ -69,8 +81,8 @@ const SingleCat: FC = () => {
   const loadAllContent = async () => {
     try {
       setLoading(true);
-      
-      
+
+
       let subCategories: CategoryDTO[] = [];
       try {
         subCategories = await categoriesService.getDirectChildren(categoryPath);
@@ -94,7 +106,7 @@ const SingleCat: FC = () => {
       const productItems: DisplayItem[] = products.map((prod: ProductDto) => ({
         id: prod._id!,
         name: prod.productName,
-        image: prod.productImage,
+        image: prod.productImage ?? "/assets/images/placeholder.png",
         type: 'product',
         path: prod.productPath,
         favorite: prod.customFields?.favorite || false,
@@ -171,44 +183,46 @@ const SingleCat: FC = () => {
   };
 
   const handleSaveProduct = async () => {
-    if (!newProductName || !newProductImage) {
-      toast.error("אנא מלא את כל השדות החובה");
-      return;
-    }
+  if (!newProductName || !newProductImage) {
+    toast.error("אנא מלא את כל השדות החובה");
+    return;
+  }
 
-    try {
-      const newProduct: Omit<ProductDto, '_id' | 'createdAt' | 'updatedAt'> = {
-        productName: newProductName,
-        productImage: newProductImage,
-        productDescription: newProductLens,
-        productPath: categoryPath,
-        customFields: {
-          lens: newProductLens,
-          color: newProductColor,
-          favorite: false,
-        },
-      };
+  try {
+    const safe = newProductName.trim().toLowerCase().replace(/\s+/g, "-") || "product";
+    const file = dataURLtoFile(newProductImage, `${safe}.jpg`);
 
-      const createdProduct = await ProductsService.createProduct(newProduct);
-      
-      const newItem: DisplayItem = {
-        id: createdProduct._id!,
-        name: createdProduct.productName,
-        image: createdProduct.productImage,
-        type: 'product',
-        path: createdProduct.productPath,
+    const createdProduct = await ProductsService.createProduct({
+      productName: newProductName,
+      productPath: categoryPath,
+      productDescription: newProductLens,
+      customFields: {
+        lens: newProductLens,
+        color: newProductColor,
         favorite: false,
-        customFields: createdProduct.customFields,
-      };
+      },
+      imageFile: file,
+    });
 
-      setItems([...items, newItem]);
-      toast.success(`המוצר "${newProductName}" נוסף בהצלחה!`);
-      closeAllModals();
-      resetForm();
-    } catch (error) {
-      toast.error("שגיאה בהוספת המוצר");
-    }
-  };
+    const newItem: DisplayItem = {
+      id: createdProduct._id!,
+      name: createdProduct.productName,
+      image: createdProduct.productImage ?? "/assets/images/placeholder.png",
+      type: "product",
+      path: createdProduct.productPath,
+      favorite: false,
+      customFields: createdProduct.customFields,
+    };
+
+    setItems([...items, newItem]);
+    toast.success(`המוצר "${newProductName}" נוסף בהצלחה!`);
+    closeAllModals();
+    resetForm();
+  } catch (error) {
+    toast.error("שגיאה בהוספת המוצר");
+  }
+};
+
   const handleSaveCategory = async () => {
     if (!newCategoryName || !newCategoryImage) {
       toast.error("אנא מלא את כל השדות החובה");
@@ -216,12 +230,16 @@ const SingleCat: FC = () => {
     }
     try {
       const newCategoryPath = `${categoryPath}/${newCategoryName.toLowerCase().replace(/\s+/g, '-')}`;
-      
+
+      const safe = newCategoryName.trim().toLowerCase().replace(/\s+/g, "-") || "category";
+      const file = dataURLtoFile(newCategoryImage, `${safe}.jpg`);
+
       const newCategory = await categoriesService.createCategory({
         categoryName: newCategoryName,
         categoryPath: newCategoryPath,
-        categoryImage: newCategoryImage,
+        imageFile: file,
       });
+
       const newItem: DisplayItem = {
         id: newCategory._id,
         name: newCategory.categoryName,
@@ -403,18 +421,16 @@ const SingleCat: FC = () => {
         {items.map((item) => (
           <div
             key={item.id}
-            className={`flex flex-col items-center p-5 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 ${
-              selectedItems.includes(item.id)
+            className={`flex flex-col items-center p-5 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 ${selectedItems.includes(item.id)
                 ? "border-[#0D305B] ring-2 ring-[#0D305B] ring-opacity-30"
                 : "border-gray-200"
-            } ${!isSelectionMode ? 'cursor-pointer' : ''}`}
+              } ${!isSelectionMode ? 'cursor-pointer' : ''}`}
             onClick={() => !isSelectionMode && handleItemClick(item)}
           >
-            <div className={`absolute top-2 left-2 px-3 py-1 text-xs font-medium rounded-full ${
-              item.type === 'category' 
-                ? 'bg-blue-100 text-blue-700 border border-blue-300' 
+            <div className={`absolute top-2 left-2 px-3 py-1 text-xs font-medium rounded-full ${item.type === 'category'
+                ? 'bg-blue-100 text-blue-700 border border-blue-300'
                 : 'bg-green-100 text-green-700 border border-green-300'
-            }`}>
+              }`}>
               {item.type === 'category' ? '📁 קטגוריה' : '📦 מוצר'}
             </div>
             {/* Selection checkbox */}
@@ -466,9 +482,8 @@ const SingleCat: FC = () => {
               <img
                 src={item.image}
                 alt={item.name}
-                className={`max-h-full max-w-full object-contain transition-transform duration-300 hover:scale-105 ${
-                  item.type === 'category' ? 'rounded-full' : ''
-                }`}
+                className={`max-h-full max-w-full object-contain transition-transform duration-300 hover:scale-105 ${item.type === 'category' ? 'rounded-full' : ''
+                  }`}
               />
             </div>
 
@@ -614,7 +629,7 @@ const SingleCat: FC = () => {
                   />
                 )}
               </>
-            )}         
+            )}
             <div className="flex justify-end gap-3 mt-4">
               <button
                 onClick={modalType === 'product' ? handleSaveProduct : handleSaveCategory}
