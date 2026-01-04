@@ -7,6 +7,7 @@ import { Category } from 'src/schemas/Categories.schema';
 import { CreateCategoryDto } from './dtos/CreateCategory.dto';
 import { Product } from 'src/schemas/Products.schema';
 import { UpdateCategoryDto } from './dtos/UpdateCategory.dto';
+import { uploadBufferToCloudinary } from 'src/utils/cloudinary/upload.util';
 
 @Injectable()
 export class CategoriesService {
@@ -15,7 +16,18 @@ export class CategoriesService {
     @InjectModel(Product.name) private productModel: Model<Product>,
   ) {}
 
-  async createCategory(createCategoryDto: CreateCategoryDto) {
+  async createCategory(
+    createCategoryDto: CreateCategoryDto,
+    file?: Express.Multer.File,
+  ) {
+    if (file?.buffer) {
+      const uploaded = await uploadBufferToCloudinary(
+        file.buffer,
+        'stockbox/categories',
+      );
+      createCategoryDto.categoryImage = uploaded.secure_url;
+    }
+
     const newCategory = new this.categoryModel(createCategoryDto);
     return newCategory.save();
   }
@@ -74,31 +86,36 @@ export class CategoriesService {
     };
   }
 
-  async updateCategory(id: string, updateCategoryDto: UpdateCategoryDto) {
-    // Find the category by ID
+  async updateCategory(
+    id: string,
+    updateCategoryDto: UpdateCategoryDto,
+    file?: Express.Multer.File,
+  ) {
     const category = await this.categoryModel.findById(id);
-    if (!category) {
-      throw new NotFoundException('Category not found');
-    }
+    if (!category) throw new NotFoundException('Category not found');
 
     const oldCategoryPath = category.categoryPath;
-    const oldCategoryName = category.categoryName;
 
-    // Update the category
+    if (file?.buffer) {
+      const uploaded = await uploadBufferToCloudinary(
+        file.buffer,
+        'stockbox/categories',
+      );
+      updateCategoryDto.categoryImage = uploaded.secure_url;
+    }
+
     const updatedCategory = await this.categoryModel.findByIdAndUpdate(
       id,
       updateCategoryDto,
-      { new: true }, // Return the updated document
+      { new: true },
     );
 
-    // If categoryPath or categoryName changed, update all nested categories and products
     if (
       updateCategoryDto.categoryPath &&
       updateCategoryDto.categoryPath !== oldCategoryPath
     ) {
       const newCategoryPath = updateCategoryDto.categoryPath;
 
-      // Update nested categories
       await this.categoryModel.updateMany(
         { categoryPath: new RegExp(`^${oldCategoryPath}/`) },
         [
@@ -121,7 +138,6 @@ export class CategoriesService {
         ],
       );
 
-      // Update products in this category and nested categories
       await this.productModel.updateMany(
         { categoryPath: new RegExp(`^${oldCategoryPath}`) },
         [
