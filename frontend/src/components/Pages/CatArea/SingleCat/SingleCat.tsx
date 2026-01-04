@@ -372,7 +372,7 @@ const SingleCat: FC = () => {
           {!isSelectionMode ? (
             <button
               onClick={toggleSelectionMode}
-              className="text-base text-gray-700 hover:text-[#0D305B] underline transition-colors"
+              className="text-base text-gray-700 hover:text-[#0D305B] hover:underline transition-colors"
             >
               בחירה מרובה
             </button>
@@ -380,7 +380,7 @@ const SingleCat: FC = () => {
             <div className="flex items-center gap-3 flex-wrap">
               <button
                 onClick={selectAllItems}
-                className="text-base underline text-gray-700 hover:text-[#0D305B] transition-colors"
+                className="text-base hover:underline text-gray-700 hover:text-[#0D305B] transition-colors"
               >
                 {selectedItems.length === items.length
                   ? "בטל בחירת הכל"
@@ -392,7 +392,7 @@ const SingleCat: FC = () => {
                   <span className="text-gray-400">|</span>
                   <button
                     onClick={handleDeleteSelected}
-                    className="text-base underline text-red-600 hover:text-red-700 transition-colors"
+                    className="text-base hover:underline text-red-600 hover:text-red-700 transition-colors"
                   >
                     מחק ({selectedItems.length})
                   </button>
@@ -400,7 +400,7 @@ const SingleCat: FC = () => {
                   <span className="text-gray-400">|</span>
                   <button
                     onClick={handleMoveSelected}
-                    className="text-base underline text-gray-700 hover:text-[#0D305B] transition-colors"
+                    className="text-base hover:underline text-gray-700 hover:text-[#0D305B] transition-colors"
                   >
                     העבר ({selectedItems.length})
                   </button>
@@ -410,7 +410,7 @@ const SingleCat: FC = () => {
               <span className="text-gray-400">|</span>
               <button
                 onClick={toggleSelectionMode}
-                className="text-base underline text-gray-700 hover:text-[#0D305B] transition-colors"
+                className="text-base hover:underline text-gray-700 hover:text-[#0D305B] transition-colors"
               >
                 ביטול
               </button>
@@ -423,32 +423,27 @@ const SingleCat: FC = () => {
         {items.map((item) => (
           <div
             key={item.id}
-            className={`flex flex-col items-center p-5 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 ${
+            className={`group flex flex-col items-center p-6 text-center rounded-2xl relative transition-all duration-200 ${
               selectedItems.includes(item.id)
-                ? "bg-[#0D305B]/5 shadow-lg"
-                : "border-gray-200"
+                ? "bg-[#0D305B]/5 ring-2 ring-[#0D305B]/40 "
+                : "bg-white/300 backdrop-blur-sm"
             } ${!isSelectionMode ? "cursor-pointer" : ""}`}
             onClick={() => !isSelectionMode && handleItemClick(item)}
           >
-            <div
-              className={`absolute top-4 left-2 px-3 py-1 pt-2 text-xs font-medium rounded-full ${
-                item.type === "category"
-                  ? " text-blue-700 "
-                  : " text-green-700 "
-              }`}
-            >
-              {item.type === "category" ? (
-                <>
-                  <Boxes />
-                  <span className="sr-only">קטגוריה</span>
-                </>
-              ) : (
-                <>
-                  <PackageCheck />
-                  <span className="sr-only">מוצר</span>
-                </>
-              )}
+            <div className="absolute top-4 left-2">
+              <div
+                className={`group px-3 py-1 pt-3 text-xs font-medium rounded-full ${
+                  item.type === "category" ? "text-blue-700" : "text-green-700"
+                }`}
+              >
+                {item.type === "category" ? <Boxes /> : <PackageCheck />}
+
+                <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-2 w-max -translate-x-1/2 rounded bg-gray-900 px-2 py-1 text-[10px] text-white opacity-0 transition-opacity group-hover:opacity-100">
+                  {item.type === "category" ? "תת-קטגוריה" : "מוצר"}
+                </span>
+              </div>
             </div>
+
             {isSelectionMode && role === "editor" && (
               <div className="absolute top-3 right-3 z-10">
                 <input
@@ -541,7 +536,7 @@ const SingleCat: FC = () => {
       </main>
 
       {role === "editor" && !isSelectionMode && (
-        <div className="fixed bottom-10 left-10 flex flex-col-reverse gap-3 group">
+        <div className="fixed bottom-10 right-4 flex flex-col-reverse gap-3 group">
           <button
             className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 z-10"
             title="הוסף"
