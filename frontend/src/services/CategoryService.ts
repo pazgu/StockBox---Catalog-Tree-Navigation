@@ -53,32 +53,33 @@ class CategoriesService {
     }
   }
 
+  async getDirectChildren(categoryPath: string): Promise<CategoryDTO[]> {
+    try {
+      let cleanPath = categoryPath.startsWith('/') 
+        ? categoryPath.substring(1) 
+        : categoryPath;
+      if (cleanPath.startsWith('categories/')) {
+        cleanPath = cleanPath.substring('categories/'.length);
+      }
+      const response = await fetch(
+        `${this.baseUrl}/children/${cleanPath}`
+      );
+      if (!response.ok) {
+        return [];
+      } 
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      return [];
+    }
+  }
+
   async createCategory(category: CreateCategoryDTO): Promise<CategoryDTO> {
     try {
       const response = await axios.post<CategoryDTO>(this.baseUrl, category);
       return response.data;
     } catch (error) {
       console.error("Error creating category:", error);
-      throw error;
-    }
-  }
-
-  async createSubCategory(
-    parentCategory: string,
-    subCategory: Omit<CreateCategoryDTO, "categoryPath">
-  ): Promise<CategoryDTO> {
-    try {
-      const categoryWithPath: CreateCategoryDTO = {
-        ...subCategory,
-        categoryPath: `/categories/${parentCategory}/${subCategory.categoryName}`,
-      };
-      const response = await axios.post<CategoryDTO>(
-        this.baseUrl,
-        categoryWithPath
-      );
-      return response.data;
-    } catch (error) {
-      console.error("Error creating subcategory:", error);
       throw error;
     }
   }

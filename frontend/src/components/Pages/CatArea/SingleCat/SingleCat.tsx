@@ -1,161 +1,258 @@
-import React, { FC, useState, ChangeEvent } from "react";
-import canoneos2000d from "../../../../assets/canon-eos2000d.png";
-import canoneos4000d from "../../../../assets/canon-eos4000d.png";
-import canoneos250d from "../../../../assets/canon-eos250d.png";
-import canoneosr10 from "../../../../assets/canon-eosr10.png";
-import canoneosr50 from "../../../../assets/canon-eosr50.png";
-import canoneosr100 from "../../../../assets/canon-eosr100.png";
+import React, { FC, useState, ChangeEvent, useEffect } from "react";
 import { Heart, Pen, Trash } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
 import Breadcrumbs from "../../../LayoutArea/Breadcrumbs/Breadcrumbs";
+import { ProductsService, ProductDto } from "../../../../services/ProductService";
+import { categoriesService, CategoryDTO } from "../../../../services/CategoryService";
 
-export interface CameraProduct {
-  id: number;
+interface DisplayItem {
+  id: string;
   name: string;
-  lens: string;
-  color: string;
-  imageUrl: string;
-  favorite: boolean;
+  image: string;
+  type: 'product' | 'category';
+  path: string;
+  favorite?: boolean;
+  description?: string;
+  customFields?: any;
 }
 
-export const initialCameraData: CameraProduct[] = [
-  {
-    id: 1,
-    name: "מצלמה דיגיטלית Canon EOS 250D DSLR",
-    lens: "EF-S 18-55mm f/4-5.6 IS",
-    color: "צבע שחור",
-    imageUrl: canoneos2000d,
-    favorite: true,
-  },
-  {
-    id: 2,
-    name: "מצלמה דיגיטלית Canon EOS 4000D DSLR",
-    lens: "EF-S 18-55mm f/3.5-5.6 III",
-    color: "צבע שחור",
-    imageUrl: canoneos4000d,
-    favorite: true,
-  },
-  {
-    id: 3,
-    name: "מצלמה דיגיטלית Canon EOS 250D DSLR",
-    lens: "EF-S 18-55mm f/3.5-5.6 III",
-    color: "צבע שחור",
-    imageUrl: canoneos250d,
-    favorite: true,
-  },
-  {
-    id: 4,
-    name: "מצלמה דיגיטלית ללא מראה Canon EOS R100",
-    lens: "RF-S 18-45mm F4.5-6.3 IS",
-    color: "צבע שחור",
-    imageUrl: canoneosr100,
-    favorite: true,
-  },
-  {
-    id: 5,
-    name: "מצלמה דיגיטלית ללא מראה Canon EOS R10",
-    lens: "RF-S 18-45mm F4.5-6.3 IS",
-    color: "צבע שחור",
-    imageUrl: canoneosr10,
-    favorite: false,
-  },
-  {
-    id: 6,
-    name: "מצלמה דיגיטלית ללא מראה Canon EOS R50",
-    lens: "RF-S 18-45mm F4.5-6.3 IS",
-    color: "צבע שחור",
-    imageUrl: canoneosr50,
-    favorite: true,
-  },
-];
-
 const SingleCat: FC = () => {
-  const [showAddCatModal, setShowAddCatModal] = useState(false);
-  const [cameras, setCameras] = useState<CameraProduct[]>(initialCameraData);
+  const [items, setItems] = useState<DisplayItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [categoryInfo, setCategoryInfo] = useState<CategoryDTO | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [modalType, setModalType] = useState<'product' | 'category'>('product');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
   const [showMoveModal, setShowMoveModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<DisplayItem | null>(null);
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [newProductName, setNewProductName] = useState("");
   const [newProductLens, setNewProductLens] = useState("");
   const [newProductColor, setNewProductColor] = useState("");
   const [newProductImage, setNewProductImage] = useState<string | null>(null);
-  const [productToDelete, setProductToDelete] = useState<CameraProduct | null>(
-    null
-  );
-  const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
-  const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const path: string[] = ["categories", "single-cat"];
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryImage, setNewCategoryImage] = useState<string | null>(null);
+  
+  const location = useLocation();
+  const params = useParams();
   const { role } = useUser();
-
   const navigate = useNavigate();
+  
+  const getCategoryPathFromUrl = () => {
+    const wildcardPath = params['*'];
+    if (wildcardPath) {
+      return `/categories/${wildcardPath}`;
+    }
+    
+    const pathParts = location.pathname.split('/').filter(Boolean);
+    const categoryIndex = pathParts.indexOf('categories');
+    if (categoryIndex !== -1 && categoryIndex < pathParts.length - 1) {
+      return `/categories/${pathParts.slice(categoryIndex + 1).join('/')}`;
+    }
+    
+    return '/categories/photography/cameras';
+  };
+  
+  const categoryPath = getCategoryPathFromUrl();
+  
+  const pathParts = categoryPath.replace('/categories/', '').split('/').filter(Boolean);
+  const breadcrumbPath = ["categories", ...pathParts];
 
-  const handleClick = () => {
-    navigate(`/product`);
+  useEffect(() => {
+    loadAllContent();
+  }, [categoryPath]);
+
+  const loadAllContent = async () => {
+    try {
+      setLoading(true);
+      
+      
+      let subCategories: CategoryDTO[] = [];
+      try {
+        subCategories = await categoriesService.getDirectChildren(categoryPath);
+      } catch (error) {
+        subCategories = [];
+      }
+      let products: ProductDto[] = [];
+      try {
+        products = await ProductsService.getProductsByPath(categoryPath);
+      } catch (error) {
+        products = [];
+      }
+      const categoryItems: DisplayItem[] = subCategories.map((cat: CategoryDTO) => ({
+        id: cat._id,
+        name: cat.categoryName,
+        image: cat.categoryImage,
+        type: 'category',
+        path: cat.categoryPath,
+        favorite: false,
+      }));
+      const productItems: DisplayItem[] = products.map((prod: ProductDto) => ({
+        id: prod._id!,
+        name: prod.productName,
+        image: prod.productImage,
+        type: 'product',
+        path: prod.productPath,
+        favorite: prod.customFields?.favorite || false,
+        description: prod.productDescription,
+        customFields: prod.customFields,
+      }));
+      setItems([...categoryItems, ...productItems]);
+    } catch (error) {
+      toast.error("שגיאה בטעינת התוכן");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleItemClick = (item: DisplayItem) => {
+    if (isSelectionMode) return;
+    if (item.type === 'category') {
+      navigate(item.path);
+    } else {
+      navigate(`/product`);
+    }
   };
 
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = () => setNewProductImage(reader.result as string);
+      reader.onload = () => {
+        if (modalType === 'product') {
+          setNewProductImage(reader.result as string);
+        } else {
+          setNewCategoryImage(reader.result as string);
+        }
+      };
       reader.readAsDataURL(file);
     }
   };
 
-  const toggleFavorite = (id: number) => {
-    const cam = cameras.find((c) => c.id === id);
-    if (!cam) return;
+  const toggleFavorite = (id: string) => {
+    const item = items.find((i) => i.id === id);
+    if (!item) return;
 
-    if (cam.favorite) {
-      toast.info(`${cam.name} הוסר מהמועדפים`);
+    if (item.favorite) {
+      toast.info(`${item.name} הוסר מהמועדפים`);
     } else {
-      toast.success(`${cam.name} נוסף למועדפים`);
+      toast.success(`${item.name} נוסף למועדפים`);
     }
 
-    setCameras((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, favorite: !c.favorite } : c))
+    setItems((prev) =>
+      prev.map((i) => (i.id === id ? { ...i, favorite: !i.favorite } : i))
     );
   };
 
-  const handleDelete = (product: CameraProduct) => {
-    setProductToDelete(product);
+  const handleDelete = (item: DisplayItem) => {
+    setItemToDelete(item);
     setShowDeleteModal(true);
   };
 
-  const confirmDelete = () => {
-    if (productToDelete)
-      setCameras(cameras.filter((cam) => cam.id !== productToDelete.id));
-    setShowDeleteModal(false);
-    setProductToDelete(null);
-    toast.success(`המוצר "${productToDelete?.name}" נמחק בהצלחה!`);
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
+    try {
+      if (itemToDelete.type === 'category') {
+        await categoriesService.deleteCategory(itemToDelete.id);
+      } else {
+      }
+      setItems(items.filter((item) => item.id !== itemToDelete.id));
+      toast.success(`${itemToDelete.type === 'category' ? 'הקטגוריה' : 'המוצר'} "${itemToDelete.name}" נמחק בהצלחה!`);
+    } catch (error) {
+      toast.error("שגיאה במחיקה");
+    } finally {
+      setShowDeleteModal(false);
+      setItemToDelete(null);
+    }
   };
 
-  const handleSave = () => {
-    if (newProductName && newProductImage) {
-      const newProduct: CameraProduct = {
-        id: Date.now(),
-        name: newProductName,
-        lens: newProductLens,
-        color: newProductColor,
-        imageUrl: newProductImage,
+  const handleSaveProduct = async () => {
+    if (!newProductName || !newProductImage) {
+      toast.error("אנא מלא את כל השדות החובה");
+      return;
+    }
+
+    try {
+      const newProduct: Omit<ProductDto, '_id' | 'createdAt' | 'updatedAt'> = {
+        productName: newProductName,
+        productImage: newProductImage,
+        productDescription: newProductLens,
+        productPath: categoryPath,
+        customFields: {
+          lens: newProductLens,
+          color: newProductColor,
+          favorite: false,
+        },
+      };
+
+      const createdProduct = await ProductsService.createProduct(newProduct);
+      
+      const newItem: DisplayItem = {
+        id: createdProduct._id!,
+        name: createdProduct.productName,
+        image: createdProduct.productImage,
+        type: 'product',
+        path: createdProduct.productPath,
+        favorite: false,
+        customFields: createdProduct.customFields,
+      };
+
+      setItems([...items, newItem]);
+      toast.success(`המוצר "${newProductName}" נוסף בהצלחה!`);
+      closeAllModals();
+      resetForm();
+    } catch (error) {
+      toast.error("שגיאה בהוספת המוצר");
+    }
+  };
+  const handleSaveCategory = async () => {
+    if (!newCategoryName || !newCategoryImage) {
+      toast.error("אנא מלא את כל השדות החובה");
+      return;
+    }
+    try {
+      const newCategoryPath = `${categoryPath}/${newCategoryName.toLowerCase().replace(/\s+/g, '-')}`;
+      
+      const newCategory = await categoriesService.createCategory({
+        categoryName: newCategoryName,
+        categoryPath: newCategoryPath,
+        categoryImage: newCategoryImage,
+      });
+      const newItem: DisplayItem = {
+        id: newCategory._id,
+        name: newCategory.categoryName,
+        image: newCategory.categoryImage,
+        type: 'category',
+        path: newCategory.categoryPath,
         favorite: false,
       };
-      setCameras([newProduct, ...cameras]);
+      setItems([...items, newItem]);
+      toast.success(`הקטגוריה "${newCategoryName}" נוספה בהצלחה!`);
+      closeAllModals();
+      resetForm();
+    } catch (error) {
+      toast.error("שגיאה בהוספת קטגוריה");
     }
-    setShowAddCatModal(false);
-    setNewProductName("");
-    setNewProductImage(null);
-    toast.success(`המוצר "${newProductName}" נוסף בהצלחה!`);
   };
 
   const closeAllModals = () => {
     setShowDeleteModal(false);
-    setProductToDelete(null);
-    setShowAddCatModal(false);
+    setItemToDelete(null);
+    setShowAddModal(false);
     setShowDeleteAllModal(false);
     setShowMoveModal(false);
+  };
+  const resetForm = () => {
+    setNewProductName("");
+    setNewProductLens("");
+    setNewProductColor("");
+    setNewProductImage(null);
+    setNewCategoryName("");
+    setNewCategoryImage(null);
   };
 
   const handleManagePermissions = () => {
@@ -164,75 +261,93 @@ const SingleCat: FC = () => {
 
   const toggleSelectionMode = () => {
     setIsSelectionMode(!isSelectionMode);
-    setSelectedProducts([]);
+    setSelectedItems([]);
   };
 
-  const toggleProductSelection = (id: number) => {
-    setSelectedProducts((prev) =>
-      prev.includes(id) ? prev.filter((pId) => pId !== id) : [...prev, id]
+  const toggleItemSelection = (id: string) => {
+    setSelectedItems((prev) =>
+      prev.includes(id) ? prev.filter((itemId) => itemId !== id) : [...prev, id]
     );
   };
 
-  const selectAllProducts = () => {
-    if (selectedProducts.length === cameras.length) {
-      setSelectedProducts([]);
+  const selectAllItems = () => {
+    if (selectedItems.length === items.length) {
+      setSelectedItems([]);
     } else {
-      setSelectedProducts(cameras.map((cam) => cam.id));
+      setSelectedItems(items.map((item) => item.id));
     }
   };
 
   const handleDeleteSelected = () => {
-    if (selectedProducts.length === 0) {
-      toast.error("אנא בחר לפחות מוצר אחד למחיקה");
+    if (selectedItems.length === 0) {
+      toast.error("אנא בחר לפחות פריט אחד למחיקה");
       return;
     }
     setShowDeleteAllModal(true);
   };
 
   const confirmDeleteSelected = () => {
-    setCameras((prev) =>
-      prev.filter((cam) => !selectedProducts.includes(cam.id))
+    setItems((prev) =>
+      prev.filter((item) => !selectedItems.includes(item.id))
     );
-    toast.success(`${selectedProducts.length} מוצרים נמחקו בהצלחה!`);
-    setSelectedProducts([]);
+    toast.success(`${selectedItems.length} פריטים נמחקו בהצלחה!`);
+    setSelectedItems([]);
     setIsSelectionMode(false);
     setShowDeleteAllModal(false);
   };
 
   const handleMoveSelected = () => {
-    if (selectedProducts.length === 0) {
-      toast.error("אנא בחר לפחות מוצר אחד להעברה");
+    if (selectedItems.length === 0) {
+      toast.error("אנא בחר לפחות פריט אחד להעברה");
       return;
     }
     setShowMoveModal(true);
   };
 
   const confirmMove = (destination: string) => {
-    setCameras((prev) =>
-      prev.filter((cam) => !selectedProducts.includes(cam.id))
+    setItems((prev) =>
+      prev.filter((item) => !selectedItems.includes(item.id))
     );
     toast.success(
-      `${selectedProducts.length} מוצרים הועברו בהצלחה לקטגוריה: ${destination}`
+      `${selectedItems.length} פריטים הועברו בהצלחה לקטגוריה: ${destination}`
     );
-    setSelectedProducts([]);
+    setSelectedItems([]);
     setIsSelectionMode(false);
     setShowMoveModal(false);
   };
 
+  if (loading) {
+    return (
+      <div className="max-w-290 mx-auto rtl mt-28 mr-4 flex items-center justify-center h-96">
+        <div className="text-xl text-gray-600">טוען...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-290 mx-auto rtl mt-28 mr-4">
-      <Breadcrumbs path={path} />
+      <Breadcrumbs path={breadcrumbPath} />
       <header className="flex flex-col items-start mb-10">
         <h1 className="text-[48px] font-light font-alef text-[#0D305B] border-b-4 border-gray-400 pb-1 mb-5 tracking-tight">
-          קטגוריה: צילום
+          {categoryInfo ? categoryInfo.categoryName : (pathParts[pathParts.length - 1] || 'קטגוריה')}
         </h1>
         <div className="flex items-center gap-4">
-          <span className="text-base">סך הכל פריטים: {cameras.length}</span>
+          <span className="text-base">סך הכל פריטים: {items.length}</span>
+          <span className="text-gray-400">|</span>
+          <span className="text-base">
+            קטגוריות: {items.filter(i => i.type === 'category').length}
+          </span>
+          <span className="text-gray-400">|</span>
+          <span className="text-base">
+            מוצרים: {items.filter(i => i.type === 'product').length}
+          </span>
+        </div>
+        <div className="text-xs text-gray-400 mt-2">
+          Path: {categoryPath} | Info: {categoryInfo?.categoryName || 'לא נמצא'}
         </div>
       </header>
 
-      {/* Selection toolbar */}
-      {role === "editor" && cameras.length !== 0 && (
+      {role === "editor" && items.length !== 0 && (
         <div className="mb-6">
           {!isSelectionMode ? (
             <button
@@ -244,22 +359,22 @@ const SingleCat: FC = () => {
           ) : (
             <div className="flex items-center gap-3 flex-wrap">
               <button
-                onClick={selectAllProducts}
+                onClick={selectAllItems}
                 className="text-base underline text-gray-700 hover:text-[#0D305B] transition-colors"
               >
-                {selectedProducts.length === cameras.length
+                {selectedItems.length === items.length
                   ? "בטל בחירת הכל"
                   : "בחר הכל"}
               </button>
 
-              {selectedProducts.length > 0 && (
+              {selectedItems.length > 0 && (
                 <>
                   <span className="text-gray-400">|</span>
                   <button
                     onClick={handleDeleteSelected}
                     className="text-base underline text-red-600 hover:text-red-700 transition-colors"
                   >
-                    מחק ({selectedProducts.length})
+                    מחק ({selectedItems.length})
                   </button>
 
                   <span className="text-gray-400">|</span>
@@ -267,7 +382,7 @@ const SingleCat: FC = () => {
                     onClick={handleMoveSelected}
                     className="text-base underline text-gray-700 hover:text-[#0D305B] transition-colors"
                   >
-                    העבר ({selectedProducts.length})
+                    העבר ({selectedItems.length})
                   </button>
                 </>
               )}
@@ -284,24 +399,31 @@ const SingleCat: FC = () => {
         </div>
       )}
 
-      {/* Product Grid */}
       <main className="grid grid-cols-[repeat(auto-fill,minmax(290px,1fr))] gap-14">
-        {cameras.map((camera) => (
+        {items.map((item) => (
           <div
-            key={camera.id}
+            key={item.id}
             className={`flex flex-col items-center p-5 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 ${
-              selectedProducts.includes(camera.id)
+              selectedItems.includes(item.id)
                 ? "border-[#0D305B] ring-2 ring-[#0D305B] ring-opacity-30"
                 : "border-gray-200"
-            }`}
+            } ${!isSelectionMode ? 'cursor-pointer' : ''}`}
+            onClick={() => !isSelectionMode && handleItemClick(item)}
           >
+            <div className={`absolute top-2 left-2 px-3 py-1 text-xs font-medium rounded-full ${
+              item.type === 'category' 
+                ? 'bg-blue-100 text-blue-700 border border-blue-300' 
+                : 'bg-green-100 text-green-700 border border-green-300'
+            }`}>
+              {item.type === 'category' ? '📁 קטגוריה' : '📦 מוצר'}
+            </div>
             {/* Selection checkbox */}
             {isSelectionMode && role === "editor" && (
               <div className="absolute top-3 left-3 z-10">
                 <input
                   type="checkbox"
-                  checked={selectedProducts.includes(camera.id)}
-                  onChange={() => toggleProductSelection(camera.id)}
+                  checked={selectedItems.includes(item.id)}
+                  onChange={() => toggleItemSelection(item.id)}
                   className="w-6 h-6 cursor-pointer accent-[#0D305B]"
                 />
               </div>
@@ -311,7 +433,10 @@ const SingleCat: FC = () => {
             {role === "editor" && !isSelectionMode && (
               <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-48 pointer-events-none">
                 <button
-                  onClick={() => handleDelete(camera)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(item);
+                  }}
                   className="absolute top-1 left-1 opacity-1 transform translate-x-3 scale-90 transition-all duration-300 ease-in-out pointer-events-auto h-8 w-8 rounded-full bg-[#e5e7eb] text-gray-800 flex items-center justify-center shadow-md hover:bg-red-600 hover:text-white hover:scale-110"
                 >
                   <Trash size={20} />
@@ -319,51 +444,61 @@ const SingleCat: FC = () => {
               </div>
             )}
 
-            {/* Favorite */}
             {!isSelectionMode && (
               <button
-                onClick={() => toggleFavorite(camera.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleFavorite(item.id);
+                }}
                 className="absolute top-3 right-3 p-2 rounded-full bg-black/40 hover:bg-black/60 transition-colors"
               >
                 <Heart
                   size={22}
                   strokeWidth={2}
                   className={
-                    camera.favorite ? "fill-red-500 text-red-500" : "text-white"
+                    item.favorite ? "fill-red-500 text-red-500" : "text-white"
                   }
                 />
               </button>
             )}
 
-            {/* Product image */}
-            <div
-              className="h-[140px] w-full flex justify-center items-center p-5"
-              onClick={() => !isSelectionMode && handleClick()}
-            >
+            <div className="h-[140px] w-full flex justify-center items-center p-5">
               <img
-                src={camera.imageUrl}
-                alt={camera.name}
-                className="max-h-full max-w-full object-contain transition-transform duration-300 hover:scale-105"
+                src={item.image}
+                alt={item.name}
+                className={`max-h-full max-w-full object-contain transition-transform duration-300 hover:scale-105 ${
+                  item.type === 'category' ? 'rounded-full' : ''
+                }`}
               />
             </div>
 
-            {/* Product details */}
             <div className="w-full text-center pt-4 border-t border-gray-200">
               <h2 className="text-[1.1rem] text-[#0D305B] mb-2">
-                {camera.name}
+                {item.name}
               </h2>
-              <p className="text-sm text-gray-600 mb-1">
-                <strong className="text-gray-800">עדשה:</strong> {camera.lens}
-              </p>
-              <p className="text-sm text-gray-600 mb-2">
-                <strong className="text-gray-800">צבע:</strong> {camera.color}
-              </p>
+              {item.type === 'product' && item.customFields && (
+                <>
+                  {item.customFields.lens && (
+                    <p className="text-sm text-gray-600 mb-1">
+                      <strong className="text-gray-800">עדשה:</strong> {item.customFields.lens}
+                    </p>
+                  )}
+                  {item.customFields.color && (
+                    <p className="text-sm text-gray-600 mb-2">
+                      <strong className="text-gray-800">צבע:</strong> {item.customFields.color}
+                    </p>
+                  )}
+                </>
+              )}
 
               {/* Manage permissions button - only for editor*/}
               {role === "editor" && !isSelectionMode && (
                 <div className="mt-2 flex justify-center">
                   <button
-                    onClick={handleManagePermissions}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleManagePermissions();
+                    }}
                     className="flex items-center gap-2 text-sm font-medium text-white bg-[#0D305B] px-4 py-2 rounded-xl shadow-md transition-all duration-300 hover:bg-[#16447A] hover:shadow-lg hover:-translate-y-0.5 focus:ring-2 focus:ring-[#0D305B]/40"
                   >
                     <Pen size={16} className="text-white" />
@@ -376,30 +511,38 @@ const SingleCat: FC = () => {
         ))}
       </main>
 
-      {/* Add product button */}
       {role === "editor" && !isSelectionMode && (
-        <div
-          className="fixed bottom-10 right-10 w-12 h-12 bg-[#0D305B] flex items-center justify-center rounded-full cursor-pointer hover:bg-[#1e3a5f] transition-colors"
-          onClick={() => setShowAddCatModal(true)}
-        >
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="white"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        <div className="fixed bottom-10 right-10 flex flex-col gap-3">
+          <button
+            onClick={() => {
+              setModalType('product');
+              setShowAddModal(true);
+            }}
+            className="w-14 h-14 bg-green-600 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-green-700 transition-all group relative"
+            title="הוסף מוצר"
           >
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
+            <span className="text-2xl">+</span>
+            <span className="absolute left-16 bg-gray-800 text-white text-xs px-3 py-1 rounded opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap">
+              הוסף מוצר
+            </span>
+          </button>
+          <button
+            onClick={() => {
+              setModalType('category');
+              setShowAddModal(true);
+            }}
+            className="w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-blue-700 transition-all group relative"
+            title="הוסף תת-קטגוריה"
+          >
+            <span className="text-2xl">📁</span>
+            <span className="absolute left-16 bg-gray-800 text-white text-xs px-3 py-1 rounded opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap">
+              הוסף תת-קטגוריה
+            </span>
+          </button>
         </div>
       )}
 
-      {/* Add modal */}
-      {role === "editor" && showAddCatModal && (
+      {role === "editor" && showAddModal && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
           onClick={closeAllModals}
@@ -408,37 +551,73 @@ const SingleCat: FC = () => {
             className="bg-white p-6 rounded-lg w-full max-w-md"
             onClick={(e) => e.stopPropagation()}
           >
-            <h4 className="text-lg font-semibold mb-4">הוסף מוצר חדש</h4>
-            <input
-              type="text"
-              placeholder="שם מוצר"
-              value={newProductName}
-              onChange={(e) => setNewProductName(e.target.value)}
-              className="w-full mb-3 p-2 border rounded"
-            />
-            <input
-              type="text"
-              placeholder="תיאור מוצר"
-              value={newProductLens}
-              onChange={(e) => setNewProductLens(e.target.value)}
-              className="w-full mb-3 p-2 border rounded"
-            />
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="w-full mb-3"
-            />
-            {newProductImage && (
-              <img
-                src={newProductImage}
-                alt="preview"
-                className="w-40 mt-2 rounded mr-28"
-              />
-            )}
+            <h4 className="text-lg font-semibold mb-4">
+              {modalType === 'product' ? 'הוסף מוצר חדש' : 'הוסף תת-קטגוריה חדשה'}
+            </h4>
+            {modalType === 'product' ? (
+              <>
+                <input
+                  type="text"
+                  placeholder="שם מוצר"
+                  value={newProductName}
+                  onChange={(e) => setNewProductName(e.target.value)}
+                  className="w-full mb-3 p-2 border rounded"
+                />
+                <input
+                  type="text"
+                  placeholder="תיאור מוצר"
+                  value={newProductLens}
+                  onChange={(e) => setNewProductLens(e.target.value)}
+                  className="w-full mb-3 p-2 border rounded"
+                />
+                <input
+                  type="text"
+                  placeholder="צבע"
+                  value={newProductColor}
+                  onChange={(e) => setNewProductColor(e.target.value)}
+                  className="w-full mb-3 p-2 border rounded"
+                />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="w-full mb-3"
+                />
+                {newProductImage && (
+                  <img
+                    src={newProductImage}
+                    alt="preview"
+                    className="w-40 mt-2 rounded mr-28"
+                  />
+                )}
+              </>
+            ) : (
+              <>
+                <input
+                  type="text"
+                  placeholder="שם תת-קטגוריה"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  className="w-full mb-3 p-2 border rounded"
+                />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="w-full mb-3"
+                />
+                {newCategoryImage && (
+                  <img
+                    src={newCategoryImage}
+                    alt="preview"
+                    className="w-40 h-40 mt-2 rounded-full mx-auto object-cover"
+                  />
+                )}
+              </>
+            )}         
             <div className="flex justify-end gap-3 mt-4">
               <button
-                onClick={handleSave}
+                onClick={modalType === 'product' ? handleSaveProduct : handleSaveCategory}
                 className="bg-[#0D305B] text-white px-4 py-2 rounded hover:bg-[#1e3a5f] transition-colors"
               >
                 שמור
@@ -455,7 +634,7 @@ const SingleCat: FC = () => {
       )}
 
       {/* Delete modal */}
-      {role === "editor" && showDeleteModal && productToDelete && (
+      {role === "editor" && showDeleteModal && itemToDelete && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
           onClick={closeAllModals}
@@ -464,9 +643,11 @@ const SingleCat: FC = () => {
             className="bg-white p-6 rounded-lg w-full max-w-md"
             onClick={(e) => e.stopPropagation()}
           >
-            <h4 className="text-lg font-semibold mb-2">מחיקת מוצר</h4>
+            <h4 className="text-lg font-semibold mb-2">
+              מחיקת {itemToDelete.type === 'category' ? 'קטגוריה' : 'מוצר'}
+            </h4>
             <p className="mb-1">
-              האם ברצונך למחוק את המוצר "{productToDelete.name}"?
+              האם ברצונך למחוק את {itemToDelete.type === 'category' ? 'הקטגוריה' : 'המוצר'} "{itemToDelete.name}"?
             </p>
             <small className="text-gray-500">לא יהיה ניתן לבטל פעולה זו</small>
             <div className="flex justify-end gap-3 mt-4">
@@ -497,13 +678,12 @@ const SingleCat: FC = () => {
             className="bg-white p-6 rounded-lg w-full max-w-md"
             onClick={(e) => e.stopPropagation()}
           >
-            <h4 className="text-lg font-semibold mb-2">מחיקת מוצרים נבחרים</h4>
+            <h4 className="text-lg font-semibold mb-2">מחיקת פריטים נבחרים</h4>
             <p className="mb-1">
-              האם ברצונך למחוק {selectedProducts.length} מוצרים?
+              האם ברצונך למחוק {selectedItems.length} פריטים?
             </p>
             <small className="text-red-600 font-medium block">
-              אזהרה: פעולה זו תמחק את כל המוצרים הנבחרים ולא ניתן יהיה לשחזר
-              אותם!
+              אזהרה: פעולה זו תמחק את כל הפריטים הנבחרים ולא ניתן יהיה לשחזר אותם!
             </small>
             <div className="flex justify-end gap-3 mt-4">
               <button
@@ -534,7 +714,7 @@ const SingleCat: FC = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <h4 className="text-lg font-semibold mb-4">
-              העבר {selectedProducts.length} מוצרים לקטגוריה אחרת
+              העבר {selectedItems.length} פריטים לקטגוריה אחרת
             </h4>
             <p className="mb-4 text-gray-600">בחר קטגוריית יעד:</p>
             <div className="space-y-3">

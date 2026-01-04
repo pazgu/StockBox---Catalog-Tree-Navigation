@@ -1,6 +1,4 @@
 import { Module } from '@nestjs/common';
-import { ProductsController } from './products/products.controller';
-import { ProductsService } from './products/products.service';
 import { ProductsModule } from './products/products.module';
 import { PermissionsController } from './permissions/permissions.controller';
 import { PermissionsModule } from './permissions/permissions.module';
@@ -36,7 +34,7 @@ import { AboutModule } from './about/about.module';
     UsersModule,
     AboutModule,
   ],
-  controllers: [ProductsController, PermissionsController, CommonController],
-  providers: [ProductsService, CommonService],
+  controllers: [PermissionsController, CommonController],
+  providers: [CommonService],
 })
 export class AppModule {}
