@@ -70,7 +70,6 @@ const SingleCat: FC = () => {
     try {
       setLoading(true);
       
-      
       let subCategories: CategoryDTO[] = [];
       try {
         subCategories = await categoriesService.getDirectChildren(categoryPath);
@@ -177,11 +176,14 @@ const SingleCat: FC = () => {
     }
 
     try {
+      const productSlug = newProductName.toLowerCase().replace(/\s+/g, '-');
+      const fullProductPath = `${categoryPath}/${productSlug}`;
+
       const newProduct: Omit<ProductDto, '_id' | 'createdAt' | 'updatedAt'> = {
         productName: newProductName,
         productImage: newProductImage,
         productDescription: newProductLens,
-        productPath: categoryPath,
+        productPath: fullProductPath,
         customFields: {
           lens: newProductLens,
           color: newProductColor,
@@ -209,6 +211,7 @@ const SingleCat: FC = () => {
       toast.error("שגיאה בהוספת המוצר");
     }
   };
+
   const handleSaveCategory = async () => {
     if (!newCategoryName || !newCategoryImage) {
       toast.error("אנא מלא את כל השדות החובה");
@@ -246,6 +249,7 @@ const SingleCat: FC = () => {
     setShowDeleteAllModal(false);
     setShowMoveModal(false);
   };
+
   const resetForm = () => {
     setNewProductName("");
     setNewProductLens("");
