@@ -437,16 +437,28 @@ const SingleCat: FC = () => {
           <div
             key={item.id}
             className={`flex flex-col items-center p-5 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 ${selectedItems.includes(item.id)
-                ? "border-[#0D305B] ring-2 ring-[#0D305B] ring-opacity-30"
+                ? "bg-[#0D305B]/10 rounded-sm"
                 : "border-gray-200"
               } ${!isSelectionMode ? 'cursor-pointer' : ''}`}
             onClick={() => !isSelectionMode && handleItemClick(item)}
           >
             <div className={`absolute top-2 left-2 px-3 py-1 text-xs font-medium rounded-full ${item.type === 'category'
-                ? 'bg-blue-100 text-blue-700 border border-blue-300'
-                : 'bg-green-100 text-green-700 border border-green-300'
+                ? ' text-blue-700'
+                : ' text-green-700'
               }`}>
-              {item.type === 'category' ? '📁 קטגוריה' : '📦 מוצר'}
+              {item.type === "category" ? (
+  <>
+ <div className="flex flex-col items-center ">
+  <Boxes />
+  <span>קטגוריה</span>
+</div>
+</>
+) : (
+  <>
+    <PackageCheck />
+    <span>מוצר</span>
+  </>
+)}
             </div>
 
             {isSelectionMode && role === "editor" && (
@@ -540,7 +552,7 @@ const SingleCat: FC = () => {
       </main>
 
       {role === "editor" && !isSelectionMode && (
-        <div className="fixed bottom-10 right-4 flex flex-col-reverse gap-3 group">
+        <div className="fixed bottom-10 left-4 flex flex-col-reverse gap-3 group">
           <button
             className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 z-10"
             title="הוסף"
