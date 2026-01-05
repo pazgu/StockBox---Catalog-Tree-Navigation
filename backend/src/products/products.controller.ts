@@ -3,7 +3,9 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
   Body,
+  Param,
   HttpCode,
   HttpStatus,
   Req,
@@ -45,5 +47,11 @@ export class ProductsController {
     @UploadedFile() file?: Express.Multer.File,
   ) {
     return this.productsService.create(createProductDto, file);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  delete(@Param('id') id: string) {
+    return this.productsService.delete(id);
   }
 }
