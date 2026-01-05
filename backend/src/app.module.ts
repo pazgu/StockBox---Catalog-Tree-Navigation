@@ -13,10 +13,18 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { AboutModule } from './about/about.module';
 
+import { join } from 'path';
+import { existsSync } from 'fs';
+
+const envPath = existsSync(join(process.cwd(), '.env'))
+  ? join(process.cwd(), '.env')
+  : join(process.cwd(), 'backend', '.env');
+
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: envPath,
     }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],

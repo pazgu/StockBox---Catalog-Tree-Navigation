@@ -7,7 +7,7 @@ import { Model } from 'mongoose';
 import { UpdateAboutDto } from './dto/UpdateAbout.dto';
 import { UpdateAboutBlockDto } from './dto/UpdateAboutBlock.dto';
 import { About, AboutDocument } from '../schemas/About.schema';
-import { cloudinary } from '../common/cloudinary';
+import { cloudinary } from '../utils/cloudinary/cloudinary';
 import type { Express } from 'express';
 
 const ABOUT_SINGLETON_ID = 'ABOUT_SINGLETON';

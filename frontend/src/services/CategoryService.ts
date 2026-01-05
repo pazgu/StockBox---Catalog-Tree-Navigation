@@ -13,8 +13,9 @@ export interface CategoryDTO {
 export interface CreateCategoryDTO {
   categoryName: string;
   categoryPath: string;
-  categoryImage: string;
+  imageFile?: File;
 }
+
 
 export interface DeleteCategoryResponse {
   success: boolean;
@@ -75,14 +76,26 @@ class CategoriesService {
   }
 
   async createCategory(category: CreateCategoryDTO): Promise<CategoryDTO> {
-    try {
-      const response = await axios.post<CategoryDTO>(this.baseUrl, category);
-      return response.data;
-    } catch (error) {
-      console.error("Error creating category:", error);
-      throw error;
+  try {
+    const fd = new FormData();
+    fd.append("categoryName", category.categoryName);
+    fd.append("categoryPath", category.categoryPath);
+
+    if (category.imageFile) {
+      fd.append("categoryImageFile", category.imageFile); 
     }
+
+    const response = await axios.post<CategoryDTO>(this.baseUrl, fd, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error("Error creating category:", error);
+    throw error;
   }
+}
+
 
   async deleteCategory(id: string): Promise<DeleteCategoryResponse> {
     try {
@@ -97,20 +110,25 @@ class CategoriesService {
   }
 
   async updateCategory(
-    id: string,
-    category: UpdateCategoryDTO
-  ): Promise<CategoryDTO> {
-    try {
-      const response = await axios.patch<CategoryDTO>(
-        `${this.baseUrl}/${id}`,
-        category
-      );
-      return response.data;
-    } catch (error) {
-      console.error("Error updating category:", error);
-      throw error;
-    }
+  id: string,
+  category: UpdateCategoryDTO & { imageFile?: File }
+): Promise<CategoryDTO> {
+  const fd = new FormData();
+
+  if (category.categoryName) fd.append("categoryName", category.categoryName);
+  if (category.categoryPath) fd.append("categoryPath", category.categoryPath);
+
+  if (category.imageFile) {
+    fd.append("categoryImageFile", category.imageFile);
   }
+
+  const response = await axios.patch<CategoryDTO>(`${this.baseUrl}/${id}`, fd, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+
+  return response.data;
+}
+
 }
 
 export const categoriesService = new CategoriesService();

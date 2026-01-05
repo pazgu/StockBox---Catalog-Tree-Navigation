@@ -1,29 +1,48 @@
 import React, { FC, useState, ChangeEvent, useEffect } from "react";
-import { Heart, Pen, Trash } from "lucide-react";
+import { Heart, Pen, Trash, PackageCheck, Boxes } from "lucide-react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
 import Breadcrumbs from "../../../LayoutArea/Breadcrumbs/Breadcrumbs";
-import { ProductsService, ProductDto } from "../../../../services/ProductService";
-import { categoriesService, CategoryDTO } from "../../../../services/CategoryService";
-
+import {
+  ProductsService,
+  ProductDto,
+} from "../../../../services/ProductService";
+import {
+  categoriesService,
+  CategoryDTO,
+} from "../../../../services/CategoryService";
+import { FilePlus2Icon } from "lucide-react";
+import { title } from "process";
 interface DisplayItem {
   id: string;
   name: string;
   image: string;
-  type: 'product' | 'category';
+  type: "product" | "category";
   path: string;
   favorite?: boolean;
   description?: string;
   customFields?: any;
 }
 
+function dataURLtoFile(dataUrl: string, filename: string) {
+  const arr = dataUrl.split(",");
+  const mimeMatch = arr[0].match(/:(.*?);/);
+  const mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) u8arr[n] = bstr.charCodeAt(n);
+  return new File([u8arr], filename, { type: mime });
+}
+
+
 const SingleCat: FC = () => {
   const [items, setItems] = useState<DisplayItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [categoryInfo, setCategoryInfo] = useState<CategoryDTO | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [modalType, setModalType] = useState<'product' | 'category'>('product');
+  const [modalType, setModalType] = useState<"product" | "category">("product");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
   const [showMoveModal, setShowMoveModal] = useState(false);
@@ -36,29 +55,32 @@ const SingleCat: FC = () => {
   const [newProductImage, setNewProductImage] = useState<string | null>(null);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryImage, setNewCategoryImage] = useState<string | null>(null);
-  
+
+
   const location = useLocation();
   const params = useParams();
   const { role } = useUser();
   const navigate = useNavigate();
-  
+
+
   const getCategoryPathFromUrl = () => {
-    const wildcardPath = params['*'];
+    const wildcardPath = params["*"];
     if (wildcardPath) {
       return `/categories/${wildcardPath}`;
     }
-    
+
     const pathParts = location.pathname.split('/').filter(Boolean);
     const categoryIndex = pathParts.indexOf('categories');
     if (categoryIndex !== -1 && categoryIndex < pathParts.length - 1) {
-      return `/categories/${pathParts.slice(categoryIndex + 1).join('/')}`;
+      return `/categories/${pathParts.slice(categoryIndex + 1).join("/")}`;
     }
-    
+
     return '/categories/photography/cameras';
   };
-  
+
+
   const categoryPath = getCategoryPathFromUrl();
-  
+
   const pathParts = categoryPath.replace('/categories/', '').split('/').filter(Boolean);
   const breadcrumbPath = ["categories", ...pathParts];
 
@@ -69,8 +91,8 @@ const SingleCat: FC = () => {
   const loadAllContent = async () => {
     try {
       setLoading(true);
-      
-      
+
+
       let subCategories: CategoryDTO[] = [];
       try {
         subCategories = await categoriesService.getDirectChildren(categoryPath);
@@ -83,18 +105,20 @@ const SingleCat: FC = () => {
       } catch (error) {
         products = [];
       }
-      const categoryItems: DisplayItem[] = subCategories.map((cat: CategoryDTO) => ({
-        id: cat._id,
-        name: cat.categoryName,
-        image: cat.categoryImage,
-        type: 'category',
-        path: cat.categoryPath,
-        favorite: false,
-      }));
+      const categoryItems: DisplayItem[] = subCategories.map(
+        (cat: CategoryDTO) => ({
+          id: cat._id,
+          name: cat.categoryName,
+          image: cat.categoryImage,
+          type: "category",
+          path: cat.categoryPath,
+          favorite: false,
+        })
+      );
       const productItems: DisplayItem[] = products.map((prod: ProductDto) => ({
         id: prod._id!,
         name: prod.productName,
-        image: prod.productImage,
+        image: prod.productImage ?? "/assets/images/placeholder.png",
         type: 'product',
         path: prod.productPath,
         favorite: prod.customFields?.favorite || false,
@@ -111,7 +135,7 @@ const SingleCat: FC = () => {
 
   const handleItemClick = (item: DisplayItem) => {
     if (isSelectionMode) return;
-    if (item.type === 'category') {
+    if (item.type === "category") {
       navigate(item.path);
     } else {
       navigate(`/product`);
@@ -123,7 +147,7 @@ const SingleCat: FC = () => {
     if (file) {
       const reader = new FileReader();
       reader.onload = () => {
-        if (modalType === 'product') {
+        if (modalType === "product") {
           setNewProductImage(reader.result as string);
         } else {
           setNewCategoryImage(reader.result as string);
@@ -156,12 +180,16 @@ const SingleCat: FC = () => {
   const confirmDelete = async () => {
     if (!itemToDelete) return;
     try {
-      if (itemToDelete.type === 'category') {
+      if (itemToDelete.type === "category") {
         await categoriesService.deleteCategory(itemToDelete.id);
       } else {
       }
       setItems(items.filter((item) => item.id !== itemToDelete.id));
-      toast.success(`${itemToDelete.type === 'category' ? 'הקטגוריה' : 'המוצר'} "${itemToDelete.name}" נמחק בהצלחה!`);
+      toast.success(
+        `${itemToDelete.type === "category" ? "הקטגוריה" : "המוצר"} "${
+          itemToDelete.name
+        }" נמחק בהצלחה!`
+      );
     } catch (error) {
       toast.error("שגיאה במחיקה");
     } finally {
@@ -171,44 +199,46 @@ const SingleCat: FC = () => {
   };
 
   const handleSaveProduct = async () => {
-    if (!newProductName || !newProductImage) {
-      toast.error("אנא מלא את כל השדות החובה");
-      return;
-    }
+  if (!newProductName || !newProductImage) {
+    toast.error("אנא מלא את כל השדות החובה");
+    return;
+  }
 
-    try {
-      const newProduct: Omit<ProductDto, '_id' | 'createdAt' | 'updatedAt'> = {
-        productName: newProductName,
-        productImage: newProductImage,
-        productDescription: newProductLens,
-        productPath: categoryPath,
-        customFields: {
-          lens: newProductLens,
-          color: newProductColor,
-          favorite: false,
-        },
-      };
+  try {
+    const safe = newProductName.trim().toLowerCase().replace(/\s+/g, "-") || "product";
+    const file = dataURLtoFile(newProductImage, `${safe}.jpg`);
 
-      const createdProduct = await ProductsService.createProduct(newProduct);
-      
-      const newItem: DisplayItem = {
-        id: createdProduct._id!,
-        name: createdProduct.productName,
-        image: createdProduct.productImage,
-        type: 'product',
-        path: createdProduct.productPath,
+    const createdProduct = await ProductsService.createProduct({
+      productName: newProductName,
+      productPath: categoryPath,
+      productDescription: newProductLens,
+      customFields: {
+        lens: newProductLens,
+        color: newProductColor,
         favorite: false,
-        customFields: createdProduct.customFields,
-      };
+      },
+      imageFile: file,
+    });
 
-      setItems([...items, newItem]);
-      toast.success(`המוצר "${newProductName}" נוסף בהצלחה!`);
-      closeAllModals();
-      resetForm();
-    } catch (error) {
-      toast.error("שגיאה בהוספת המוצר");
-    }
-  };
+    const newItem: DisplayItem = {
+      id: createdProduct._id!,
+      name: createdProduct.productName,
+      image: createdProduct.productImage ?? "/assets/images/placeholder.png",
+      type: "product",
+      path: createdProduct.productPath,
+      favorite: false,
+      customFields: createdProduct.customFields,
+    };
+
+    setItems([...items, newItem]);
+    toast.success(`המוצר "${newProductName}" נוסף בהצלחה!`);
+    closeAllModals();
+    resetForm();
+  } catch (error) {
+    toast.error("שגיאה בהוספת המוצר");
+  }
+};
+
   const handleSaveCategory = async () => {
     if (!newCategoryName || !newCategoryImage) {
       toast.error("אנא מלא את כל השדות החובה");
@@ -216,17 +246,21 @@ const SingleCat: FC = () => {
     }
     try {
       const newCategoryPath = `${categoryPath}/${newCategoryName.toLowerCase().replace(/\s+/g, '-')}`;
-      
+
+      const safe = newCategoryName.trim().toLowerCase().replace(/\s+/g, "-") || "category";
+      const file = dataURLtoFile(newCategoryImage, `${safe}.jpg`);
+
       const newCategory = await categoriesService.createCategory({
         categoryName: newCategoryName,
         categoryPath: newCategoryPath,
-        categoryImage: newCategoryImage,
+        imageFile: file,
       });
+
       const newItem: DisplayItem = {
         id: newCategory._id,
         name: newCategory.categoryName,
         image: newCategory.categoryImage,
-        type: 'category',
+        type: "category",
         path: newCategory.categoryPath,
         favorite: false,
       };
@@ -246,6 +280,7 @@ const SingleCat: FC = () => {
     setShowDeleteAllModal(false);
     setShowMoveModal(false);
   };
+
   const resetForm = () => {
     setNewProductName("");
     setNewProductLens("");
@@ -287,9 +322,7 @@ const SingleCat: FC = () => {
   };
 
   const confirmDeleteSelected = () => {
-    setItems((prev) =>
-      prev.filter((item) => !selectedItems.includes(item.id))
-    );
+    setItems((prev) => prev.filter((item) => !selectedItems.includes(item.id)));
     toast.success(`${selectedItems.length} פריטים נמחקו בהצלחה!`);
     setSelectedItems([]);
     setIsSelectionMode(false);
@@ -305,9 +338,7 @@ const SingleCat: FC = () => {
   };
 
   const confirmMove = (destination: string) => {
-    setItems((prev) =>
-      prev.filter((item) => !selectedItems.includes(item.id))
-    );
+    setItems((prev) => prev.filter((item) => !selectedItems.includes(item.id)));
     toast.success(
       `${selectedItems.length} פריטים הועברו בהצלחה לקטגוריה: ${destination}`
     );
@@ -329,21 +360,23 @@ const SingleCat: FC = () => {
       <Breadcrumbs path={breadcrumbPath} />
       <header className="flex flex-col items-start mb-10">
         <h1 className="text-[48px] font-light font-alef text-[#0D305B] border-b-4 border-gray-400 pb-1 mb-5 tracking-tight">
-          {categoryInfo ? categoryInfo.categoryName : (pathParts[pathParts.length - 1] || 'קטגוריה')}
+          {categoryInfo
+            ? categoryInfo.categoryName
+            : pathParts[pathParts.length - 1] || "קטגוריה"}
         </h1>
         <div className="flex items-center gap-4">
           <span className="text-base">סך הכל פריטים: {items.length}</span>
           <span className="text-gray-400">|</span>
           <span className="text-base">
-            קטגוריות: {items.filter(i => i.type === 'category').length}
+            קטגוריות: {items.filter((i) => i.type === "category").length}
           </span>
           <span className="text-gray-400">|</span>
           <span className="text-base">
-            מוצרים: {items.filter(i => i.type === 'product').length}
+            מוצרים: {items.filter((i) => i.type === "product").length}
           </span>
         </div>
         <div className="text-xs text-gray-400 mt-2">
-          Path: {categoryPath} | Info: {categoryInfo?.categoryName || 'לא נמצא'}
+          Path: {categoryPath} | Info: {categoryInfo?.categoryName || "לא נמצא"}
         </div>
       </header>
 
@@ -352,7 +385,7 @@ const SingleCat: FC = () => {
           {!isSelectionMode ? (
             <button
               onClick={toggleSelectionMode}
-              className="text-base text-gray-700 hover:text-[#0D305B] underline transition-colors"
+              className="text-base text-gray-700 hover:text-[#0D305B] hover:underline transition-colors"
             >
               בחירה מרובה
             </button>
@@ -360,7 +393,7 @@ const SingleCat: FC = () => {
             <div className="flex items-center gap-3 flex-wrap">
               <button
                 onClick={selectAllItems}
-                className="text-base underline text-gray-700 hover:text-[#0D305B] transition-colors"
+                className="text-base hover:underline text-gray-700 hover:text-[#0D305B] transition-colors"
               >
                 {selectedItems.length === items.length
                   ? "בטל בחירת הכל"
@@ -372,7 +405,7 @@ const SingleCat: FC = () => {
                   <span className="text-gray-400">|</span>
                   <button
                     onClick={handleDeleteSelected}
-                    className="text-base underline text-red-600 hover:text-red-700 transition-colors"
+                    className="text-base hover:underline text-red-600 hover:text-red-700 transition-colors"
                   >
                     מחק ({selectedItems.length})
                   </button>
@@ -380,7 +413,7 @@ const SingleCat: FC = () => {
                   <span className="text-gray-400">|</span>
                   <button
                     onClick={handleMoveSelected}
-                    className="text-base underline text-gray-700 hover:text-[#0D305B] transition-colors"
+                    className="text-base hover:underline text-gray-700 hover:text-[#0D305B] transition-colors"
                   >
                     העבר ({selectedItems.length})
                   </button>
@@ -390,7 +423,7 @@ const SingleCat: FC = () => {
               <span className="text-gray-400">|</span>
               <button
                 onClick={toggleSelectionMode}
-                className="text-base underline text-gray-700 hover:text-[#0D305B] transition-colors"
+                className="text-base hover:underline text-gray-700 hover:text-[#0D305B] transition-colors"
               >
                 ביטול
               </button>
@@ -399,27 +432,37 @@ const SingleCat: FC = () => {
         </div>
       )}
 
-      <main className="grid grid-cols-[repeat(auto-fill,minmax(290px,1fr))] gap-14">
+      <main className="grid grid-cols-[repeat(auto-fill,minmax(290px,1fr))] gap-24">
         {items.map((item) => (
           <div
             key={item.id}
-            className={`flex flex-col items-center p-5 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 ${
-              selectedItems.includes(item.id)
-                ? "border-[#0D305B] ring-2 ring-[#0D305B] ring-opacity-30"
+            className={`flex flex-col items-center p-5 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 ${selectedItems.includes(item.id)
+                ? "bg-[#0D305B]/10 rounded-sm"
                 : "border-gray-200"
-            } ${!isSelectionMode ? 'cursor-pointer' : ''}`}
+              } ${!isSelectionMode ? 'cursor-pointer' : ''}`}
             onClick={() => !isSelectionMode && handleItemClick(item)}
           >
-            <div className={`absolute top-2 left-2 px-3 py-1 text-xs font-medium rounded-full ${
-              item.type === 'category' 
-                ? 'bg-blue-100 text-blue-700 border border-blue-300' 
-                : 'bg-green-100 text-green-700 border border-green-300'
-            }`}>
-              {item.type === 'category' ? '📁 קטגוריה' : '📦 מוצר'}
+            <div className={`absolute top-2 left-2 px-3 py-1 text-xs font-medium rounded-full ${item.type === 'category'
+                ? ' text-blue-700'
+                : ' text-green-700'
+              }`}>
+              {item.type === "category" ? (
+  <>
+ <div className="flex flex-col items-center ">
+  <Boxes />
+  <span>קטגוריה</span>
+</div>
+</>
+) : (
+  <>
+    <PackageCheck />
+    <span>מוצר</span>
+  </>
+)}
             </div>
-            {/* Selection checkbox */}
+
             {isSelectionMode && role === "editor" && (
-              <div className="absolute top-3 left-3 z-10">
+              <div className="absolute top-3 right-3 z-10">
                 <input
                   type="checkbox"
                   checked={selectedItems.includes(item.id)}
@@ -429,19 +472,16 @@ const SingleCat: FC = () => {
               </div>
             )}
 
-            {/* Delete button */}
             {role === "editor" && !isSelectionMode && (
-              <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-48 pointer-events-none">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(item);
-                  }}
-                  className="absolute top-1 left-1 opacity-1 transform translate-x-3 scale-90 transition-all duration-300 ease-in-out pointer-events-auto h-8 w-8 rounded-full bg-[#e5e7eb] text-gray-800 flex items-center justify-center shadow-md hover:bg-red-600 hover:text-white hover:scale-110"
-                >
-                  <Trash size={20} />
-                </button>
-              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(item);
+                }}
+                className="absolute bottom-3 left-3 group-hover:opacity-100 transition-all duration-200 h-9 w-9  text-gray-700 flex items-center justify-center hover:text-red-500 hover:scale-110"
+              >
+                <Trash size={18} />
+              </button>
             )}
 
             {!isSelectionMode && (
@@ -450,42 +490,42 @@ const SingleCat: FC = () => {
                   e.stopPropagation();
                   toggleFavorite(item.id);
                 }}
-                className="absolute top-3 right-3 p-2 rounded-full bg-black/40 hover:bg-black/60 transition-colors"
+                className="absolute right-3 group-hover:opacity-100 transition-all duration-200 h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110"
               >
                 <Heart
                   size={22}
                   strokeWidth={2}
                   className={
-                    item.favorite ? "fill-red-500 text-red-500" : "text-white"
+                    item.favorite
+                      ? "fill-red-500 text-red-500"
+                      : "text-gray-700"
                   }
                 />
               </button>
             )}
-
             <div className="h-[140px] w-full flex justify-center items-center p-5">
               <img
                 src={item.image}
                 alt={item.name}
-                className={`max-h-full max-w-full object-contain transition-transform duration-300 hover:scale-105 ${
-                  item.type === 'category' ? 'rounded-full' : ''
-                }`}
+                className={`max-h-full max-w-full object-contain transition-transform duration-300 hover:scale-105 ${item.type === 'category' ? 'rounded-full' : ''
+                  }`}
               />
             </div>
 
             <div className="w-full text-center pt-4 border-t border-gray-200">
-              <h2 className="text-[1.1rem] text-[#0D305B] mb-2">
-                {item.name}
-              </h2>
-              {item.type === 'product' && item.customFields && (
+              <h2 className="text-[1.1rem] text-[#0D305B] mb-2">{item.name}</h2>
+              {item.type === "product" && item.customFields && (
                 <>
                   {item.customFields.lens && (
                     <p className="text-sm text-gray-600 mb-1">
-                      <strong className="text-gray-800">עדשה:</strong> {item.customFields.lens}
+                      <strong className="text-gray-800">עדשה:</strong>{" "}
+                      {item.customFields.lens}
                     </p>
                   )}
                   {item.customFields.color && (
                     <p className="text-sm text-gray-600 mb-2">
-                      <strong className="text-gray-800">צבע:</strong> {item.customFields.color}
+                      <strong className="text-gray-800">צבע:</strong>{" "}
+                      {item.customFields.color}
                     </p>
                   )}
                 </>
@@ -499,7 +539,7 @@ const SingleCat: FC = () => {
                       e.stopPropagation();
                       handleManagePermissions();
                     }}
-                    className="flex items-center gap-2 text-sm font-medium text-white bg-[#0D305B] px-4 py-2 rounded-xl shadow-md transition-all duration-300 hover:bg-[#16447A] hover:shadow-lg hover:-translate-y-0.5 focus:ring-2 focus:ring-[#0D305B]/40"
+                    className="flex items-center gap-2 text-sm font-medium text-white bg-[#0D305B] px-4 py-2 rounded-xl shadow-md transition-all duration-300 hover:bg-[#16447A] hover:shadow-lg focus:ring-2 focus:ring-[#0D305B]/40"
                   >
                     <Pen size={16} className="text-white" />
                     ניהול הרשאות
@@ -512,30 +552,53 @@ const SingleCat: FC = () => {
       </main>
 
       {role === "editor" && !isSelectionMode && (
-        <div className="fixed bottom-10 right-10 flex flex-col gap-3">
+        <div className="fixed bottom-10 left-4 flex flex-col-reverse gap-3 group">
+          <button
+            className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 z-10"
+            title="הוסף"
+          >
+            <span className="text-3xl font-light transition-transform duration-300 group-hover:rotate-45">
+              +
+            </span>
+          </button>
+
           <button
             onClick={() => {
-              setModalType('product');
+              setModalType("product");
               setShowAddModal(true);
             }}
-            className="w-14 h-14 bg-green-600 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-green-700 transition-all group relative"
+            className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 ease-in-out scale-0 group-hover:scale-100 -translate-y-14 group-hover:translate-y-0 pointer-events-none group-hover:pointer-events-auto relative"
             title="הוסף מוצר"
           >
-            <span className="text-2xl">+</span>
-            <span className="absolute left-16 bg-gray-800 text-white text-xs px-3 py-1 rounded opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap">
+            <FilePlus2Icon size={24} />
+            <span className="absolute left-16 bg-gray-800 text-white text-xs px-3 py-1 rounded opacity-0 hover:opacity-100 transition-all duration-200 whitespace-nowrap">
               הוסף מוצר
             </span>
           </button>
+
           <button
             onClick={() => {
-              setModalType('category');
+              setModalType("category");
               setShowAddModal(true);
             }}
-            className="w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-blue-700 transition-all group relative"
+            className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 ease-in-out scale-0 group-hover:scale-100 -translate-y-14 group-hover:translate-y-0 pointer-events-none group-hover:pointer-events-auto relative"
             title="הוסף תת-קטגוריה"
           >
-            <span className="text-2xl">📁</span>
-            <span className="absolute left-16 bg-gray-800 text-white text-xs px-3 py-1 rounded opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap">
+            <svg
+              color="white"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              width="24"
+              height="24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2zm-10-8v6m-3-3h6" />
+            </svg>
+            <span className="absolute left-16 bg-gray-800 text-white text-xs px-3 py-1 rounded opacity-0 hover:opacity-100 transition-all duration-200 whitespace-nowrap">
               הוסף תת-קטגוריה
             </span>
           </button>
@@ -552,9 +615,11 @@ const SingleCat: FC = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <h4 className="text-lg font-semibold mb-4">
-              {modalType === 'product' ? 'הוסף מוצר חדש' : 'הוסף תת-קטגוריה חדשה'}
+              {modalType === "product"
+                ? "הוסף מוצר חדש"
+                : "הוסף תת-קטגוריה חדשה"}
             </h4>
-            {modalType === 'product' ? (
+            {modalType === "product" ? (
               <>
                 <input
                   type="text"
@@ -614,10 +679,14 @@ const SingleCat: FC = () => {
                   />
                 )}
               </>
-            )}         
+            )}
             <div className="flex justify-end gap-3 mt-4">
               <button
-                onClick={modalType === 'product' ? handleSaveProduct : handleSaveCategory}
+                onClick={
+                  modalType === "product"
+                    ? handleSaveProduct
+                    : handleSaveCategory
+                }
                 className="bg-[#0D305B] text-white px-4 py-2 rounded hover:bg-[#1e3a5f] transition-colors"
               >
                 שמור
@@ -644,10 +713,12 @@ const SingleCat: FC = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <h4 className="text-lg font-semibold mb-2">
-              מחיקת {itemToDelete.type === 'category' ? 'קטגוריה' : 'מוצר'}
+              מחיקת {itemToDelete.type === "category" ? "קטגוריה" : "מוצר"}
             </h4>
             <p className="mb-1">
-              האם ברצונך למחוק את {itemToDelete.type === 'category' ? 'הקטגוריה' : 'המוצר'} "{itemToDelete.name}"?
+              האם ברצונך למחוק את{" "}
+              {itemToDelete.type === "category" ? "הקטגוריה" : "המוצר"} "
+              {itemToDelete.name}"?
             </p>
             <small className="text-gray-500">לא יהיה ניתן לבטל פעולה זו</small>
             <div className="flex justify-end gap-3 mt-4">
@@ -683,7 +754,8 @@ const SingleCat: FC = () => {
               האם ברצונך למחוק {selectedItems.length} פריטים?
             </p>
             <small className="text-red-600 font-medium block">
-              אזהרה: פעולה זו תמחק את כל הפריטים הנבחרים ולא ניתן יהיה לשחזר אותם!
+              אזהרה: פעולה זו תמחק את כל הפריטים הנבחרים ולא ניתן יהיה לשחזר
+              אותם!
             </small>
             <div className="flex justify-end gap-3 mt-4">
               <button
