@@ -46,4 +46,6 @@ export class ProductsController {
   ) {
     return this.productsService.create(createProductDto, file);
   }
+
+  
 }
