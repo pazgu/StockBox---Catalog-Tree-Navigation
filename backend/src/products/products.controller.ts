@@ -48,10 +48,4 @@ export class ProductsController {
   ) {
     return this.productsService.create(createProductDto, file);
   }
-
-  @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  delete(@Param('id') id: string) {
-    return this.productsService.delete(id);
-  }
 }
