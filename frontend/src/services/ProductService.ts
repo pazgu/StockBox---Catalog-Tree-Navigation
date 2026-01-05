@@ -56,4 +56,17 @@ export class ProductsService {
     if (!response.ok) throw new Error("Failed to create product");
     return response.json();
   }
+  
+  static async deleteProduct(id: string): Promise<void> {
+  const response = await fetch(`${this.baseUrl}/${id}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error("Product not found");
+    }
+    throw new Error("Failed to delete product");
+  }
+}
 }

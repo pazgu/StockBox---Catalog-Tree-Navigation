@@ -183,6 +183,7 @@ const SingleCat: FC = () => {
       if (itemToDelete.type === "category") {
         await categoriesService.deleteCategory(itemToDelete.id);
       } else {
+        await ProductsService.deleteProduct(itemToDelete.id);
       }
       setItems(items.filter((item) => item.id !== itemToDelete.id));
       toast.success(
