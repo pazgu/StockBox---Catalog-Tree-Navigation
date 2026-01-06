@@ -1,15 +1,24 @@
+import axios from "axios";
 import { environment } from "./../environments/environment.development";
+import { ProductDataDto } from "@/components/models/product.models";
 
 export interface ProductDto {
   _id?: string;
   productName: string;
-  productImage?: string; 
+  productImages?: string[];
   productDescription?: string;
   productPath: string;
-  customFields?: Record<string, any>;
+  customFields?: Array<{
+    _id?: string;
+    title: string;
+    type: 'bullets' | 'content';
+    bullets?: string[];
+    content?: string;
+  }>;
   createdAt?: string;
   updatedAt?: string;
 }
+
 
 export type CreateProductPayload = {
   productName: string;
@@ -39,18 +48,19 @@ export class ProductsService {
     return response.json();
   }
 
-  static async createProduct(payload: CreateProductPayload): Promise<ProductDto> {
-    const fd = new FormData();
-    fd.append("productName", payload.productName);
-    fd.append("productPath", payload.productPath);
+static async createProduct(payload: CreateProductPayload): Promise<ProductDto> {
+  const fd = new FormData();
+  fd.append("productName", payload.productName);
+  console.log("from service product path:",payload.productPath)
+  fd.append("productPath", payload.productPath);
 
-    if (payload.productDescription) {
-      fd.append("productDescription", payload.productDescription);
-    }
+  if (payload.productDescription) {
+    fd.append("productDescription", payload.productDescription);
+  }
 
-    if (payload.customFields) {
-      fd.append("customFields", JSON.stringify(payload.customFields));
-    }
+  if (payload.customFields) {
+    fd.append("customFields", JSON.stringify(payload.customFields));
+  }
 
     if (payload.imageFile) {
       fd.append("productImageFile", payload.imageFile);
@@ -73,6 +83,13 @@ export class ProductsService {
     }
     return response.json();
   }
+
+   static async getById(id: string): Promise<ProductDataDto> {
+  const { data } = await axios.get(
+    `${environment.API_URL}/products/${id}`
+  );
+  return data;
+}
 
   static async deleteProduct(id: string): Promise<void> {
     const response = await fetch(`${this.baseUrl}/${id}`, {

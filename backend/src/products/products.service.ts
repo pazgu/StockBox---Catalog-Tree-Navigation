@@ -20,6 +20,16 @@ export class ProductsService {
     return this.productModel.find().exec();
   }
 
+   async getById(id: string) {
+    const product = await this.productModel.findById(id).lean();
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    return product;
+  }
+
   async findByPath(path: string): Promise<Product[]> {
     const escapedPath = path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const matchingProducts = await this.productModel
@@ -37,17 +47,25 @@ export class ProductsService {
     return directChildren;
   }
 
-  async create(createProductDto: CreateProductDto, file?: Express.Multer.File) {
-    if (file?.buffer) {
-      const uploaded = await uploadBufferToCloudinary(
-        file.buffer,
-        'stockbox/products',
-      );
-      createProductDto.productImage = uploaded.secure_url;
-    }
+ async create(createProductDto: CreateProductDto, file?: Express.Multer.File) {
+
+  if (file?.buffer) {
+    const uploaded = await uploadBufferToCloudinary(
+      file.buffer,
+      'stockbox/products',
+    );
+
+    createProductDto.productImages = [uploaded.secure_url];
+  }
+
+  if (!createProductDto.productImages) {
+    createProductDto.productImages = [];
+  }
 
     const newProduct = new this.productModel(createProductDto);
-    return newProduct.save();
+    const saved = await newProduct.save();
+
+    return saved;
   }
 
   async delete(id: string): Promise<{ success: boolean; message: string }> {
@@ -58,9 +76,12 @@ export class ProductsService {
     }
 
     try {
-      if (product.productImage) {
-        await this.deleteProductImage(product.productImage);
-      }
+      if (product.productImages && product.productImages.length > 0) {
+            await Promise.all(
+              product.productImages.map((url) => this.deleteProductImage(url))
+            );
+          }
+
 
       await this.productModel.findByIdAndDelete(id);
 

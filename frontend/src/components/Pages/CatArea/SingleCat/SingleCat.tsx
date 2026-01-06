@@ -49,8 +49,7 @@ const SingleCat: FC = () => {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [newProductName, setNewProductName] = useState("");
-  const [newProductLens, setNewProductLens] = useState("");
-  const [newProductColor, setNewProductColor] = useState("");
+  const [newProductDesc, setNewProductDesc] = useState("");
   const [newProductImage, setNewProductImage] = useState<string | null>(null);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryImage, setNewCategoryImage] = useState<string | null>(null);
@@ -72,7 +71,7 @@ const SingleCat: FC = () => {
       return `/categories/${pathParts.slice(categoryIndex + 1).join("/")}`;
     }
 
-    return "/categories/photography/cameras";
+    return '';
   };
 
   const categoryPath = getCategoryPathFromUrl();
@@ -116,10 +115,9 @@ const SingleCat: FC = () => {
       const productItems: DisplayItem[] = products.map((prod: ProductDto) => ({
         id: prod._id!,
         name: prod.productName,
-        image: prod.productImage ?? "/assets/images/placeholder.png",
-        type: "product",
+        image: prod.productImages?.[0] ?? "/assets/images/placeholder.png",
+        type: 'product',
         path: prod.productPath,
-        favorite: prod.customFields?.favorite || false,
         description: prod.productDescription,
         customFields: prod.customFields,
       }));
@@ -135,9 +133,7 @@ const SingleCat: FC = () => {
     if (isSelectionMode) return;
     if (item.type === "category") {
       navigate(item.path);
-    } else {
-      navigate(`/product`);
-    }
+    } 
   };
 
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
@@ -197,47 +193,45 @@ const SingleCat: FC = () => {
     }
   };
 
-  const handleSaveProduct = async () => {
-    if (!newProductName || !newProductImage) {
-      toast.error("אנא מלא את כל השדות החובה");
-      return;
-    }
+const handleSaveProduct = async () => {
+  if (!newProductName || !newProductImage) {
+    toast.error("אנא מלא את כל השדות החובה");
+    return;
+  }
+  
 
-    try {
-      const safe =
-        newProductName.trim().toLowerCase().replace(/\s+/g, "-") || "product";
-      const file = dataURLtoFile(newProductImage, `${safe}.jpg`);
+  try {
+    const safe = newProductName.trim().toLowerCase().replace(/\s+/g, "-") || "product";
+    const file = dataURLtoFile(newProductImage, `${safe}.jpg`);
+    const newpath = `${categoryPath}/${safe}`;
+    const createdProduct = await ProductsService.createProduct({
+      productName: newProductName,
+      productPath: newpath,
+      productDescription: newProductDesc, 
+      customFields: [], 
+      imageFile: file, 
+    });
 
-      const createdProduct = await ProductsService.createProduct({
-        productName: newProductName,
-        productPath: categoryPath,
-        productDescription: newProductLens,
-        customFields: {
-          lens: newProductLens,
-          color: newProductColor,
-          favorite: false,
-        },
-        imageFile: file,
-      });
+    const newItem: DisplayItem = {
+      id: createdProduct._id!,
+      name: createdProduct.productName,
+      image: createdProduct.productImages?.[0] ?? "/assets/images/placeholder.png",
+      type: "product",
+      path: createdProduct.productPath,
+      favorite: false,
+      customFields: createdProduct.customFields,
+      description: createdProduct.productDescription,
+    };
 
-      const newItem: DisplayItem = {
-        id: createdProduct._id!,
-        name: createdProduct.productName,
-        image: createdProduct.productImage ?? "/assets/images/placeholder.png",
-        type: "product",
-        path: createdProduct.productPath,
-        favorite: false,
-        customFields: createdProduct.customFields,
-      };
+    setItems([...items, newItem]);
+    toast.success(`המוצר "${newProductName}" נוסף בהצלחה!`);
+    closeAllModals();
+    resetForm();
+  } catch (error) {
+    toast.error("שגיאה בהוספת המוצר");
+  }
+};
 
-      setItems([...items, newItem]);
-      toast.success(`המוצר "${newProductName}" נוסף בהצלחה!`);
-      closeAllModals();
-      resetForm();
-    } catch (error) {
-      toast.error("שגיאה בהוספת המוצר");
-    }
-  };
 
   const handleSaveCategory = async () => {
     if (!newCategoryName || !newCategoryImage) {
@@ -284,8 +278,7 @@ const SingleCat: FC = () => {
 
   const resetForm = () => {
     setNewProductName("");
-    setNewProductLens("");
-    setNewProductColor("");
+    setNewProductDesc("");
     setNewProductImage(null);
     setNewCategoryName("");
     setNewCategoryImage(null);
@@ -506,7 +499,18 @@ const SingleCat: FC = () => {
                 />
               </button>
             )}
-            <div className="h-[140px] w-full flex justify-center items-center p-5">
+            <div
+                className="h-[140px] w-full flex justify-center items-center p-5 cursor-pointer"
+                onClick={() => {
+                  if (item.type === "product") {
+                    navigate(`/products/${item.id}`);
+                  } else {
+                    navigate(`/${item.path}`);
+                  }
+                }}
+              >
+
+              
               <img
                 src={item.image}
                 alt={item.name}
@@ -518,23 +522,7 @@ const SingleCat: FC = () => {
 
             <div className="w-full text-center pt-4 border-t border-gray-200">
               <h2 className="text-[1.1rem] text-[#0D305B] mb-2">{item.name}</h2>
-              {item.type === "product" && item.customFields && (
-                <>
-                  {item.customFields.lens && (
-                    <p className="text-sm text-gray-600 mb-1">
-                      <strong className="text-gray-800">עדשה:</strong>{" "}
-                      {item.customFields.lens}
-                    </p>
-                  )}
-                  {item.customFields.color && (
-                    <p className="text-sm text-gray-600 mb-2">
-                      <strong className="text-gray-800">צבע:</strong>{" "}
-                      {item.customFields.color}
-                    </p>
-                  )}
-                </>
-              )}
-
+            
               {/* Manage permissions button - only for editor*/}
               {role === "editor" && !isSelectionMode && (
                 <div className="mt-2 flex justify-center">
@@ -635,15 +623,8 @@ const SingleCat: FC = () => {
                 <input
                   type="text"
                   placeholder="תיאור מוצר"
-                  value={newProductLens}
-                  onChange={(e) => setNewProductLens(e.target.value)}
-                  className="w-full mb-3 p-2 border rounded"
-                />
-                <input
-                  type="text"
-                  placeholder="צבע"
-                  value={newProductColor}
-                  onChange={(e) => setNewProductColor(e.target.value)}
+                  value={newProductDesc}
+                  onChange={(e) => setNewProductDesc(e.target.value)}
                   className="w-full mb-3 p-2 border rounded"
                 />
                 <input

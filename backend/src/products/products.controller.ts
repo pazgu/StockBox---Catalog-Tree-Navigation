@@ -5,7 +5,6 @@ import {
   Post,
   Delete,
   Body,
-  Param,
   HttpCode,
   HttpStatus,
   Req,
@@ -13,6 +12,7 @@ import {
   UploadedFile,
   UsePipes,
   ValidationPipe,
+  Param,
   UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -53,6 +53,10 @@ export class ProductsController {
     return this.productsService.create(createProductDto, file);
   }
 
+  @Get(':id')
+  getProductById(@Param('id') id: string) {
+    return this.productsService.getById(id);
+  }
   @Delete(':id')
   @UseGuards(JwtAuthGuard, EditorGuard)
   @HttpCode(HttpStatus.OK)
