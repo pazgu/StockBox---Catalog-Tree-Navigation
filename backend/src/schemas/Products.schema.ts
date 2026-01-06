@@ -21,6 +21,5 @@ export class Product {
 
   @Prop({ type: [UploadGroup], default: [] })
   uploadFolders: UploadGroup[];
-
 }
 export const ProductSchema = SchemaFactory.createForClass(Product);

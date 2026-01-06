@@ -3,7 +3,9 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
   Body,
+  Param,
   HttpCode,
   HttpStatus,
   Req,
@@ -12,12 +14,16 @@ import {
   UsePipes,
   ValidationPipe,
   Param,
+  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dtos/CreateProduct.dto';
 import express from 'express';
 import { productUploadsOptions } from './productUploads';
+import { JwtAuthGuard } from 'src/gaurds/jwt-auth.guard';
+import { EditorGuard } from 'src/gaurds/editor.guard';
+import { ParseObjectIdPipe } from 'src/pipes/parse-object-id.pipe';
 
 @Controller('products')
 export class ProductsController {
@@ -37,9 +43,9 @@ export class ProductsController {
   }
 
   @Post()
+  @UseGuards(JwtAuthGuard, EditorGuard)
   @HttpCode(HttpStatus.CREATED)
   @UsePipes(new ValidationPipe({ transform: true }))
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   @UseInterceptors(FileInterceptor('productImageFile', productUploadsOptions))
   create(
     @Body() createProductDto: CreateProductDto,
@@ -52,5 +58,10 @@ export class ProductsController {
   getProductById(@Param('id') id: string) {
     return this.productsService.getById(id);
   }
-  
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, EditorGuard)
+  @HttpCode(HttpStatus.OK)
+  delete(@Param('id', ParseObjectIdPipe) id: string) {
+    return this.productsService.delete(id);
+  }
 }
