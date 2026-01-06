@@ -25,7 +25,7 @@ const Layout: FC<LayoutProps> = () => {
         <Routes>
           <Route path="/" element={<About></About>} />
           <Route path="/login" element={<Login></Login>} />
-          <Route path="/product" element={<SingleProd></SingleProd>} />
+          <Route path="/products/:productId" element={<SingleProd />} />
           <Route path="/categories" element={<Categories></Categories>} />
           <Route
             path="/categories/single-cat"
