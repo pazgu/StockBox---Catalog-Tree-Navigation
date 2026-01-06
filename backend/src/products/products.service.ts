@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Product } from '../schemas/Products.schema';
@@ -32,17 +32,37 @@ export class ProductsService {
     return directChildren;
   }
 
-  async create(createProductDto: CreateProductDto, file?: Express.Multer.File) {
-    if (file?.buffer) {
-      const uploaded = await uploadBufferToCloudinary(
-        file.buffer,
-        'stockbox/products',
-      );
-      createProductDto.productImage = uploaded.secure_url;
+ async create(createProductDto: CreateProductDto, file?: Express.Multer.File) {
+
+  if (file?.buffer) {
+    const uploaded = await uploadBufferToCloudinary(
+      file.buffer,
+      'stockbox/products',
+    );
+
+    createProductDto.productImages = [uploaded.secure_url];
+  }
+
+  if (!createProductDto.productImages) {
+    createProductDto.productImages = [];
+  }
+
+  const newProduct = new this.productModel(createProductDto);
+  const saved = await newProduct.save();
+
+  return saved;
+
+}
+
+
+    async getById(id: string) {
+    const product = await this.productModel.findById(id).lean();
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
     }
 
-    const newProduct = new this.productModel(createProductDto);
-    return newProduct.save();
+    return product;
   }
 
 }
