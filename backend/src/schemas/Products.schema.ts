@@ -7,8 +7,8 @@ export class Product {
   @Prop({ required: true, unique: true })
   productName: string;
 
-  @Prop({ required: false, default: '' })
-  productImage: string;
+  @Prop({ type: [String], default: [] })
+  productImages: string[];
 
   @Prop({ required: false })
   productDescription: string;
