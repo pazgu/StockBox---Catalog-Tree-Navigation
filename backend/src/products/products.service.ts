@@ -20,6 +20,16 @@ export class ProductsService {
     return this.productModel.find().exec();
   }
 
+   async getById(id: string) {
+    const product = await this.productModel.findById(id).lean();
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    return product;
+  }
+
   async findByPath(path: string): Promise<Product[]> {
     const escapedPath = path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const matchingProducts = await this.productModel
@@ -66,9 +76,12 @@ export class ProductsService {
     }
 
     try {
-      if (product.productImage) {
-        await this.deleteProductImage(product.productImage);
-      }
+      if (product.productImages && product.productImages.length > 0) {
+            await Promise.all(
+              product.productImages.map((url) => this.deleteProductImage(url))
+            );
+          }
+
 
       await this.productModel.findByIdAndDelete(id);
 
