@@ -22,6 +22,14 @@ export type CreateProductPayload = {
 export class ProductsService {
   private static readonly baseUrl = `${environment.API_URL}/products`;
 
+  private static getAuthHeader(): HeadersInit {
+    const token = localStorage.getItem("token");
+    if (token) {
+      return { Authorization: `Bearer ${token}` };
+    }
+    return {};
+  }
+
   static async getProductsByPath(path: string): Promise<ProductDto[]> {
     const cleanPath = path.startsWith("/") ? path.substring(1) : path;
     const url = `${this.baseUrl}/by-path/${cleanPath}`;
@@ -45,15 +53,44 @@ export class ProductsService {
     }
 
     if (payload.imageFile) {
-        fd.append("productImageFile", payload.imageFile); 
+      fd.append("productImageFile", payload.imageFile);
     }
 
     const response = await fetch(this.baseUrl, {
       method: "POST",
+      headers: this.getAuthHeader(),
       body: fd,
     });
 
-    if (!response.ok) throw new Error("Failed to create product");
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized - please login");
+      }
+      if (response.status === 403) {
+        throw new Error("Only editors can create products");
+      }
+      throw new Error("Failed to create product");
+    }
     return response.json();
+  }
+
+  static async deleteProduct(id: string): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/${id}`, {
+      method: "DELETE",
+      headers: this.getAuthHeader(),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Unauthorized - please login");
+      }
+      if (response.status === 403) {
+        throw new Error("Only editors can delete products");
+      }
+      if (response.status === 404) {
+        throw new Error("Product not found");
+      }
+      throw new Error("Failed to delete product");
+    }
   }
 }
