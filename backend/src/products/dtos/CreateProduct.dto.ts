@@ -1,4 +1,4 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsString, IsOptional } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class CreateProductDto {
@@ -14,18 +14,29 @@ export class CreateProductDto {
 
   @IsOptional()
   @Transform(({ value }) => {
-    if (!value) return undefined;
+    if (!value) return [];
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       return typeof value === 'string' ? JSON.parse(value) : value;
     } catch {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       return value;
     }
   })
-  customFields?: Record<string, any>;
+  customFields?: Array<{
+    _id?: string;
+    title: string;
+    type: 'bullets' | 'content';
+    bullets?: string[];
+    content?: string;
+  }>;
 
   @IsOptional()
-  @IsString()
-  productImage?: string;
+  @Transform(({ value }) => {
+    if (!value) return [];
+    try {
+      return typeof value === 'string' ? JSON.parse(value) : value;
+    } catch {
+      return value;
+    }
+  })
+  productImages?: string[];
 }
