@@ -179,8 +179,14 @@ const AccordionSection: FC<AccordionSectionProps> = ({
                   }
                   className="w-full p-4 text-gray-700 text-sm bg-white/50 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-stockblue/50 focus:border-stockblue transition-all duration-300"
                 />
+                            ) : item.type === "bullets" ? (
+                <ul className="list-disc list-inside space-y-1 text-right">
+                  {JSON.parse(item.content).map((bullet: string, idx: number) => (
+                    <li key={idx}>{bullet}</li>
+                  ))}
+                </ul>
               ) : (
-                item.content
+                <p>{item.content}</p>
               )}
             </AccordionContent>
           </AccordionItem>
