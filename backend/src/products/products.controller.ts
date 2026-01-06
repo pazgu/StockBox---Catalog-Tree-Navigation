@@ -11,6 +11,7 @@ import {
   UploadedFile,
   UsePipes,
   ValidationPipe,
+  Param,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ProductsService } from './products.service';
@@ -47,5 +48,9 @@ export class ProductsController {
     return this.productsService.create(createProductDto, file);
   }
 
+  @Get(':id')
+  getProductById(@Param('id') id: string) {
+    return this.productsService.getById(id);
+  }
   
 }
