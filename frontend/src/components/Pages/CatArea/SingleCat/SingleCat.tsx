@@ -6,24 +6,14 @@ import { toast } from "sonner";
 import Breadcrumbs from "../../../LayoutArea/Breadcrumbs/Breadcrumbs";
 import {
   ProductsService,
-  ProductDto,
 } from "../../../../services/ProductService";
 import {
   categoriesService,
-  CategoryDTO,
 } from "../../../../services/CategoryService";
 import { FilePlus2Icon } from "lucide-react";
-import { title } from "process";
-interface DisplayItem {
-  id: string;
-  name: string;
-  image: string;
-  type: "product" | "category";
-  path: string;
-  favorite?: boolean;
-  description?: string;
-  customFields?: any;
-}
+import { CategoryDTO } from "../../../../components/models/category.models";
+import { DisplayItem } from "../../../../components/models/item.models";
+import { ProductDto } from "../../../../components/models/product.models";
 
 function dataURLtoFile(dataUrl: string, filename: string) {
   const arr = dataUrl.split(",");

@@ -34,3 +34,31 @@ export interface ProductDataDto {
   createdAt: string;
   updatedAt: string;
 }
+
+
+
+export interface ProductDto {
+  _id?: string;
+  productName: string;
+  productImages?: string[];
+  productDescription?: string;
+  productPath: string;
+  customFields?: Array<{
+    _id?: string;
+    title: string;
+    type: 'bullets' | 'content';
+    bullets?: string[];
+    content?: string;
+  }>;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+
+export type CreateProductPayload = {
+  productName: string;
+  productPath: string;
+  productDescription?: string;
+  customFields?: Record<string, any>;
+  imageFile?: File; 
+};

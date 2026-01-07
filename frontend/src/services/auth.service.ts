@@ -1,9 +1,7 @@
+import { LoginPayload } from "../components/models/login.models";
 import axios from "./axios";
 
-export interface LoginPayload {
-  userName: string;
-  email: string;
-}
+
 
 class AuthService {
   async login(payload: LoginPayload) {
