@@ -1,7 +1,11 @@
-import { CategoryDTO, CreateCategoryDTO, DeleteCategoryResponse, UpdateCategoryDTO } from "../components/models/category.models";
+import {
+  CategoryDTO,
+  CreateCategoryDTO,
+  DeleteCategoryResponse,
+  UpdateCategoryDTO,
+} from "../components/models/category.models";
 import { environment } from "./../environments/environment.development";
 import axios from "axios";
-
 
 class CategoriesService {
   private baseUrl = `${environment.API_URL}/categories`;
@@ -29,17 +33,22 @@ class CategoriesService {
   }
 
   async getSubCategories(slug: string): Promise<CategoryDTO[]> {
-    const response = await fetch(`${this.baseUrl}/children/${slug}`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
+    const token = localStorage.getItem("token");
+    try {
+      const response = await axios.get<CategoryDTO[]>(
+        `${this.baseUrl}/children/${slug}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-    if (!response.ok) {
-      throw new Error("Failed to fetch subcategories");
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching subcategories:", error);
+      throw error;
     }
-
-    return await response.json();
   }
 
   async getDirectChildren(categoryPath: string): Promise<CategoryDTO[]> {
@@ -52,21 +61,19 @@ class CategoriesService {
         cleanPath = cleanPath.substring("categories/".length);
       }
 
-      const response = await fetch(`${this.baseUrl}/children/${cleanPath}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
+      const response = await axios.get<CategoryDTO[]>(
+        `${this.baseUrl}/children/${cleanPath}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
 
-      if (!response.ok) {
-        console.error("Failed to fetch children:", response.status);
-        return [];
-      }
-
-      return await response.json();
+      return response.data;
     } catch (error) {
       console.error("Error fetching direct children:", error);
-      return [];
+      throw error;
     }
   }
 
