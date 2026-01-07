@@ -8,7 +8,6 @@ class CategoriesService {
 
   private getAuthHeaders() {
     const token = localStorage.getItem("token");
-    console.log("Token found in localStorage:", !!token); // Should be true
     return {
       headers: {
         Authorization: `Bearer ${token}`,
