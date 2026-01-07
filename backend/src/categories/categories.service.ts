@@ -93,8 +93,7 @@ export class CategoriesService {
       const permissions = await this.permissionsService.getAllPermissions();
       const userPermissions = permissions.filter(
         (p) =>
-          p.entityType === EntityType.CATEGORY &&
-          p.allowed?.equals(user.userId),
+          p.entityType === EntityType.CATEGORY && p.allowed?.toString() === user.userId
       );
 
       const allowedCategoryIds = userPermissions.map((p) =>
