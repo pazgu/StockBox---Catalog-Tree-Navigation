@@ -69,7 +69,7 @@ export class ProductsService {
         .filter(
           (p) =>
             p.entityType === EntityType.PRODUCT &&
-            p.allowed?.equals(user.userId),
+            p.allowed.toString() === user.userId,
         )
         .map((p) => p.entityId.toString());
 
