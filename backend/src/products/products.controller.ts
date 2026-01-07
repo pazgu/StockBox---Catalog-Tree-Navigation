@@ -45,10 +45,7 @@ export class ProductsController {
     request: express.Request & { user?: { userId: string; role: string } },
   ) {
     const fullUrl = request.url;
-    console.log('Full URL:', fullUrl);
     const pathPart = fullUrl.split('by-path/')[1];
-    console.log('Path part:', pathPart);
-
     const fullPath = `/${pathPart}`;
 
     if (!request.user) {
