@@ -27,8 +27,8 @@ import Breadcrumbs from "../../../LayoutArea/Breadcrumbs/Breadcrumbs";
 import { useEffect } from "react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
-import { ProductDto, ProductsService } from "../../../../services/ProductService";
-import { Item } from "@radix-ui/react-accordion";
+import { ProductsService } from "../../../../services/ProductService";
+import { ProductDto } from "../../../../components/models/product.models";
 
 
 interface SingleProdProps {}

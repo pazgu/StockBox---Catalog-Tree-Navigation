@@ -1,32 +1,8 @@
 import axios from "axios";
 import { environment } from "./../environments/environment.development";
-import { ProductDataDto } from "@/components/models/product.models";
-
-export interface ProductDto {
-  _id?: string;
-  productName: string;
-  productImages?: string[];
-  productDescription?: string;
-  productPath: string;
-  customFields?: Array<{
-    _id?: string;
-    title: string;
-    type: 'bullets' | 'content';
-    bullets?: string[];
-    content?: string;
-  }>;
-  createdAt?: string;
-  updatedAt?: string;
-}
+import { CreateProductPayload, ProductDataDto, ProductDto } from "../components/models/product.models";
 
 
-export type CreateProductPayload = {
-  productName: string;
-  productPath: string;
-  productDescription?: string;
-  customFields?: Record<string, any>;
-  imageFile?: File; 
-};
 
 export class ProductsService {
   private static readonly baseUrl = `${environment.API_URL}/products`;
