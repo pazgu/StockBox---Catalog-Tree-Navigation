@@ -10,7 +10,7 @@ export class PermissionsService {
     @InjectModel(Permission.name) private permissionModel: Model<Permission>,
   ) {}
 
-  async getAllPermissions(allowedId: string) {
+  async getPermissionsForUser (allowedId: string) {
     return await this.permissionModel
       .find({ allowed: new Types.ObjectId(allowedId) })
       .exec();
