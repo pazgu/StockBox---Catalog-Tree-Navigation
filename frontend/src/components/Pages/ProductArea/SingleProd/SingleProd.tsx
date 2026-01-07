@@ -1,5 +1,6 @@
 import React, { FC, useState, useCallback, useMemo } from "react";
 import cam from "../../../../assets/red-lens-camera.png";
+import { useNavigate } from "react-router-dom";
 import {
   Heart,
   PencilLine,
@@ -23,53 +24,91 @@ import {
 import AccordionSection from "../AccordionSection/AccordionSection/AccordionSection";
 import ImageCarousel from "../ImageCarousel/ImageCarousel/ImageCarousel";
 import Breadcrumbs from "../../../LayoutArea/Breadcrumbs/Breadcrumbs";
+import { useEffect } from "react";
+import axios from "axios";
+import { useParams } from "react-router-dom";
+import { ProductsService } from "../../../../services/ProductService";
+import { ProductDto } from "../../../../components/models/product.models";
+
 
 interface SingleProdProps {}
+
 const generateUniqueId = () =>
   `accordion-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
 const SingleProd: FC<SingleProdProps> = () => {
   const { role } = useUser();
   const [isEditing, setIsEditing] = useState(false);
-  const [title, setTitle] = useState("מצלמת DSLR קלאסית עם עדשה אדומה");
-  const path: string[] = ["categories", "single-cat", title];
-  const [description, setDescription] = useState(
-    "פתרון מקצועי לצילום איכותי עם עיצוב רטרו ועמידות גבוהה."
-  );
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [product, setProduct] = useState<ProductDto | null>(null);
 
-  const [accordionData, setAccordionData] = useState<AccordionData[]>([
-    {
-      id: "description",
-      title: "תיאור המוצר",
-      content:
-        "מצלמת DSLR מקצועית עם עדשה איכותית ועיצוב קלאסי רטרו. המצלמה מציעה איכות תמונה מעולה עם חיישן מתקדם ובקרה מלאה על כל הגדרות הצילום.",
-      isEditable: true,
-    },
-    {
-      id: "specifications",
-      title: "מפרט טכני",
-      content:
-        "רזולוציה 24MP, חיישן APS-C, עדשה 18-55mm, מסך LCD 3 אינץ', חיבור Wi-Fi",
-      isEditable: true,
-    },
-    {
-      id: "features",
-      title: "מאפיינים עיקריים",
-      content: JSON.stringify([
-        "איכות תמונה חדה במיוחד",
-        "עיצוב רטרו יוקרתי עם טבעות אדומות",
-        "צילום ווידאו 4K מקצועי",
-        "עדשה מהירה לצילום בתאורה חלשה",
-        "נוחות אחיזה ובקרה",
-      ]),
-      isEditable: true,
-    },
-  ]);
 
-  const [productImages, setProductImages] = useState<string[]>([cam]);
+const { productId } = useParams<{ productId: string }>();
+
+useEffect(() => {
+  if (!productId) return;
+
+  const loadProduct = async () => {
+    const product = await ProductsService.getById(productId);
+
+    setTitle(product.productName);
+    setDescription(product.productDescription || '');
+    setProductImages(product.productImages || []);
+    setCurrentImageIndex(0);
+    setProduct(product);
+
+   if (Array.isArray(product.customFields)) {
+  const accordion = product.customFields?.map((field: any) => ({
+  id: field._id || generateUniqueId(),
+  title: field.title,
+  type: field.type, 
+  content: field.type === 'bullets' ? JSON.stringify(field.bullets) : field.content,
+  isEditable: true,
+}));
+setAccordionData(accordion || []);
+
+}
+
+
+    const folders =
+      product.uploadFolders?.[0]?.folders.map((folder: any) => ({
+        id: folder._id,
+        name: folder.folderName,
+        files: folder.files.map((file: any) => ({
+          id: file._id,
+          name: file.link.split('/').pop(),
+          type: '',
+          url: file.link,
+          size: 0,
+        })),
+      })) || [];
+
+    setFolders(folders);
+  };
+
+  loadProduct();
+}, [productId]);
+
+
+const breadcrumbPath = useMemo(() => {
+  if (!product?.productPath) return [];
+
+  return [
+    "categories",
+    ...product.productPath
+      .replace(/^categories\//, "")
+      .split("/")
+      .filter(Boolean),
+  ];
+}, [product]);
+
+ const [accordionData, setAccordionData] = useState<AccordionData[]>([]);
+
+
+const [productImages, setProductImages] = useState<string[]>([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [originalImages] = useState<string[]>([cam]);
-  const [hasImageChanged, setHasImageChanged] = useState(false);
+ 
 
   const nextImage = () => {
     setCurrentImageIndex((prev) =>
@@ -118,9 +157,8 @@ const SingleProd: FC<SingleProdProps> = () => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [showNewFolderInput, setShowNewFolderInput] = useState(false);
-  const [folders, setFolders] = useState<FileFolder[]>([
-    { id: "folder-1", name: "ניסויים", files: [] },
-  ]);
+ const [folders, setFolders] = useState<FileFolder[]>([]);
+
   const toggleFavorite = () => {
     if (isFavorite) {
       toast.info("הוסר מהמועדפים ");
@@ -298,7 +336,7 @@ const SingleProd: FC<SingleProdProps> = () => {
   };
   return (
     <div className="pt-16 px-6 pb-10 font-sans-['Noto_Sans_Hebrew'] rtl">
-      <Breadcrumbs path={path} />
+      <Breadcrumbs path={breadcrumbPath} />
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-4 text-right">

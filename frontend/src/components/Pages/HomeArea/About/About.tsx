@@ -7,8 +7,9 @@ import { ICONS_HE } from '../../../../mockdata/icons';
 import FeaturesSection from './FeaturesSection/FeaturesSection';
 import AboutImagesPanel from './AboutImagesPanel/AboutImagesPanel';
 import AddSectionButton from './AddSectionButton/AddSectionButton/AddSectionButton';
-import { aboutApi, AboutBlock } from "../../../../services/aboutApi";
+import { aboutApi } from "../../../../services/aboutApi";
 import BulletsSection from './BulletsSection/BulletsSection';
+import { AboutBlock } from '@/components/models/about.models';
 
 
 

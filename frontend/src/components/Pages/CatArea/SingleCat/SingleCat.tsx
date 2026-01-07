@@ -6,24 +6,14 @@ import { toast } from "sonner";
 import Breadcrumbs from "../../../LayoutArea/Breadcrumbs/Breadcrumbs";
 import {
   ProductsService,
-  ProductDto,
 } from "../../../../services/ProductService";
 import {
   categoriesService,
-  CategoryDTO,
 } from "../../../../services/CategoryService";
 import { FilePlus2Icon } from "lucide-react";
-import { title } from "process";
-interface DisplayItem {
-  id: string;
-  name: string;
-  image: string;
-  type: "product" | "category";
-  path: string;
-  favorite?: boolean;
-  description?: string;
-  customFields?: any;
-}
+import { CategoryDTO } from "../../../../components/models/category.models";
+import { DisplayItem } from "../../../../components/models/item.models";
+import { ProductDto } from "../../../../components/models/product.models";
 
 function dataURLtoFile(dataUrl: string, filename: string) {
   const arr = dataUrl.split(",");
@@ -35,7 +25,6 @@ function dataURLtoFile(dataUrl: string, filename: string) {
   while (n--) u8arr[n] = bstr.charCodeAt(n);
   return new File([u8arr], filename, { type: mime });
 }
-
 
 const SingleCat: FC = () => {
   const [items, setItems] = useState<DisplayItem[]>([]);
@@ -50,18 +39,15 @@ const SingleCat: FC = () => {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [newProductName, setNewProductName] = useState("");
-  const [newProductLens, setNewProductLens] = useState("");
-  const [newProductColor, setNewProductColor] = useState("");
+  const [newProductDesc, setNewProductDesc] = useState("");
   const [newProductImage, setNewProductImage] = useState<string | null>(null);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryImage, setNewCategoryImage] = useState<string | null>(null);
-
 
   const location = useLocation();
   const params = useParams();
   const { role } = useUser();
   const navigate = useNavigate();
-
 
   const getCategoryPathFromUrl = () => {
     const wildcardPath = params["*"];
@@ -69,19 +55,21 @@ const SingleCat: FC = () => {
       return `/categories/${wildcardPath}`;
     }
 
-    const pathParts = location.pathname.split('/').filter(Boolean);
-    const categoryIndex = pathParts.indexOf('categories');
+    const pathParts = location.pathname.split("/").filter(Boolean);
+    const categoryIndex = pathParts.indexOf("categories");
     if (categoryIndex !== -1 && categoryIndex < pathParts.length - 1) {
       return `/categories/${pathParts.slice(categoryIndex + 1).join("/")}`;
     }
 
-    return '/categories/photography/cameras';
+    return '';
   };
-
 
   const categoryPath = getCategoryPathFromUrl();
 
-  const pathParts = categoryPath.replace('/categories/', '').split('/').filter(Boolean);
+  const pathParts = categoryPath
+    .replace("/categories/", "")
+    .split("/")
+    .filter(Boolean);
   const breadcrumbPath = ["categories", ...pathParts];
 
   useEffect(() => {
@@ -91,7 +79,6 @@ const SingleCat: FC = () => {
   const loadAllContent = async () => {
     try {
       setLoading(true);
-
 
       let subCategories: CategoryDTO[] = [];
       try {
@@ -118,10 +105,9 @@ const SingleCat: FC = () => {
       const productItems: DisplayItem[] = products.map((prod: ProductDto) => ({
         id: prod._id!,
         name: prod.productName,
-        image: prod.productImage ?? "/assets/images/placeholder.png",
+        image: prod.productImages?.[0] ?? "/assets/images/placeholder.png",
         type: 'product',
         path: prod.productPath,
-        favorite: prod.customFields?.favorite || false,
         description: prod.productDescription,
         customFields: prod.customFields,
       }));
@@ -137,9 +123,7 @@ const SingleCat: FC = () => {
     if (isSelectionMode) return;
     if (item.type === "category") {
       navigate(item.path);
-    } else {
-      navigate(`/product`);
-    }
+    } 
   };
 
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
@@ -183,6 +167,7 @@ const SingleCat: FC = () => {
       if (itemToDelete.type === "category") {
         await categoriesService.deleteCategory(itemToDelete.id);
       } else {
+        await ProductsService.deleteProduct(itemToDelete.id);
       }
       setItems(items.filter((item) => item.id !== itemToDelete.id));
       toast.success(
@@ -198,36 +183,34 @@ const SingleCat: FC = () => {
     }
   };
 
-  const handleSaveProduct = async () => {
+const handleSaveProduct = async () => {
   if (!newProductName || !newProductImage) {
     toast.error("אנא מלא את כל השדות החובה");
     return;
   }
+  
 
   try {
     const safe = newProductName.trim().toLowerCase().replace(/\s+/g, "-") || "product";
     const file = dataURLtoFile(newProductImage, `${safe}.jpg`);
-
+    const newpath = `${categoryPath}/${safe}`;
     const createdProduct = await ProductsService.createProduct({
       productName: newProductName,
-      productPath: categoryPath,
-      productDescription: newProductLens,
-      customFields: {
-        lens: newProductLens,
-        color: newProductColor,
-        favorite: false,
-      },
-      imageFile: file,
+      productPath: newpath,
+      productDescription: newProductDesc, 
+      customFields: [], 
+      imageFile: file, 
     });
 
     const newItem: DisplayItem = {
       id: createdProduct._id!,
       name: createdProduct.productName,
-      image: createdProduct.productImage ?? "/assets/images/placeholder.png",
+      image: createdProduct.productImages?.[0] ?? "/assets/images/placeholder.png",
       type: "product",
       path: createdProduct.productPath,
       favorite: false,
       customFields: createdProduct.customFields,
+      description: createdProduct.productDescription,
     };
 
     setItems([...items, newItem]);
@@ -239,15 +222,17 @@ const SingleCat: FC = () => {
   }
 };
 
+
   const handleSaveCategory = async () => {
     if (!newCategoryName || !newCategoryImage) {
       toast.error("אנא מלא את כל השדות החובה");
       return;
     }
     try {
-      const newCategoryPath = `${categoryPath}/${newCategoryName.toLowerCase().replace(/\s+/g, '-')}`;
+      const newCategoryPath = `${categoryPath}/${newCategoryName.toLowerCase().replace(/\s+/g, "-")}`;
 
-      const safe = newCategoryName.trim().toLowerCase().replace(/\s+/g, "-") || "category";
+      const safe =
+        newCategoryName.trim().toLowerCase().replace(/\s+/g, "-") || "category";
       const file = dataURLtoFile(newCategoryImage, `${safe}.jpg`);
 
       const newCategory = await categoriesService.createCategory({
@@ -283,8 +268,7 @@ const SingleCat: FC = () => {
 
   const resetForm = () => {
     setNewProductName("");
-    setNewProductLens("");
-    setNewProductColor("");
+    setNewProductDesc("");
     setNewProductImage(null);
     setNewCategoryName("");
     setNewCategoryImage(null);
@@ -436,29 +420,31 @@ const SingleCat: FC = () => {
         {items.map((item) => (
           <div
             key={item.id}
-            className={`flex flex-col items-center p-5 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 ${selectedItems.includes(item.id)
+            className={`flex flex-col items-center p-5 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 ${
+              selectedItems.includes(item.id)
                 ? "bg-[#0D305B]/10 rounded-sm"
                 : "border-gray-200"
-              } ${!isSelectionMode ? 'cursor-pointer' : ''}`}
+            } ${!isSelectionMode ? "cursor-pointer" : ""}`}
             onClick={() => !isSelectionMode && handleItemClick(item)}
           >
-            <div className={`absolute top-2 left-2 px-3 py-1 text-xs font-medium rounded-full ${item.type === 'category'
-                ? ' text-blue-700'
-                : ' text-green-700'
-              }`}>
+            <div
+              className={`absolute top-2 left-2 px-3 py-1 text-xs font-medium rounded-full ${
+                item.type === "category" ? " text-blue-700" : " text-green-700"
+              }`}
+            >
               {item.type === "category" ? (
-  <>
- <div className="flex flex-col items-center ">
-  <Boxes />
-  <span>קטגוריה</span>
-</div>
-</>
-) : (
-  <>
-    <PackageCheck />
-    <span>מוצר</span>
-  </>
-)}
+                <>
+                  <div className="flex flex-col items-center ">
+                    <Boxes />
+                    <span>קטגוריה</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <PackageCheck />
+                  <span>מוצר</span>
+                </>
+              )}
             </div>
 
             {isSelectionMode && role === "editor" && (
@@ -503,34 +489,30 @@ const SingleCat: FC = () => {
                 />
               </button>
             )}
-            <div className="h-[140px] w-full flex justify-center items-center p-5">
+            <div
+                className="h-[140px] w-full flex justify-center items-center p-5 cursor-pointer"
+                onClick={() => {
+                  if (item.type === "product") {
+                    navigate(`/products/${item.id}`);
+                  } else {
+                    navigate(`/${item.path}`);
+                  }
+                }}
+              >
+
+              
               <img
                 src={item.image}
                 alt={item.name}
-                className={`max-h-full max-w-full object-contain transition-transform duration-300 hover:scale-105 ${item.type === 'category' ? 'rounded-full' : ''
-                  }`}
+                className={`max-h-full max-w-full object-contain transition-transform duration-300 hover:scale-105 ${
+                  item.type === "category" ? "rounded-full" : ""
+                }`}
               />
             </div>
 
             <div className="w-full text-center pt-4 border-t border-gray-200">
               <h2 className="text-[1.1rem] text-[#0D305B] mb-2">{item.name}</h2>
-              {item.type === "product" && item.customFields && (
-                <>
-                  {item.customFields.lens && (
-                    <p className="text-sm text-gray-600 mb-1">
-                      <strong className="text-gray-800">עדשה:</strong>{" "}
-                      {item.customFields.lens}
-                    </p>
-                  )}
-                  {item.customFields.color && (
-                    <p className="text-sm text-gray-600 mb-2">
-                      <strong className="text-gray-800">צבע:</strong>{" "}
-                      {item.customFields.color}
-                    </p>
-                  )}
-                </>
-              )}
-
+            
               {/* Manage permissions button - only for editor*/}
               {role === "editor" && !isSelectionMode && (
                 <div className="mt-2 flex justify-center">
@@ -631,15 +613,8 @@ const SingleCat: FC = () => {
                 <input
                   type="text"
                   placeholder="תיאור מוצר"
-                  value={newProductLens}
-                  onChange={(e) => setNewProductLens(e.target.value)}
-                  className="w-full mb-3 p-2 border rounded"
-                />
-                <input
-                  type="text"
-                  placeholder="צבע"
-                  value={newProductColor}
-                  onChange={(e) => setNewProductColor(e.target.value)}
+                  value={newProductDesc}
+                  onChange={(e) => setNewProductDesc(e.target.value)}
                   className="w-full mb-3 p-2 border rounded"
                 />
                 <input
