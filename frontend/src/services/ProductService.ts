@@ -3,7 +3,7 @@ import { environment } from "./../environments/environment.development";
 export interface ProductDto {
   _id?: string;
   productName: string;
-  productImage?: string; 
+  productImage?: string;
   productDescription?: string;
   productPath: string;
   customFields?: Record<string, any>;
@@ -16,22 +16,37 @@ export type CreateProductPayload = {
   productPath: string;
   productDescription?: string;
   customFields?: Record<string, any>;
-  imageFile?: File; 
+  imageFile?: File;
 };
 
 export class ProductsService {
   private static readonly baseUrl = `${environment.API_URL}/products`;
 
+  static getAuthHeaders() {
+    const token = localStorage.getItem("token");
+    return {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    };
+  }
+
   static async getProductsByPath(path: string): Promise<ProductDto[]> {
     const cleanPath = path.startsWith("/") ? path.substring(1) : path;
     const url = `${this.baseUrl}/by-path/${cleanPath}`;
 
-    const response = await fetch(url);
+    // Use the auth headers
+    const headers = this.getAuthHeaders();
+
+    const response = await fetch(url, headers);
     if (!response.ok) throw new Error("Failed to fetch products");
+
     return response.json();
   }
 
-  static async createProduct(payload: CreateProductPayload): Promise<ProductDto> {
+  static async createProduct(
+    payload: CreateProductPayload
+  ): Promise<ProductDto> {
     const fd = new FormData();
     fd.append("productName", payload.productName);
     fd.append("productPath", payload.productPath);
@@ -45,7 +60,7 @@ export class ProductsService {
     }
 
     if (payload.imageFile) {
-        fd.append("productImageFile", payload.imageFile); 
+      fd.append("productImageFile", payload.imageFile);
     }
 
     const response = await fetch(this.baseUrl, {
