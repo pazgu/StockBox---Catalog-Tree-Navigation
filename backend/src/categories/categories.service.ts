@@ -43,7 +43,9 @@ export class CategoriesService {
     }
 
     if (user.role === 'viewer') {
-      const permissions = await this.permissionsService.getAllPermissions();
+      const permissions = await this.permissionsService.getAllPermissions(
+        user.userId,
+      );
       const allowedCategoryIds = permissions
 
         .filter((p) => p.allowed.toString() === user.userId)
@@ -89,7 +91,9 @@ export class CategoriesService {
       return directChildren;
     }
     if (user.role === 'viewer') {
-      const permissions = await this.permissionsService.getAllPermissions();
+      const permissions = await this.permissionsService.getAllPermissions(
+        user.userId,
+      );
       const userPermissions = permissions.filter(
         (p) =>
           p.entityType === EntityType.CATEGORY &&
