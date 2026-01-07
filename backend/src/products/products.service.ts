@@ -11,15 +11,12 @@ import { Product } from '../schemas/Products.schema';
 import { CreateProductDto } from './dtos/CreateProduct.dto';
 import { uploadBufferToCloudinary } from 'src/utils/cloudinary/upload.util';
 import { deleteFromCloudinary } from 'src/utils/cloudinary/delete.util';
-
 import { PermissionsService } from 'src/permissions/permissions.service';
 import { EntityType } from 'src/schemas/Permissions.schema';
-import { Category } from 'src/schemas/Categories.schema';
 @Injectable()
 export class ProductsService {
   constructor(
     @InjectModel(Product.name) private productModel: Model<Product>,
-    @InjectModel(Category.name) private category: Model<Category>,
     private permissionsService: PermissionsService,
   ) {}
 

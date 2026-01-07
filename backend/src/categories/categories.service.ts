@@ -7,14 +7,14 @@ import { CreateCategoryDto } from './dtos/CreateCategory.dto';
 import { Product } from 'src/schemas/Products.schema';
 import { UpdateCategoryDto } from './dtos/UpdateCategory.dto';
 import { uploadBufferToCloudinary } from 'src/utils/cloudinary/upload.util';
-import { PermissionsService } from 'src/permissions/permissions.service';
 import { EntityType } from 'src/schemas/Permissions.schema';
+import { PermissionsService } from 'src/permissions/permissions.service';
 @Injectable()
 export class CategoriesService {
   constructor(
     @InjectModel(Category.name) private categoryModel: Model<Category>,
     @InjectModel(Product.name) private productModel: Model<Product>,
-    private permissionsService: PermissionsService,
+    private readonly permissionsService: PermissionsService,
   ) {}
 
   async createCategory(
