@@ -53,7 +53,6 @@ static async createProduct(payload: CreateProductPayload): Promise<ProductDto> {
 
     if (payload.imageFile) {
       fd.append("productImageFile", payload.imageFile);
-      fd.append("productImageFile", payload.imageFile);
     }
 
     const response = await fetch(this.baseUrl, {
