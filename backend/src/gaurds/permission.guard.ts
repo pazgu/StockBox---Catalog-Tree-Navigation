@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
@@ -32,10 +31,7 @@ export class PermissionGuard implements CanActivate {
       return true;
     }
 
-    const isProductRoute = request.url.includes('products');
-    const entityType = isProductRoute
-      ? EntityType.PRODUCT
-      : EntityType.CATEGORY;
+    const entityType = EntityType.CATEGORY;
 
     const hasPermission = await this.permissionModel.findOne({
       entityId: entityId,

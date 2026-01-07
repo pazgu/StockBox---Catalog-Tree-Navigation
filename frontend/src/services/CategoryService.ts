@@ -16,7 +16,6 @@ export interface CreateCategoryDTO {
   imageFile?: File;
 }
 
-
 export interface DeleteCategoryResponse {
   success: boolean;
   message: string;
@@ -32,9 +31,22 @@ export interface UpdateCategoryDTO {
 class CategoriesService {
   private baseUrl = `${environment.API_URL}/categories`;
 
+  private getAuthHeaders() {
+    const token = localStorage.getItem("token");
+    console.log("Token found in localStorage:", !!token); // Should be true
+    return {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    };
+  }
+
   async getCategories(): Promise<CategoryDTO[]> {
     try {
-      const response = await axios.get<CategoryDTO[]>(this.baseUrl);
+      const response = await axios.get<CategoryDTO[]>(
+        this.baseUrl,
+        this.getAuthHeaders()
+      );
       return response.data;
     } catch (error) {
       console.error("Error fetching categories:", error);
@@ -42,60 +54,68 @@ class CategoriesService {
     }
   }
 
-  async getSubCategories(parentCategory: string): Promise<CategoryDTO[]> {
-    try {
-      const response = await axios.get<CategoryDTO[]>(
-        `${this.baseUrl}/subcategories/${parentCategory}`
-      );
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching subcategories:", error);
-      throw error;
+  async getSubCategories(slug: string): Promise<CategoryDTO[]> {
+    const response = await fetch(`${this.baseUrl}/children/${slug}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch subcategories");
     }
+
+    return await response.json();
   }
 
   async getDirectChildren(categoryPath: string): Promise<CategoryDTO[]> {
     try {
-      let cleanPath = categoryPath.startsWith('/') 
-        ? categoryPath.substring(1) 
+      let cleanPath = categoryPath.startsWith("/")
+        ? categoryPath.substring(1)
         : categoryPath;
-      if (cleanPath.startsWith('categories/')) {
-        cleanPath = cleanPath.substring('categories/'.length);
+
+      if (cleanPath.startsWith("categories/")) {
+        cleanPath = cleanPath.substring("categories/".length);
       }
-      const response = await fetch(
-        `${this.baseUrl}/children/${cleanPath}`
-      );
+
+      const response = await fetch(`${this.baseUrl}/children/${cleanPath}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
       if (!response.ok) {
+        console.error("Failed to fetch children:", response.status);
         return [];
-      } 
-      const data = await response.json();
-      return data;
+      }
+
+      return await response.json();
     } catch (error) {
+      console.error("Error fetching direct children:", error);
       return [];
     }
   }
 
   async createCategory(category: CreateCategoryDTO): Promise<CategoryDTO> {
-  try {
-    const fd = new FormData();
-    fd.append("categoryName", category.categoryName);
-    fd.append("categoryPath", category.categoryPath);
+    try {
+      const fd = new FormData();
+      fd.append("categoryName", category.categoryName);
+      fd.append("categoryPath", category.categoryPath);
 
-    if (category.imageFile) {
-      fd.append("categoryImageFile", category.imageFile); 
+      if (category.imageFile) {
+        fd.append("categoryImageFile", category.imageFile);
+      }
+
+      const response = await axios.post<CategoryDTO>(this.baseUrl, fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error("Error creating category:", error);
+      throw error;
     }
-
-    const response = await axios.post<CategoryDTO>(this.baseUrl, fd, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-
-    return response.data;
-  } catch (error) {
-    console.error("Error creating category:", error);
-    throw error;
   }
-}
-
 
   async deleteCategory(id: string): Promise<DeleteCategoryResponse> {
     try {
@@ -110,25 +130,28 @@ class CategoriesService {
   }
 
   async updateCategory(
-  id: string,
-  category: UpdateCategoryDTO & { imageFile?: File }
-): Promise<CategoryDTO> {
-  const fd = new FormData();
+    id: string,
+    category: UpdateCategoryDTO & { imageFile?: File }
+  ): Promise<CategoryDTO> {
+    const fd = new FormData();
 
-  if (category.categoryName) fd.append("categoryName", category.categoryName);
-  if (category.categoryPath) fd.append("categoryPath", category.categoryPath);
+    if (category.categoryName) fd.append("categoryName", category.categoryName);
+    if (category.categoryPath) fd.append("categoryPath", category.categoryPath);
 
-  if (category.imageFile) {
-    fd.append("categoryImageFile", category.imageFile);
+    if (category.imageFile) {
+      fd.append("categoryImageFile", category.imageFile);
+    }
+
+    const response = await axios.patch<CategoryDTO>(
+      `${this.baseUrl}/${id}`,
+      fd,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      }
+    );
+
+    return response.data;
   }
-
-  const response = await axios.patch<CategoryDTO>(`${this.baseUrl}/${id}`, fd, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-
-  return response.data;
-}
-
 }
 
 export const categoriesService = new CategoriesService();
