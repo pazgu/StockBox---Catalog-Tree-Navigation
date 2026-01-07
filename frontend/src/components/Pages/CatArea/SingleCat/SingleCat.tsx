@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { FC, useState, ChangeEvent, useEffect } from "react";
 import { Heart, Pen, Trash, PackageCheck, Boxes } from "lucide-react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
@@ -120,12 +122,15 @@ const SingleCat: FC = () => {
   };
 
   const handleItemClick = (item: DisplayItem) => {
-    if (isSelectionMode) return;
-    if (item.type === "category") {
-      navigate(item.path);
-    } 
-  };
+  if (isSelectionMode) return;
+    const cleanPath = item.path.startsWith('/') ? item.path : `/${item.path}`;
 
+  if (item.type === "category") {
+    navigate(cleanPath);
+  } else {
+    navigate(`/products/${item.id}`);
+  }
+};
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -493,9 +498,9 @@ const handleSaveProduct = async () => {
                 className="h-[140px] w-full flex justify-center items-center p-5 cursor-pointer"
                 onClick={() => {
                   if (item.type === "product") {
-                    navigate(`/products/${item.id}`);
+                    navigate(`${item.id}`);
                   } else {
-                    navigate(`/${item.path}`);
+                    navigate(`${item.path}`);
                   }
                 }}
               >

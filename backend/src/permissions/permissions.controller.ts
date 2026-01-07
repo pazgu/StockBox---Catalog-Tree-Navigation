@@ -10,7 +10,7 @@ export class PermissionsController {
     return this.permissionsService.createPermission(createPermissionDto);
   }
   @Get()
-  GetAllPermissions() {
+  getAllPermissions() {
     return this.permissionsService.getAllPermissions();
   }
   @Delete(':id')

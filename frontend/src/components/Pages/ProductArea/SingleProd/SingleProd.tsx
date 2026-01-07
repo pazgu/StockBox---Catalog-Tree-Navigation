@@ -1,6 +1,4 @@
 import React, { FC, useState, useCallback, useMemo } from "react";
-import cam from "../../../../assets/red-lens-camera.png";
-import { useNavigate } from "react-router-dom";
 import {
   Heart,
   PencilLine,
@@ -25,7 +23,6 @@ import AccordionSection from "../AccordionSection/AccordionSection/AccordionSect
 import ImageCarousel from "../ImageCarousel/ImageCarousel/ImageCarousel";
 import Breadcrumbs from "../../../LayoutArea/Breadcrumbs/Breadcrumbs";
 import { useEffect } from "react";
-import axios from "axios";
 import { useParams } from "react-router-dom";
 import { ProductsService } from "../../../../services/ProductService";
 import { ProductDto } from "../../../../components/models/product.models";

@@ -15,12 +15,25 @@ export class ProductsService {
     return {};
   }
 
+  static getAuthHeaders() {
+    const token = localStorage.getItem("token");
+    return {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    };
+  }
+
   static async getProductsByPath(path: string): Promise<ProductDto[]> {
     const cleanPath = path.startsWith("/") ? path.substring(1) : path;
     const url = `${this.baseUrl}/by-path/${cleanPath}`;
 
-    const response = await fetch(url);
+    // Use the auth headers
+    const headers = this.getAuthHeaders();
+
+    const response = await fetch(url, headers);
     if (!response.ok) throw new Error("Failed to fetch products");
+
     return response.json();
   }
 
