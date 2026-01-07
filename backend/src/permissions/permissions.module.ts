@@ -13,6 +13,6 @@ import { PermissionGuard } from 'src/gaurds/permission.guard';
   ],
   providers: [PermissionsService, PermissionGuard],
   controllers: [PermissionsController],
-  exports: [PermissionsService, PermissionGuard],
+  exports: [PermissionsService, PermissionGuard, MongooseModule],
 })
 export class PermissionsModule {}

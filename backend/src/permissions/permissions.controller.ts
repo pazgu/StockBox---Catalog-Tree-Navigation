@@ -17,9 +17,10 @@ export class PermissionsController {
   }
   @Get()
   @UseGuards(AuthGuard('jwt'))
-  async getPermissionsForUser (@Req() req) {
+  async getPermissionsForUser(@Req() req) {
     const userId = req.user.userId;
-    const permissions = await this.permissionsService.getPermissionsForUser (userId);
+    const permissions =
+      await this.permissionsService.getPermissionsForUser(userId);
     return permissions;
   }
   @Delete(':id')
