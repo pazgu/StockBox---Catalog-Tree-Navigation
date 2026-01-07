@@ -43,7 +43,7 @@ export class CategoriesService {
     }
 
     if (user.role === 'viewer') {
-      const permissions = await this.permissionsService.getAllPermissions(
+      const permissions = await this.permissionsService.getPermissionsForUser (
         user.userId,
       );
       const allowedCategoryIds = permissions
@@ -91,7 +91,7 @@ export class CategoriesService {
       return directChildren;
     }
     if (user.role === 'viewer') {
-      const permissions = await this.permissionsService.getAllPermissions(
+      const permissions = await this.permissionsService.getPermissionsForUser (
         user.userId,
       );
       const userPermissions = permissions.filter(
