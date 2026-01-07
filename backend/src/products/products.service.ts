@@ -60,7 +60,7 @@ export class ProductsService {
     }
 
     if (user.role === 'viewer') {
-      const permissions = await this.permissionsService.getAllPermissions(
+      const permissions = await this.permissionsService.getPermissionsForUser (
         user.userId,
       );
 
