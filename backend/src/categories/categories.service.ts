@@ -73,7 +73,6 @@ export class CategoriesService {
     }
 
     const fullPath = `/categories/${cleanPath}`;
-    console.log('   fullPath:', fullPath);
 
     const allChildren = await this.categoryModel.find({
       categoryPath: new RegExp(
