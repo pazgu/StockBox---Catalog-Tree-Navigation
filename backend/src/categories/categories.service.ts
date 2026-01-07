@@ -7,14 +7,14 @@ import { CreateCategoryDto } from './dtos/CreateCategory.dto';
 import { Product } from 'src/schemas/Products.schema';
 import { UpdateCategoryDto } from './dtos/UpdateCategory.dto';
 import { uploadBufferToCloudinary } from 'src/utils/cloudinary/upload.util';
-import { PermissionsService } from 'src/permissions/permissions.service';
 import { EntityType } from 'src/schemas/Permissions.schema';
+import { PermissionsService } from 'src/permissions/permissions.service';
 @Injectable()
 export class CategoriesService {
   constructor(
     @InjectModel(Category.name) private categoryModel: Model<Category>,
     @InjectModel(Product.name) private productModel: Model<Product>,
-    private permissionsService: PermissionsService,
+    private readonly permissionsService: PermissionsService,
   ) {}
 
   async createCategory(
@@ -43,7 +43,9 @@ export class CategoriesService {
     }
 
     if (user.role === 'viewer') {
-      const permissions = await this.permissionsService.getAllPermissions();
+      const permissions = await this.permissionsService.getPermissionsForUser (
+        user.userId,
+      );
       const allowedCategoryIds = permissions
 
         .filter((p) => p.allowed.toString() === user.userId)
@@ -89,10 +91,13 @@ export class CategoriesService {
       return directChildren;
     }
     if (user.role === 'viewer') {
-      const permissions = await this.permissionsService.getAllPermissions();
+      const permissions = await this.permissionsService.getPermissionsForUser (
+        user.userId,
+      );
       const userPermissions = permissions.filter(
         (p) =>
-          p.entityType === EntityType.CATEGORY && p.allowed?.toString() === user.userId
+          p.entityType === EntityType.CATEGORY &&
+          p.allowed?.toString() === user.userId,
       );
 
       const allowedCategoryIds = userPermissions.map((p) =>
