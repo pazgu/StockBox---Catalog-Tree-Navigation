@@ -1,5 +1,12 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { FC, useState, useEffect } from "react";
-import { Pen, Trash, Lock, Heart } from "lucide-react";
+import {
+  Pen,
+  Trash,
+  Lock,
+  Heart,
+  LucideFileChartColumnIncreasing,
+} from "lucide-react";
 import { useUser } from "../../../../context/UserContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -9,8 +16,7 @@ import Breadcrumbs from "../../../LayoutArea/Breadcrumbs/Breadcrumbs";
 import { categoriesService } from "../../../../services/CategoryService";
 import { AddCategoryResult } from "../../../../types/types";
 
-
-interface CategoriesProps { }
+interface CategoriesProps {}
 
 export interface Category {
   _id: string;
@@ -21,12 +27,13 @@ export interface Category {
 
 type CategoryEditPayload = Category & { imageFile?: File };
 
-
 export const Categories: FC<CategoriesProps> = () => {
   const [showAddCatModal, setShowAddCatModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(
+    null
+  );
   const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
@@ -36,8 +43,12 @@ export const Categories: FC<CategoriesProps> = () => {
   const path: string[] = ["categories"];
 
   useEffect(() => {
-    fetchCategories();
-  }, []);
+    if (role) {
+      fetchCategories();
+    } else {
+      setIsLoading(false); // Add this!
+    }
+  }, [role]);
 
   const fetchCategories = async () => {
     try {
@@ -119,28 +130,29 @@ export const Categories: FC<CategoriesProps> = () => {
     toast.success(`הקטגוריה "${name}" נוספה בהצלחה!`);
   };
 
+  const handleSaveEdit = async (updatedCategory: CategoryEditPayload) => {
+    try {
+      const result = await categoriesService.updateCategory(
+        updatedCategory._id,
+        {
+          categoryName: updatedCategory.categoryName,
+          categoryPath: updatedCategory.categoryPath,
+          imageFile: updatedCategory.imageFile,
+        }
+      );
 
-const handleSaveEdit = async (updatedCategory: CategoryEditPayload) => {
-  try {
-    const result = await categoriesService.updateCategory(updatedCategory._id, {
-      categoryName: updatedCategory.categoryName,
-      categoryPath: updatedCategory.categoryPath,
-      imageFile: updatedCategory.imageFile,
-    });
+      setCategories((prev) =>
+        prev.map((c) => (c._id === result._id ? result : c))
+      );
 
-    setCategories((prev) =>
-      prev.map((c) => (c._id === result._id ? result : c))
-    );
-
-    setShowEditModal(false);
-    setCategoryToEdit(null);
-    toast.success(`הקטגוריה "${result.categoryName}" עודכנה בהצלחה!`);
-  } catch (error) {
-    console.error("Error updating category:", error);
-    toast.error("שגיאה בעדכון הקטגוריה");
-  }
-};
-
+      setShowEditModal(false);
+      setCategoryToEdit(null);
+      toast.success(`הקטגוריה "${result.categoryName}" עודכנה בהצלחה!`);
+    } catch (error) {
+      console.error("Error updating category:", error);
+      toast.error("שגיאה בעדכון הקטגוריה");
+    }
+  };
 
   const handleCategoryClick = (category: Category) => {
     navigate(category.categoryPath);
@@ -168,8 +180,11 @@ const handleSaveEdit = async (updatedCategory: CategoryEditPayload) => {
       </div>
 
       {categories.length === 0 ? (
-        <div className="w-full flex justify-center items-center my-12 text-slate-500">
-          <p className="text-lg">אין קטגוריות להצגה. הוסף קטגוריה חדשה!</p>
+        <div className="w-full h-40 flex justify-center items-center my-12 text-slate-500">
+         {role === "editor" ? ( <p  className="text-lg">אין קטגוריות להצגה. הוסף קטגוריה חדשה!</p>
+         ):
+         (<p  className="text-lg">אין קטגוריות להצגה!</p>)}
+         
         </div>
       ) : (
         <div className="w-full flex justify-center flex-wrap gap-10 my-12">

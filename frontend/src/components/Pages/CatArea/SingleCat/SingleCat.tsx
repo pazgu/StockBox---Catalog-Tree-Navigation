@@ -364,9 +364,7 @@ const handleSaveProduct = async () => {
             מוצרים: {items.filter((i) => i.type === "product").length}
           </span>
         </div>
-        <div className="text-xs text-gray-400 mt-2">
-          Path: {categoryPath} | Info: {categoryInfo?.categoryName || "לא נמצא"}
-        </div>
+    
       </header>
 
       {role === "editor" && items.length !== 0 && (
