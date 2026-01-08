@@ -14,7 +14,7 @@ import AddCategoryModal from "./AddCategoryModal/AddCategoryModal/AddCategoryMod
 import EditCategoryModal from "./EditCategoryModal/EditCategoryModal/EditCategoryModal";
 import Breadcrumbs from "../../../LayoutArea/Breadcrumbs/Breadcrumbs";
 import { categoriesService } from "../../../../services/CategoryService";
-import { AddCategoryResult } from "../../../../types/types";
+import { AddCategoryResult } from "../../../models/category.models";
 
 interface CategoriesProps {}
 

@@ -1,7 +1,7 @@
 import React from "react";
 import { toast } from "sonner";
 import useBlockBrowserZoom from "../../useBlockBrowserZoom";
-import { AddCategoryResult } from "../../../../../../types/types";
+import { AddCategoryResult } from "../../../../../models/category.models";
 
 type Props = {
   isOpen: boolean;

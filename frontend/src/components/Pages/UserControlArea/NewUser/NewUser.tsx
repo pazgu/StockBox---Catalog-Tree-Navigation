@@ -5,10 +5,10 @@ import { z } from "zod";
 import { motion } from "framer-motion";
 import { userService } from "../../../../services/UserService";
 import { toast } from "sonner";
-import { User, Group } from "../../../../types/types";
+import { User,USER_ROLES  } from "../../../models/user.models";
+import { Group } from "../../../models/group.models";
 import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
-import { USER_ROLES } from "../../../../types/types";
 import axios from "axios";
 
 import { useUser } from "../../../../context/UserContext";

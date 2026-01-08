@@ -6,13 +6,14 @@ import {
 } from '@nestjs/common';
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Product } from '../schemas/Products.schema';
 import { CreateProductDto } from './dtos/CreateProduct.dto';
 import { uploadBufferToCloudinary } from 'src/utils/cloudinary/upload.util';
 import { deleteFromCloudinary } from 'src/utils/cloudinary/delete.util';
 import { PermissionsService } from 'src/permissions/permissions.service';
-import { EntityType } from 'src/schemas/Permissions.schema';
+import { EntityType } from 'src/schemas/Permissions.schema';import { UpdateProductDto } from './dtos/UpdateProduct.dto';
+
 @Injectable()
 export class ProductsService {
   constructor(
@@ -131,6 +132,37 @@ export class ProductsService {
       );
     }
   }
+
+
+
+
+async update(id: string, dto: UpdateProductDto) {
+  console.log("the dto:", dto);
+
+  if (dto.customFields && Array.isArray(dto.customFields)) {
+    dto.customFields = dto.customFields.map((field) => {
+      if (field._id?.startsWith('new-')) {
+        return {
+          ...field,
+          _id: new Types.ObjectId().toString(), // convert to string
+        };
+      }
+      return field;
+    });
+  }
+
+  const updatedProduct = await this.productModel.findByIdAndUpdate(
+    id,
+    { $set: dto },
+    { new: true }
+  );
+
+  if (!updatedProduct) {
+    throw new NotFoundException('Product not found');
+  }
+
+  return updatedProduct;
+}
 
   private async deleteProductImage(imageUrl: string): Promise<void> {
     try {

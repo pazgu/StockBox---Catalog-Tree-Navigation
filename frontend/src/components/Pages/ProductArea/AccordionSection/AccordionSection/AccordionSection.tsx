@@ -15,7 +15,7 @@ import {
   Download,
   X,
 } from "lucide-react";
-import { UploadedFile } from "../../../../../types/types";
+import { UploadedFile } from "../../../../models/files.models";
 interface AccordionSectionProps {
   isEditing: boolean;
   accordionData: any[];
@@ -43,6 +43,9 @@ interface AccordionSectionProps {
   setShowNewFolderInput: (value: boolean) => void;
   setNewFolderName: (value: string) => void;
   handleCreateFolder: () => void;
+  confirmAddAccordion: (type: "content" | "bullets") => void;
+  showAccordionTypeSelector: boolean;
+  setShowAccordionTypeSelector: (value: boolean) => void;
 }
 
 const AccordionSection: FC<AccordionSectionProps> = ({
@@ -72,6 +75,9 @@ const AccordionSection: FC<AccordionSectionProps> = ({
   setShowNewFolderInput,
   setNewFolderName,
   handleCreateFolder,
+  confirmAddAccordion,
+  showAccordionTypeSelector,
+  setShowAccordionTypeSelector,
 }) => {
   const [openFolders, setOpenFolders] = useState<Set<string>>(new Set());
   return (
@@ -79,8 +85,8 @@ const AccordionSection: FC<AccordionSectionProps> = ({
       <Accordion type="single" collapsible className="w-full space-y-2">
         {accordionData.map((item) => (
           <AccordionItem
-            key={item.id}
-            value={item.id}
+            key={item.uiId}
+            value={item.uiId}
             className={`border-b border-gray-200/70 ${
               isEditing &&
               "p-2 border border-dashed border-gray-300 rounded-lg"
@@ -91,7 +97,7 @@ const AccordionSection: FC<AccordionSectionProps> = ({
             onDrop={() => handleDrop(item)}
             onDragEnd={() => setDraggedItem(null)}
             style={{
-              opacity: draggedItem && draggedItem.id === item.id ? 0.4 : 1,
+              opacity: draggedItem && draggedItem.uiId === item.uiId ? 0.4 : 1,
             }}
           >
             <AccordionTrigger className="w-full text-right text-lg font-semibold text-stockblue py-4 px-2 rounded-lg hover:bg-stockblue/5 transition-colors [&>svg]:text-stockblue">
@@ -102,7 +108,7 @@ const AccordionSection: FC<AccordionSectionProps> = ({
                     onClick={(e) => {
                       e.stopPropagation();
                       e.preventDefault();
-                      removeAccordion(item.id);
+                      removeAccordion(item.uiId);
                     }}
                     className="text-black hover:text-gray-700 transition-colors font-bold"
                     title="הסר אקורדיון"
@@ -116,7 +122,7 @@ const AccordionSection: FC<AccordionSectionProps> = ({
                   type="text"
                   value={item.title}
                   onChange={(e) =>
-                    handleAccordionTitleChange(item.id, e.target.value)
+                    handleAccordionTitleChange(item.uiId, e.target.value)
                   }
                   onClick={(e) => e.stopPropagation()}
                   className="bg-transparent text-lg font-semibold text-stockblue border-b border-gray-400 w-full text-right outline-none"
@@ -126,82 +132,110 @@ const AccordionSection: FC<AccordionSectionProps> = ({
               )}
             </AccordionTrigger>
 
-            <AccordionContent className="text-right text-base text-gray-700 leading-relaxed pb-6">
-              {item.id === "features" ? (
-                isEditing ? (
-                  <div className="space-y-3">
-                    {features.map((feature, idx) => (
-                      <div key={idx} className="flex items-center gap-2">
-                        <button
-                          onClick={() => removeFeature(idx)}
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full p-1 transition-colors duration-200 text-sm"
-                          title="הסר תכונה"
-                        >
-                          ✕
-                        </button>
-                        <input
-                          type="text"
-                          value={feature}
-                          onChange={(e) =>
-                            handleFeatureChange(idx, e.target.value)
-                          }
-                          className="flex-1 px-3 py-2 text-sm text-gray-700 bg-white/50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-stockblue/50 focus:border-stockblue transition-all duration-300"
-                          placeholder="תכונה..."
-                        />
-                      </div>
-                    ))}
-                    <button
-                      onClick={addFeature}
-                      className="flex items-center gap-1 px-4 py-2 font-medium rounded-lg border border-stockblue/30 text-stockblue bg-stockblue/10 hover:bg-stockblue/20 hover:border-stockblue/50 transition-all duration-300"
-                    >
-                      <Plus size={16} /> הוסף תכונה
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-2 text-right">
-                    {features.map((feature, idx) => (
-                      <div key={idx} className="text-sm text-stockblue">
-                        • {feature}
-                      </div>
-                    ))}
-                  </div>
-                )
-              ) : isEditing ? (
-                <textarea
-                  value={item.content}
-                  onChange={(e) =>
-                    handleAccordionContentChange(item.id, e.target.value)
-                  }
-                  rows={
-                    item.id === "description" || item.id === "specifications"
-                      ? 4
-                      : 3
-                  }
-                  className="w-full p-4 text-gray-700 text-sm bg-white/50 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-stockblue/50 focus:border-stockblue transition-all duration-300"
-                />
-                            ) : item.type === "bullets" ? (
-                <ul className="list-disc list-inside space-y-1 text-right">
-                  {JSON.parse(item.content).map((bullet: string, idx: number) => (
-                    <li key={idx}>{bullet}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p>{item.content}</p>
-              )}
-            </AccordionContent>
+           <AccordionContent className="text-right text-base text-gray-700 leading-relaxed pb-6">
+  {item.type === "bullets" ? (
+    isEditing ? (
+      <div className="space-y-2">
+        {JSON.parse(item.content || "[]").map((bullet: string, idx: number) => (
+          <div key={idx} className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                const bullets = JSON.parse(item.content || "[]");
+                bullets.splice(idx, 1);
+                handleAccordionContentChange(item.uiId, JSON.stringify(bullets));
+              }}
+              className="text-red-500 hover:text-red-700 px-2 py-1 rounded transition-all"
+              title="מחק פריט"
+            >
+              ✕
+            </button>
+            <input
+              type="text"
+              value={bullet}
+              onChange={(e) => {
+                const bullets = JSON.parse(item.content || "[]");
+                bullets[idx] = e.target.value;
+                handleAccordionContentChange(item.uiId, JSON.stringify(bullets));
+              }}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-stockblue/50 focus:border-stockblue"
+              placeholder="פריט..."
+            />
+          </div>
+        ))}
+        <button
+          onClick={() => {
+            const bullets = JSON.parse(item.content || "[]");
+            bullets.push("");
+            handleAccordionContentChange(item.uiId, JSON.stringify(bullets));
+          }}
+          className="mt-2 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-all"
+        >
+          הוסף פריט
+        </button>
+      </div>
+    ) : (
+      <ul className="list-disc list-inside space-y-1 text-right">
+        {JSON.parse(item.content || "[]").map((b: string, i: number) => (
+          <li key={i}>{b}</li>
+        ))}
+      </ul>
+    )
+  ) : (
+    <textarea
+      value={item.content}
+      onChange={(e) =>
+        handleAccordionContentChange(item.uiId, e.target.value)
+      }
+      rows={3}
+      className="w-full p-4 text-gray-700 text-sm bg-white/50 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-stockblue/50 focus:border-stockblue transition-all duration-300"
+    />
+  )}
+</AccordionContent>
+
           </AccordionItem>
         ))}
       </Accordion>
 
-      {isEditing && (
-        <div
-          onClick={addCustomAccordion}
-          className="flex items-center justify-start gap-2 mt-4 p-4 rounded-lg border border-dashed border-gray-300 text-stockblue hover:border-stockblue/50 hover:bg-stockblue/5 transition-all duration-300 cursor-pointer"
-        >
-          <Plus size={18} />
-          <span className="font-medium">הוסף אקורדיון חדש</span>
+ {isEditing && (
+  <div className="mt-4">
+    {/* Always visible Add Accordion button */}
+    <div
+      onClick={() => setShowAccordionTypeSelector(true)}
+      className="flex items-center justify-start gap-2 p-4 rounded-lg border border-dashed border-gray-300 text-stockblue hover:border-stockblue/50 hover:bg-stockblue/5 transition-all duration-300 cursor-pointer"
+    >
+      <Plus size={18} />
+      <span className="font-medium">הוסף אקורדיון חדש</span>
+    </div>
+
+    {/* Only show type selector when the button is clicked */}
+    {showAccordionTypeSelector && (
+      <div className="p-4 bg-gray-100 border rounded-lg mt-2">
+        <p className="mb-2">בחר סוג אקורדיון:</p>
+        <div className="flex gap-2">
+          <button
+            onClick={() => confirmAddAccordion("content")}
+            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+          >
+            Content
+          </button>
+          <button
+            onClick={() => confirmAddAccordion("bullets")}
+            className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition"
+          >
+            Bullets
+          </button>
+          <button
+            onClick={() => setShowAccordionTypeSelector(false)}
+            className="px-3 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition"
+          >
+            ביטול
+          </button>
         </div>
-      )}
+      </div>
+    )}
+  </div>
+)}
+
 
       {/* Files section */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 mt-6">
@@ -249,7 +283,7 @@ const AccordionSection: FC<AccordionSectionProps> = ({
         <div className="space-y-4">
           {folders.map((folder) => (
             <details
-              key={folder.id}
+              key={folder.uiId}
               className="border border-gray-200 rounded-lg bg-gray-50 hover:bg-gray-100 transition-all duration-300 overflow-hidden"
             >
               <summary 
@@ -276,7 +310,7 @@ const AccordionSection: FC<AccordionSectionProps> = ({
                   <input
                     type="file"
                     multiple
-                    onChange={(e) => handleFileUpload(folder.id, e)}
+                    onChange={(e) => handleFileUpload(folder.uiId, e)}
                     className="hidden"
                   />
                 </label>
@@ -290,10 +324,10 @@ const AccordionSection: FC<AccordionSectionProps> = ({
                       detailsElement.open = !detailsElement.open;
                       setOpenFolders(prev => {
                         const newSet = new Set(prev);
-                        if (newSet.has(folder.id)) {
-                          newSet.delete(folder.id);
+                        if (newSet.has(folder.uiId)) {
+                          newSet.delete(folder.uiId);
                         } else {
-                          newSet.add(folder.id);
+                          newSet.add(folder.uiId);
                         }
                         return newSet;
                       });
@@ -301,13 +335,13 @@ const AccordionSection: FC<AccordionSectionProps> = ({
                   }}
                   className="flex items-center gap-2 px-3 py-1.5 bg-stockblue text-white rounded-lg hover:bg-stockblue/90 cursor-pointer transition-all text-sm"
                 >
-                  {openFolders.has(folder.id) ? 'הסתר קבצים' : 'צפה בקבצים'}
+                  {openFolders.has(folder.uiId) ? 'הסתר קבצים' : 'צפה בקבצים'}
                 </button>
               )}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDeleteFolder(folder.id);
+                        handleDeleteFolder(folder.uiId);
                       }}
                       className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-all"
                       title="מחק תיקייה"
@@ -323,11 +357,11 @@ const AccordionSection: FC<AccordionSectionProps> = ({
                   <div className="space-y-2 mt-3">
                     {folder.files.map((file: UploadedFile) => (
                       <div
-                        key={file.id}
+                        key={file.uiId}
                         className="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200 hover:shadow-md transition-all duration-300"
                       >
                         <div className="flex items-center gap-3 flex-1 min-w-0">
-                          {getFileIcon(file.type)}
+                        {getFileIcon(file.type || "")}
                           <div className="flex-1 min-w-0">
                             <p
                               className="text-sm font-medium text-gray-800 truncate"
@@ -352,7 +386,7 @@ const AccordionSection: FC<AccordionSectionProps> = ({
                           {isEditing && (
                             <button
                               onClick={() =>
-                                handleDeleteFile(folder.id, file.id)
+                                handleDeleteFile(folder.uiId, file.uiId)
                               }
                               className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all"
                               title="מחק קובץ"

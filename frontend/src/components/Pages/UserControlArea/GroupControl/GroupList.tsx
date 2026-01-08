@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Users, Trash2, Plus, Pen } from "lucide-react";
-import { Group, User } from "../../../../types/types";
+import { Group} from "../../../models/group.models";
+import { User } from "../../../models/user.models";
 
 interface GroupListProps {
   groups: Group[];

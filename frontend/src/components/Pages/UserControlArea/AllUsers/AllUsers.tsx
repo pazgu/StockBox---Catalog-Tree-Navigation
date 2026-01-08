@@ -5,7 +5,7 @@ import { userService } from "../../../../services/UserService";
 import { toast } from "sonner";
 import { Ban } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
-import { User } from "../../../../types/types";
+import { User } from "../../../models/user.models";
 
 const ROLE_OPTIONS: Array<{ value: User["role"]; label: string }> = [
   { value: "editor", label: "עורך" },
