@@ -1,6 +1,7 @@
 import React from "react";
 import { Search, Users, Plus, UserMinus } from "lucide-react";
-import { User, Group } from "../../../../types/types";
+import { User } from "../../../models/user.models";
+import { Group } from "../../../models/group.models";
 
 interface UsersListProps {
   users: User[];

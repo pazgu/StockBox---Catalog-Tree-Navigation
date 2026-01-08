@@ -43,13 +43,8 @@ export interface ProductDto {
   productImages?: string[];
   productDescription?: string;
   productPath: string;
-  customFields?: Array<{
-    _id?: string;
-    title: string;
-    type: 'bullets' | 'content';
-    bullets?: string[];
-    content?: string;
-  }>;
+  customFields?: CustomFieldDto[];
+  uploadFolders?: UploadGroupDto[]; 
   createdAt?: string;
   updatedAt?: string;
 }
@@ -62,3 +57,31 @@ export type CreateProductPayload = {
   customFields?: Record<string, any>;
   imageFile?: File; 
 };
+
+
+export interface UpdateProductPayload {
+  productName?: string;
+  productDescription?: string;
+  productPath?: string;
+  productImages?: (string | File)[];
+  customFields?: Array<{
+    _id?: string;      // optional: if missing, backend creates new
+    title: string;
+    type: 'bullets' | 'content';
+    bullets?: string[];
+    content?: string;
+  }>;
+  uploadFolders?: Array<{
+    _id?: string;      // optional: if missing, backend creates new
+    title: string;
+    folders: Array<{
+      _id?: string;    // optional
+      folderName: string;
+      files: Array<{
+        _id?: string;  // optional
+        link?: string; // existing file
+        file?: File;   // new uploaded file
+      }>;
+    }>;
+  }>;
+}

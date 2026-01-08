@@ -25,3 +25,10 @@ export interface UpdateCategoryDTO {
   categoryPath?: string;
   categoryImage?: string;
 }
+
+
+export type AddCategoryResult = {
+  name: string;
+  imageFile: File;
+};
+
