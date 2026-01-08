@@ -28,4 +28,6 @@ export class Permission {
   })
   allowed: mongoose.Types.ObjectId;
 }
+
 export const PermissionSchema = SchemaFactory.createForClass(Permission);
+PermissionSchema.index({ allowed: 1 });

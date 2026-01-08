@@ -4,11 +4,12 @@ import { ProductsController } from './products.controller';
 import { ProductsService } from './products.service';
 import { Product, ProductSchema } from '../schemas/Products.schema';
 import { AuthModule } from 'src/auth/auth.module';
-
+import { PermissionsModule } from 'src/permissions/permissions.module';
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Product.name, schema: ProductSchema }]),
     AuthModule,
+    MongooseModule.forFeature([{ name: Product.name, schema: ProductSchema }]),
+    PermissionsModule,
   ],
   controllers: [ProductsController],
   providers: [ProductsService],

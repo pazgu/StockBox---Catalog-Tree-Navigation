@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
@@ -14,20 +15,24 @@ import {
   Req,
   UseInterceptors,
   UploadedFile,
+  UseGuards,
 } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dtos/CreateCategory.dto';
 import { UpdateCategoryDto } from './dtos/UpdateCategory.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { categoryUploadsOptions } from './categoryUploads';
+import { PermissionGuard } from 'src/gaurds/permission.guard';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('categories')
+@UseGuards(AuthGuard('jwt'), PermissionGuard)
 export class CategoriesController {
   constructor(private categoriesService: CategoriesService) {}
 
   @Get()
-  async findAll() {
-    return await this.categoriesService.getCategories();
+  async findAll(@Req() req) {
+    return await this.categoriesService.getCategories(req.user);
   }
 
   @Post()
@@ -49,10 +54,15 @@ export class CategoriesController {
   async getDirectChildren(@Req() request: any) {
     const fullUrl = request.url;
     const pathPart = fullUrl.split('children/')[1];
+
     if (!pathPart) {
       return [];
     }
-    return await this.categoriesService.getDirectChildren(pathPart);
+
+    return await this.categoriesService.getDirectChildren(
+      pathPart,
+      request.user,
+    );
   }
 
   @Patch(':id')

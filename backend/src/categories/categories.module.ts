@@ -4,6 +4,7 @@ import { CategoriesController } from './categories.controller';
 import { Category, CategorySchema } from 'src/schemas/Categories.schema';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Product, ProductSchema } from 'src/schemas/Products.schema';
+import { PermissionsModule } from 'src/permissions/permissions.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { Product, ProductSchema } from 'src/schemas/Products.schema';
         schema: ProductSchema,
       },
     ]),
+    PermissionsModule,
   ],
   providers: [CategoriesService],
   controllers: [CategoriesController],

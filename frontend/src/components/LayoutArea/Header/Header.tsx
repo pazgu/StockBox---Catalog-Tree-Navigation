@@ -118,7 +118,7 @@ const Header: React.FC<HeaderProps> = ({
                 <NavLink to="/" className={navLinkClass}>
                   אודות
                 </NavLink>
-                {role !== "editor" && (
+                {!role && (
                   <>
                     <span className="text-white/30 animate-pulse">|</span>
                     <NavLink to="/login" className={navLinkClass}>
