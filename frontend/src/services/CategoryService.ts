@@ -34,6 +34,7 @@ class CategoriesService {
 
   async getSubCategories(slug: string): Promise<CategoryDTO[]> {
     const token = localStorage.getItem("token");
+
     try {
       const response = await axios.get<CategoryDTO[]>(
         `${this.baseUrl}/children/${slug}`,
@@ -44,7 +45,7 @@ class CategoriesService {
         }
       );
 
-      return response.data;
+      return await response.data;
     } catch (error) {
       console.error("Error fetching subcategories:", error);
       throw error;
@@ -70,7 +71,7 @@ class CategoriesService {
         }
       );
 
-      return response.data;
+      return await response.data;
     } catch (error) {
       console.error("Error fetching direct children:", error);
       throw error;
