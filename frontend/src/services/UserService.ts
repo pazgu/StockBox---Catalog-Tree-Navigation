@@ -1,6 +1,6 @@
 import axios from "axios";
-import { User } from "../types/types";
 import { environment } from "../environments/environment.development";
+import { User } from "../components/models/user.models";
 
 const API_URL = environment.API_URL + "/users";
 
