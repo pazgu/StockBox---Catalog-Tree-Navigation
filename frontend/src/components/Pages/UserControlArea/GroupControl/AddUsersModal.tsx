@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Search, Users } from 'lucide-react';
-import { Group, User } from '../../../../types/types';
-
+import { Group } from '../../../models/group.models';
+import { User } from '../../../models/user.models';
 interface AddUsersModalProps {
   group: Group;
   allUsers: User[];

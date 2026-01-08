@@ -4,10 +4,11 @@ import GroupList from "./GroupList";
 import UsersList from "../AllUsers/UsersList";
 import BannedItems from "./BannedItems";
 import AddUsersModal from "./AddUsersModal";
-import { BannedItem, Group } from "../../../../types/types";
+import { BannedItem} from "../../../../types/types";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
+import { Group } from "../../../models/group.models";
 import axios from "axios";
 import { environment } from "../../../../environments/environment.development";
 const api = axios.create({

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Plus, Upload } from "lucide-react";
-import { UserRole } from "@/types/types";
+import { UserRole } from "../../../../models/user.models";
 
 type AboutImagesPanelProps = {
   isEditing: boolean;
