@@ -1,6 +1,7 @@
 import React from "react";
 import { Search, Users, Plus, UserMinus } from "lucide-react";
-import { User, Group } from "../../../../types/types";
+import { User } from "../../../models/user.models";
+import { Group } from "../../../models/group.models";
 
 interface UsersListProps {
   users: User[];
@@ -18,8 +19,6 @@ interface UsersListProps {
 }
 
 const UsersList: React.FC<UsersListProps> = ({
-  users,
-  groups,
   filteredUsers,
   selectedUsers,
   searchQuery,
@@ -99,49 +98,30 @@ const UsersList: React.FC<UsersListProps> = ({
         <div className="space-y-3 max-h-[500px] lg:max-h-[700px] overflow-y-auto pr-2">
           {filteredUsers.map((user) => (
             <div
-              key={user.id}
-              onClick={() => onToggleUser(user.id)}
+              key={user._id}
+              onClick={() => onToggleUser(user._id!)}
               className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${
-                selectedUsers.has(user.id)
+                selectedUsers.has(user._id!)
                   ? "bg-slate-50 border-slate-400 shadow-md"
                   : "bg-white border-gray-200 hover:shadow-lg hover:-translate-y-0.5"
               }`}
             >
               <input
                 type="checkbox"
-                checked={selectedUsers.has(user.id)}
-                onChange={() => onToggleUser(user.id)}
+                checked={selectedUsers.has(user._id!)}
+                onChange={() => onToggleUser(user._id!)}
                 onClick={(e) => e.stopPropagation()}
                 className="w-5 h-5 text-slate-700 rounded focus:ring-slate-700"
               />
 
               <div className="w-12 h-12 bg-gradient-to-br from-slate-600 to-slate-700 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                {user.avatar}
               </div>
 
               <div className="flex-1 text-right min-w-0">
                 <h4 className="font-semibold text-gray-800 truncate">
-                  {user.name}
+                  {user.firstName} {user.lastName}
                 </h4>
                 <p className="text-sm text-gray-600 truncate">{user.email}</p>
-              </div>
-
-              <div className="flex flex-wrap justify-end gap-2">
-                {user.groups.map((groupId) => {
-                  const group = groups.find((g) => g.id === groupId);
-                  return group ? (
-                    <span
-                      key={groupId}
-                      className={`px-2 py-1 text-xs rounded-md whitespace-nowrap ${
-                        groupId === selectedGroup
-                          ? "bg-slate-700 text-white font-medium"
-                          : "bg-gray-100 text-gray-700"
-                      }`}
-                    >
-                      {group.name}
-                    </span>
-                  ) : null;
-                })}
               </div>
             </div>
           ))}

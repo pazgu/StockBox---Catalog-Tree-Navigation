@@ -1,37 +1,28 @@
 import React, { FC, useEffect, useState } from "react";
 import Header from "../../../LayoutArea/Header/Header";
 import { useNavigate } from "react-router-dom";
-import { useUser } from "../../../../context/UserContext";
+import { userService } from "../../../../services/UserService";
 import { toast } from "sonner";
-import {  Ban } from "lucide-react";
+import { Ban } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
-
-
-
-interface User {
-  id: string | number;
-  name: string;
-  email: string;
-  isApproved?: boolean;
-  role: "admin" | "user"; 
-}
+import { User } from "../../../models/user.models";
 
 const ROLE_OPTIONS: Array<{ value: User["role"]; label: string }> = [
-  { value: "admin", label: "מנהל" },  
-  { value: "user",  label: "משתמש" },  
+  { value: "editor", label: "עורך" },
+  { value: "viewer", label: "צופה" },
 ];
 
 const roleLabel = (r: User["role"]) =>
   ROLE_OPTIONS.find((o) => o.value === r)?.label ?? r;
 
-
-
-
 interface AllUsersProps {}
 
 const AllUsers: FC<AllUsersProps> = () => {
   const navigate = useNavigate();
-  const { users, deleteUser, updateUser, role } = useUser(); // get from usercontext 
+  const [users, setUsers] = useState<User[]>([]);
+  useEffect(() => {
+    userService.getAll().then(setUsers);
+  }, []);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
@@ -41,7 +32,6 @@ const AllUsers: FC<AllUsersProps> = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [userToEdit, setUserToEdit] = useState<User | null>(null);
   const [blockUserIndex, setBlockUserIndex] = useState<number | null>(null);
-  const [blockedUsers, setBlockedUsers] = useState<number[]>([]);
   const [approveUserIndex, setApproveUserIndex] = useState<number | null>(null);
 
   const usersPerPage = 8;
@@ -56,7 +46,7 @@ const AllUsers: FC<AllUsersProps> = () => {
 
   const filteredUsers = users.filter(
     (user) =>
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -79,11 +69,14 @@ const AllUsers: FC<AllUsersProps> = () => {
     setDeleteUserIndex(index);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (deleteUserIndex !== null) {
-      const userIdToDelete = currentUsers[deleteUserIndex].id;
-      
-      deleteUser(userIdToDelete);
+      const userIdToDelete = currentUsers[deleteUserIndex]._id;
+      if (!userIdToDelete) return;
+
+      await userService.remove(userIdToDelete);
+
+      setUsers((prev) => prev.filter((u) => u._id !== userIdToDelete));
 
       if (
         currentPage > Math.ceil((users.length - 1) / usersPerPage) &&
@@ -93,28 +86,46 @@ const AllUsers: FC<AllUsersProps> = () => {
       }
 
       setDeleteUserIndex(null);
-      toast.info(`המשתמש נמחק בהצלחה!`);
+      toast.info("המשתמש נמחק בהצלחה!");
     }
   };
-  const confirmBlock = () => {
+  const confirmBlock = async () => {
     if (blockUserIndex !== null) {
-      const userId = Number(currentUsers[blockUserIndex].id);
-      const isBlocked = blockedUsers.includes(userId);
+      const user = currentUsers[blockUserIndex];
+      const userId = user._id;
+      if (!userId) return;
 
-      setBlockedUsers((prev) =>
-        isBlocked ? prev.filter((id) => id !== userId) : [...prev, userId]
-      );
+      const currentBlockStatus = user.isBlocked || false;
 
-      toast.success(isBlocked ? "המשתמש שוחרר מהחסימה" : "המשתמש נחסם בהצלחה");
+      try {
+        const updatedUser = await userService.block(
+          userId,
+          !currentBlockStatus
+        );
+
+        setUsers((prev) =>
+          prev.map((u) => (u._id === userId ? updatedUser : u))
+        );
+
+        toast.success(
+          currentBlockStatus ? "המשתמש שוחרר מהחסימה" : "המשתמש נחסם בהצלחה"
+        );
+      } catch (error) {
+        toast.error("אירעה שגיאה בעדכון סטטוס החסימה");
+        console.error("Block error:", error);
+      }
 
       setBlockUserIndex(null);
     }
   };
   const handleApproveClick = (index: number) => setApproveUserIndex(index);
-const confirmApprove = () => {
+  const confirmApprove = () => {
     if (approveUserIndex !== null) {
-      const userId = currentUsers[approveUserIndex].id;
-      updateUser(userId, { isApproved: true });
+      const userId = currentUsers[approveUserIndex]._id;
+      if (!userId) {
+        return;
+      }
+      userService.update(userId, { approved: true });
       toast.success("המשתמש אושר בהצלחה!");
       setApproveUserIndex(null);
     }
@@ -137,12 +148,20 @@ const confirmApprove = () => {
     }
   };
 
-  const handleSaveEdit = () => {
-    if (userToEdit) {
-      updateUser(userToEdit.id, userToEdit);
+  const handleSaveEdit = async () => {
+    if (!userToEdit || !userToEdit._id) return;
+
+    try {
+      const updatedUser = await userService.update(userToEdit._id, userToEdit);
+      setUsers((prev) =>
+        prev.map((u) => (u._id === updatedUser._id ? updatedUser : u))
+      );
       toast.success("המשתמש עודכן בהצלחה!");
       setShowEditModal(false);
       setUserToEdit(null);
+    } catch (error) {
+      console.error("שגיאה בעדכון משתמש:", error);
+      toast.error("שגיאה בעדכון המשתמש");
     }
   };
 
@@ -155,7 +174,6 @@ const confirmApprove = () => {
     <div className=" font-sans text-[#0D305B] rtl bg-[#fffaf1]">
       <Header />
       <main className="px-7 md:px-5  relative pb-4">
-        {/* Header Section */}
         <div className="flex justify-between items-center mb-8">
           <div className="text-right flex-1">
             <h1 className="text-3xl font-bold mb-4">כל המשתמשים</h1>
@@ -203,7 +221,6 @@ const confirmApprove = () => {
           </div>
         </div>
 
-        {/* Results count */}
         {searchTerm && (
           <div className="text-right mb-4 text-gray-600">
             נמצאו {filteredUsers.length} תוצאות
@@ -213,12 +230,12 @@ const confirmApprove = () => {
         <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {currentUsers.map((user, index) => (
             <div
-              key={user.id}
+              key={user._id}
               className={`rounded-xl p-4 text-center shadow-sm relative min-h-[110px] transition-transform hover:-translate-y-1 hover:shadow-md border-gray-100 ${
-                user.isApproved ? "bg-[#fffdf8]" : "bg-gray-100"
+                user.approved ? "bg-[#fffdf8]" : "bg-gray-100"
               }`}
             >
-              {!user.isApproved && (
+              {!user.approved && (
                 <div
                   className="absolute top-2 left-2 text-red-600 bg-red-100 px-3 py-1 rounded-full text-xs font-medium cursor-pointer hover:bg-red-200 transition"
                   onClick={() => handleApproveClick(index)}
@@ -227,7 +244,6 @@ const confirmApprove = () => {
                 </div>
               )}
 
-              {/* Top right buttons */}
               <div className="absolute top-2 right-2 flex gap-2">
                 <button
                   className="p-1 w-6 h-6 rounded hover:bg-gray-100 opacity-60 hover:opacity-100 transition"
@@ -271,17 +287,18 @@ const confirmApprove = () => {
                   </svg>
                 </button>
 
-                <button
-                  className={`p-1 w-6 h-6 rounded transition ${
-                    blockedUsers.includes(Number(user.id))
-                      ? "bg-red-600 text-white hover:bg-red-700"
-                      : "hover:bg-gray-100 opacity-60 hover:opacity-100"
-                  }`}
-                  onClick={() => setBlockUserIndex(index)}
-                >
-                  <Ban size={14} />
-                </button>
-
+                {user.approved && (
+                  <button
+                    className={`p-1 w-6 h-6 rounded transition ${
+                      user.isBlocked
+                        ? "bg-red-600 text-white hover:bg-red-700"
+                        : "hover:bg-gray-100 opacity-60 hover:opacity-100"
+                    }`}
+                    onClick={() => setBlockUserIndex(index)}
+                  >
+                    <Ban size={14} />
+                  </button>
+                )}
               </div>
 
               {/* Avatar */}
@@ -313,19 +330,20 @@ const confirmApprove = () => {
 
               <div>
                 <div className="text-sm text-gray-600">שם:</div>
-                <div className="font-semibold text-[#0D305B]">{user.name}</div>
+                <div className="font-semibold text-[#0D305B]">
+                  {user.firstName}
+                </div>
+
                 <div className="text-sm text-gray-600">{user.email}</div>
 
                 <div
                   className={`inline-block mt-2 text-xs px-2 py-1 rounded-full font-semibold ${
-                    blockedUsers.includes(Number(user.id))
+                    user.isBlocked
                       ? "bg-red-200 text-red-700"
                       : "bg-[#0D305B]/10 text-[#0D305B]"
                   }`}
                 >
-                  {blockedUsers.includes(Number(user.id))
-                    ? "משתמש חסום"
-                    : roleLabel(user.role)}
+                  {user.isBlocked ? "משתמש חסום" : roleLabel(user.role)}
                 </div>
               </div>
             </div>
@@ -421,12 +439,12 @@ const confirmApprove = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-xl p-6 w-80 text-right shadow-lg">
               <h2 className="text-xl font-semibold mb-4">
-                {blockedUsers.includes(Number(currentUsers[blockUserIndex].id))
+                {currentUsers[blockUserIndex].isBlocked
                   ? "לבטל חסימת משתמש זה?"
                   : "לחסום משתמש זה?"}
               </h2>
               <p className="mb-6 text-gray-600">
-                {blockedUsers.includes(Number(currentUsers[blockUserIndex].id))
+                {currentUsers[blockUserIndex].isBlocked
                   ? "האם אתה בטוח שברצונך לבטל את חסימת המשתמש ולאפשר לו גישה מחדש לאתר?"
                   : "האם אתה בטוח שברצונך לחסום משתמש זה מצפייה במוצרים?"}
               </p>
@@ -439,17 +457,13 @@ const confirmApprove = () => {
                 </button>
                 <button
                   className={`px-4 py-2 rounded text-white ${
-                    blockedUsers.includes(
-                      Number(currentUsers[blockUserIndex].id)
-                    )
+                    currentUsers[blockUserIndex].isBlocked
                       ? "bg-green-700 hover:bg-green-600"
                       : "bg-red-500 hover:bg-red-600"
                   }`}
                   onClick={() => confirmBlock()}
                 >
-                  {blockedUsers.includes(
-                    Number(currentUsers[blockUserIndex].id)
-                  )
+                  {currentUsers[blockUserIndex].isBlocked
                     ? "בטל חסימה"
                     : "חסום"}
                 </button>
@@ -458,17 +472,32 @@ const confirmApprove = () => {
           </div>
         )}
 
-        {/* Edit Modal */}
         {showEditModal && userToEdit && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-xl p-6 w-96 text-right shadow-lg">
               <h2 className="text-xl font-semibold mb-4">עריכת משתמש</h2>
 
-              <label className="block text-sm mb-1">שם:</label>
+              <label className="block text-sm mb-1">שם פרטי:</label>
               <input
                 type="text"
-                value={userToEdit.name}
-                onChange={(e) => handleEditChange("name", e.target.value)}
+                value={userToEdit.firstName}
+                onChange={(e) => handleEditChange("firstName", e.target.value)}
+                className="w-full border rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-[#0D305B]"
+              />
+
+              <label className="block text-sm mb-1">שם משפחה:</label>
+              <input
+                type="text"
+                value={userToEdit.lastName}
+                onChange={(e) => handleEditChange("lastName", e.target.value)}
+                className="w-full border rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-[#0D305B]"
+              />
+
+              <label className="block text-sm mb-1">שם משתמש:</label>
+              <input
+                type="text"
+                value={userToEdit.userName}
+                onChange={(e) => handleEditChange("userName", e.target.value)}
                 className="w-full border rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-[#0D305B]"
               />
 

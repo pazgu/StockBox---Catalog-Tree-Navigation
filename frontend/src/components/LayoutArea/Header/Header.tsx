@@ -28,12 +28,12 @@ const Header: React.FC<HeaderProps> = ({
   const location = useLocation();
   const navigate = useNavigate();
   const { role } = useUser();
-  // Close mobile menu on route change
+
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location]);
 
-  // Handle scroll effect
+
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
@@ -42,7 +42,6 @@ const Header: React.FC<HeaderProps> = ({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Close mobile menu on escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -93,8 +92,8 @@ const Header: React.FC<HeaderProps> = ({
       <header
         className={`fixed top-0 w-full transition-all duration-300 z-50 flex items-center justify-between px-6 ${
           isScrolled
-            ? "bg-[#0D305B]/95 backdrop-blur-md shadow-xl h-32" // taller on scroll
-            : "bg-[#0D305B] shadow-lg h-40" // taller when at top
+            ? "bg-[#0D305B]/95 backdrop-blur-md shadow-xl h-32" 
+            : "bg-[#0D305B] shadow-lg h-40" 
         }`}
       >
         <div className="container mx-auto px-4">
@@ -119,7 +118,7 @@ const Header: React.FC<HeaderProps> = ({
                 <NavLink to="/" className={navLinkClass}>
                   אודות
                 </NavLink>
-                {role !== "admin" && (
+                {!role && (
                   <>
                     <span className="text-white/30 animate-pulse">|</span>
                     <NavLink to="/login" className={navLinkClass}>
@@ -179,7 +178,7 @@ const Header: React.FC<HeaderProps> = ({
               )}
 
               {/* All Users */}
-              {role === "admin" && (
+              {role === "editor" && (
                 <div className="relative group">
                   <button
                     aria-label="User Profile"
@@ -209,7 +208,6 @@ const Header: React.FC<HeaderProps> = ({
                   </div>
                 </div>
               )}
-
 
               {/* Mobile Menu Toggle */}
               <button
@@ -289,7 +287,7 @@ const Header: React.FC<HeaderProps> = ({
               >
                 תכולות ואמצעים
               </NavLink>
-              {role !== "admin" && (
+              {role !== "editor" && (
                 <NavLink
                   to="/login"
                   className={navLinkClass}
@@ -308,7 +306,7 @@ const Header: React.FC<HeaderProps> = ({
                   <span className="text-xs">מועדפים</span>
                 </button>
               }
-              {role === "admin" && (
+              {role === "editor" && (
                 <button className="flex flex-col items-center gap-1 text-white/80 hover:text-white transition-colors">
                   <User size={20} />
                   <span className="text-xs">כל המשתמשים</span>
@@ -317,7 +315,6 @@ const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
         </div>
-       
       </header>
 
       {/* Spacer to prevent content from going under fixed header */}

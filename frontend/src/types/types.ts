@@ -1,4 +1,3 @@
-export type UserRole = "admin" | "user";
 
 export type BannedEntityType = "product" | "category" | "subcategory";
 
@@ -7,6 +6,7 @@ export interface BannedItem {
   name: string;
   type: BannedEntityType;
   groupId?: string;
+  image?: string; 
 }
 
 export const mockBannedItems: BannedItem[] = [
@@ -16,61 +16,5 @@ export const mockBannedItems: BannedItem[] = [
   { id: "sub_cat_7", name: "עדשות EF", type: "subcategory" },
 ];
 
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  avatar: string;
-  groups: string[];
-}
 
-export interface Group {
-  id: string;
-   name: string;
-  permissions: string[];
-  bannedItems: BannedItem[]; 
-}
-
-export interface Permission {
-  id: string;
-  category: string;
-  name: string;
-  description: string;
-  icon: React.ReactNode;
-  enabled: boolean;
-}
-
-export interface PermissionCategory {
-  name: string;
-  icon: React.ReactNode;
-  permissions: Permission[];
-}
-
-export interface BannedItem {
-  id: string | number;
-  name: string;
-  type: "product" | "category" | "subcategory";
-  image?: string; 
-}
-
-
-export interface AccordionData {
-  id: string; // Unique ID for key and manipulation
-  title: string;
-  content: string;
-  isEditable: boolean; // Flag to indicate if content is editable (like the default ones)
-}
-export interface UploadedFile {
-  id: string;
-  name: string;
-  type: string;
-  url: string;
-  size: number;
-}
-
-// Folder interface
-export interface FileFolder {
-  id: string;
-  name: string;
-  files: UploadedFile[];
-}
+export type Point = { x: number; y: number };

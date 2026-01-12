@@ -1,6 +1,6 @@
 import React from "react";
 import { toast } from "sonner";
-import { Category } from "../../Categories"; // or wherever your Category type lives
+import { Category } from "../../Categories";
 import {
   getBaseCoverScale,
   clampOffsetToCircle,
@@ -10,20 +10,40 @@ import useBlockBrowserZoom from "../../useBlockBrowserZoom";
 
 type Props = {
   isOpen: boolean;
-  category: Category;              // incoming category to edit
-  onClose: () => void;             // close without saving
-  onSave: (updated: Category) => void; // called with updated category
+  category: Category; 
+  onClose: () => void;
+  onSave: (updated: Category) => void;
 };
 
 const CROP_BOX = 256;
+function dataURLtoFile(dataUrl: string, filename: string) {
+  const arr = dataUrl.split(",");
+  const mimeMatch = arr[0].match(/:(.*?);/);
+  const mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) u8arr[n] = bstr.charCodeAt(n);
+  return new File([u8arr], filename, { type: mime });
+}
 
-const EditCategoryModal: React.FC<Props> = ({ isOpen, category, onClose, onSave }) => {
-  const [name, setName] = React.useState(category.name);
-  const [previewImage, setPreviewImage] = React.useState<string>(category.image);
+const EditCategoryModal: React.FC<Props> = ({
+  isOpen,
+  category,
+  onClose,
+  onSave,
+}) => {
+  const [name, setName] = React.useState(category.categoryName);
+  const [previewImage, setPreviewImage] = React.useState<string>(
+    category.categoryImage
+  );
 
-  // cropper state
+  const [imageFile, setImageFile] = React.useState<File | undefined>(undefined); 
+
+
   const [isEditCropperOpen, setIsEditCropperOpen] = React.useState(false);
-  const [editRawImage, setEditRawImage] = React.useState<HTMLImageElement | null>(null);
+  const [editRawImage, setEditRawImage] =
+    React.useState<HTMLImageElement | null>(null);
   const [editZoom, setEditZoom] = React.useState(1);
   const [editOffset, setEditOffset] = React.useState({ x: 0, y: 0 });
   const [isEditPanning, setIsEditPanning] = React.useState(false);
@@ -33,9 +53,9 @@ const EditCategoryModal: React.FC<Props> = ({ isOpen, category, onClose, onSave 
   useBlockBrowserZoom(editCropRef);
 
   React.useEffect(() => {
-    // sync when the modal re-opens with a different category
-    setName(category.name);
-    setPreviewImage(category.image);
+    setName(category.categoryName);
+    setImageFile(undefined); 
+    setPreviewImage(category.categoryImage);
   }, [category]);
 
   if (!isOpen) return null;
@@ -65,45 +85,52 @@ const EditCategoryModal: React.FC<Props> = ({ isOpen, category, onClose, onSave 
   };
 
   const commitEditCrop = () => {
-    if (!editRawImage) return;
+  if (!editRawImage) return;
 
-    const OUT = 512;
-    const canvas = document.createElement("canvas");
-    canvas.width = OUT;
-    canvas.height = OUT;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+  const OUT = 512;
+  const canvas = document.createElement("canvas");
+  canvas.width = OUT;
+  canvas.height = OUT;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
 
-    const iw = editRawImage.naturalWidth;
-    const ih = editRawImage.naturalHeight;
+  const iw = editRawImage.naturalWidth;
+  const ih = editRawImage.naturalHeight;
 
-    const baseScale = getBaseCoverScale(iw, ih, CROP_BOX);
-    const displayScale = baseScale * editZoom;
-    const canvasScale = OUT / CROP_BOX;
+  const baseScale = getBaseCoverScale(iw, ih, CROP_BOX);
+  const displayScale = baseScale * editZoom;
+  const canvasScale = OUT / CROP_BOX;
 
-    ctx.clearRect(0, 0, OUT, OUT);
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, OUT, OUT);
+  ctx.clearRect(0, 0, OUT, OUT);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, OUT, OUT);
 
-    ctx.save();
-    ctx.scale(canvasScale, canvasScale);
-    ctx.beginPath();
-    ctx.arc(CROP_BOX / 2, CROP_BOX / 2, CROP_BOX / 2, 0, Math.PI * 2);
-    ctx.closePath();
-    ctx.clip();
+  ctx.save();
+  ctx.scale(canvasScale, canvasScale);
+  ctx.beginPath();
+  ctx.arc(CROP_BOX / 2, CROP_BOX / 2, CROP_BOX / 2, 0, Math.PI * 2);
+  ctx.closePath();
+  ctx.clip();
 
-    ctx.translate(CROP_BOX / 2, CROP_BOX / 2);
-    ctx.translate(editOffset.x, editOffset.y);
-    ctx.scale(displayScale, displayScale);
-    ctx.drawImage(editRawImage, -iw / 2, -ih / 2);
-    ctx.restore();
+  ctx.translate(CROP_BOX / 2, CROP_BOX / 2);
+  ctx.translate(editOffset.x, editOffset.y);
+  ctx.scale(displayScale, displayScale);
+  ctx.drawImage(editRawImage, -iw / 2, -ih / 2);
+  ctx.restore();
 
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
-    setPreviewImage(dataUrl);
-    setIsEditCropperOpen(false);
-    setEditRawImage(null);
-    toast.success("התמונה עודכנה לפי המסגור החדש");
-  };
+  const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+
+  const safe = name.trim().toLowerCase().replace(/\s+/g, "-") || "category";
+  const file = dataURLtoFile(dataUrl, `${safe}.jpg`);
+
+  setImageFile(file);        
+  setPreviewImage(dataUrl);  
+  setIsEditCropperOpen(false);
+  setEditRawImage(null);
+
+  toast.success("התמונה עודכנה לפי המסגור החדש");
+};
+
 
   const resetEditCrop = () => {
     setEditZoom(1);
@@ -123,6 +150,8 @@ const EditCategoryModal: React.FC<Props> = ({ isOpen, category, onClose, onSave 
       toast.error(`התמונה גדולה מדי (מעל ${MAX_MB}MB)`);
       return;
     }
+
+     setImageFile(file); 
 
     const reader = new FileReader();
     reader.onload = () => {
@@ -146,13 +175,14 @@ const EditCategoryModal: React.FC<Props> = ({ isOpen, category, onClose, onSave 
   };
 
   const handleSave = () => {
-    const updated: Category = {
-      ...category,
-      name: name.trim(),
-      image: previewImage,
-    };
-    onSave(updated);
-  };
+  const updated = {
+    ...category,
+    categoryName: name.trim(),
+    imageFile,
+  } as any;
+  onSave(updated);
+};
+
 
   return (
     <div
@@ -176,7 +206,12 @@ const EditCategoryModal: React.FC<Props> = ({ isOpen, category, onClose, onSave 
         />
 
         {/* upload to open cropper */}
-        <input type="file" accept="image/*" onChange={onFileChange} className="w-full mb-4" />
+        <input
+          type="file"
+          accept="image/*"
+          onChange={onFileChange}
+          className="w-full mb-4"
+        />
 
         {/* edit current image without uploading */}
         {!isEditCropperOpen && previewImage && (
@@ -205,10 +240,18 @@ const EditCategoryModal: React.FC<Props> = ({ isOpen, category, onClose, onSave 
               onWheel={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                const rect = (editCropRef.current as HTMLDivElement).getBoundingClientRect();
-                const cursor = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+                const rect = (
+                  editCropRef.current as HTMLDivElement
+                ).getBoundingClientRect();
+                const cursor = {
+                  x: e.clientX - rect.left,
+                  y: e.clientY - rect.top,
+                };
                 const delta = Math.sign(e.deltaY) * -0.1;
-                const next = Math.min(4, Math.max(1, +(editZoom + delta).toFixed(3)));
+                const next = Math.min(
+                  4,
+                  Math.max(1, +(editZoom + delta).toFixed(3))
+                );
                 if (next === editZoom) return;
 
                 const newOffset = anchoredZoom(
@@ -226,11 +269,17 @@ const EditCategoryModal: React.FC<Props> = ({ isOpen, category, onClose, onSave 
               onMouseDown={(e) => {
                 e.preventDefault();
                 setIsEditPanning(true);
-                setEditStartPan({ x: e.clientX - editOffset.x, y: e.clientY - editOffset.y });
+                setEditStartPan({
+                  x: e.clientX - editOffset.x,
+                  y: e.clientY - editOffset.y,
+                });
               }}
               onMouseMove={(e) => {
                 if (!isEditPanning) return;
-                const next = { x: e.clientX - editStartPan.x, y: e.clientY - editStartPan.y };
+                const next = {
+                  x: e.clientX - editStartPan.x,
+                  y: e.clientY - editStartPan.y,
+                };
                 setEditOffset(
                   clampOffsetToCircle(
                     next,
@@ -246,12 +295,18 @@ const EditCategoryModal: React.FC<Props> = ({ isOpen, category, onClose, onSave 
               onTouchStart={(e) => {
                 const t = e.touches[0];
                 setIsEditPanning(true);
-                setEditStartPan({ x: t.clientX - editOffset.x, y: t.clientY - editOffset.y });
+                setEditStartPan({
+                  x: t.clientX - editOffset.x,
+                  y: t.clientY - editOffset.y,
+                });
               }}
               onTouchMove={(e) => {
                 if (!isEditPanning) return;
                 const t = e.touches[0];
-                const next = { x: t.clientX - editStartPan.x, y: t.clientY - editStartPan.y };
+                const next = {
+                  x: t.clientX - editStartPan.x,
+                  y: t.clientY - editStartPan.y,
+                };
                 setEditOffset(
                   clampOffsetToCircle(
                     next,
@@ -287,11 +342,13 @@ const EditCategoryModal: React.FC<Props> = ({ isOpen, category, onClose, onSave 
                   transformOrigin: "center center",
                   width:
                     editRawImage.naturalWidth >= editRawImage.naturalHeight
-                      ? (CROP_BOX * editRawImage.naturalWidth) / editRawImage.naturalHeight
+                      ? (CROP_BOX * editRawImage.naturalWidth) /
+                        editRawImage.naturalHeight
                       : CROP_BOX,
                   height:
                     editRawImage.naturalHeight > editRawImage.naturalWidth
-                      ? (CROP_BOX * editRawImage.naturalHeight) / editRawImage.naturalWidth
+                      ? (CROP_BOX * editRawImage.naturalHeight) /
+                        editRawImage.naturalWidth
                       : CROP_BOX,
                 }}
               />
@@ -313,15 +370,21 @@ const EditCategoryModal: React.FC<Props> = ({ isOpen, category, onClose, onSave 
             <div className="flex items-center gap-2 mt-3">
               <button
                 type="button"
-                onClick={() => setEditZoom((z) => Math.max(1, +(z - 0.1).toFixed(2)))}
+                onClick={() =>
+                  setEditZoom((z) => Math.max(1, +(z - 0.1).toFixed(2)))
+                }
                 className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-slate-700"
               >
                 -
               </button>
-              <div className="px-2 text-sm text-slate-600">זום: {editZoom.toFixed(2)}</div>
+              <div className="px-2 text-sm text-slate-600">
+                זום: {editZoom.toFixed(2)}
+              </div>
               <button
                 type="button"
-                onClick={() => setEditZoom((z) => Math.min(4, +(z + 0.1).toFixed(2)))}
+                onClick={() =>
+                  setEditZoom((z) => Math.min(4, +(z + 0.1).toFixed(2)))
+                }
                 className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-slate-700"
               >
                 +

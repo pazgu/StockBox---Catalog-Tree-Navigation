@@ -1,14 +1,24 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
-import { useUser } from "../../../../context/UserContext";
+import { userService } from "../../../../services/UserService";
 import { toast } from "sonner";
+import { User,USER_ROLES  } from "../../../models/user.models";
+import { Group } from "../../../models/group.models";
+import { useNavigate } from "react-router-dom";
+import { X } from "lucide-react";
+import axios from "axios";
+
+import { useUser } from "../../../../context/UserContext";
+import { environment } from "../../../../environments/environment.development";
+const api = axios.create({
+  baseURL: environment.API_URL,
+});
 
 const userSchema = z.object({
-  username: z
+  userName: z
     .string()
     .min(1, "שם משתמש הוא שדה חובה")
     .min(2, "שם משתמש חייב להכיל לפחות 2 תווים")
@@ -16,7 +26,8 @@ const userSchema = z.object({
       /^[א-תa-zA-Z\s]+$/,
       "שם משתמש יכול להכיל רק אותיות, מספרים וקו תחתון"
     ),
-
+  firstName: z.string().min(1, "שם פרטי הוא שדה חובה"),
+  lastName: z.string().min(1, "שם משפחה הוא שדה חובה"),
   email: z
     .string()
     .min(1, "כתובת מייל היא שדה חובה")
@@ -26,25 +37,58 @@ const userSchema = z.object({
       "כתובת מייל לא תקינה"
     ),
   companyName: z.string().optional(),
-  role: z
-    .string()
-    .min(1, "סוג משתמש הוא שדה חובה")
-    .refine((val) => val === "user" || val === "admin", {
-      message: "סוג משתמש לא חוקי",
-    }),
+
+  role: z.string().refine((val) => USER_ROLES.includes(val as any), {
+    message: "סוג משתמש לא חוקי",
+  }),
 });
 
 type UserFormData = z.infer<typeof userSchema>;
 
 const NewUser: React.FC = () => {
+  const { role, refreshUsers } = useUser();
   const navigate = useNavigate();
-  const { role, addUser } = useUser();
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [isLoadingGroups, setIsLoadingGroups] = useState(false);
+
+  const goToAllUsers = () => {
+    navigate("/AllUsers");
+  };
 
   useEffect(() => {
-    if (role !== "admin") {
+    if (role !== "editor") {
       navigate("/");
     }
   }, [navigate, role]);
+
+  useEffect(() => {
+    fetchGroups();
+  }, []);
+
+  const fetchGroups = async () => {
+    try {
+      setIsLoadingGroups(true);
+      const response = await api.get("/groups");
+
+      const transformedGroups: Group[] = response.data.map((g: any) => ({
+        id: g._id || g.id,
+        name: g.groupName,
+        members:
+          g.members?.map((m: any) =>
+            typeof m === "string" ? m : m._id || m.id
+          ) || [],
+        permissions: [],
+        bannedItems: [],
+      }));
+
+      setGroups(transformedGroups);
+    } catch (error) {
+      console.error("Error fetching groups:", error);
+      toast.error("שגיאה בטעינת קבוצות");
+    } finally {
+      setIsLoadingGroups(false);
+    }
+  };
 
   const {
     register,
@@ -58,15 +102,28 @@ const NewUser: React.FC = () => {
 
   const onSubmit = async (data: UserFormData) => {
     try {
-      const newUser = {
-        id: Date.now(),
-        name: data.username,
+      const newUser: Omit<User, "_id"> = {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        userName: data.userName,
         email: data.email,
-        role: data.role as "admin" | "user",
-        isApproved: false,
+        role: data.role as User["role"],
+        approved: true,
+        requestSent: true,
+        isBlocked: false,
       };
 
-      addUser(newUser);
+      const createdUser = await userService.create(newUser);
+
+      if (data.companyName && createdUser._id) {
+        const group = groups.find((g) => g.id === data.companyName);
+        if (group) {
+          const newMembers = [...group.members, createdUser._id];
+          await api.patch(`/groups/${data.companyName}`, { members: newMembers });
+        }
+      }
+
+      await refreshUsers();
 
       reset();
       toast.success("משתמש נוסף בהצלחה!");
@@ -101,68 +158,127 @@ const NewUser: React.FC = () => {
             הוספת משתמש חדש
           </h2>
         </div>
-
+        <X
+          onClick={goToAllUsers}
+          className="absolute top-4 right-4 cursor-pointer text-gray-500 hover:text-gray-700"
+        />
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="w-full flex flex-row rtl text-right gap-12 justify-center"
         >
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-col min-w-[320px] max-w-[380px]">
-            <label
-              htmlFor="username"
-              className="mb-2 text-sm font-semibold text-gray-700 rtl text-right"
-            >
-              שם משתמש
-            </label>
-            <input
-              {...register("username")}
-              type="text"
-              id="username"
-              className={`py-3 px-4 border rounded-lg text-base outline-none transition-all duration-200 rtl text-right bg-white min-h-6 leading-6 ${
-                errors.username
-                  ? "border-red-500 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]"
-                  : "border-gray-300 focus:border-[#0D305B] focus:shadow-[0_0_0_3px_rgba(13,48,91,0.1)]"
-              }`}
-            />
-            {errors.username && (
-              <motion.span
-                className="text-red-500 text-[13px] mt-1.5 block text-right rtl font-medium opacity-100 transition-opacity duration-200"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col min-w-[320px] max-w-[380px]">
+              <label
+                htmlFor="userName"
+                className="mb-2 text-sm font-semibold text-gray-700 rtl text-right"
               >
-                {errors.username.message}
-              </motion.span>
-            )}
-          </div>
+                שם משתמש
+              </label>
+              <input
+                {...register("userName")}
+                type="text"
+                id="userName"
+                className={`py-3 px-4 border rounded-lg text-base outline-none transition-all duration-200 rtl text-right bg-white min-h-6 leading-6 ${
+                  errors.userName
+                    ? "border-red-500 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]"
+                    : "border-gray-300 focus:border-[#0D305B] focus:shadow-[0_0_0_3px_rgba(13,48,91,0.1)]"
+                }`}
+              />
+              {errors.userName && (
+                <motion.span
+                  className="text-red-500 text-[13px] mt-1.5 block text-right rtl font-medium opacity-100 transition-opacity duration-200"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  {errors.userName.message}
+                </motion.span>
+              )}
+            </div>
 
-          <div className="flex flex-col min-w-[320px] max-w-[380px]">
-            <label
-              htmlFor="email"
-              className="mb-2 text-sm font-semibold text-gray-700 rtl text-right"
-            >
-              כתובת מייל
-            </label>
-            <input
-              {...register("email")}
-              type="email"
-              id="email"
-              placeholder="yourname@gmail.com"
-              className={`py-3 px-4 border rounded-lg text-base outline-none transition-all duration-200 rtl text-right bg-white min-h-6 leading-6 placeholder:text-gray-400 placeholder:rtl placeholder:text-right placeholder:text-base ${
-                errors.email
-                  ? "border-red-500 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]"
-                  : "border-gray-300 focus:border-[#0D305B] focus:shadow-[0_0_0_3px_rgba(13,48,91,0.1)]"
-              }`}
-            />
-            {errors.email && (
-              <motion.span
-                className="text-red-500 text-[13px] mt-1.5 block text-right rtl font-medium opacity-100 transition-opacity duration-200"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+            <div className="flex flex-col min-w-[320px] max-w-[380px]">
+              <label
+                htmlFor="firstName"
+                className="mb-2 text-sm font-semibold text-gray-700 rtl text-right"
               >
-                {errors.email.message}
-              </motion.span>
-            )}
-          </div>
+                שם פרטי
+              </label>
+              <input
+                {...register("firstName")}
+                type="text"
+                id="firstName"
+                className={`py-3 px-4 border rounded-lg text-base outline-none transition-all duration-200 rtl text-right bg-white min-h-6 leading-6 ${
+                  errors.firstName
+                    ? "border-red-500 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]"
+                    : "border-gray-300 focus:border-[#0D305B] focus:shadow-[0_0_0_3px_rgba(13,48,91,0.1)]"
+                }`}
+              />
+              {errors.firstName && (
+                <motion.span
+                  className="text-red-500 text-[13px] mt-1.5 block text-right rtl font-medium opacity-100 transition-opacity duration-200"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  {errors.firstName.message}
+                </motion.span>
+              )}
+            </div>
+
+            <div className="flex flex-col min-w-[320px] max-w-[380px]">
+              <label
+                htmlFor="lastName"
+                className="mb-2 text-sm font-semibold text-gray-700 rtl text-right"
+              >
+                שם משפחה
+              </label>
+              <input
+                {...register("lastName")}
+                type="text"
+                id="lastName"
+                className={`py-3 px-4 border rounded-lg text-base outline-none transition-all duration-200 rtl text-right bg-white min-h-6 leading-6 ${
+                  errors.lastName
+                    ? "border-red-500 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]"
+                    : "border-gray-300 focus:border-[#0D305B] focus:shadow-[0_0_0_3px_rgba(13,48,91,0.1)]"
+                }`}
+              />
+              {errors.lastName && (
+                <motion.span
+                  className="text-red-500 text-[13px] mt-1.5 block text-right rtl font-medium opacity-100 transition-opacity duration-200"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  {errors.lastName.message}
+                </motion.span>
+              )}
+            </div>
+
+            <div className="flex flex-col min-w-[320px] max-w-[380px]">
+              <label
+                htmlFor="email"
+                className="mb-2 text-sm font-semibold text-gray-700 rtl text-right"
+              >
+                כתובת מייל
+              </label>
+              <input
+                {...register("email")}
+                type="email"
+                id="email"
+                placeholder="yourname@gmail.com"
+                className={`py-3 px-4 border rounded-lg text-base outline-none transition-all duration-200 rtl text-right bg-white min-h-6 leading-6 placeholder:text-gray-400 placeholder:rtl placeholder:text-right placeholder:text-base ${
+                  errors.email
+                    ? "border-red-500 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]"
+                    : "border-gray-300 focus:border-[#0D305B] focus:shadow-[0_0_0_3px_rgba(13,48,91,0.1)]"
+                }`}
+              />
+              {errors.email && (
+                <motion.span
+                  className="text-red-500 text-[13px] mt-1.5 block text-right rtl font-medium opacity-100 transition-opacity duration-200"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  {errors.email.message}
+                </motion.span>
+              )}
+            </div>
           </div>
 
           <div className="flex flex-col gap-3">
@@ -175,8 +291,9 @@ const NewUser: React.FC = () => {
               </label>
               <div className="relative">
                 <select
-                  {...register("role")}
                   id="role"
+                  {...register("role")}
+                  defaultValue=""
                   className={`cursor-pointer py-3 px-4 pl-10 border rounded-lg text-base outline-none transition-all duration-200 rtl text-right bg-white min-h-6 leading-6 appearance-none w-full ${
                     errors.role
                       ? "border-red-500 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]"
@@ -189,9 +306,11 @@ const NewUser: React.FC = () => {
                     backgroundSize: "20px",
                   }}
                 >
-                  <option value="">בחר סוג</option>
-                  <option value="admin">מנהל</option>
-                  <option value="user">משתמש</option>
+                  <option value="" disabled>
+                    בחר סוג
+                  </option>
+                  <option value="editor">מנהל</option>
+                  <option value="viewer">משתמש</option>
                 </select>
               </div>
               {errors.role && (
@@ -200,7 +319,15 @@ const NewUser: React.FC = () => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                 >
-                  {errors.role.message}
+                  {errors.role?.message && (
+                    <motion.span
+                      className="text-red-500 text-xs mt-1 font-medium"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                    >
+                      {String(errors.role.message)}
+                    </motion.span>
+                  )}
                 </motion.span>
               )}
             </div>
@@ -215,7 +342,8 @@ const NewUser: React.FC = () => {
               <select
                 {...register("companyName")}
                 id="companyName"
-                className="cursor-pointer py-3 px-4 pl-10 border border-gray-300 rounded-lg text-base outline-none transition-all duration-200 rtl text-right bg-white min-h-6 leading-6 appearance-none focus:border-[#0D305B] focus:shadow-[0_0_0_3px_rgba(13,48,91,0.1)]"
+                disabled={isLoadingGroups}
+                className="cursor-pointer py-3 px-4 pl-10 border border-gray-300 rounded-lg text-base outline-none transition-all duration-200 rtl text-right bg-white min-h-6 leading-6 appearance-none focus:border-[#0D305B] focus:shadow-[0_0_0_3px_rgba(13,48,91,0.1)] disabled:bg-gray-100 disabled:cursor-not-allowed"
                 style={{
                   backgroundImage: `url('data:image/svg+xml;utf8,<svg fill="%23374151" height="20" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>')`,
                   backgroundRepeat: "no-repeat",
@@ -223,10 +351,14 @@ const NewUser: React.FC = () => {
                   backgroundSize: "20px",
                 }}
               >
-                <option value="">בחר קבוצה</option>
-                <option value="company1">קבוצה 1</option>
-                <option value="company2">קבוצה 2</option>
-                <option value="company3">קבוצה 3</option>
+                <option value="">
+                  {isLoadingGroups ? "טוען קבוצות..." : "בחר קבוצה"}
+                </option>
+                {groups.map((group) => (
+                  <option key={group.id} value={group.id}>
+                    {group.name}
+                  </option>
+                ))}
               </select>
             </div>
           </div>

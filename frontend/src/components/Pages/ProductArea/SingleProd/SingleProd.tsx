@@ -1,17 +1,7 @@
 import React, { FC, useState, useCallback, useMemo } from "react";
 import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from "../../../ui/accordion";
-import cam from "../../../../assets/red-lens-camera.png";
-import {
   Heart,
   PencilLine,
-  Upload,
-  Plus,
-  GripVertical,
   MailQuestionIcon,
   Check,
 } from "lucide-react";
@@ -19,76 +9,103 @@ import { useUser } from "../../../../context/UserContext";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import {
-  FolderPlus,
-  Folder,
   File,
   Video,
   Music,
   FileText,
-  Download,
-  Trash2,
-  X,
 } from "lucide-react";
 import {
   AccordionData,
-  UploadedFile,
-  FileFolder,
-} from "../../../../types/types";
+} from "../../../models/accordion.models";
 import AccordionSection from "../AccordionSection/AccordionSection/AccordionSection";
 import ImageCarousel from "../ImageCarousel/ImageCarousel/ImageCarousel";
 import Breadcrumbs from "../../../LayoutArea/Breadcrumbs/Breadcrumbs";
-
+import { useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { ProductsService } from "../../../../services/ProductService";
+import { ProductDto } from "../../../../components/models/product.models";
+import { CloudinaryService } from "../../../../services/Cloudinary.service";
+import { FileFolder, UploadedFile } from "../../../models/files.models";
 interface SingleProdProps {}
-// Helper function to generate a unique ID (simple timestamp for this example)
-const generateUniqueId = () =>
-  `accordion-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
 const SingleProd: FC<SingleProdProps> = () => {
   const { role } = useUser();
   const [isEditing, setIsEditing] = useState(false);
-  const [title, setTitle] = useState("מצלמת DSLR קלאסית עם עדשה אדומה");
-  const path: string[] = ["categories", "single-cat", title];
-  const [description, setDescription] = useState(
-    "פתרון מקצועי לצילום איכותי עם עיצוב רטרו ועמידות גבוהה."
-  );
-
-  // Consolidated state for product data that was previously separate states
-  const [accordionData, setAccordionData] = useState<AccordionData[]>([
-    {
-      id: "description",
-      title: "תיאור המוצר",
-      content:
-        "מצלמת DSLR מקצועית עם עדשה איכותית ועיצוב קלאסי רטרו. המצלמה מציעה איכות תמונה מעולה עם חיישן מתקדם ובקרה מלאה על כל הגדרות הצילום.",
-      isEditable: true,
-    },
-    {
-      id: "specifications",
-      title: "מפרט טכני",
-      content:
-        "רזולוציה 24MP, חיישן APS-C, עדשה 18-55mm, מסך LCD 3 אינץ', חיבור Wi-Fi",
-      isEditable: true,
-    },
-    {
-      id: "features",
-      title: "מאפיינים עיקריים",
-      content: JSON.stringify([
-        "איכות תמונה חדה במיוחד",
-        "עיצוב רטרו יוקרתי עם טבעות אדומות",
-        "צילום ווידאו 4K מקצועי",
-        "עדשה מהירה לצילום בתאורה חלשה",
-        "נוחות אחיזה ובקרה",
-      ]), // Storing features as JSON string to keep original logic contained
-      isEditable: true,
-    },
-  ]);
-
-  // === IMAGE STATES (MODIFIED) ===
-  const [productImages, setProductImages] = useState<string[]>([cam]);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [product, setProduct] = useState<ProductDto | null>(null);
+  const [originalProduct, setOriginalProduct] = useState<ProductDto | null>(null);
+  const [newAccordionType, setNewAccordionType] = useState<'bullets' | 'content' | null>(null);
+  const [showAccordionTypeSelector, setShowAccordionTypeSelector] = useState(false);
+  const [accordionData, setAccordionData] = useState<AccordionData[]>([]);
+  const [productImages, setProductImages] = useState<string[]>([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [originalImages] = useState<string[]>([cam]);
-  const [hasImageChanged, setHasImageChanged] = useState(false);
+  const [draggedItem, setDraggedItem] = useState<AccordionData | null>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [showNewFolderInput, setShowNewFolderInput] = useState(false);
+  const [folders, setFolders] = useState<FileFolder[]>([]);
 
-  // === IMAGE HANDLERS ===
+
+  const { productId } = useParams<{ productId: string }>();
+
+  useEffect(() => {
+    if (!productId) return;
+
+    const loadProduct = async () => {
+      const product = await ProductsService.getById(productId);
+
+      setTitle(product.productName);
+      setDescription(product.productDescription || '');
+      setProductImages(product.productImages || []);
+      setCurrentImageIndex(0);
+      setProduct(product);
+      setOriginalProduct(product);
+
+    if (Array.isArray(product.customFields)) {
+      const accordion = product.customFields.map((field: any) => ({
+          id: field._id,                
+          uiId: field._id,              
+          title: field.title,
+          type: field.type,
+          content:
+            field.type === 'bullets'
+              ? JSON.stringify(field.bullets)
+              : field.content,
+        }));
+setAccordionData(accordion);
+}
+    const folders =
+    product.uploadFolders?.[0]?.folders.map((folder: any) => ({
+      uiId: folder._id,               
+      name: folder.folderName,
+      files: folder.files.map((file: any) => ({
+        uiId: file._id,             
+        name: file.link.split("/").pop(),
+        type: "",
+        url: file.link,
+        size: 0,
+      })),
+  })) || [];
+setFolders(folders);
+  };
+
+  loadProduct();
+}, [productId]);
+
+
+const breadcrumbPath = useMemo(() => {
+  if (!product?.productPath) return [];
+
+  return [
+    "categories",
+    ...product.productPath
+      .replace(/^categories\//, "")
+      .split("/")
+      .filter(Boolean),
+  ];
+}, [product]);
+
   const nextImage = () => {
     setCurrentImageIndex((prev) =>
       prev === productImages.length - 1 ? 0 : prev + 1
@@ -101,45 +118,53 @@ const SingleProd: FC<SingleProdProps> = () => {
     );
   };
 
-  //This section is for the files upload
-  const handleAddImages = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      const newImages = Array.from(files).map((file) =>
-        URL.createObjectURL(file)
-      );
-      setProductImages((prev) => [...prev, ...newImages]);
-    }
-  };
+  const handleAddImages = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const files = e.target.files;
+  if (!files || files.length === 0) return;
 
-  const handleReplaceImage = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      const newImage = URL.createObjectURL(files[0]);
-      setProductImages((prev) =>
-        prev.map((img, i) => (i === currentImageIndex ? newImage : img))
-      );
+  const uploadedImages: string[] = [];
+
+  for (const file of Array.from(files)) {
+    try {
+      const result = await CloudinaryService.uploadFile(file, "products/images");
+      uploadedImages.push(result.url); // only store the Cloudinary URL
+    } catch (err) {
+      console.error("Image upload failed for", file.name, err);
+      toast.error(`Upload failed for ${file.name}`);
     }
-  };
+  }
+
+  setProductImages((prev) => [...prev, ...uploadedImages]);
+};
+
+
+ const handleReplaceImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const files = e.target.files;
+  if (!files || files.length === 0) return;
+
+  try {
+    const result = await CloudinaryService.uploadFile(files[0], "products/images");
+    setProductImages((prev) =>
+      prev.map((img, i) => (i === currentImageIndex ? result.url : img))
+    );
+  } catch (err) {
+    console.error("Image replacement failed", err);
+    toast.error("Image replacement failed");
+  }
+};
+
 
   const handleDeleteImage = () => {
-    setProductImages((prev) => {
-      if (prev.length === 1) return prev; // keep at least one
-      const updated = prev.filter((_, i) => i !== currentImageIndex);
-      setCurrentImageIndex((prevIndex) =>
-        prevIndex === updated.length ? updated.length - 1 : prevIndex
-      );
-      return updated;
-    });
-  };
+  setProductImages((prev) => {
+    if (prev.length === 1) return prev;
+    const updated = prev.filter((_, i) => i !== currentImageIndex);
+    setCurrentImageIndex((prevIndex) =>
+      prevIndex === updated.length ? updated.length - 1 : prevIndex
+    );
+    return updated;
+  });
+};
 
-  const [draggedItem, setDraggedItem] = useState<AccordionData | null>(null);
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [newFolderName, setNewFolderName] = useState("");
-  const [showNewFolderInput, setShowNewFolderInput] = useState(false);
-  const [folders, setFolders] = useState<FileFolder[]>([
-    { id: "folder-1", name: "ניסויים", files: [] },
-  ]);
   const toggleFavorite = () => {
     if (isFavorite) {
       toast.info("הוסר מהמועדפים ");
@@ -148,86 +173,99 @@ const SingleProd: FC<SingleProdProps> = () => {
     }
     setIsFavorite((prev) => !prev);
   };
-  const handleAccordionContentChange = (id: string, newContent: string) => {
-    setAccordionData((prevData) =>
-      prevData.map((item) =>
-        item.id === id ? { ...item, content: newContent } : item
-      )
-    );
+const handleAccordionContentChange = (uiId: string, newContent: string) => {
+  setAccordionData((prevData) =>
+    prevData.map((item) =>
+      item.uiId === uiId ? { ...item, content: newContent } : item
+    )
+  );
+};
+
+ const handleAccordionTitleChange = (uiId: string, newTitle: string) => {
+  setAccordionData((prevData) =>
+    prevData.map((item) =>
+      item.uiId === uiId ? { ...item, title: newTitle } : item
+    )
+  );
+};
+
+  const confirmAddAccordion = (type: "content" | "bullets") => {
+    const newItem = {
+      uiId: `ui-${Date.now()}`, // required for type AccordionData
+      id: `new-${Date.now()}`,
+      title: "",
+      type,
+      content: type === "bullets" ? JSON.stringify([]) : "",
+    };
+
+    addCustomAccordion(newItem);
+
+    setShowAccordionTypeSelector(false);
+    setNewAccordionType(null);
   };
 
-  const handleAccordionTitleChange = (id: string, newTitle: string) => {
-    setAccordionData((prevData) =>
-      prevData.map((item) =>
-        item.id === id ? { ...item, title: newTitle } : item
-      )
-    );
-  };
+const addCustomAccordion = (newItem?: AccordionData) => {
+  if (!newItem) return; 
+  setAccordionData((prev) => [...prev, newItem]);
+};
 
-  const addCustomAccordion = () => {
-    setAccordionData((prevData) => [
-      ...prevData,
-      {
-        id: generateUniqueId(),
-        title: "כותרת אקורדיון חדש",
-        content: "תוכן האקורדיון החדש...",
-        isEditable: false, // Custom accordions are initially not treated as the special hardcoded ones
-      },
-    ]);
-  };
 
-  // Remove a custom accordion
-  const removeAccordion = (id: string) => {
-    setAccordionData((prevData) => prevData.filter((item) => item.id !== id));
-  };
+  const removeAccordion = (uiId: string) => {
+  setAccordionData((prevData) =>
+    prevData.filter((item) => item.uiId !== uiId)
+  );
+};
 
-  // Handle drag start
+
   const handleDragStart = (item: AccordionData) => {
     setDraggedItem(item);
   };
 
-  // Handle drag over
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
   };
 
-  const handleDrop = (targetItem: AccordionData) => {
-    if (!draggedItem || draggedItem.id === targetItem.id) return;
+const handleDrop = (targetItem: AccordionData) => {
+  if (!draggedItem || draggedItem.uiId === targetItem.uiId) return;
 
-    setAccordionData((prevData) => {
-      const newItems = [...prevData];
-      const draggedIndex = newItems.findIndex(
-        (item) => item.id === draggedItem.id
-      );
-      const targetIndex = newItems.findIndex(
-        (item) => item.id === targetItem.id
-      );
+  setAccordionData((prevData) => {
+    const newItems = [...prevData];
 
-      if (draggedIndex === -1 || targetIndex === -1) return prevData;
+    const draggedIndex = newItems.findIndex(
+      (item) => item.uiId === draggedItem.uiId
+    );
+    const targetIndex = newItems.findIndex(
+      (item) => item.uiId === targetItem.uiId
+    );
 
-      const [removed] = newItems.splice(draggedIndex, 1);
-      newItems.splice(targetIndex, 0, removed);
+    if (draggedIndex === -1 || targetIndex === -1) return prevData;
 
-      return newItems;
-    });
+    const [removed] = newItems.splice(draggedIndex, 1);
+    newItems.splice(targetIndex, 0, removed);
 
-    setDraggedItem(null); // Reset dragged item
-  };
+    return newItems;
+  });
 
-  const features = useMemo(() => {
-    try {
-      const data = accordionData.find(
-        (item) => item.id === "features"
-      )?.content;
-      return data ? JSON.parse(data) : [];
-    } catch {
-      return [];
-    }
-  }, [accordionData]);
+  setDraggedItem(null);
+};
+
+const features = useMemo(() => {
+  try {
+    const data = accordionData.find(
+      (item) => item.uiId === "features"
+    )?.content;
+
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+}, [accordionData]);
 
   const setFeatures = useCallback((newFeatures: string[]) => {
     handleAccordionContentChange("features", JSON.stringify(newFeatures));
   }, []);
+
+
 
   const handleFeatureChange = (index: number, value: string) => {
     const newFeatures = [...features];
@@ -239,12 +277,96 @@ const SingleProd: FC<SingleProdProps> = () => {
   const removeFeature = (index: number) =>
     setFeatures(features.filter((_: string, i: number) => i !== index));
 
-  const handleSaveClick = () => {
-    if (isEditing) {
-      toast.success("השינויים נשמרו בהצלחה!");
-    }
+
+const handleSaveClick = async () => {
+   if (!isEditing) {
+    setIsEditing(true);
+    return;
+  }
+    const customFields = accordionData.map(item => ({
+        _id: item.id, 
+        title: item.title,
+        type: item.type,
+        content: item.type === 'content' ? item.content : undefined,
+        bullets: item.type === 'bullets' ? JSON.parse(item.content || '[]') : undefined
+      }));
+const uploadFolders = folders.length
+  ? [
+      {
+        title: "Default Group",
+        folders: folders
+          .filter(folder => folder.files.length > 0) 
+          .map((folder) => ({
+            ...(folder._id ? { _id: folder._id } : {}),
+            folderName: folder.name,
+            files: folder.files.map((file) => ({
+              ...(file._id ? { _id: file._id } : {}), 
+              link: file.url,
+              name: file.name,
+              size: file.size,
+            })),
+          })),
+      },
+    ]
+  : [];
+
+
+
+const payload = {
+  productName: title,
+  productDescription: description,
+  productImages,
+  customFields,
+  uploadFolders,
+};
+  // Check if anything changed
+  const hasChanges =
+    title !== originalProduct?.productName ||
+    description !== originalProduct?.productDescription ||
+    JSON.stringify(accordionData) !== JSON.stringify(
+      originalProduct?.customFields?.map(field => ({
+        uiId: field._id,
+        title: field.title,
+        type: field.type,
+        content:
+          field.type === 'bullets'
+            ? JSON.stringify(field.bullets)
+            : field.content,
+      }))
+    ) ||
+    JSON.stringify(productImages) !== JSON.stringify(originalProduct?.productImages) ||
+    JSON.stringify(folders) !== JSON.stringify(
+      originalProduct?.uploadFolders?.[0]?.folders.map(folder => ({
+        uiId: folder._id,
+        name: folder.folderName,
+        files: folder.files.map(f => ({
+          uiId: f._id,
+          name: f.link.split("/").pop(),
+          url: f.link,
+          size: 0,
+        })),
+      })) || []
+    );
+
+  if (!hasChanges) {
+    setIsEditing(false);
+    toast.info("לא נעשו שינויים");
+    return;
+  }
+
+try {
+  console.log("frontend payload:",payload)
+  await ProductsService.updateProduct(productId!, payload);
+  toast.success("שינויים נשמרו בהצלחה");
+} catch (err) {
+  console.error(err);
+  toast.error("Failed to save product. Please try again.");
+}
+
     setIsEditing(!isEditing);
   };
+
+
 
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return "0 Bytes";
@@ -266,61 +388,73 @@ const SingleProd: FC<SingleProdProps> = () => {
     return <File size={20} className="text-gray-600" />;
   };
 
-  const handleFileUpload = (
-    folderId: string,
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      const newFiles: UploadedFile[] = Array.from(files).map((file) => ({
-        id: generateUniqueId(),
-        name: file.name,
+
+const handleFileUpload = async (
+  folderUiId: string,
+  e: React.ChangeEvent<HTMLInputElement>
+) => {
+  const files = e.target.files;
+  if (!files || files.length === 0) return;
+
+  const uploadedFiles: UploadedFile[] = [];
+
+  for (const file of Array.from(files)) {
+    try {
+      const result = await CloudinaryService.uploadFile(file);
+      uploadedFiles.push({
+        uiId: crypto.randomUUID(),
+        name: result.originalName,
         type: file.type,
-        url: URL.createObjectURL(file),
-        size: file.size,
-      }));
-
-      setFolders((prev) =>
-        prev.map((folder) =>
-          folder.id === folderId
-            ? { ...folder, files: [...folder.files, ...newFiles] }
-            : folder
-        )
-      );
+        url: result.url,
+        size: result.size,
+      });
+    } catch (err) {
+      console.error("Upload failed for", file.name, err);
+      toast.error(`Upload failed for ${file.name}`);
     }
-  };
+  }
 
-  const handleDeleteFile = (folderId: string, fileId: string) => {
-    setFolders((prev) =>
-      prev.map((folder) =>
-        folder.id === folderId
-          ? { ...folder, files: folder.files.filter((f) => f.id !== fileId) }
-          : folder
-      )
-    );
-  };
+  setFolders((prev) =>
+    prev.map((folder) =>
+      folder.uiId === folderUiId
+        ? { ...folder, files: [...folder.files, ...uploadedFiles] }
+        : folder
+    )
+  );
+};
 
-  const handleCreateFolder = () => {
-    if (newFolderName.trim()) {
-      setFolders((prev) => [
-        ...prev,
-        {
-          id: generateUniqueId(),
-          name: newFolderName,
-          files: [],
-        },
-      ]);
-      setNewFolderName("");
-      setShowNewFolderInput(false);
-    }
-  };
+const handleDeleteFile = (folderUiId: string, fileUiId: string) => {
+  setFolders((prev) =>
+    prev.map((folder) =>
+      folder.uiId === folderUiId
+        ? { ...folder, files: folder.files.filter((f) => f.uiId !== fileUiId) }
+        : folder
+    )
+  );
+};
 
-  const handleDeleteFolder = (folderId: string) => {
-    setFolders((prev) => prev.filter((f) => f.id !== folderId));
-  };
+ const handleCreateFolder = () => {
+  if (newFolderName.trim()) {
+    setFolders((prev) => [
+      ...prev,
+      {
+        uiId: crypto.randomUUID(),
+        name: newFolderName,
+        files: [],
+      },
+    ]);
+    setNewFolderName("");
+    setShowNewFolderInput(false);
+  }
+};
+
+ const handleDeleteFolder = (folderUiId: string) => {
+  setFolders((prev) => prev.filter((f) => f.uiId !== folderUiId));
+};
+
   return (
     <div className="pt-16 px-6 pb-10 font-sans-['Noto_Sans_Hebrew'] rtl">
-      <Breadcrumbs path={path} />
+      <Breadcrumbs path={breadcrumbPath} />
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-4 text-right">
@@ -339,15 +473,14 @@ const SingleProd: FC<SingleProdProps> = () => {
             )}
           </div>
 
-          {role === "admin" && (
-           <button
-            onClick={handleSaveClick}
-            aria-label={isEditing ? "סיום עריכה" : "עריכת דף"}
-            className="fixed top-44 left-6 flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300"
-          >
-            {isEditing ? <Check size={22} /> : <PencilLine size={22} />}
-          </button>
-
+          {role === "editor" && (
+            <button
+              onClick={handleSaveClick}
+              aria-label={isEditing ? "סיום עריכה" : "עריכת דף"}
+              className="fixed top-44 left-6 flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300"
+            >
+              {isEditing ? <Check size={22} /> : <PencilLine size={22} />}
+            </button>
           )}
         </div>
 
@@ -385,7 +518,7 @@ const SingleProd: FC<SingleProdProps> = () => {
               />
 
               {/* Buttons */}
-              {role === "user" ? (
+              {role === "viewer" ? (
                 <div className="space-y-2 relative z-10 flex flex-row justify-center gap-12">
                   <button
                     title="צור קשר"
@@ -402,8 +535,8 @@ const SingleProd: FC<SingleProdProps> = () => {
                     }}
                   >
                     <MailQuestionIcon size={24} />
-                  </button> <h3 className="pt-1">|</h3>
-
+                  </button>{" "}
+                  <h3 className="pt-1">|</h3>
                   <button
                     title="הוסף למועדפים"
                     onClick={toggleFavorite}
@@ -417,7 +550,7 @@ const SingleProd: FC<SingleProdProps> = () => {
                     />
                   </button>
                 </div>
-              ) : role === "admin" ? (
+              ) : role === "editor" ? (
                 <div className="relative z-10">
                   <Link
                     to="/permissions"
@@ -459,6 +592,10 @@ const SingleProd: FC<SingleProdProps> = () => {
             setShowNewFolderInput={setShowNewFolderInput}
             setNewFolderName={setNewFolderName}
             handleCreateFolder={handleCreateFolder}
+            confirmAddAccordion={confirmAddAccordion}
+            showAccordionTypeSelector={showAccordionTypeSelector}
+            setShowAccordionTypeSelector={setShowAccordionTypeSelector}
+
           />
         </div>
       </div>
