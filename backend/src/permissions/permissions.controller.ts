@@ -12,6 +12,7 @@ import { Req } from '@nestjs/common';
 export class PermissionsController {
   constructor(private permissionsService: PermissionsService) {}
   @Post()
+  @UseGuards(AuthGuard('jwt'))
   createPermission(@Body() createPermissionDto: CreatePermissionDto) {
     return this.permissionsService.createPermission(createPermissionDto);
   }
@@ -24,6 +25,7 @@ export class PermissionsController {
     return permissions;
   }
   @Delete(':id')
+  @UseGuards(AuthGuard('jwt'))
   async deletePermission(@Param('id') id: string) {
     const deleted = await this.permissionsService.deletePermission(id);
     if (!deleted) {

@@ -477,7 +477,7 @@ const handleDeleteFile = (folderUiId: string, fileUiId: string) => {
             <button
               onClick={handleSaveClick}
               aria-label={isEditing ? "סיום עריכה" : "עריכת דף"}
-              className="fixed top-44 left-6 flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300"
+              className="fixed bottom-8 left-6 flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300"
             >
               {isEditing ? <Check size={22} /> : <PencilLine size={22} />}
             </button>
