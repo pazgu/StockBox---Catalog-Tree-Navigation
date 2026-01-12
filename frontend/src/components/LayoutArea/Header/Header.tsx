@@ -1,30 +1,25 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { Heart, Search, User, Menu, X, ShoppingCart, Bell } from "lucide-react";
 import logo from "../../../assets/logo.png";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../context/UserContext";
-
+import SearchBar from "../SearchBar/SearchBar/SearchBar";
 interface HeaderProps {
   logoSrc?: string;
   cartItemCount?: number;
   favoriteCount?: number;
-  notificationCount?: number;
   onSearch?: (query: string) => void;
 }
 
 const Header: React.FC<HeaderProps> = ({
   logoSrc = logo,
-  cartItemCount = 0,
   favoriteCount = 0,
-  notificationCount = 0,
   onSearch,
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const searchRef = useRef<HTMLInputElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { role } = useUser();
@@ -46,7 +41,6 @@ const Header: React.FC<HeaderProps> = ({
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setIsMobileMenuOpen(false);
-        setIsSearchFocused(false);
       }
     };
     document.addEventListener("keydown", handleEscape);
@@ -129,35 +123,7 @@ const Header: React.FC<HeaderProps> = ({
               </nav>
             </div>
 
-            <form
-              onSubmit={handleSearch}
-              className={`${
-                isMobileMenuOpen ? "hidden" : "hidden md:flex"
-              } items-center backdrop-blur-sm rounded-full px-1 py-1 transition-all duration-300 ${
-                isSearchFocused
-                  ? "bg-white/20 shadow-lg"
-                  : "bg-white/10 hover:bg-white/15"
-              }`}
-            >
-              <input
-                ref={searchRef}
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onFocus={() => setIsSearchFocused(true)}
-                onBlur={() => setIsSearchFocused(false)}
-                placeholder="חפש מוצר..."
-                className="bg-transparent text-white placeholder-white/70 px-4 py-2 outline-none w-48 lg:w-64 text-right"
-                dir="rtl"
-              />
-              <button
-                type="submit"
-                className="bg-gradient-to-r from-[#edd7b8] to-[#beaa88] text-[#0D305B] px-4 py-2 rounded-full transition-all duration-300 flex items-center gap-2 transform active:scale-95"
-              >
-                <Search size={18} />
-                <span>חפש</span>
-              </button>
-            </form>
+            <SearchBar></SearchBar>
 
             {/* Action Icons */}
             <div
