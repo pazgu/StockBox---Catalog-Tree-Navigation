@@ -1,22 +1,10 @@
 import React, { FC, useState, useCallback, useMemo } from "react";
-import {
-  Heart,
-  PencilLine,
-  MailQuestionIcon,
-  Check,
-} from "lucide-react";
+import { Heart, PencilLine, MailQuestionIcon, Check } from "lucide-react";
 import { useUser } from "../../../../context/UserContext";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import {
-  File,
-  Video,
-  Music,
-  FileText,
-} from "lucide-react";
-import {
-  AccordionData,
-} from "../../../models/accordion.models";
+import { File, Video, Music, FileText } from "lucide-react";
+import { AccordionData } from "../../../models/accordion.models";
 import AccordionSection from "../AccordionSection/AccordionSection/AccordionSection";
 import ImageCarousel from "../ImageCarousel/ImageCarousel/ImageCarousel";
 import Breadcrumbs from "../../../LayoutArea/Breadcrumbs/Breadcrumbs";
@@ -26,6 +14,7 @@ import { ProductsService } from "../../../../services/ProductService";
 import { ProductDto } from "../../../../components/models/product.models";
 import { CloudinaryService } from "../../../../services/Cloudinary.service";
 import { FileFolder, UploadedFile } from "../../../models/files.models";
+import MoveProductModal from "../MoveProductModal/MoveProductModal";
 interface SingleProdProps {}
 
 const SingleProd: FC<SingleProdProps> = () => {
@@ -34,9 +23,14 @@ const SingleProd: FC<SingleProdProps> = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [product, setProduct] = useState<ProductDto | null>(null);
-  const [originalProduct, setOriginalProduct] = useState<ProductDto | null>(null);
-  const [newAccordionType, setNewAccordionType] = useState<'bullets' | 'content' | null>(null);
-  const [showAccordionTypeSelector, setShowAccordionTypeSelector] = useState(false);
+  const [originalProduct, setOriginalProduct] = useState<ProductDto | null>(
+    null
+  );
+  const [newAccordionType, setNewAccordionType] = useState<
+    "bullets" | "content" | null
+  >(null);
+  const [showAccordionTypeSelector, setShowAccordionTypeSelector] =
+    useState(false);
   const [accordionData, setAccordionData] = useState<AccordionData[]>([]);
   const [productImages, setProductImages] = useState<string[]>([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -45,7 +39,7 @@ const SingleProd: FC<SingleProdProps> = () => {
   const [newFolderName, setNewFolderName] = useState("");
   const [showNewFolderInput, setShowNewFolderInput] = useState(false);
   const [folders, setFolders] = useState<FileFolder[]>([]);
-
+  const [showMoveModal, setShowMoveModal] = useState(false);
 
   const { productId } = useParams<{ productId: string }>();
 
@@ -56,55 +50,54 @@ const SingleProd: FC<SingleProdProps> = () => {
       const product = await ProductsService.getById(productId);
 
       setTitle(product.productName);
-      setDescription(product.productDescription || '');
+      setDescription(product.productDescription || "");
       setProductImages(product.productImages || []);
       setCurrentImageIndex(0);
       setProduct(product);
       setOriginalProduct(product);
 
-    if (Array.isArray(product.customFields)) {
-      const accordion = product.customFields.map((field: any) => ({
-          id: field._id,                
-          uiId: field._id,              
+      if (Array.isArray(product.customFields)) {
+        const accordion = product.customFields.map((field: any) => ({
+          id: field._id,
+          uiId: field._id,
           title: field.title,
           type: field.type,
           content:
-            field.type === 'bullets'
+            field.type === "bullets"
               ? JSON.stringify(field.bullets)
               : field.content,
         }));
-setAccordionData(accordion);
-}
-    const folders =
-    product.uploadFolders?.[0]?.folders.map((folder: any) => ({
-      uiId: folder._id,               
-      name: folder.folderName,
-      files: folder.files.map((file: any) => ({
-        uiId: file._id,             
-        name: file.link.split("/").pop(),
-        type: "",
-        url: file.link,
-        size: 0,
-      })),
-  })) || [];
-setFolders(folders);
-  };
+        setAccordionData(accordion);
+      }
+      const folders =
+        product.uploadFolders?.[0]?.folders.map((folder: any) => ({
+          uiId: folder._id,
+          name: folder.folderName,
+          files: folder.files.map((file: any) => ({
+            uiId: file._id,
+            name: file.link.split("/").pop(),
+            type: "",
+            url: file.link,
+            size: 0,
+          })),
+        })) || [];
+      setFolders(folders);
+    };
 
-  loadProduct();
-}, [productId]);
+    loadProduct();
+  }, [productId]);
 
+  const breadcrumbPath = useMemo(() => {
+    if (!product?.productPath) return [];
 
-const breadcrumbPath = useMemo(() => {
-  if (!product?.productPath) return [];
-
-  return [
-    "categories",
-    ...product.productPath
-      .replace(/^categories\//, "")
-      .split("/")
-      .filter(Boolean),
-  ];
-}, [product]);
+    return [
+      "categories",
+      ...product.productPath
+        .replace(/^categories\//, "")
+        .split("/")
+        .filter(Boolean),
+    ];
+  }, [product]);
 
   const nextImage = () => {
     setCurrentImageIndex((prev) =>
@@ -119,51 +112,55 @@ const breadcrumbPath = useMemo(() => {
   };
 
   const handleAddImages = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const files = e.target.files;
-  if (!files || files.length === 0) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-  const uploadedImages: string[] = [];
+    const uploadedImages: string[] = [];
 
-  for (const file of Array.from(files)) {
-    try {
-      const result = await CloudinaryService.uploadFile(file, "products/images");
-      uploadedImages.push(result.url); // only store the Cloudinary URL
-    } catch (err) {
-      console.error("Image upload failed for", file.name, err);
-      toast.error(`Upload failed for ${file.name}`);
+    for (const file of Array.from(files)) {
+      try {
+        const result = await CloudinaryService.uploadFile(
+          file,
+          "products/images"
+        );
+        uploadedImages.push(result.url); // only store the Cloudinary URL
+      } catch (err) {
+        console.error("Image upload failed for", file.name, err);
+        toast.error(`Upload failed for ${file.name}`);
+      }
     }
-  }
 
-  setProductImages((prev) => [...prev, ...uploadedImages]);
-};
+    setProductImages((prev) => [...prev, ...uploadedImages]);
+  };
 
+  const handleReplaceImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
- const handleReplaceImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const files = e.target.files;
-  if (!files || files.length === 0) return;
-
-  try {
-    const result = await CloudinaryService.uploadFile(files[0], "products/images");
-    setProductImages((prev) =>
-      prev.map((img, i) => (i === currentImageIndex ? result.url : img))
-    );
-  } catch (err) {
-    console.error("Image replacement failed", err);
-    toast.error("Image replacement failed");
-  }
-};
-
+    try {
+      const result = await CloudinaryService.uploadFile(
+        files[0],
+        "products/images"
+      );
+      setProductImages((prev) =>
+        prev.map((img, i) => (i === currentImageIndex ? result.url : img))
+      );
+    } catch (err) {
+      console.error("Image replacement failed", err);
+      toast.error("Image replacement failed");
+    }
+  };
 
   const handleDeleteImage = () => {
-  setProductImages((prev) => {
-    if (prev.length === 1) return prev;
-    const updated = prev.filter((_, i) => i !== currentImageIndex);
-    setCurrentImageIndex((prevIndex) =>
-      prevIndex === updated.length ? updated.length - 1 : prevIndex
-    );
-    return updated;
-  });
-};
+    setProductImages((prev) => {
+      if (prev.length === 1) return prev;
+      const updated = prev.filter((_, i) => i !== currentImageIndex);
+      setCurrentImageIndex((prevIndex) =>
+        prevIndex === updated.length ? updated.length - 1 : prevIndex
+      );
+      return updated;
+    });
+  };
 
   const toggleFavorite = () => {
     if (isFavorite) {
@@ -173,21 +170,21 @@ const breadcrumbPath = useMemo(() => {
     }
     setIsFavorite((prev) => !prev);
   };
-const handleAccordionContentChange = (uiId: string, newContent: string) => {
-  setAccordionData((prevData) =>
-    prevData.map((item) =>
-      item.uiId === uiId ? { ...item, content: newContent } : item
-    )
-  );
-};
+  const handleAccordionContentChange = (uiId: string, newContent: string) => {
+    setAccordionData((prevData) =>
+      prevData.map((item) =>
+        item.uiId === uiId ? { ...item, content: newContent } : item
+      )
+    );
+  };
 
- const handleAccordionTitleChange = (uiId: string, newTitle: string) => {
-  setAccordionData((prevData) =>
-    prevData.map((item) =>
-      item.uiId === uiId ? { ...item, title: newTitle } : item
-    )
-  );
-};
+  const handleAccordionTitleChange = (uiId: string, newTitle: string) => {
+    setAccordionData((prevData) =>
+      prevData.map((item) =>
+        item.uiId === uiId ? { ...item, title: newTitle } : item
+      )
+    );
+  };
 
   const confirmAddAccordion = (type: "content" | "bullets") => {
     const newItem = {
@@ -204,18 +201,16 @@ const handleAccordionContentChange = (uiId: string, newContent: string) => {
     setNewAccordionType(null);
   };
 
-const addCustomAccordion = (newItem?: AccordionData) => {
-  if (!newItem) return; 
-  setAccordionData((prev) => [...prev, newItem]);
-};
-
+  const addCustomAccordion = (newItem?: AccordionData) => {
+    if (!newItem) return;
+    setAccordionData((prev) => [...prev, newItem]);
+  };
 
   const removeAccordion = (uiId: string) => {
-  setAccordionData((prevData) =>
-    prevData.filter((item) => item.uiId !== uiId)
-  );
-};
-
+    setAccordionData((prevData) =>
+      prevData.filter((item) => item.uiId !== uiId)
+    );
+  };
 
   const handleDragStart = (item: AccordionData) => {
     setDraggedItem(item);
@@ -225,47 +220,45 @@ const addCustomAccordion = (newItem?: AccordionData) => {
     e.preventDefault();
   };
 
-const handleDrop = (targetItem: AccordionData) => {
-  if (!draggedItem || draggedItem.uiId === targetItem.uiId) return;
+  const handleDrop = (targetItem: AccordionData) => {
+    if (!draggedItem || draggedItem.uiId === targetItem.uiId) return;
 
-  setAccordionData((prevData) => {
-    const newItems = [...prevData];
+    setAccordionData((prevData) => {
+      const newItems = [...prevData];
 
-    const draggedIndex = newItems.findIndex(
-      (item) => item.uiId === draggedItem.uiId
-    );
-    const targetIndex = newItems.findIndex(
-      (item) => item.uiId === targetItem.uiId
-    );
+      const draggedIndex = newItems.findIndex(
+        (item) => item.uiId === draggedItem.uiId
+      );
+      const targetIndex = newItems.findIndex(
+        (item) => item.uiId === targetItem.uiId
+      );
 
-    if (draggedIndex === -1 || targetIndex === -1) return prevData;
+      if (draggedIndex === -1 || targetIndex === -1) return prevData;
 
-    const [removed] = newItems.splice(draggedIndex, 1);
-    newItems.splice(targetIndex, 0, removed);
+      const [removed] = newItems.splice(draggedIndex, 1);
+      newItems.splice(targetIndex, 0, removed);
 
-    return newItems;
-  });
+      return newItems;
+    });
 
-  setDraggedItem(null);
-};
+    setDraggedItem(null);
+  };
 
-const features = useMemo(() => {
-  try {
-    const data = accordionData.find(
-      (item) => item.uiId === "features"
-    )?.content;
+  const features = useMemo(() => {
+    try {
+      const data = accordionData.find(
+        (item) => item.uiId === "features"
+      )?.content;
 
-    return data ? JSON.parse(data) : [];
-  } catch {
-    return [];
-  }
-}, [accordionData]);
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  }, [accordionData]);
 
   const setFeatures = useCallback((newFeatures: string[]) => {
     handleAccordionContentChange("features", JSON.stringify(newFeatures));
   }, []);
-
-
 
   const handleFeatureChange = (index: number, value: string) => {
     const newFeatures = [...features];
@@ -277,96 +270,108 @@ const features = useMemo(() => {
   const removeFeature = (index: number) =>
     setFeatures(features.filter((_: string, i: number) => i !== index));
 
+  const handleSaveClick = async () => {
+    if (!isEditing) {
+      setIsEditing(true);
+      return;
+    }
+    const customFields = accordionData.map((item) => ({
+      _id: item.id,
+      title: item.title,
+      type: item.type,
+      content: item.type === "content" ? item.content : undefined,
+      bullets:
+        item.type === "bullets" ? JSON.parse(item.content || "[]") : undefined,
+    }));
+    const uploadFolders = folders.length
+      ? [
+          {
+            title: "Default Group",
+            folders: folders
+              .filter((folder) => folder.files.length > 0)
+              .map((folder) => ({
+                ...(folder._id ? { _id: folder._id } : {}),
+                folderName: folder.name,
+                files: folder.files.map((file) => ({
+                  ...(file._id ? { _id: file._id } : {}),
+                  link: file.url,
+                  name: file.name,
+                  size: file.size,
+                })),
+              })),
+          },
+        ]
+      : [];
 
-const handleSaveClick = async () => {
-   if (!isEditing) {
-    setIsEditing(true);
-    return;
-  }
-    const customFields = accordionData.map(item => ({
-        _id: item.id, 
-        title: item.title,
-        type: item.type,
-        content: item.type === 'content' ? item.content : undefined,
-        bullets: item.type === 'bullets' ? JSON.parse(item.content || '[]') : undefined
-      }));
-const uploadFolders = folders.length
-  ? [
-      {
-        title: "Default Group",
-        folders: folders
-          .filter(folder => folder.files.length > 0) 
-          .map((folder) => ({
-            ...(folder._id ? { _id: folder._id } : {}),
-            folderName: folder.name,
-            files: folder.files.map((file) => ({
-              ...(file._id ? { _id: file._id } : {}), 
-              link: file.url,
-              name: file.name,
-              size: file.size,
+    const payload = {
+      productName: title,
+      productDescription: description,
+      productImages,
+      customFields,
+      uploadFolders,
+    };
+    // Check if anything changed
+    const hasChanges =
+      title !== originalProduct?.productName ||
+      description !== originalProduct?.productDescription ||
+      JSON.stringify(accordionData) !==
+        JSON.stringify(
+          originalProduct?.customFields?.map((field) => ({
+            uiId: field._id,
+            title: field.title,
+            type: field.type,
+            content:
+              field.type === "bullets"
+                ? JSON.stringify(field.bullets)
+                : field.content,
+          }))
+        ) ||
+      JSON.stringify(productImages) !==
+        JSON.stringify(originalProduct?.productImages) ||
+      JSON.stringify(folders) !==
+        JSON.stringify(
+          originalProduct?.uploadFolders?.[0]?.folders.map((folder) => ({
+            uiId: folder._id,
+            name: folder.folderName,
+            files: folder.files.map((f) => ({
+              uiId: f._id,
+              name: f.link.split("/").pop(),
+              url: f.link,
+              size: 0,
             })),
-          })),
-      },
-    ]
-  : [];
+          })) || []
+        );
 
+    if (!hasChanges) {
+      setIsEditing(false);
+      toast.info("לא נעשו שינויים");
+      return;
+    }
 
-
-const payload = {
-  productName: title,
-  productDescription: description,
-  productImages,
-  customFields,
-  uploadFolders,
-};
-  // Check if anything changed
-  const hasChanges =
-    title !== originalProduct?.productName ||
-    description !== originalProduct?.productDescription ||
-    JSON.stringify(accordionData) !== JSON.stringify(
-      originalProduct?.customFields?.map(field => ({
-        uiId: field._id,
-        title: field.title,
-        type: field.type,
-        content:
-          field.type === 'bullets'
-            ? JSON.stringify(field.bullets)
-            : field.content,
-      }))
-    ) ||
-    JSON.stringify(productImages) !== JSON.stringify(originalProduct?.productImages) ||
-    JSON.stringify(folders) !== JSON.stringify(
-      originalProduct?.uploadFolders?.[0]?.folders.map(folder => ({
-        uiId: folder._id,
-        name: folder.folderName,
-        files: folder.files.map(f => ({
-          uiId: f._id,
-          name: f.link.split("/").pop(),
-          url: f.link,
-          size: 0,
-        })),
-      })) || []
-    );
-
-  if (!hasChanges) {
-    setIsEditing(false);
-    toast.info("לא נעשו שינויים");
-    return;
-  }
-
-try {
-  console.log("frontend payload:",payload)
-  await ProductsService.updateProduct(productId!, payload);
-  toast.success("שינויים נשמרו בהצלחה");
-} catch (err) {
-  console.error(err);
-  toast.error("Failed to save product. Please try again.");
-}
+    try {
+      console.log("frontend payload:", payload);
+      await ProductsService.updateProduct(productId!, payload);
+      toast.success("שינויים נשמרו בהצלחה");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to save product. Please try again.");
+    }
 
     setIsEditing(!isEditing);
   };
 
+  const handleMove = () => {
+    setShowMoveModal(true);
+  };
 
+  const handleMoveSuccess = async () => {
+    if (productId) {
+      const updated = await ProductsService.getById(productId);
+      setProduct(updated);
+      setOriginalProduct(updated);
+    }
+    setShowMoveModal(false);
+  };
 
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return "0 Bytes";
@@ -388,69 +393,71 @@ try {
     return <File size={20} className="text-gray-600" />;
   };
 
+  const handleFileUpload = async (
+    folderUiId: string,
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-const handleFileUpload = async (
-  folderUiId: string,
-  e: React.ChangeEvent<HTMLInputElement>
-) => {
-  const files = e.target.files;
-  if (!files || files.length === 0) return;
+    const uploadedFiles: UploadedFile[] = [];
 
-  const uploadedFiles: UploadedFile[] = [];
-
-  for (const file of Array.from(files)) {
-    try {
-      const result = await CloudinaryService.uploadFile(file);
-      uploadedFiles.push({
-        uiId: crypto.randomUUID(),
-        name: result.originalName,
-        type: file.type,
-        url: result.url,
-        size: result.size,
-      });
-    } catch (err) {
-      console.error("Upload failed for", file.name, err);
-      toast.error(`Upload failed for ${file.name}`);
+    for (const file of Array.from(files)) {
+      try {
+        const result = await CloudinaryService.uploadFile(file);
+        uploadedFiles.push({
+          uiId: crypto.randomUUID(),
+          name: result.originalName,
+          type: file.type,
+          url: result.url,
+          size: result.size,
+        });
+      } catch (err) {
+        console.error("Upload failed for", file.name, err);
+        toast.error(`Upload failed for ${file.name}`);
+      }
     }
-  }
 
-  setFolders((prev) =>
-    prev.map((folder) =>
-      folder.uiId === folderUiId
-        ? { ...folder, files: [...folder.files, ...uploadedFiles] }
-        : folder
-    )
-  );
-};
+    setFolders((prev) =>
+      prev.map((folder) =>
+        folder.uiId === folderUiId
+          ? { ...folder, files: [...folder.files, ...uploadedFiles] }
+          : folder
+      )
+    );
+  };
 
-const handleDeleteFile = (folderUiId: string, fileUiId: string) => {
-  setFolders((prev) =>
-    prev.map((folder) =>
-      folder.uiId === folderUiId
-        ? { ...folder, files: folder.files.filter((f) => f.uiId !== fileUiId) }
-        : folder
-    )
-  );
-};
+  const handleDeleteFile = (folderUiId: string, fileUiId: string) => {
+    setFolders((prev) =>
+      prev.map((folder) =>
+        folder.uiId === folderUiId
+          ? {
+              ...folder,
+              files: folder.files.filter((f) => f.uiId !== fileUiId),
+            }
+          : folder
+      )
+    );
+  };
 
- const handleCreateFolder = () => {
-  if (newFolderName.trim()) {
-    setFolders((prev) => [
-      ...prev,
-      {
-        uiId: crypto.randomUUID(),
-        name: newFolderName,
-        files: [],
-      },
-    ]);
-    setNewFolderName("");
-    setShowNewFolderInput(false);
-  }
-};
+  const handleCreateFolder = () => {
+    if (newFolderName.trim()) {
+      setFolders((prev) => [
+        ...prev,
+        {
+          uiId: crypto.randomUUID(),
+          name: newFolderName,
+          files: [],
+        },
+      ]);
+      setNewFolderName("");
+      setShowNewFolderInput(false);
+    }
+  };
 
- const handleDeleteFolder = (folderUiId: string) => {
-  setFolders((prev) => prev.filter((f) => f.uiId !== folderUiId));
-};
+  const handleDeleteFolder = (folderUiId: string) => {
+    setFolders((prev) => prev.filter((f) => f.uiId !== folderUiId));
+  };
 
   return (
     <div className="pt-16 px-6 pb-10 font-sans-['Noto_Sans_Hebrew'] rtl">
@@ -474,13 +481,37 @@ const handleDeleteFile = (folderUiId: string, fileUiId: string) => {
           </div>
 
           {role === "editor" && (
-            <button
-              onClick={handleSaveClick}
-              aria-label={isEditing ? "סיום עריכה" : "עריכת דף"}
-              className="fixed bottom-8 left-6 flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300"
-            >
-              {isEditing ? <Check size={22} /> : <PencilLine size={22} />}
-            </button>
+            <>
+              <button
+                onClick={handleSaveClick}
+                aria-label={isEditing ? "סיום עריכה" : "עריכת דף"}
+                className="fixed bottom-8 left-6 flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300"
+              >
+                {isEditing ? <Check size={22} /> : <PencilLine size={22} />}
+              </button>
+              <button
+                onClick={handleMove}
+                aria-label="העבר מוצר"
+                className="fixed bottom-24 left-6 flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="5 9 2 12 5 15"></polyline>
+                  <polyline points="9 9 12 12 9 15"></polyline>
+                  <polyline points="15 13 18 10 21 13"></polyline>
+                  <polyline points="15 13 12 16 15 19"></polyline>
+                </svg>
+              </button>
+            </>
           )}
         </div>
 
@@ -595,9 +626,19 @@ const handleDeleteFile = (folderUiId: string, fileUiId: string) => {
             confirmAddAccordion={confirmAddAccordion}
             showAccordionTypeSelector={showAccordionTypeSelector}
             setShowAccordionTypeSelector={setShowAccordionTypeSelector}
-
           />
         </div>
+
+        {showMoveModal && product && (
+          <MoveProductModal
+            isOpen={showMoveModal}
+            productId={product._id || ""}
+            productName={product.productName}
+            currentPath={product.productPath || ""}
+            onClose={() => setShowMoveModal(false)}
+            onSuccess={handleMoveSuccess}
+          />
+        )}
       </div>
     </div>
   );
