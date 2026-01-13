@@ -26,6 +26,8 @@ import { ProductsService } from "../../../../services/ProductService";
 import { ProductDto } from "../../../../components/models/product.models";
 import { CloudinaryService } from "../../../../services/Cloudinary.service";
 import { FileFolder, UploadedFile } from "../../../models/files.models";
+import bulletIcon from "../../../../assets/bullets.png"
+import contentIcon from "../../../../assets/font.png"
 interface SingleProdProps {}
 
 const SingleProd: FC<SingleProdProps> = () => {
@@ -45,8 +47,8 @@ const SingleProd: FC<SingleProdProps> = () => {
   const [newFolderName, setNewFolderName] = useState("");
   const [showNewFolderInput, setShowNewFolderInput] = useState(false);
   const [folders, setFolders] = useState<FileFolder[]>([]);
-
-
+  const contentIconUrl = contentIcon;
+  const bulletsIconUrl = bulletIcon;
   const { productId } = useParams<{ productId: string }>();
 
   useEffect(() => {
@@ -554,7 +556,7 @@ const handleDeleteFile = (folderUiId: string, fileUiId: string) => {
                 <div className="relative z-10">
                   <Link
                     to="/permissions"
-                    className="block w-full text-center py-3 px-4 rounded-lg font-semibold text-white bg-orange-600 hover:bg-orange-700 shadow-md transition-all duration-300 transform hover:scale-105"
+                    className="block w-full text-center py-3 px-4 rounded-lg font-semibold text-white bg-[#6E7C7C] hover:bg-[#6E7C7C]/80 shadow-md"
                   >
                     נהל הרשאות
                   </Link>
@@ -573,6 +575,8 @@ const handleDeleteFile = (folderUiId: string, fileUiId: string) => {
             draggedItem={draggedItem}
             showNewFolderInput={showNewFolderInput}
             newFolderName={newFolderName}
+            contentIconUrl={contentIconUrl}
+            bulletsIconUrl={bulletsIconUrl}
             handleDragStart={handleDragStart}
             handleDragOver={handleDragOver}
             handleDrop={handleDrop}
