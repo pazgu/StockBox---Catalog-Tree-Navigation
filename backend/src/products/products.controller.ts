@@ -1,48 +1,48 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
-  Controller,
-  Get,
-  Post,
-  Delete,
-  Body,
+  Controller as ProductController,
+  Get as ProductGet,
+  Post as ProductPost,
+  Delete as ProductDelete,
+  Body as ProductBody,
   HttpCode,
   HttpStatus,
   Req,
-  UseInterceptors,
-  UploadedFile,
-  UsePipes,
-  ValidationPipe,
-  Param,
-  UseGuards,
-  Patch,
+  UseInterceptors as ProductUseInterceptors,
+  UploadedFile as ProductUploadedFile,
+  UsePipes as ProductUsePipes,
+  ValidationPipe as ProductValidationPipe,
+  Param as ProductParam,
+  UseGuards as ProductUseGuards,
+  Patch as ProductPatch,
   UploadedFiles,
 } from '@nestjs/common';
-import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import {
+  FileInterceptor as ProductFileInterceptor,
+  FilesInterceptor,
+} from '@nestjs/platform-express';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dtos/CreateProduct.dto';
+import { MoveProductDto } from './dtos/MoveProduct.dto';
 import express from 'express';
 import { productUploadsOptions } from './productUploads';
 import { JwtAuthGuard } from 'src/gaurds/jwt-auth.guard';
 import { EditorGuard } from 'src/gaurds/editor.guard';
 import { ParseObjectIdPipe } from 'src/pipes/parse-object-id.pipe';
 import { UpdateProductDto } from './dtos/UpdateProduct.dto';
+import { AuthGuard as ProductAuthGuard } from '@nestjs/passport';
+import { PermissionGuard as ProductPermissionGuard } from 'src/gaurds/permission.guard';
 
-import { AuthGuard } from '@nestjs/passport';
-import { PermissionGuard } from 'src/gaurds/permission.guard';
-@Controller('products')
+@ProductController('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
-  @Get()
+  @ProductGet()
   findAll() {
     return this.productsService.findAll();
   }
 
-  @UseGuards(AuthGuard('jwt'), PermissionGuard)
-  @Get('by-path/*')
+  @ProductUseGuards(ProductAuthGuard('jwt'), ProductPermissionGuard)
+  @ProductGet('by-path/*')
   findByPath(
     @Req()
     request: express.Request & { user?: { userId: string; role: string } },
@@ -60,65 +60,80 @@ export class ProductsController {
     return this.productsService.findByPath(fullPath, user);
   }
 
-  @Post()
-  @UseGuards(JwtAuthGuard, EditorGuard)
+  @ProductPost()
+  @ProductUseGuards(JwtAuthGuard, EditorGuard)
   @HttpCode(HttpStatus.CREATED)
-  @UsePipes(new ValidationPipe({ transform: true }))
-  @UseInterceptors(FileInterceptor('productImageFile', productUploadsOptions))
+  @ProductUsePipes(new ProductValidationPipe({ transform: true }))
+  @ProductUseInterceptors(
+    ProductFileInterceptor('productImageFile', productUploadsOptions),
+  )
   create(
-    @Body() createProductDto: CreateProductDto,
-    @UploadedFile() file?: Express.Multer.File,
+    @ProductBody() createProductDto: CreateProductDto,
+    @ProductUploadedFile() file?: Express.Multer.File,
   ) {
     return this.productsService.create(createProductDto, file);
   }
 
-  @Get(':id')
-  getProductById(@Param('id') id: string) {
+  @ProductGet(':id')
+  getProductById(@ProductParam('id') id: string) {
     return this.productsService.getById(id);
   }
 
-  @Delete(':id')
-  @UseGuards(JwtAuthGuard, EditorGuard)
+  @ProductDelete(':id')
+  @ProductUseGuards(JwtAuthGuard, EditorGuard)
   @HttpCode(HttpStatus.OK)
-  delete(@Param('id', ParseObjectIdPipe) id: string) {
+  delete(@ProductParam('id', ParseObjectIdPipe) id: string) {
     return this.productsService.delete(id);
   }
 
- @Patch(':id')
- @UseInterceptors(FilesInterceptor('newProductImages'))
-  async updateProduct(
-    @Param('id') id: string,
-    @UploadedFiles() files: Express.Multer.File[],
-    @Body() body: any 
+  // IMPORTANT: Move endpoint MUST come BEFORE the :id PATCH route
+  @ProductPost(':id/move')
+  @ProductUseGuards(JwtAuthGuard, EditorGuard)
+  @HttpCode(HttpStatus.OK)
+  @ProductUsePipes(new ProductValidationPipe({ transform: true }))
+  async moveProduct(
+    @ProductParam('id') id: string,
+    @ProductBody() moveProductDto: MoveProductDto,
   ) {
-  console.log('raw body:', body);
-  console.log('files:', files);
+    return this.productsService.moveProduct(id, moveProductDto);
+  }
 
-  const dto: UpdateProductDto = {
-    productName: body.productName,
-    productDescription: body.productDescription,
-    productPath: body.productPath,
-    customFields: body.customFields ? JSON.parse(body.customFields) : undefined,
-    productImages: body.existingProductImages
-      ? [].concat(body.existingProductImages)
-      : undefined,
-    
-    uploadFolders: body.uploadFolders
-      ? [].concat(body.uploadFolders).map((group: any) => ({
-          title: group.title,
-          folders: group.folders.map((folder: any) => ({
-            _id: folder._id,        
-            folderName: folder.folderName,
-            files: folder.files.map((f: any) => ({
-              _id: f._id,
-              link: f.link,
+  @ProductPatch(':id')
+  @ProductUseInterceptors(FilesInterceptor('newProductImages'))
+  async updateProduct(
+    @ProductParam('id') id: string,
+    @UploadedFiles() files: Express.Multer.File[],
+    @ProductBody() body: any,
+  ) {
+    console.log('raw body:', body);
+    console.log('files:', files);
+
+    const dto: UpdateProductDto = {
+      productName: body.productName,
+      productDescription: body.productDescription,
+      productPath: body.productPath,
+      customFields: body.customFields
+        ? JSON.parse(body.customFields)
+        : undefined,
+      productImages: body.existingProductImages
+        ? [].concat(body.existingProductImages)
+        : undefined,
+
+      uploadFolders: body.uploadFolders
+        ? [].concat(body.uploadFolders).map((group: any) => ({
+            title: group.title,
+            folders: group.folders.map((folder: any) => ({
+              _id: folder._id,
+              folderName: folder.folderName,
+              files: folder.files.map((f: any) => ({
+                _id: f._id,
+                link: f.link,
+              })),
             })),
-          })),
-        }))
-      : undefined,
-  };
+          }))
+        : undefined,
+    };
 
-  return this.productsService.update(id, dto);
-}
-
+    return this.productsService.update(id, dto);
+  }
 }
