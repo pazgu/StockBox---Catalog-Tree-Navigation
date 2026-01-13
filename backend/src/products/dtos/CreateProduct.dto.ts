@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import { IsString, IsOptional } from 'class-validator';
 import { Transform } from 'class-transformer';
 
