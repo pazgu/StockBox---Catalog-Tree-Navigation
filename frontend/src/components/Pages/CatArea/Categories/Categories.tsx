@@ -1,12 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { FC, useState, useEffect } from "react";
-import {
-  Pen,
-  Trash,
-  Lock,
-  Heart,
-  LucideFileChartColumnIncreasing,
-} from "lucide-react";
+import { Pen, Trash, Lock, Heart } from "lucide-react";
 import { useUser } from "../../../../context/UserContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -46,7 +40,7 @@ export const Categories: FC<CategoriesProps> = () => {
     if (role) {
       fetchCategories();
     } else {
-      setIsLoading(false); // Add this!
+      setIsLoading(false);
     }
   }, [role]);
 
@@ -181,10 +175,11 @@ export const Categories: FC<CategoriesProps> = () => {
 
       {categories.length === 0 ? (
         <div className="w-full h-40 flex justify-center items-center my-12 text-slate-500">
-         {role === "editor" ? ( <p  className="text-lg">אין קטגוריות להצגה. הוסף קטגוריה חדשה!</p>
-         ):
-         (<p  className="text-lg">אין קטגוריות להצגה!</p>)}
-         
+          {role === "editor" ? (
+            <p className="text-lg">אין קטגוריות להצגה. הוסף קטגוריה חדשה!</p>
+          ) : (
+            <p className="text-lg">אין קטגוריות להצגה!</p>
+          )}
         </div>
       ) : (
         <div className="w-full flex justify-center flex-wrap gap-10 my-12">
