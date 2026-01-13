@@ -24,6 +24,8 @@ interface AccordionSectionProps {
   draggedItem: any;
   showNewFolderInput: boolean;
   newFolderName: string;
+  contentIconUrl: string; // Add this prop for content type icon
+  bulletsIconUrl: string; // Add this prop for bullets type icon
   handleDragStart: (item: any) => void;
   handleDragOver: (e: React.DragEvent) => void;
   handleDrop: (item: any) => void;
@@ -56,6 +58,8 @@ const AccordionSection: FC<AccordionSectionProps> = ({
   draggedItem,
   showNewFolderInput,
   newFolderName,
+  contentIconUrl,
+  bulletsIconUrl,
   handleDragStart,
   handleDragOver,
   handleDrop,
@@ -87,7 +91,7 @@ const AccordionSection: FC<AccordionSectionProps> = ({
           <AccordionItem
             key={item.uiId}
             value={item.uiId}
-            className={`border-b border-gray-200/70 ${
+            className={`border-b border-gray-200/70 relative ${
               isEditing &&
               "p-2 border border-dashed border-gray-300 rounded-lg"
             }`}
@@ -100,6 +104,17 @@ const AccordionSection: FC<AccordionSectionProps> = ({
               opacity: draggedItem && draggedItem.uiId === item.uiId ? 0.4 : 1,
             }}
           >
+              {isEditing && (
+              <div className="absolute -top-3 -right-3 z-10">
+                <div className="w-10 h-10 rounded-full bg-[#fffaf1] shadow-lg border-2 border-[#F5E7C6] flex items-center justify-center overflow-hidden">
+                  <img
+                    src={item.type === "bullets" ? bulletsIconUrl : contentIconUrl}
+                    alt={item.type === "bullets" ? "Bullets type" : "Content type"}
+                    className="w-6 h-6 object-contain"
+                  />
+                </div>
+              </div>
+            )}
             <AccordionTrigger className="w-full text-right text-lg font-semibold text-stockblue py-4 px-2 rounded-lg hover:bg-stockblue/5 transition-colors [&>svg]:text-stockblue">
               {isEditing && (
                 <div className="flex items-center gap-2 ml-3 text-gray-500 cursor-grab">
@@ -168,7 +183,7 @@ const AccordionSection: FC<AccordionSectionProps> = ({
             bullets.push("");
             handleAccordionContentChange(item.uiId, JSON.stringify(bullets));
           }}
-          className="mt-2 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-all"
+          className="mt-2 px-3 py-1 bg-cyan-800 text-white rounded hover:bg-cyan-700 transition-all"
         >
           הוסף פריט
         </button>
@@ -209,20 +224,20 @@ const AccordionSection: FC<AccordionSectionProps> = ({
 
     {/* Only show type selector when the button is clicked */}
     {showAccordionTypeSelector && (
-      <div className="p-4 bg-gray-100 border rounded-lg mt-2">
+      <div className="p-4 bg-white border rounded-lg mt-2">
         <p className="mb-2">בחר סוג אקורדיון:</p>
         <div className="flex gap-2">
           <button
             onClick={() => confirmAddAccordion("content")}
-            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+            className="px-3 py-1 bg-[#D7C097] text-white rounded hover:bg-[#D7C097]/80 transition"
           >
-            Content
-          </button>
+              טקסט          
+</button>
           <button
             onClick={() => confirmAddAccordion("bullets")}
-            className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition"
+            className="px-3 py-1 bg-[#547792] text-white rounded hover:bg-[#547792]/80 transition"
           >
-            Bullets
+            נקודות
           </button>
           <button
             onClick={() => setShowAccordionTypeSelector(false)}
@@ -264,7 +279,7 @@ const AccordionSection: FC<AccordionSectionProps> = ({
             />
             <button
               onClick={handleCreateFolder}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all"
+              className="px-4 py-2 bg-cyan-800 text-white rounded-lg hover:bg-cyan-700 transition-all"
             >
               צור
             </button>

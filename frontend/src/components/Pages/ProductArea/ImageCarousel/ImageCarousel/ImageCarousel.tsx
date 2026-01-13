@@ -139,7 +139,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
             {/* Replace */}
             <label
               htmlFor={replaceId}
-              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-stockblue bg-white/95 backdrop-blur-sm rounded-lg shadow-md border border-white/30 cursor-pointer hover:shadow-lg hover:scale-105 hover:bg-white transition-all duration-300"
+              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-stockblue bg-white/95 backdrop-blur-sm rounded-lg shadow-md border border-white/30 cursor-pointer hover:shadow-lg hover:bg-white"
             >
               <Upload size={14} />
               החלף
@@ -155,7 +155,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
             {/* Add */}
             <label
               htmlFor={addId}
-              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-green-600 bg-white/95 backdrop-blur-sm rounded-lg shadow-md border border-white/30 cursor-pointer hover:shadow-lg hover:scale-105 hover:bg-white transition-all duration-300"
+              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-[#5A7863] bg-white/95 backdrop-blur-sm rounded-lg shadow-md border border-white/30 cursor-pointer hover:shadow-lg hover:bg-white"
             >
               <Upload size={14} />
               הוסף
@@ -173,7 +173,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
             <button
               type="button"
               onClick={handleDeleteImage}
-              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-red-600/95 backdrop-blur-sm rounded-lg shadow-md border border-red-600/30 hover:shadow-lg hover:scale-105 hover:bg-red-700 transition-all duration-300"
+              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-[#A91D3A] backdrop-blur-sm rounded-lg shadow-md border border-[#A91D3A] hover:shadow-lg hover:bg-[#A91D3A]/80"
             >
               מחק
             </button>
