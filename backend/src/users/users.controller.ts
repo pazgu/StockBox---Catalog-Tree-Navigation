@@ -1,8 +1,9 @@
-import { Controller, Delete, Patch, Param } from '@nestjs/common';
-import { Post, Body, Get, UsePipes } from '@nestjs/common';
+import { Controller, Delete, Patch, Param, Get } from '@nestjs/common';
+import { Post, Body, UsePipes } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { ValidationPipe } from '@nestjs/common';
 import { CreateUserDto } from './dto/createUser.dto';
+import { FavoriteType } from 'src/schemas/Users.schema';
 
 @Controller('users')
 export class UsersController {
@@ -41,5 +42,33 @@ export class UsersController {
     @Body('isBlocked') isBlocked: boolean,
   ) {
     return this.usersService.toggleBlockUser(id, isBlocked);
+  }
+
+  @Get(':userId/favorites/:itemId/check')
+  async isFavorite(
+    @Param('userId') userId: string,
+    @Param('itemId') itemId: string,
+  ) {
+    const isFav = await this.usersService.isFavorite(userId, itemId);
+    return { isFavorite: isFav };
+  }
+
+  @Patch(':userId/favorites/toggle')
+  async toggleFavorite(
+    @Param('userId') userId: string,
+    @Body() body: { itemId: string; type: FavoriteType },
+  ) {
+    const { itemId, type } = body;
+    const isFavorite = await this.usersService.isFavorite(userId, itemId);
+    if (isFavorite) {
+      return this.usersService.removeFavorite(userId, itemId);
+    } else {
+      return this.usersService.addFavorite(userId, itemId, type);
+    }
+  }
+
+  @Get(':userId/favorites')
+  async getUserFavorites(@Param('userId') userId: string) {
+    return this.usersService.getUserFavorites(userId);
   }
 }
