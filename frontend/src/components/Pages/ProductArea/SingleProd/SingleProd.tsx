@@ -463,7 +463,6 @@ const SingleProd: FC<SingleProdProps> = () => {
     <div className="pt-16 px-6 pb-10 font-sans-['Noto_Sans_Hebrew'] rtl">
       <Breadcrumbs path={breadcrumbPath} />
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
         <div className="flex justify-between items-center mb-4 text-right">
           <div className="flex-1">
             {isEditing ? (
@@ -500,7 +499,6 @@ const SingleProd: FC<SingleProdProps> = () => {
           )}
         </div>
 
-        {/* Secondary Description */}
         <div className="text-right mb-12">
           {isEditing ? (
             <textarea
@@ -519,7 +517,6 @@ const SingleProd: FC<SingleProdProps> = () => {
             <div className="group relative bg-white p-6 rounded-2xl border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-stockblue to-stockblue"></div>
 
-              {/* === IMAGE CAROUSEL START === */}
               <ImageCarousel
                 productImages={productImages}
                 currentImageIndex={currentImageIndex}
@@ -533,7 +530,6 @@ const SingleProd: FC<SingleProdProps> = () => {
                 title={title}
               />
 
-              {/* Buttons */}
               {role === "viewer" ? (
                 <div className="space-y-2 relative z-10 flex flex-row justify-center gap-12">
                   <button
@@ -579,7 +575,6 @@ const SingleProd: FC<SingleProdProps> = () => {
             </div>
           </div>
 
-          {/* Right: Accordion List */}
 
           <AccordionSection
             isEditing={isEditing}

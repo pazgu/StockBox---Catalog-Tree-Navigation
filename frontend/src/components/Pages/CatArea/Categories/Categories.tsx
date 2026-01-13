@@ -217,7 +217,6 @@ export const Categories: FC<CategoriesProps> = () => {
 
                   {role === "editor" && (
                     <div className="w-60 absolute inset-0 flex mr-16 gap-3 mb-4">
-                      {/* Delete Button */}
                       <div className="relative">
                         <button
                           className="peer -mt-1.5 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl"
@@ -234,7 +233,6 @@ export const Categories: FC<CategoriesProps> = () => {
                         </span>
                       </div>
 
-                      {/* Edit Button */}
                       <div className="relative">
                         <button
                           className="peer opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl mt-2.1"
@@ -251,7 +249,6 @@ export const Categories: FC<CategoriesProps> = () => {
                         </span>
                       </div>
 
-                      {/* Lock Button */}
                       <div className="relative">
                         <button
                           className="peer mt-8 -mr-2.5 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl"

@@ -545,7 +545,6 @@ const SingleCat: FC = () => {
             <div className="w-full text-center pt-4 border-t border-gray-200">
               <h2 className="text-[1.1rem] text-[#0D305B] mb-2">{item.name}</h2>
 
-              {/* Manage permissions button - only for editor*/}
               {role === "editor" && !isSelectionMode && (
                 <div className="mt-2 flex justify-center">
                   <button
@@ -709,7 +708,6 @@ const SingleCat: FC = () => {
         </div>
       )}
 
-      {/* Delete modal */}
       {role === "editor" && showDeleteModal && itemToDelete && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
@@ -746,7 +744,6 @@ const SingleCat: FC = () => {
         </div>
       )}
 
-      {/* Delete selected modal */}
       {role === "editor" && showDeleteAllModal && isSelectionMode && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
@@ -782,7 +779,6 @@ const SingleCat: FC = () => {
         </div>
       )}
 
-      {/* Move modals - FIXED VERSION */}
       {showMoveModal && itemToMove && (
         <>
           {itemToMove.type === "product" ? (
