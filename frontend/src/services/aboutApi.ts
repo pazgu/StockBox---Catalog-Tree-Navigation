@@ -1,20 +1,7 @@
+import { AboutBlock, AboutResponse } from "../components/models/about.models";
+import { environment } from "../environments/environment.development";
 import axios from "axios";
-
-const BASE_URL = "http://localhost:4000";
-
-export type BlockType = "intro" | "features" | "bullets" | "paragraph";
-
-export type AboutBlock = {
-  id: string;
-  type: BlockType;
-  data: any;
-};
-
-export type AboutResponse = {
-  blocks: AboutBlock[];
-  images: string[];
-  updatedAt: string;
-};
+const BASE_URL = environment.API_URL;
 
 export const aboutApi = {
   get: async (): Promise<AboutResponse> => {

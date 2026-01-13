@@ -8,8 +8,8 @@ export class Category {
   @Prop({ required: true })
   categoryPath: string;
 
-  @Prop({ required: true })
-  categoryImage: string;
+  @Prop({ required: false, default: '' })
+  categoryImage?: string;
 }
 
 export const CategorySchema = SchemaFactory.createForClass(Category);

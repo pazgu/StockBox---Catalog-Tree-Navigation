@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
-import { UserRole, User } from "../types/types";
+import { UserRole, User } from "../../src/components/models/user.models";
 import { environment } from "../environments/environment.development";
 
 

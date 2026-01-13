@@ -1,7 +1,7 @@
 import React from "react";
 import { toast } from "sonner";
 import useBlockBrowserZoom from "../../useBlockBrowserZoom";
-import { AddCategoryResult } from "../../../../../../types/types";
+import { AddCategoryResult } from "../../../../../models/category.models";
 
 type Props = {
   isOpen: boolean;
@@ -14,6 +14,17 @@ const CROP_BOX = 256;
 function getBaseCoverScale(imgW: number, imgH: number, box: number) {
   return Math.max(box / imgW, box / imgH);
 }
+function dataURLtoFile(dataUrl: string, filename: string) {
+  const arr = dataUrl.split(",");
+  const mimeMatch = arr[0].match(/:(.*?);/);
+  const mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) u8arr[n] = bstr.charCodeAt(n);
+  return new File([u8arr], filename, { type: mime });
+}
+
 
 function clampOffsetToCircle(
   offset: { x: number; y: number },
@@ -22,7 +33,7 @@ function clampOffsetToCircle(
   zoom: number,
   box: number
 ) {
-const baseScale = getBaseCoverScale(imgW, imgH, box);
+  const baseScale = getBaseCoverScale(imgW, imgH, box);
   const dispW = imgW * baseScale * zoom;
   const dispH = imgH * baseScale * zoom;
 
@@ -175,7 +186,11 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
       toast.error("נא לבחור תמונה ולהחיל את החיתוך");
       return;
     }
-    onSave({ name: newCatName.trim(), image: finalImage });
+    const safeName = newCatName.trim().toLowerCase().replace(/\s+/g, "-");
+    const file = dataURLtoFile(finalImage, `${safeName}.jpg`);
+
+    onSave({ name: newCatName.trim(), imageFile: file });
+
   };
 
   return (

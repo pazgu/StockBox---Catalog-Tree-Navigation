@@ -1,4 +1,4 @@
-import { BlockType } from '../schemas/About.schema';
+import { BlockType } from '../../schemas/About.schema';
 
 export class UpdateAboutBlockDto {
   id: string;

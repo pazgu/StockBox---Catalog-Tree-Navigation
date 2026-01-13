@@ -1,11 +1,11 @@
+import { environment } from "../environments/environment.development";
 import axios, {
   AxiosError,
   AxiosResponse,
 } from "axios";
-import { toast } from "sonner";
 
 const api = axios.create({
-  baseURL: "http://localhost:4000",
+  baseURL: environment.API_URL,
   withCredentials: true,
 });
 

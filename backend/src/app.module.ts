@@ -1,6 +1,4 @@
 import { Module } from '@nestjs/common';
-import { ProductsController } from './products/products.controller';
-import { ProductsService } from './products/products.service';
 import { ProductsModule } from './products/products.module';
 import { PermissionsController } from './permissions/permissions.controller';
 import { PermissionsModule } from './permissions/permissions.module';
@@ -15,10 +13,18 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { AboutModule } from './about/about.module';
 
+import { join } from 'path';
+import { existsSync } from 'fs';
+
+const envPath = existsSync(join(process.cwd(), '.env'))
+  ? join(process.cwd(), '.env')
+  : join(process.cwd(), 'backend', '.env');
+
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: envPath,
     }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
@@ -36,7 +42,7 @@ import { AboutModule } from './about/about.module';
     UsersModule,
     AboutModule,
   ],
-  controllers: [ProductsController, PermissionsController, CommonController],
-  providers: [ProductsService, CommonService],
+  controllers: [PermissionsController, CommonController],
+  providers: [CommonService],
 })
 export class AppModule {}

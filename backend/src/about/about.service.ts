@@ -1,12 +1,14 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { UpdateAboutDto } from './dto/UpdateAbout.dto';
 import { UpdateAboutBlockDto } from './dto/UpdateAboutBlock.dto';
-import { About, AboutDocument } from './schemas/About.schema';
-import { promises as fs } from 'fs';
-import { join } from 'path';
+import { About, AboutDocument } from '../schemas/About.schema';
+import { cloudinary } from '../utils/cloudinary/cloudinary';
+import type { Express } from 'express';
 
 const ABOUT_SINGLETON_ID = 'ABOUT_SINGLETON';
 
@@ -27,34 +29,11 @@ export class AboutService {
     });
   }
 
-  private uploadsDir() {
-    return join(process.cwd(), 'src', 'about', 'aboutUploads', 'images');
-  }
-
-  private filePathFromUrl(url: string) {
-    const filename = url.split('/').pop()?.split('?')[0];
-
-    if (!filename) return null;
-    return join(this.uploadsDir(), filename);
-  }
-
-  private async safeUnlinkByUrl(url?: string | null) {
-    if (!url) return;
-    const path = this.filePathFromUrl(url);
-    if (!path) return;
-
-    try {
-      await fs.unlink(path);
-    } catch {
-      /* empty */
-    }
-  }
-
   async getAbout() {
     const doc = await this.getOrCreateSingleton();
     return {
       blocks: doc.blocks ?? [],
-      images: doc.images ?? [],
+      images: this.toImageUrls(doc.images ?? []),
       updatedAt: doc.updatedAt,
     };
   }
@@ -62,21 +41,24 @@ export class AboutService {
   async replaceAbout(dto: UpdateAboutDto) {
     const doc = await this.getOrCreateSingleton();
 
-    const oldImages = doc.images ?? [];
-    const newImages = dto.images ?? [];
+    const old = doc.images ?? []; // [{url, public_id}]
+    const newUrls = dto.images ?? []; // string[]
 
-    const removed = oldImages.filter((url) => !newImages.includes(url));
+    const keep = old.filter((img) => newUrls.includes(img.url));
+    const removed = old.filter((img) => !newUrls.includes(img.url));
 
     doc.blocks = dto.blocks ?? [];
-    doc.images = newImages;
+    doc.images = keep;
 
     const saved = await doc.save();
 
-    await Promise.all(removed.map((u) => this.safeUnlinkByUrl(u)));
+    await Promise.all(
+      removed.map((img) => this.safeCloudinaryDestroy(img.public_id)),
+    );
 
     return {
       blocks: saved.blocks ?? [],
-      images: saved.images ?? [],
+      images: this.toImageUrls(saved.images ?? []),
       updatedAt: saved.updatedAt,
     };
   }
@@ -102,39 +84,43 @@ export class AboutService {
     };
   }
 
-  async addImages(images: string[]) {
+  async addImages(files: Express.Multer.File[]) {
     const doc = await this.getOrCreateSingleton();
 
-    doc.images = [...(doc.images ?? []), ...(images ?? [])];
+    const uploaded = await Promise.all(
+      files.map((f) => this.uploadToCloudinary(f)),
+    );
+    doc.images = [...(doc.images ?? []), ...uploaded];
+
     const saved = await doc.save();
 
     return {
       blocks: saved.blocks ?? [],
-      images: saved.images ?? [],
+      images: this.toImageUrls(saved.images ?? []),
       updatedAt: saved.updatedAt,
     };
   }
 
-  async replaceImageAt(index: number, image: string) {
+  async replaceImageAt(index: number, file: Express.Multer.File) {
     const doc = await this.getOrCreateSingleton();
 
     const arr = doc.images ?? [];
-    if (index < 0 || index >= arr.length) {
+    if (index < 0 || index >= arr.length)
       throw new NotFoundException('Image index out of range');
-    }
 
-    const oldUrl = arr[index];
+    const old = arr[index];
 
-    arr[index] = image;
+    const uploaded = await this.uploadToCloudinary(file);
+    arr[index] = uploaded;
     doc.images = arr;
 
     const saved = await doc.save();
 
-    await this.safeUnlinkByUrl(oldUrl);
+    await this.safeCloudinaryDestroy(old?.public_id);
 
     return {
       blocks: saved.blocks ?? [],
-      images: saved.images ?? [],
+      images: this.toImageUrls(saved.images ?? []),
       updatedAt: saved.updatedAt,
     };
   }
@@ -143,21 +129,19 @@ export class AboutService {
     const doc = await this.getOrCreateSingleton();
 
     const arr = doc.images ?? [];
-    if (index < 0 || index >= arr.length) {
+    if (index < 0 || index >= arr.length)
       throw new NotFoundException('Image index out of range');
-    }
 
-    const removedUrl = arr[index];
-
+    const removed = arr[index];
     doc.images = arr.filter((_, i) => i !== index);
 
     const saved = await doc.save();
 
-    await this.safeUnlinkByUrl(removedUrl);
+    await this.safeCloudinaryDestroy(removed?.public_id);
 
     return {
       blocks: saved.blocks ?? [],
-      images: saved.images ?? [],
+      images: this.toImageUrls(saved.images ?? []),
       updatedAt: saved.updatedAt,
     };
   }
@@ -165,18 +149,44 @@ export class AboutService {
   async clearImages() {
     const doc = await this.getOrCreateSingleton();
 
-    const urls = doc.images ?? [];
+    const imgs = doc.images ?? [];
     doc.images = [];
 
     const saved = await doc.save();
 
-    // ✅ delete all files from disk
-    await Promise.all(urls.map((u) => this.safeUnlinkByUrl(u)));
+    await Promise.all(imgs.map((x) => this.safeCloudinaryDestroy(x.public_id)));
 
     return {
       blocks: saved.blocks ?? [],
-      images: saved.images ?? [],
+      images: this.toImageUrls(saved.images ?? []),
       updatedAt: saved.updatedAt,
     };
+  }
+
+  private async uploadToCloudinary(file: Express.Multer.File) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    const base64 = file.buffer.toString('base64');
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    const dataUri = `data:${file.mimetype};base64,${base64}`;
+
+    const res = await cloudinary.uploader.upload(dataUri, {
+      folder: 'about',
+      resource_type: 'image',
+    });
+
+    return { url: res.secure_url, public_id: res.public_id };
+  }
+
+  private async safeCloudinaryDestroy(public_id?: string | null) {
+    if (!public_id) return;
+    try {
+      await cloudinary.uploader.destroy(public_id, { resource_type: 'image' });
+    } catch {
+      /* ignore */
+    }
+  }
+
+  private toImageUrls(images: any[] = []) {
+    return images.map((x) => x.url);
   }
 }

@@ -1,12 +1,14 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { CustomField } from './CustomFields.schema';
+import { UploadGroup } from './UploadGroup.schema';
 
 @Schema({ timestamps: true })
 export class Product {
   @Prop({ required: true, unique: true })
   productName: string;
 
-  @Prop({ required: true })
-  productImage: string;
+  @Prop({ type: [String], default: [] })
+  productImages: string[];
 
   @Prop({ required: false })
   productDescription: string;
@@ -14,7 +16,10 @@ export class Product {
   @Prop({ required: true })
   productPath: string;
 
-  @Prop({ type: Object, default: {} })
-  customFields: Record<string, any>;
+  @Prop({ type: [CustomField], default: [] })
+  customFields: CustomField[];
+
+  @Prop({ type: [UploadGroup], default: [] })
+  uploadFolders: UploadGroup[];
 }
 export const ProductSchema = SchemaFactory.createForClass(Product);
