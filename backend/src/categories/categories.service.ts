@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable no-useless-escape */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
@@ -215,5 +219,12 @@ export class CategoriesService {
     }
 
     return updatedCategory;
+  }
+  async getCategoryById(id: string) {
+    const category = await this.categoryModel.findById(id);
+    if (!category) {
+      throw new NotFoundException('Category not found');
+    }
+    return category;
   }
 }
