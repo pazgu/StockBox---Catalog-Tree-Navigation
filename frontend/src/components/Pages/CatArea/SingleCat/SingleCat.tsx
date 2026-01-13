@@ -16,6 +16,8 @@ import { FilePlus2Icon } from "lucide-react";
 import { CategoryDTO } from "../../../../components/models/category.models";
 import { DisplayItem } from "../../../../components/models/item.models";
 import { ProductDto } from "../../../../components/models/product.models";
+import { Item } from "@radix-ui/react-accordion";
+import { id } from "zod/v4/locales";
 
 function dataURLtoFile(dataUrl: string, filename: string) {
   const arr = dataUrl.split(",");
@@ -279,8 +281,8 @@ const handleSaveProduct = async () => {
     setNewCategoryImage(null);
   };
 
-  const handleManagePermissions = () => {
-    navigate("/permissions");
+  const handleManagePermissions = (id: string, type: string) => {
+    navigate(`/permissions/${type}/${id}`);
   };
 
   const toggleSelectionMode = () => {
@@ -522,7 +524,7 @@ const handleSaveProduct = async () => {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleManagePermissions();
+                      handleManagePermissions(item.id, item.type);
                     }}
                     className="flex items-center gap-2 text-sm font-medium text-white bg-[#0D305B] px-4 py-2 rounded-xl shadow-md transition-all duration-300 hover:bg-[#16447A] hover:shadow-lg focus:ring-2 focus:ring-[#0D305B]/40"
                   >

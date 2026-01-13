@@ -263,7 +263,7 @@ export const Categories: FC<CategoriesProps> = () => {
                           onClick={(e) => {
                             e.stopPropagation();
                             e.preventDefault();
-                            navigate("/permissions");
+                            navigate(`/permissions/category/${category._id}`);
                           }}
                         >
                           <Lock size={18} />
