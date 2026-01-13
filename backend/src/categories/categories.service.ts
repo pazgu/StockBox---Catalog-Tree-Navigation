@@ -138,7 +138,13 @@ export class CategoriesService {
       deletedCategoryPath: categoryPath,
     };
   }
-
+  async getById(id: string) {
+    const category = await this.categoryModel.findById(id).lean();
+    if (!category) {
+      throw new NotFoundException('Category not found');
+    }
+    return category;
+  }
   async updateCategory(
     id: string,
     updateCategoryDto: UpdateCategoryDto,

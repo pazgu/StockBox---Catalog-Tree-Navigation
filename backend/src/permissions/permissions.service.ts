@@ -22,4 +22,8 @@ export class PermissionsService {
   async deletePermission(id: string) {
     return this.permissionModel.findByIdAndDelete(id).exec();
   }
+
+  async getPermissionsByEntityType(entityId: string) {
+    return await this.permissionModel.find({ entityId: entityId }).exec();
+  }
 }

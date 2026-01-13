@@ -12,7 +12,8 @@ import { CreateProductDto } from './dtos/CreateProduct.dto';
 import { uploadBufferToCloudinary } from 'src/utils/cloudinary/upload.util';
 import { deleteFromCloudinary } from 'src/utils/cloudinary/delete.util';
 import { PermissionsService } from 'src/permissions/permissions.service';
-import { EntityType } from 'src/schemas/Permissions.schema';import { UpdateProductDto } from './dtos/UpdateProduct.dto';
+import { EntityType } from 'src/schemas/Permissions.schema';
+import { UpdateProductDto } from './dtos/UpdateProduct.dto';
 
 @Injectable()
 export class ProductsService {
@@ -133,36 +134,31 @@ export class ProductsService {
     }
   }
 
+  async update(id: string, dto: UpdateProductDto) {
+    if (dto.customFields && Array.isArray(dto.customFields)) {
+      dto.customFields = dto.customFields.map((field) => {
+        if (field._id?.startsWith('new-')) {
+          return {
+            ...field,
+            _id: new Types.ObjectId().toString(),
+          };
+        }
+        return field;
+      });
+    }
 
+    const updatedProduct = await this.productModel.findByIdAndUpdate(
+      id,
+      { $set: dto },
+      { new: true },
+    );
 
+    if (!updatedProduct) {
+      throw new NotFoundException('Product not found');
+    }
 
-async update(id: string, dto: UpdateProductDto) {
-  console.log("the dto:", dto);
-
-  if (dto.customFields && Array.isArray(dto.customFields)) {
-    dto.customFields = dto.customFields.map((field) => {
-      if (field._id?.startsWith('new-')) {
-        return {
-          ...field,
-          _id: new Types.ObjectId().toString(), // convert to string
-        };
-      }
-      return field;
-    });
+    return updatedProduct;
   }
-
-  const updatedProduct = await this.productModel.findByIdAndUpdate(
-    id,
-    { $set: dto },
-    { new: true }
-  );
-
-  if (!updatedProduct) {
-    throw new NotFoundException('Product not found');
-  }
-
-  return updatedProduct;
-}
 
   private async deleteProductImage(imageUrl: string): Promise<void> {
     try {

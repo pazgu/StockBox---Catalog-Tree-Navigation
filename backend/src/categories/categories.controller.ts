@@ -79,4 +79,9 @@ export class CategoriesController {
       file,
     );
   }
+
+  @Get(':id')
+  getCategoryById(@Param('id') id: string) {
+    return this.categoriesService.getById(id);
+  }
 }
