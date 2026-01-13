@@ -32,12 +32,11 @@ const Layout: FC<LayoutProps> = () => {
             element={<SingleCat></SingleCat>}
           />
           <Route path="/categories/*" element={<SingleCat />} />
-
           <Route path="/new-user" element={<NewUser></NewUser>} />
           <Route path="/product-details" element={<SingleProd></SingleProd>} />
           <Route path="/allUsers" element={<AllUsers></AllUsers>} />
-          <Route path="/Permissions" element={<Permissions></Permissions>} />
-          <Route path="/GroupControl" element={<GroupControl></GroupControl>} /> 
+          <Route path="/permissions/:type/:id" element={<Permissions></Permissions>} />{" "}
+          <Route path="/GroupControl" element={<GroupControl></GroupControl>} />
           {/* <Route path="/Favorites" element={<Favorites></Favorites>} /> */}
           <Route path="*" element={<Page404 />} />
         </Routes>
