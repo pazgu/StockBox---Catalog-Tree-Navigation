@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 import {
   Injectable,
@@ -140,7 +142,7 @@ export class ProductsService {
         if (field._id?.startsWith('new-')) {
           return {
             ...field,
-            _id: new Types.ObjectId().toString(),
+            _id: new Types.ObjectId().toString(), // convert to string
           };
         }
         return field;

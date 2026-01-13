@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
@@ -86,9 +87,12 @@ export class ProductsController {
 
   @Patch(':id')
   @UseInterceptors(FilesInterceptor('newProductImages'))
+  @Patch(':id')
+  @UseInterceptors(FilesInterceptor('newProductImages'))
   async updateProduct(
     @Param('id') id: string,
     @UploadedFiles() files: Express.Multer.File[],
+    @Body() body: any,
     @Body() body: any,
   ) {
     const dto: UpdateProductDto = {
@@ -117,6 +121,8 @@ export class ProductsController {
         : undefined,
     };
 
+    return this.productsService.update(id, dto);
+  }
     return this.productsService.update(id, dto);
   }
 }

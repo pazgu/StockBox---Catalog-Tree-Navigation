@@ -12,6 +12,7 @@ import {
 import {
   categoriesService,
 } from "../../../../services/CategoryService";
+import { userService } from "../../../../services/UserService";
 import { FilePlus2Icon } from "lucide-react";
 import { CategoryDTO } from "../../../../components/models/category.models";
 import { DisplayItem } from "../../../../components/models/item.models";
@@ -50,7 +51,7 @@ const SingleCat: FC = () => {
 
   const location = useLocation();
   const params = useParams();
-  const { role } = useUser();
+  const { role, user , id } = useUser();
   const navigate = useNavigate();
 
   const getCategoryPathFromUrl = () => {
@@ -78,8 +79,7 @@ const SingleCat: FC = () => {
 
   useEffect(() => {
     loadAllContent();
-  }, [categoryPath]);
-
+  }, [categoryPath, user]);
   const loadAllContent = async () => {
     try {
       setLoading(true);
@@ -95,6 +95,14 @@ const SingleCat: FC = () => {
         products = await ProductsService.getProductsByPath(categoryPath);
       } catch (error) {
         products = [];
+      }     
+      let userFavorites: string[] = [];
+      if (id) {
+        try {
+          const favorites = await userService.getFavorites(id);
+          userFavorites = favorites.map((fav: any) => fav.id.toString());
+        } catch (error) {
+        }
       }
       const categoryItems: DisplayItem[] = subCategories.map(
         (cat: CategoryDTO) => ({
@@ -103,7 +111,7 @@ const SingleCat: FC = () => {
           image: cat.categoryImage,
           type: "category",
           path: cat.categoryPath,
-          favorite: false,
+          favorite: userFavorites.includes(cat._id),
         })
       );
       const productItems: DisplayItem[] = products.map((prod: ProductDto) => ({
@@ -114,6 +122,7 @@ const SingleCat: FC = () => {
         path: prod.productPath,
         description: prod.productDescription,
         customFields: prod.customFields,
+        favorite: userFavorites.includes(prod._id!),
       }));
       setItems([...categoryItems, ...productItems]);
     } catch (error) {
@@ -148,19 +157,30 @@ const SingleCat: FC = () => {
     }
   };
 
-  const toggleFavorite = (id: string) => {
-    const item = items.find((i) => i.id === id);
-    if (!item) return;
-
-    if (item.favorite) {
-      toast.info(`${item.name} הוסר מהמועדפים`);
-    } else {
-      toast.success(`${item.name} נוסף למועדפים`);
+  const toggleFavorite = async (itemId: string, name: string, type: "product" | "category") => {
+    if (!id) {
+      toast.error("יש להתחבר כדי להוסיף למועדפים");
+      return;
     }
+    try {
+      const item = items.find((i) => i.id === itemId);
+      const newFavoriteStatus = !item?.favorite;
 
-    setItems((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, favorite: !i.favorite } : i))
-    );
+      setItems((prev) =>
+        prev.map((i) => (i.id === itemId ? { ...i, favorite: newFavoriteStatus } : i))
+      );
+      await userService.toggleFavorite(id, itemId, type);
+      if (newFavoriteStatus) {
+        toast.success(`${name} נוסף למועדפים`);
+      } else {
+        toast.info(`${name} הוסר מהמועדפים`);
+      }
+    } catch (error) {
+      toast.error("שגיאה בעדכון המועדפים");
+      setItems((prev) =>
+        prev.map((i) => (i.id === itemId ? { ...i, favorite: !i.favorite } : i))  // ← itemId
+      );
+    }
   };
 
   const handleDelete = (item: DisplayItem) => {
@@ -195,7 +215,6 @@ const handleSaveProduct = async () => {
     toast.error("אנא מלא את כל השדות החובה");
     return;
   }
-  
 
   try {
     const safe = newProductName.trim().toLowerCase().replace(/\s+/g, "-") || "product";
@@ -229,7 +248,6 @@ const handleSaveProduct = async () => {
   }
 };
 
-
   const handleSaveCategory = async () => {
     if (!newCategoryName || !newCategoryImage) {
       toast.error("אנא מלא את כל השדות החובה");
@@ -237,7 +255,6 @@ const handleSaveProduct = async () => {
     }
     try {
       const newCategoryPath = `${categoryPath}/${newCategoryName.toLowerCase().replace(/\s+/g, "-")}`;
-
       const safe =
         newCategoryName.trim().toLowerCase().replace(/\s+/g, "-") || "category";
       const file = dataURLtoFile(newCategoryImage, `${safe}.jpg`);
@@ -366,7 +383,6 @@ const handleSaveProduct = async () => {
             מוצרים: {items.filter((i) => i.type === "product").length}
           </span>
         </div>
-    
       </header>
 
       {role === "editor" && items.length !== 0 && (
@@ -388,7 +404,6 @@ const handleSaveProduct = async () => {
                   ? "בטל בחירת הכל"
                   : "בחר הכל"}
               </button>
-
               {selectedItems.length > 0 && (
                 <>
                   <span className="text-gray-400">|</span>
@@ -398,7 +413,6 @@ const handleSaveProduct = async () => {
                   >
                     מחק ({selectedItems.length})
                   </button>
-
                   <span className="text-gray-400">|</span>
                   <button
                     onClick={handleMoveSelected}
@@ -408,7 +422,6 @@ const handleSaveProduct = async () => {
                   </button>
                 </>
               )}
-
               <span className="text-gray-400">|</span>
               <button
                 onClick={toggleSelectionMode}
@@ -479,7 +492,7 @@ const handleSaveProduct = async () => {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  toggleFavorite(item.id);
+                  toggleFavorite(item.id, item.name, item.type);
                 }}
                 className="absolute right-3 group-hover:opacity-100 transition-all duration-200 h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110"
               >
@@ -504,8 +517,6 @@ const handleSaveProduct = async () => {
                   }
                 }}
               >
-
-              
               <img
                 src={item.image}
                 alt={item.name}
@@ -517,8 +528,6 @@ const handleSaveProduct = async () => {
 
             <div className="w-full text-center pt-4 border-t border-gray-200">
               <h2 className="text-[1.1rem] text-[#0D305B] mb-2">{item.name}</h2>
-            
-              {/* Manage permissions button - only for editor*/}
               {role === "editor" && !isSelectionMode && (
                 <div className="mt-2 flex justify-center">
                   <button
@@ -591,7 +600,6 @@ const handleSaveProduct = async () => {
           </button>
         </div>
       )}
-
       {role === "editor" && showAddModal && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"

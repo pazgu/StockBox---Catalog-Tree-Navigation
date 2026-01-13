@@ -4,8 +4,21 @@ import {
   IsEnum,
   IsNotEmpty,
   IsString,
+  IsArray,
+  ValidateNested,
+  IsOptional,
+  IsMongoId,
 } from 'class-validator';
-import { UserRole } from 'src/schemas/Users.schema';
+import { Type } from 'class-transformer';
+import { UserRole, FavoriteType } from 'src/schemas/Users.schema';
+
+export class FavoriteDto {
+  @IsNotEmpty()
+  @IsMongoId()
+  id: string;
+  @IsEnum(FavoriteType)
+  type: FavoriteType;
+}
 
 export class CreateUserDto {
   @IsNotEmpty()
@@ -26,6 +39,11 @@ export class CreateUserDto {
 
   @IsEnum(UserRole)
   role: UserRole;
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => FavoriteDto)
+  favorites?: FavoriteDto[];
 
   @IsBoolean()
   approved: boolean;
