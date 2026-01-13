@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { categoriesService } from "../../../../../services/CategoryService";
 import { Category } from "../Categories";
-import { MoveRight, ChevronRight } from "lucide-react";
+import { MoveRight, ChevronLeft } from "lucide-react";
 
 interface MoveCategoryModalProps {
   isOpen: boolean;
@@ -131,9 +131,9 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
               {isLoading ? (
                 <div className="w-4 h-4 border-2 border-gray-300 border-t-slate-700 rounded-full animate-spin" />
               ) : (
-                <ChevronRight
+                <ChevronLeft
                   size={16}
-                  className={`transition-transform ${isExpanded ? "rotate-90" : ""}`}
+                  className={`transition-transform ${isExpanded ? "-rotate-90" : ""}`}
                 />
               )}
             </button>

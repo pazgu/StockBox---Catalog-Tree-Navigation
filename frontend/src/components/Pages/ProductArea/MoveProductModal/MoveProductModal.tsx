@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { categoriesService } from "../../../../services/CategoryService";
 import { ProductsService } from "../../../../services/ProductService";
-import { MoveRight, ChevronRight } from "lucide-react";
+import { MoveRight, ChevronLeft } from "lucide-react";
 import { Category } from "../../CatArea/Categories/Categories";
 
 interface MoveProductModalProps {
@@ -123,9 +123,9 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
               {isLoading ? (
                 <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
               ) : (
-                <ChevronRight
+                <ChevronLeft
                   size={16}
-                  className={`transition-transform ${isExpanded ? "rotate-90" : ""}`}
+                  className={`transition-transform ${isExpanded ? "-rotate-90" : ""}`}
                 />
               )}
             </button>

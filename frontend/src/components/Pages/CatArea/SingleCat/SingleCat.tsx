@@ -7,7 +7,7 @@ import {
   Trash,
   PackageCheck,
   Boxes,
-  MoveRight,
+  FolderInput,
 } from "lucide-react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
@@ -482,6 +482,7 @@ const SingleCat: FC = () => {
             {role === "editor" && !isSelectionMode && (
               <>
                 <button
+                title="מחיקה"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDelete(item);
@@ -491,13 +492,14 @@ const SingleCat: FC = () => {
                   <Trash size={18} />
                 </button>
                 <button
+                  title="העברה לקטגוריה אחרת"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleMove(item);
                   }}
                   className="absolute bottom-3 left-12 group-hover:opacity-100 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-blue-500 hover:scale-110"
                 >
-                  <MoveRight size={18} />
+                  <FolderInput size={18} />
                 </button>
               </>
             )}
