@@ -93,7 +93,6 @@ export class ProductsController {
     @Param('id') id: string,
     @UploadedFiles() files: Express.Multer.File[],
     @Body() body: any,
-    @Body() body: any,
   ) {
     const dto: UpdateProductDto = {
       productName: body.productName,
@@ -121,8 +120,6 @@ export class ProductsController {
         : undefined,
     };
 
-    return this.productsService.update(id, dto);
-  }
     return this.productsService.update(id, dto);
   }
 }
