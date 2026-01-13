@@ -1,5 +1,5 @@
 import React, { FC, useState, useCallback, useMemo } from "react";
-import { Heart, PencilLine, MailQuestionIcon, Check } from "lucide-react";
+import { Heart, PencilLine, MailQuestionIcon, Check, FolderInput } from "lucide-react";
 import { useUser } from "../../../../context/UserContext";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -494,22 +494,7 @@ const SingleProd: FC<SingleProdProps> = () => {
                 aria-label="העבר מוצר"
                 className="fixed bottom-24 left-6 flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <polyline points="5 9 2 12 5 15"></polyline>
-                  <polyline points="9 9 12 12 9 15"></polyline>
-                  <polyline points="15 13 18 10 21 13"></polyline>
-                  <polyline points="15 13 12 16 15 19"></polyline>
-                </svg>
+                <FolderInput size={22} />
               </button>
             </>
           )}
