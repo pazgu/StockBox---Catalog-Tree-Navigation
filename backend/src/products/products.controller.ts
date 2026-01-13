@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
@@ -84,41 +85,38 @@ export class ProductsController {
     return this.productsService.delete(id);
   }
 
- @Patch(':id')
- @UseInterceptors(FilesInterceptor('newProductImages'))
+  @Patch(':id')
+  @UseInterceptors(FilesInterceptor('newProductImages'))
   async updateProduct(
     @Param('id') id: string,
     @UploadedFiles() files: Express.Multer.File[],
-    @Body() body: any 
+    @Body() body: any,
   ) {
-  console.log('raw body:', body);
-  console.log('files:', files);
-
-  const dto: UpdateProductDto = {
-    productName: body.productName,
-    productDescription: body.productDescription,
-    productPath: body.productPath,
-    customFields: body.customFields ? JSON.parse(body.customFields) : undefined,
-    productImages: body.existingProductImages
-      ? [].concat(body.existingProductImages)
-      : undefined,
-    
-    uploadFolders: body.uploadFolders
-      ? [].concat(body.uploadFolders).map((group: any) => ({
-          title: group.title,
-          folders: group.folders.map((folder: any) => ({
-            _id: folder._id,        
-            folderName: folder.folderName,
-            files: folder.files.map((f: any) => ({
-              _id: f._id,
-              link: f.link,
+    const dto: UpdateProductDto = {
+      productName: body.productName,
+      productDescription: body.productDescription,
+      productPath: body.productPath,
+      customFields: body.customFields
+        ? JSON.parse(body.customFields)
+        : undefined,
+      productImages: body.existingProductImages
+        ? [].concat(body.existingProductImages)
+        : undefined,
+      uploadFolders: body.uploadFolders
+        ? [].concat(body.uploadFolders).map((group: any) => ({
+            title: group.title,
+            folders: group.folders.map((folder: any) => ({
+              _id: folder._id,
+              folderName: folder.folderName,
+              files: folder.files.map((f: any) => ({
+                _id: f._id,
+                link: f.link,
+              })),
             })),
-          })),
-        }))
-      : undefined,
-  };
+          }))
+        : undefined,
+    };
 
-  return this.productsService.update(id, dto);
-}
-
+    return this.productsService.update(id, dto);
+  }
 }

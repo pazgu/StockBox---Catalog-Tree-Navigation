@@ -134,6 +134,18 @@ class CategoriesService {
 
     return response.data;
   }
+  async getCategoryById(id: string): Promise<CategoryDTO | null> {
+    try {
+      const response = await axios.get<CategoryDTO>(
+        `${this.baseUrl}/${id}`,
+        this.getAuthHeaders()
+      );
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching category ${id}:`, error);
+      return null;
+    }
+  }
 }
 
 export const categoriesService = new CategoriesService();
