@@ -175,7 +175,7 @@ const Permissions: React.FC = () => {
                     מוסתר מכל המשתמשים
                   </Label>
                   <span className="text-xs text-gray-500">
-                    {generalAccess ? " מצב רשימת רשאים (כולם חוץ מ-)" : " מצב רשימת חסומים (כולם חוץ מ-)"}
+                    {generalAccess ? " מצב רשימת רשאים (רק הבאים רשאים לצפות)" : " מצב רשימת חסומים (כולם חוץ מ-)"}
                   </span>
                 </div>
                 <Switch
