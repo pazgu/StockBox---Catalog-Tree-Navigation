@@ -10,26 +10,24 @@ export class SearchController {
   @Get('dropdown')
   @UseGuards(AuthGuard('jwt'))
   async dropdown(@Query() query: SearchQueryDto, @Req() req) {
-
-    const user = { userId: req.user!.userId, role: req.user!.role }; 
-
+    const user = { userId: req.user!.userId, role: req.user!.role };
+    console.log('Dropdown search query:', query);
     const limit = Math.min(query.limit || 10, 10);
 
-    const results = await this.searchService.search(query.q, user, { limit });
+    const results = await this.searchService.searchEntities(user.userId, query.q, 1, limit);
+    console.log('Dropdown search results:', results);
     return results;
   }
 
-@Get()
-@UseGuards(AuthGuard('jwt'))
-async fullSearch(@Query() query: SearchQueryDto, @Req() req) {
-  const user = { userId: req.user!.userId, role: req.user!.role };
+  @Get()
+  @UseGuards(AuthGuard('jwt'))
+  async fullSearch(@Query() query: SearchQueryDto, @Req() req) {
+    const user = { userId: req.user!.userId, role: req.user!.role };
 
-  const results = await this.searchService.search(query.q, user, {
-    limit: query.limit || 20, 
-    page: query.page,
-  });
+    const page = query.page || 1;
+    const limit = query.limit || 20;
 
-  return results;
-}
-
+    const results = await this.searchService.searchEntities(user.userId, query.q, page, limit);
+    return results;
+  }
 }
