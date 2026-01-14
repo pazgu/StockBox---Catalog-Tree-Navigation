@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import { Injectable } from '@nestjs/common';
 import { Model, Types } from 'mongoose';
 import { User, FavoriteType } from 'src/schemas/Users.schema';
@@ -8,8 +12,9 @@ import { CreateUserDto } from './dto/createUser.dto';
 export class UsersService {
   constructor(@InjectModel(User.name) private userModel: Model<User>) {}
 
-  getAllUsers() {
-    return this.userModel.find().exec();
+  async getAllUsers(role?: string) {
+    const filter = role ? { role } : {};
+    return this.userModel.find(filter).exec();
   }
   async createUser(createUserDto: CreateUserDto) {
     const newUser = new this.userModel(createUserDto);

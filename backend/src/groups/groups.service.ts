@@ -19,7 +19,7 @@ export class GroupsService {
   async findAll(): Promise<GroupDocument[]> {
     return this.groupModel
       .find()
-      .populate('members', 'username firstName lastName')
+      .populate('members', 'userName firstName lastName')
       .exec();
   }
 
@@ -27,7 +27,7 @@ export class GroupsService {
     const query = this.groupModel.findById(id);
 
     if (populateMembers) {
-      query.populate('members', 'username firstName lastName');
+      query.populate('members', 'userName firstName lastName');
     }
 
     const group = await query.exec();

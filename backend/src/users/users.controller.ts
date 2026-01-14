@@ -1,5 +1,16 @@
-import { Controller, Delete, Patch, Param, Get } from '@nestjs/common';
-import { Post, Body, UsePipes } from '@nestjs/common';
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+import {
+  Controller,
+  Delete,
+  Patch,
+  Param,
+  Get,
+  Query,
+  Post,
+  Body,
+  UsePipes,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { ValidationPipe } from '@nestjs/common';
 import { CreateUserDto } from './dto/createUser.dto';
@@ -15,8 +26,8 @@ export class UsersController {
   }
 
   @Get()
-  GetAllUsers() {
-    return this.usersService.getAllUsers();
+  GetAllUsers(@Query('role') role?: string) {
+    return this.usersService.getAllUsers(role);
   }
 
   @Delete(':id')

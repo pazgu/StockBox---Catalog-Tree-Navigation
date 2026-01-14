@@ -1,5 +1,5 @@
 import React, { FC, useState, useCallback, useMemo } from "react";
-import { Heart, PencilLine, MailQuestionIcon, Check, FolderInput } from "lucide-react";
+import { Heart, PencilLine, MailQuestionIcon, Check } from "lucide-react";
 import { useUser } from "../../../../context/UserContext";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -14,9 +14,8 @@ import { ProductsService } from "../../../../services/ProductService";
 import { ProductDto } from "../../../../components/models/product.models";
 import { CloudinaryService } from "../../../../services/Cloudinary.service";
 import { FileFolder, UploadedFile } from "../../../models/files.models";
-import MoveProductModal from "../MoveProductModal/MoveProductModal";
-import bulletIcon from "../../../../assets/bullets.png"
-import contentIcon from "../../../../assets/font.png"
+import bulletIcon from "../../../../assets/bullets.png";
+import contentIcon from "../../../../assets/font.png";
 interface SingleProdProps {}
 
 const SingleProd: FC<SingleProdProps> = () => {
@@ -41,10 +40,9 @@ const SingleProd: FC<SingleProdProps> = () => {
   const [newFolderName, setNewFolderName] = useState("");
   const [showNewFolderInput, setShowNewFolderInput] = useState(false);
   const [folders, setFolders] = useState<FileFolder[]>([]);
-  const [showMoveModal, setShowMoveModal] = useState(false);
-
   const contentIconUrl = contentIcon;
   const bulletsIconUrl = bulletIcon;
+
   const { productId } = useParams<{ productId: string }>();
 
   useEffect(() => {
@@ -353,7 +351,6 @@ const SingleProd: FC<SingleProdProps> = () => {
     }
 
     try {
-      console.log("frontend payload:", payload);
       await ProductsService.updateProduct(productId!, payload);
       toast.success("שינויים נשמרו בהצלחה");
     } catch (err) {
@@ -362,19 +359,6 @@ const SingleProd: FC<SingleProdProps> = () => {
     }
 
     setIsEditing(!isEditing);
-  };
-
-  const handleMove = () => {
-    setShowMoveModal(true);
-  };
-
-  const handleMoveSuccess = async () => {
-    if (productId) {
-      const updated = await ProductsService.getById(productId);
-      setProduct(updated);
-      setOriginalProduct(updated);
-    }
-    setShowMoveModal(false);
   };
 
   const formatFileSize = (bytes: number): string => {
@@ -467,6 +451,7 @@ const SingleProd: FC<SingleProdProps> = () => {
     <div className="pt-16 px-6 pb-10 font-sans-['Noto_Sans_Hebrew'] rtl">
       <Breadcrumbs path={breadcrumbPath} />
       <div className="max-w-6xl mx-auto">
+        {/* Header */}
         <div className="flex justify-between items-center mb-4 text-right">
           <div className="flex-1">
             {isEditing ? (
@@ -484,25 +469,17 @@ const SingleProd: FC<SingleProdProps> = () => {
           </div>
 
           {role === "editor" && (
-            <>
-              <button
-                onClick={handleSaveClick}
-                aria-label={isEditing ? "סיום עריכה" : "עריכת דף"}
-                className="fixed bottom-8 left-6 flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300"
-              >
-                {isEditing ? <Check size={22} /> : <PencilLine size={22} />}
-              </button>
-              <button
-                onClick={handleMove}
-                aria-label="העבר מוצר"
-                className="fixed bottom-24 left-6 flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300"
-              >
-                <FolderInput size={22} />
-              </button>
-            </>
+            <button
+              onClick={handleSaveClick}
+              aria-label={isEditing ? "סיום עריכה" : "עריכת דף"}
+              className="fixed bottom-8 left-6 flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300"
+            >
+              {isEditing ? <Check size={22} /> : <PencilLine size={22} />}
+            </button>
           )}
         </div>
 
+        {/* Secondary Description */}
         <div className="text-right mb-12">
           {isEditing ? (
             <textarea
@@ -521,6 +498,7 @@ const SingleProd: FC<SingleProdProps> = () => {
             <div className="group relative bg-white p-6 rounded-2xl border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-stockblue to-stockblue"></div>
 
+              {/* === IMAGE CAROUSEL START === */}
               <ImageCarousel
                 productImages={productImages}
                 currentImageIndex={currentImageIndex}
@@ -534,6 +512,7 @@ const SingleProd: FC<SingleProdProps> = () => {
                 title={title}
               />
 
+              {/* Buttons */}
               {role === "viewer" ? (
                 <div className="space-y-2 relative z-10 flex flex-row justify-center gap-12">
                   <button
@@ -569,8 +548,8 @@ const SingleProd: FC<SingleProdProps> = () => {
               ) : role === "editor" ? (
                 <div className="relative z-10">
                   <Link
-                    to="/permissions"
-                    className="block w-full text-center py-3 px-4 rounded-lg font-semibold text-white bg-[#6E7C7C] hover:bg-[#6E7C7C]/80 shadow-md"
+                    to={`/permissions/product/${product?._id}`}
+                    className="block w-full text-center py-3 px-4 rounded-lg font-semibold text-white bg-orange-600 hover:bg-orange-700 shadow-md transition-all duration-300 transform hover:scale-105"
                   >
                     נהל הרשאות
                   </Link>
@@ -579,6 +558,7 @@ const SingleProd: FC<SingleProdProps> = () => {
             </div>
           </div>
 
+          {/* Right: Accordion List */}
 
           <AccordionSection
             isEditing={isEditing}
@@ -614,17 +594,6 @@ const SingleProd: FC<SingleProdProps> = () => {
             setShowAccordionTypeSelector={setShowAccordionTypeSelector}
           />
         </div>
-
-        {showMoveModal && product && (
-          <MoveProductModal
-            isOpen={showMoveModal}
-            productId={product._id || ""}
-            productName={product.productName}
-            currentPath={product.productPath || ""}
-            onClose={() => setShowMoveModal(false)}
-            onSuccess={handleMoveSuccess}
-          />
-        )}
       </div>
     </div>
   );

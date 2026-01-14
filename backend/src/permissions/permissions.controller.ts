@@ -33,4 +33,10 @@ export class PermissionsController {
     }
     return { status: 'ok', deleted };
   }
+
+  @Get(':entityId')
+  @UseGuards(AuthGuard('jwt'))
+  async getPermissionsByEntityType(@Param('entityId') entityId: string) {
+    return this.permissionsService.getPermissionsByEntityType(entityId);
+  }
 }
