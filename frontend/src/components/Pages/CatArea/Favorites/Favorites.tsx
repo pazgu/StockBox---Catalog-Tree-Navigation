@@ -33,7 +33,7 @@ export const Favorites: React.FC = () => {
       if (!id) return;
       try {
         setLoading(true);
-        const userFavorites = await userService.getFavorites(id);  // ← השתמש ב-id
+        const userFavorites = await userService.getFavorites();
         setFavorites(userFavorites);
         const productIds = userFavorites
           .filter((fav: FavoriteItem) => fav.type === "product")
@@ -76,7 +76,7 @@ export const Favorites: React.FC = () => {
         return;
       }
       try {
-        await userService.toggleFavorite(id, productId, "product");
+        await userService.toggleFavorite(productId, "product");
         const isFavorite = favorites.some(fav => fav.id === productId);
         if (isFavorite) {
           setFavorites(prev => prev.filter(fav => fav.id !== productId));
@@ -95,7 +95,7 @@ export const Favorites: React.FC = () => {
         return;
       }
       try {
-        await userService.toggleFavorite(id, categoryId, "category");  // ← השתמש ב-id
+        await userService.toggleFavorite( categoryId, "category");
         const isFavorite = favorites.some(fav => fav.id === categoryId);
         if (isFavorite) {
           setFavorites(prev => prev.filter(fav => fav.id !== categoryId));
