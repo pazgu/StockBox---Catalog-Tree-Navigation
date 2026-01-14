@@ -186,12 +186,11 @@ export class ProductsService {
 
     const oldPath = product.productPath;
     const productName = product.productName.toLowerCase().replace(/\s+/g, '-');
-    
     const newPath = `${newCategoryPath}/${productName}`;
 
     const existingProduct = await this.productModel.findOne({
       productPath: newPath,
-      _id: { $ne: id }, 
+      _id: { $ne: id },
     });
 
     if (existingProduct) {

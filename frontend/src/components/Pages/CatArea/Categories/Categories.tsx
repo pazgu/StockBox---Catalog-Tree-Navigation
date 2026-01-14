@@ -41,7 +41,7 @@ export const Categories: FC<CategoriesProps> = () => {
     } else {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   const fetchCategories = async () => {
     try {
