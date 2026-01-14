@@ -11,11 +11,9 @@ export class SearchController {
   @UseGuards(AuthGuard('jwt'))
   async dropdown(@Query() query: SearchQueryDto, @Req() req) {
     const user = { userId: req.user!.userId, role: req.user!.role };
-    console.log('Dropdown search query:', query);
     const limit = Math.min(query.limit || 10, 10);
 
     const results = await this.searchService.searchEntities(user.userId, query.q, 1, limit);
-    console.log('Dropdown search results:', results);
     return results;
   }
 
