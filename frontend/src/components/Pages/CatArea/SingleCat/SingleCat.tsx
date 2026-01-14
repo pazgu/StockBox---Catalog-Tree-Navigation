@@ -1,22 +1,26 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { FC, useState, ChangeEvent, useEffect } from "react";
-import { Heart, Pen, Trash, PackageCheck, Boxes } from "lucide-react";
+import {
+  Heart,
+  Pen,
+  Trash,
+  PackageCheck,
+  Boxes,
+  FolderInput,
+} from "lucide-react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
 import Breadcrumbs from "../../../LayoutArea/Breadcrumbs/Breadcrumbs";
-import {
-  ProductsService,
-} from "../../../../services/ProductService";
-import {
-  categoriesService,
-} from "../../../../services/CategoryService";
-import { userService } from "../../../../services/UserService";
+import { ProductsService } from "../../../../services/ProductService";
+import { categoriesService } from "../../../../services/CategoryService";
 import { FilePlus2Icon } from "lucide-react";
 import { CategoryDTO } from "../../../../components/models/category.models";
 import { DisplayItem } from "../../../../components/models/item.models";
 import { ProductDto } from "../../../../components/models/product.models";
+import MoveProductModal from "../../ProductArea/MoveProductModal/MoveProductModal";
+import MoveCategoryModal from "../../CatArea/Categories/MoveCategoryModal/MoveCategoryModal";
 
 function dataURLtoFile(dataUrl: string, filename: string) {
   const arr = dataUrl.split(",");
@@ -39,6 +43,7 @@ const SingleCat: FC = () => {
   const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
   const [showMoveModal, setShowMoveModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<DisplayItem | null>(null);
+  const [itemToMove, setItemToMove] = useState<DisplayItem | null>(null);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [newProductName, setNewProductName] = useState("");
@@ -64,7 +69,7 @@ const SingleCat: FC = () => {
       return `/categories/${pathParts.slice(categoryIndex + 1).join("/")}`;
     }
 
-    return '';
+    return "";
   };
 
   const categoryPath = getCategoryPathFromUrl();
@@ -116,7 +121,7 @@ const SingleCat: FC = () => {
         id: prod._id!,
         name: prod.productName,
         image: prod.productImages?.[0] ?? "/assets/images/placeholder.png",
-        type: 'product',
+        type: "product",
         path: prod.productPath,
         description: prod.productDescription,
         customFields: prod.customFields,
@@ -131,15 +136,16 @@ const SingleCat: FC = () => {
   };
 
   const handleItemClick = (item: DisplayItem) => {
-  if (isSelectionMode) return;
-    const cleanPath = item.path.startsWith('/') ? item.path : `/${item.path}`;
+    if (isSelectionMode) return;
+    const cleanPath = item.path.startsWith("/") ? item.path : `/${item.path}`;
 
-  if (item.type === "category") {
-    navigate(cleanPath);
-  } else {
-    navigate(`/products/${item.id}`);
-  }
-};
+    if (item.type === "category") {
+      navigate(cleanPath);
+    } else {
+      navigate(`/products/${item.id}`);
+    }
+  };
+
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -208,43 +214,56 @@ const SingleCat: FC = () => {
     }
   };
 
-const handleSaveProduct = async () => {
-  if (!newProductName || !newProductImage) {
-    toast.error("אנא מלא את כל השדות החובה");
-    return;
-  }
+  const handleMove = (item: DisplayItem) => {
+    setItemToMove(item);
+    setShowMoveModal(true);
+  };
 
-  try {
-    const safe = newProductName.trim().toLowerCase().replace(/\s+/g, "-") || "product";
-    const file = dataURLtoFile(newProductImage, `${safe}.jpg`);
-    const newpath = `${categoryPath}/${safe}`;
-    const createdProduct = await ProductsService.createProduct({
-      productName: newProductName,
-      productPath: newpath,
-      productDescription: newProductDesc, 
-      customFields: [], 
-      imageFile: file, 
-    });
+  const handleMoveSuccess = async () => {
+    await loadAllContent();
+    setShowMoveModal(false);
+    setItemToMove(null);
+  };
 
-    const newItem: DisplayItem = {
-      id: createdProduct._id!,
-      name: createdProduct.productName,
-      image: createdProduct.productImages?.[0] ?? "/assets/images/placeholder.png",
-      type: "product",
-      path: createdProduct.productPath,
-      favorite: false,
-      customFields: createdProduct.customFields,
-      description: createdProduct.productDescription,
-    };
+  const handleSaveProduct = async () => {
+    if (!newProductName || !newProductImage) {
+      toast.error("אנא מלא את כל השדות החובה");
+      return;
+    }
 
-    setItems([...items, newItem]);
-    toast.success(`המוצר "${newProductName}" נוסף בהצלחה!`);
-    closeAllModals();
-    resetForm();
-  } catch (error) {
-    toast.error("שגיאה בהוספת המוצר");
-  }
-};
+    try {
+      const safe =
+        newProductName.trim().toLowerCase().replace(/\s+/g, "-") || "product";
+      const file = dataURLtoFile(newProductImage, `${safe}.jpg`);
+      const newpath = `${categoryPath}/${safe}`;
+      const createdProduct = await ProductsService.createProduct({
+        productName: newProductName,
+        productPath: newpath,
+        productDescription: newProductDesc,
+        customFields: [],
+        imageFile: file,
+      });
+
+      const newItem: DisplayItem = {
+        id: createdProduct._id!,
+        name: createdProduct.productName,
+        image:
+          createdProduct.productImages?.[0] ?? "/assets/images/placeholder.png",
+        type: "product",
+        path: createdProduct.productPath,
+        favorite: false,
+        customFields: createdProduct.customFields,
+        description: createdProduct.productDescription,
+      };
+
+      setItems([...items, newItem]);
+      toast.success(`המוצר "${newProductName}" נוסף בהצלחה!`);
+      closeAllModals();
+      resetForm();
+    } catch (error) {
+      toast.error("שגיאה בהוספת המוצר");
+    }
+  };
 
   const handleSaveCategory = async () => {
     if (!newCategoryName || !newCategoryImage) {
@@ -286,6 +305,7 @@ const handleSaveProduct = async () => {
     setShowAddModal(false);
     setShowDeleteAllModal(false);
     setShowMoveModal(false);
+    setItemToMove(null);
   };
 
   const resetForm = () => {
@@ -475,15 +495,28 @@ const handleSaveProduct = async () => {
             )}
 
             {role === "editor" && !isSelectionMode && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete(item);
-                }}
-                className="absolute bottom-3 left-3 group-hover:opacity-100 transition-all duration-200 h-9 w-9  text-gray-700 flex items-center justify-center hover:text-red-500 hover:scale-110"
-              >
-                <Trash size={18} />
-              </button>
+              <>
+                <button
+                title="מחיקה"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(item);
+                  }}
+                  className="absolute bottom-3 left-3 group-hover:opacity-100 transition-all duration-200 h-9 w-9  text-gray-700 flex items-center justify-center hover:text-red-500 hover:scale-110"
+                >
+                  <Trash size={18} />
+                </button>
+                <button
+                  title="העברה לקטגוריה אחרת"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleMove(item);
+                  }}
+                  className="absolute bottom-3 left-12 group-hover:opacity-100 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-blue-500 hover:scale-110"
+                >
+                  <FolderInput size={18} />
+                </button>
+              </>
             )}
 
             {!isSelectionMode && (
@@ -506,15 +539,15 @@ const handleSaveProduct = async () => {
               </button>
             )}
             <div
-                className="h-[140px] w-full flex justify-center items-center p-5 cursor-pointer"
-                onClick={() => {
-                  if (item.type === "product") {
-                    navigate(`${item.id}`);
-                  } else {
-                    navigate(`${item.path}`);
-                  }
-                }}
-              >
+              className="h-[140px] w-full flex justify-center items-center p-5 cursor-pointer"
+              onClick={() => {
+                if (item.type === "product") {
+                  navigate(`${item.id}`);
+                } else {
+                  navigate(`${item.path}`);
+                }
+              }}
+            >
               <img
                 src={item.image}
                 alt={item.name}
@@ -526,6 +559,7 @@ const handleSaveProduct = async () => {
 
             <div className="w-full text-center pt-4 border-t border-gray-200">
               <h2 className="text-[1.1rem] text-[#0D305B] mb-2">{item.name}</h2>
+
               {role === "editor" && !isSelectionMode && (
                 <div className="mt-2 flex justify-center">
                   <button
@@ -688,7 +722,6 @@ const handleSaveProduct = async () => {
         </div>
       )}
 
-      {/* Delete modal */}
       {role === "editor" && showDeleteModal && itemToDelete && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
@@ -725,7 +758,6 @@ const handleSaveProduct = async () => {
         </div>
       )}
 
-      {/* Delete selected modal */}
       {role === "editor" && showDeleteAllModal && isSelectionMode && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
@@ -761,50 +793,37 @@ const handleSaveProduct = async () => {
         </div>
       )}
 
-      {/* Move modal */}
-      {role === "editor" && showMoveModal && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-          onClick={closeAllModals}
-        >
-          <div
-            className="bg-white p-6 rounded-lg w-full max-w-md"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h4 className="text-lg font-semibold mb-4">
-              העבר {selectedItems.length} פריטים לקטגוריה אחרת
-            </h4>
-            <p className="mb-4 text-gray-600">בחר קטגוריית יעד:</p>
-            <div className="space-y-3">
-              <button
-                onClick={() => confirmMove("מחשבים")}
-                className="w-full p-3 text-right border-2 border-gray-200 rounded-lg hover:border-[#0D305B] hover:bg-blue-50 transition-all"
-              >
-                מחשבים
-              </button>
-              <button
-                onClick={() => confirmMove("אביזרים")}
-                className="w-full p-3 text-right border-2 border-gray-200 rounded-lg hover:border-[#0D305B] hover:bg-blue-50 transition-all"
-              >
-                אביזרים
-              </button>
-              <button
-                onClick={() => confirmMove("אלקטרוניקה")}
-                className="w-full p-3 text-right border-2 border-gray-200 rounded-lg hover:border-[#0D305B] hover:bg-blue-50 transition-all"
-              >
-                אלקטרוניקה
-              </button>
-            </div>
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={closeAllModals}
-                className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400 transition-colors"
-              >
-                ביטול
-              </button>
-            </div>
-          </div>
-        </div>
+      {showMoveModal && itemToMove && (
+        <>
+          {itemToMove.type === "product" ? (
+            <MoveProductModal
+              isOpen={showMoveModal}
+              productId={itemToMove.id}
+              productName={itemToMove.name}
+              currentPath={itemToMove.path || categoryPath}
+              onClose={() => {
+                setShowMoveModal(false);
+                setItemToMove(null);
+              }}
+              onSuccess={handleMoveSuccess}
+            />
+          ) : (
+            <MoveCategoryModal
+              isOpen={showMoveModal}
+              category={{
+                _id: itemToMove.id,
+                categoryName: itemToMove.name,
+                categoryPath: itemToMove.path,
+                categoryImage: itemToMove.image,
+              }}
+              onClose={() => {
+                setShowMoveModal(false);
+                setItemToMove(null);
+              }}
+              onSuccess={handleMoveSuccess}
+            />
+          )}
+        </>
       )}
     </div>
   );

@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
+
 import {
   Controller,
   Get,
@@ -20,6 +21,7 @@ import {
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dtos/CreateCategory.dto';
 import { UpdateCategoryDto } from './dtos/UpdateCategory.dto';
+import { MoveCategoryDto } from './dtos/MoveCategory.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { categoryUploadsOptions } from './categoryUploads';
 import { PermissionGuard } from 'src/gaurds/permission.guard';
@@ -63,6 +65,15 @@ export class CategoriesController {
       pathPart,
       request.user,
     );
+  }
+
+  @Patch(':id/move')
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async moveCategory(
+    @Param('id') id: string,
+    @Body() moveCategoryDto: MoveCategoryDto,
+  ) {
+    return await this.categoriesService.moveCategory(id, moveCategoryDto);
   }
 
   @Patch(':id')
