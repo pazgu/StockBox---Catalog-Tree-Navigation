@@ -185,7 +185,18 @@ const Permissions: React.FC = () => {
               </div>
             </div>
           </div>
-
+          <div className="flex justify-between items-center p-4 bg-white border rounded-lg mb-6 shadow-sm border-blue-100">
+  <div className="flex flex-col text-right">
+    <Label className="font-bold text-blue-900 text-sm">בחר בכולם</Label>
+  </div>
+  <Switch
+    checked={users.length > 0 && users.every(u => u.enabled) && groups.every(g => g.enabled)}
+    onCheckedChange={(checked) => {
+      setUsers(prev => prev.map(u => ({ ...u, enabled: checked, isUserInDisabledGroup: !checked })));
+      setGroups(prev => prev.map(g => ({ ...g, enabled: checked })));
+    }}
+  />
+</div>
           <div className="mb-4">
             <Button
               variant="ghost"
