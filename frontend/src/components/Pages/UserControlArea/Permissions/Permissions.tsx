@@ -13,20 +13,37 @@ import { permissionsService } from "../../../../services/permissions.service";
 interface Group {
   _id: string;
   groupName: string;
-  enabled: boolean;
+  memebers: boolean;
 }
 
 interface ViewerUser {
   _id: string;
   userName: string;
   enabled: boolean;
+  groupIds: string[];
+}
+interface Permission {
+  _id: string;
+  allowed: string;
 }
 
+interface RawUser {
+  _id?: string;
+  id?: string;
+  userName: string;
+}
+
+interface RawGroup {
+  id: string;
+  groupName: string;
+  members: { id: string; userName: string }[];
+}
 const Permissions: React.FC = () => {
   const navigate = useNavigate();
   const { role } = useUser();
   const { type, id } = useParams<{ type: string; id: string }>();
   const cleanId = useMemo(() => id?.replace(/^:/, ""), [id]);
+
   const [isExpandedUsers, setIsExpandedUsers] = useState(false);
   const [isExpandedGroups, setIsExpandedGroups] = useState(false);
   const [users, setUsers] = useState<ViewerUser[]>([]);
@@ -44,34 +61,72 @@ const Permissions: React.FC = () => {
       navigate("/");
       return;
     }
+
     const loadData = async () => {
       try {
         if (!cleanId || !type) return;
 
-        const [perms, viewersData, entity] = await Promise.all([
+        const [permsRaw, viewersData, entity] = await Promise.all([
           permissionsService.getPermissionsByEntity(cleanId),
           permissionsService.getPotentialViewers(),
           permissionsService.getEntityDetails(type as any, cleanId),
         ]);
 
+        interface Permission {
+          _id: string;
+          allowed: string;
+        }
+        const perms: Permission[] = permsRaw;
+
         setEntityData(entity);
         setExistingPermissions(perms);
 
-        const { users: rawUsers, groups: rawGroups } = viewersData;
+        const {
+          users: rawUsers,
+          groups: rawGroups,
+        }: {
+          users: { userName: string; _id?: string; id?: string }[];
+          groups: {
+            id: string;
+            groupName: string;
+            members: { userName: string; _id?: string; id?: string }[];
+          }[];
+        } = viewersData;
 
-        setUsers(
-          rawUsers.map((u: any) => ({
-            ...u,
-            enabled: !perms.some((p: any) => p.allowed === u._id),
-          }))
-        );
+        const userToGroupsMap = new Map<string, string[]>();
+        rawGroups.forEach((group) => {
+          const groupId = group.id;
+          (group.members || []).forEach((member) => {
+            const userId = member._id || member.id;
+            if (!userId) return;
+            if (!userToGroupsMap.has(userId))
+              userToGroupsMap.set(userId, []);
+            userToGroupsMap.get(userId)!.push(groupId);
+          });
+        });
 
-        setGroups(
-          rawGroups.map((g: any) => ({
-            ...g,
-            _id: g._id || g.id, 
-            enabled: !perms.some((p: any) => p.allowed === (g._id || g.id)),
-          }))
+        const mappedUsers: ViewerUser[] = rawUsers.map((u) => {
+          const userId = u._id || u.id || u.userName;
+          return {
+            _id: userId,
+            userName: u.userName,
+            groupIds: userToGroupsMap.get(userId) || [],
+            enabled: perms.some((p: Permission) => p.allowed === userId),
+          };
+        });
+
+        setUsers(mappedUsers);
+
+        const mappedGroups: Group[] = rawGroups.map((g) => ({
+          _id: g.id,
+          groupName: g.groupName,
+          memebers: perms.some((p: Permission) => p.allowed === g.id),
+        }));
+
+        setGroups(mappedGroups);
+
+        console.table(
+          mappedUsers.map((u) => ({ user: u.userName, userId: u._id, groups: u.groupIds }))
         );
       } catch (err) {
         console.error("Load Error:", err);
@@ -82,30 +137,47 @@ const Permissions: React.FC = () => {
     loadData();
   }, [cleanId, type, role, navigate]);
 
-  const handleGeneralAccessToggle = () => {
-    setGeneralAccess((prev) => !prev);
-    setUsers((prev) => prev.map((u) => ({ ...u, enabled: !u.enabled })));
-    setGroups((prev) => prev.map((g) => ({ ...g, enabled: !g.enabled })));
-  };
+  const enabledGroupIds = useMemo(() => {
+    return new Set(groups.filter((g) => g.memebers).map((g) => g._id));
+  }, [groups]);
+
+  const usersWithEffectiveState = useMemo(() => {
+    return users.map((user) => ({
+      ...user,
+      effectiveEnabled:
+        user.enabled || user.groupIds?.some((gid) => enabledGroupIds.has(gid)),
+    }));
+  }, [users, enabledGroupIds]);
+
+  const userToGroupsMap = new Map<string, string[]>();
+
+  groups.forEach((group: any) => {
+    const groupId = group._id || group.id;
+
+    (group.members || []).forEach((member: any) => {
+      const userId = member._id || member.id;
+      if (!userId) return;
+
+      if (!userToGroupsMap.has(userId)) {
+        userToGroupsMap.set(userId, []);
+      }
+
+      userToGroupsMap.get(userId)!.push(groupId);
+    });
+  });
 
   const handleToggle = (targetId: string, toggleType: "user" | "group") => {
     if (toggleType === "user") {
       setUsers((prev) =>
-        prev.map((u) => {
-          const uId = u._id || (u as any).id; 
-          return String(uId) === String(targetId)
-            ? { ...u, enabled: !u.enabled }
-            : u;
-        })
+        prev.map((u) =>
+          String(u._id) === String(targetId) ? { ...u, enabled: !u.enabled } : u
+        )
       );
     } else {
       setGroups((prev) =>
-        prev.map((g) => {
-          const gId = g._id || (g as any).id; 
-          return String(gId) === String(targetId)
-            ? { ...g, enabled: !g.enabled }
-            : g;
-        })
+        prev.map((g) =>
+          String(g._id) === String(targetId) ? { ...g, memebers: !g.memebers } : g
+        )
       );
     }
   };
@@ -114,39 +186,37 @@ const Permissions: React.FC = () => {
     try {
       if (!cleanId || !type) return;
 
-      const usersToAllow = users
-        .filter((u) => (generalAccess ? u.enabled : !u.enabled))
-        .map((u) => u._id);
-      const groupsToAllow = groups
-        .filter((g) => (generalAccess ? g.enabled : !g.enabled))
-        .map((g) => g._id);
+      const usersToAllow = users.filter((u) => u.enabled).map((u) => u._id);
+      const groupsToAllow = groups.filter((g) => g.memebers).map((g) => g._id);
       const finalAllowedIds = [...usersToAllow, ...groupsToAllow];
 
       const currentDbIds = existingPermissions.map((p) => p.allowed);
       const toCreate = finalAllowedIds.filter(
-        (allowedId) => !currentDbIds.includes(allowedId)
+        (id) => !currentDbIds.includes(id)
       );
       const toDelete = existingPermissions.filter(
         (p) => !finalAllowedIds.includes(p.allowed)
       );
 
       await Promise.all([
-        ...toCreate.map((allowedId) =>
-          permissionsService.createPermission(type, cleanId, allowedId)
-        ),
-        ...toDelete.map((p) => permissionsService.deletePermission(p._id)),
+        ...toCreate.map((allowedId) => {
+          return permissionsService.createPermission(type, cleanId, allowedId);
+        }),
+        ...toDelete.map((p) => {
+          return permissionsService.deletePermission(p._id);
+        }),
       ]);
 
       toast.success("השינויים נשמרו בהצלחה");
       navigate(-1);
     } catch (err) {
-      toast.error("שגיאה בשמירת השינויים");
+      toast.error("שגיאה בשמירה");
     }
   };
 
   return (
     <div
-      className="rtl px-5 md:px-16 py-20 flex justify-center font-sans my-16"
+      className="rtl px-5 md:px-16 py-20 flex justify-center font-sans mt-8"
       dir="rtl"
     >
       <Card className="w-full max-w-4xl bg-gray-100 border border-gray-200 rounded-xl shadow-md">
@@ -156,7 +226,7 @@ const Permissions: React.FC = () => {
               <img
                 src={entityData?.image || "/placeholder-image.png"}
                 className="w-20 h-20 rounded-xl border-2 border-white shadow-lg object-cover bg-white"
-                alt="entity-icon"
+                alt="entity"
               />
               <span className="absolute -bottom-2 -left-2 bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded-full uppercase font-bold">
                 {type === "category" ? "קטגוריה" : "מוצר"}
@@ -169,43 +239,35 @@ const Permissions: React.FC = () => {
                   {entityData?.name || "טוען..."}
                 </span>
               </h2>
-              <div className="flex justify-between items-center p-3 bg-white border rounded-lg mt-3 shadow-sm">
-                <div className="flex flex-col">
-                  <Label className="font-bold text-blue-900">
-                    מוסתר מכל המשתמשים
-                  </Label>
-                  <span className="text-xs text-gray-500">
-                    {generalAccess ? " מצב רשימת רשאים (רק הבאים רשאים לצפות)" : " מצב רשימת חסומים (כולם חוץ מ-)"}
-                  </span>
-                </div>
-                <Switch
-                  checked={generalAccess}
-                  onCheckedChange={handleGeneralAccessToggle}
-                />
-              </div>
             </div>
           </div>
-          <div className="flex justify-between items-center p-4 bg-white border rounded-lg mb-6 shadow-sm border-blue-100">
-  <div className="flex flex-col text-right">
-    <Label className="font-bold text-blue-900 text-sm">בחר בכולם</Label>
-  </div>
-  <Switch
-    checked={users.length > 0 && users.every(u => u.enabled) && groups.every(g => g.enabled)}
-    onCheckedChange={(checked) => {
-      setUsers(prev => prev.map(u => ({ ...u, enabled: checked, isUserInDisabledGroup: !checked })));
-      setGroups(prev => prev.map(g => ({ ...g, enabled: checked })));
-    }}
-  />
-</div>
+          <div className="flex justify-between items-center p-4 bg-white border rounded-lg mb-4 shadow-sm border-blue-100">
+            <Label className="font-bold text-blue-900 text-sm">
+              אפשר לכולם
+            </Label>
+            <Switch
+              checked={
+                users.length > 0 &&
+                users.every((u) => u.enabled) &&
+                groups.every((g) => g.memebers)
+              }
+              onCheckedChange={(checked) => {
+                setUsers((prev) =>
+                  prev.map((u) => ({ ...u, enabled: checked }))
+                );
+                setGroups((prev) =>
+                  prev.map((g) => ({ ...g, enabled: checked }))
+                );
+              }}
+            />
+          </div>
           <div className="mb-4">
             <Button
               variant="ghost"
               className="w-full justify-between bg-white border"
               onClick={() => setIsExpandedUsers(!isExpandedUsers)}
             >
-              <span className="font-medium">
-                {generalAccess ? "משתמשים מורשי צפייה:" : "משתמשים לחסימה:"}
-              </span>
+              <span className="font-medium">משתמשים:</span>
               {isExpandedUsers ? <ChevronUp /> : <ChevronDown />}
             </Button>
             <AnimatePresence>
@@ -223,7 +285,7 @@ const Permissions: React.FC = () => {
                     onChange={(e) => setSearch(e.target.value)}
                   />
                   <div className="bg-white border rounded-lg max-h-48 overflow-y-auto">
-                    {users
+                    {usersWithEffectiveState
                       .filter((u) =>
                         u.userName.toLowerCase().includes(search.toLowerCase())
                       )
@@ -232,11 +294,20 @@ const Permissions: React.FC = () => {
                           key={user._id}
                           className="flex justify-between p-3 border-b hover:bg-slate-50 transition-colors"
                         >
-                          <Label className="cursor-pointer font-medium">
-                            {user.userName}
-                          </Label>
+                          <div className="flex items-center">
+                            <Label className="font-medium ml-2">
+                              {user.userName}
+                            </Label>
+                            {user.groupIds?.some((id) =>
+                              enabledGroupIds.has(id)
+                            ) && (
+                              <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                                מורשה מקבוצה
+                              </span>
+                            )}
+                          </div>
                           <Switch
-                            checked={user.enabled}
+                            checked={user.effectiveEnabled}
                             onCheckedChange={() =>
                               handleToggle(user._id, "user")
                             }
@@ -249,16 +320,13 @@ const Permissions: React.FC = () => {
             </AnimatePresence>
           </div>
 
-          {/* Group Section */}
           <div className="mb-4">
             <Button
               variant="ghost"
               className="w-full justify-between bg-white border"
               onClick={() => setIsExpandedGroups(!isExpandedGroups)}
             >
-              <span className="font-medium">
-                {generalAccess ? "קבוצות מורשי צפייה:" : "קבוצות לחסימה:"}
-              </span>
+              <span className="font-medium">קבוצות:</span>
               {isExpandedGroups ? <ChevronUp /> : <ChevronDown />}
             </Button>
             <AnimatePresence>
@@ -270,26 +338,20 @@ const Permissions: React.FC = () => {
                   className="overflow-hidden mt-2"
                 >
                   <div className="bg-white border rounded-lg max-h-48 overflow-y-auto">
-                    {groups.map((group, index) => {
-                      const groupId = group._id || (group as any).id;
-
-                      return (
-                        <div
-                          key={groupId || index} 
-                          className="flex justify-between p-3 border-b hover:bg-slate-50 transition-colors"
-                        >
-                          <Label className="cursor-pointer font-medium">
-                            {group.groupName}
-                          </Label>
-                          <Switch
-                            checked={group.enabled}
-                            onCheckedChange={() =>
-                              handleToggle(groupId, "group")
-                            }
-                          />
-                        </div>
-                      );
-                    })}
+                    {groups.map((group) => (
+                      <div
+                        key={group._id}
+                        className="flex justify-between p-3 border-b hover:bg-slate-50 transition-colors"
+                      >
+                        <Label className="font-medium">{group.groupName}</Label>
+                        <Switch
+                          checked={group.memebers}
+                          onCheckedChange={() =>
+                            handleToggle(group._id, "group")
+                          }
+                        />
+                      </div>
+                    ))}
                   </div>
                 </motion.div>
               )}
