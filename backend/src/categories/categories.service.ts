@@ -3,16 +3,18 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable no-useless-escape */
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Category } from 'src/schemas/Categories.schema';
 import { CreateCategoryDto } from './dtos/CreateCategory.dto';
 import { Product } from 'src/schemas/Products.schema';
 import { UpdateCategoryDto } from './dtos/UpdateCategory.dto';
+import { MoveCategoryDto } from './dtos/MoveCategory.dto';
 import { uploadBufferToCloudinary } from 'src/utils/cloudinary/upload.util';
 import { EntityType } from 'src/schemas/Permissions.schema';
 import { PermissionsService } from 'src/permissions/permissions.service';
+
 @Injectable()
 export class CategoriesService {
   constructor(
@@ -51,7 +53,6 @@ export class CategoriesService {
         user.userId,
       );
       const allowedCategoryIds = permissions
-
         .filter((p) => p.allowed.toString() === user.userId)
         .map((p) => p.entityId.toString());
 
@@ -91,9 +92,11 @@ export class CategoriesService {
       const slashCount = (remainingPath.match(/\//g) || []).length;
       return slashCount === 0;
     });
+
     if (user.role === 'editor') {
       return directChildren;
     }
+
     if (user.role === 'viewer') {
       const permissions = await this.permissionsService.getPermissionsForUser(
         user.userId,
@@ -131,7 +134,7 @@ export class CategoriesService {
     });
 
     await this.productModel.deleteMany({
-      categoryPath: new RegExp(`^${categoryPath}`),
+      productPath: new RegExp(`^${categoryPath}`),
     });
 
     await this.categoryModel.findByIdAndDelete(id);
@@ -199,21 +202,22 @@ export class CategoriesService {
             },
           },
         ],
+        { updatePipeline: true }, 
       );
 
       await this.productModel.updateMany(
-        { categoryPath: new RegExp(`^${oldCategoryPath}`) },
+        { productPath: new RegExp(`^${oldCategoryPath}`) },
         [
           {
             $set: {
-              categoryPath: {
+              productPath: {
                 $concat: [
                   newCategoryPath,
                   {
                     $substr: [
-                      '$categoryPath',
+                      '$productPath',
                       oldCategoryPath.length,
-                      { $strLenCP: '$categoryPath' },
+                      { $strLenCP: '$productPath' },
                     ],
                   },
                 ],
@@ -221,11 +225,111 @@ export class CategoriesService {
             },
           },
         ],
+        { updatePipeline: true }, 
       );
     }
 
     return updatedCategory;
   }
+
+  async moveCategory(id: string, moveCategoryDto: MoveCategoryDto) {
+    const category = await this.categoryModel.findById(id);
+    if (!category) {
+      throw new NotFoundException('Category not found');
+    }
+
+    const oldPath = category.categoryPath;
+    const { newParentPath } = moveCategoryDto;
+
+    const pathSegments = oldPath.split('/').filter(Boolean);
+    if (pathSegments.length <= 2) {
+      throw new BadRequestException(
+        'Cannot move main categories. Only subcategories can be moved.',
+      );
+    }
+
+    const parentCategory = await this.categoryModel.findOne({
+      categoryPath: newParentPath,
+    });
+
+    if (!parentCategory) {
+      throw new BadRequestException('Target parent category does not exist');
+    }
+
+    if (newParentPath.startsWith(oldPath)) {
+      throw new BadRequestException('Cannot move category into itself or its children');
+    }
+
+    const categoryName = oldPath.split('/').pop();
+    
+    const newPath = `${newParentPath}/${categoryName}`;
+
+    const existingCategory = await this.categoryModel.findOne({
+      categoryPath: newPath,
+    });
+
+    if (existingCategory) {
+      throw new BadRequestException(
+        'A category with this name already exists at the destination',
+      );
+    }
+
+    category.categoryPath = newPath;
+    await category.save();
+
+    await this.categoryModel.updateMany(
+      { categoryPath: new RegExp(`^${oldPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/`) },
+      [
+        {
+          $set: {
+            categoryPath: {
+              $concat: [
+                newPath,
+                {
+                  $substr: [
+                    '$categoryPath',
+                    oldPath.length,
+                    { $strLenCP: '$categoryPath' },
+                  ],
+                },
+              ],
+            },
+          },
+        },
+      ],
+      { updatePipeline: true },
+    );
+
+    await this.productModel.updateMany(
+      { productPath: new RegExp(`^${oldPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`) },
+      [
+        {
+          $set: {
+            productPath: {
+              $concat: [
+                newPath,
+                {
+                  $substr: [
+                    '$productPath',
+                    oldPath.length,
+                    { $strLenCP: '$productPath' },
+                  ],
+                },
+              ],
+            },
+          },
+        },
+      ],
+      { updatePipeline: true }, 
+    );
+
+    return {
+      success: true,
+      message: `Subcategory moved successfully from ${oldPath} to ${newPath}`,
+      category: await this.categoryModel.findById(id),
+    };
+  }
+  
   async getCategoryById(id: string) {
     const category = await this.categoryModel.findById(id);
     if (!category) {
