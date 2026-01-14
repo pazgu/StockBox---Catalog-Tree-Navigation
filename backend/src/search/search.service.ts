@@ -80,9 +80,6 @@ async searchEntities(
   const { allowedCategoryPaths, allowedProductIds } =
     await this.getAllowedPaths(userId);
 
-  console.log('Allowed category paths:', allowedCategoryPaths);
-  console.log('Allowed product IDs:', Array.from(allowedProductIds));
-
   if (!allowedCategoryPaths.length) {
     return { items: [], total: 0, page, limit, hasMore: false };
   }
