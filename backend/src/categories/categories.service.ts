@@ -3,7 +3,11 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable no-useless-escape */
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Category } from 'src/schemas/Categories.schema';
@@ -202,7 +206,7 @@ export class CategoriesService {
             },
           },
         ],
-        { updatePipeline: true }, 
+        { updatePipeline: true },
       );
 
       await this.productModel.updateMany(
@@ -225,7 +229,7 @@ export class CategoriesService {
             },
           },
         ],
-        { updatePipeline: true }, 
+        { updatePipeline: true },
       );
     }
 
@@ -257,11 +261,13 @@ export class CategoriesService {
     }
 
     if (newParentPath.startsWith(oldPath)) {
-      throw new BadRequestException('Cannot move category into itself or its children');
+      throw new BadRequestException(
+        'Cannot move category into itself or its children',
+      );
     }
 
     const categoryName = oldPath.split('/').pop();
-    
+
     const newPath = `${newParentPath}/${categoryName}`;
 
     const existingCategory = await this.categoryModel.findOne({
@@ -278,7 +284,11 @@ export class CategoriesService {
     await category.save();
 
     await this.categoryModel.updateMany(
-      { categoryPath: new RegExp(`^${oldPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/`) },
+      {
+        categoryPath: new RegExp(
+          `^${oldPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/`,
+        ),
+      },
       [
         {
           $set: {
@@ -301,7 +311,11 @@ export class CategoriesService {
     );
 
     await this.productModel.updateMany(
-      { productPath: new RegExp(`^${oldPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`) },
+      {
+        productPath: new RegExp(
+          `^${oldPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`,
+        ),
+      },
       [
         {
           $set: {
@@ -320,7 +334,7 @@ export class CategoriesService {
           },
         },
       ],
-      { updatePipeline: true }, 
+      { updatePipeline: true },
     );
 
     return {
@@ -329,7 +343,6 @@ export class CategoriesService {
       category: await this.categoryModel.findById(id),
     };
   }
-  
   async getCategoryById(id: string) {
     const category = await this.categoryModel.findById(id);
     if (!category) {
