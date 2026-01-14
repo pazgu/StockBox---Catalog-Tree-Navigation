@@ -3,6 +3,10 @@ import { environment } from "../environments/environment.development";
 import { User } from "../components/models/user.models";
 
 const API_URL = environment.API_URL + "/users";
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
 
 export const userService = {
   getAll: async (): Promise<User[]> => {
@@ -20,7 +24,6 @@ export const userService = {
   }
 },
 
-
   update: async (id: string, updates: Partial<User>): Promise<User> => {
     const { data } = await axios.patch<User>(`${API_URL}/${id}`, updates);
     return data;
@@ -35,24 +38,43 @@ export const userService = {
     return data;
   },
   toggleFavorite: async (
-    userId: string, 
-    itemId: string, 
+    itemId: string,
     type: 'product' | 'category'
-  ): Promise<User> => { 
-    const { data } = await axios.patch<User>(
-      `${API_URL}/${userId}/favorites/toggle`, 
-      { itemId, type }
-    );
-    return data;
+  ): Promise<User> => {
+    try {
+      const { data } = await axios.patch<User>(
+        `${API_URL}/me/favorites/toggle`,
+        { itemId, type },
+        { headers: getAuthHeaders() }
+      );
+      return data;
+    } catch (err) {
+      console.error("Error toggling favorite:", err);
+      throw err;
+    }
   },
-  getFavorites: async (userId: string) => {
-    const { data } = await axios.get(`${API_URL}/${userId}/favorites`);
-    return data;
+  getFavorites: async () => {
+    try {
+      const { data } = await axios.get(
+        `${API_URL}/me/favorites`,
+        { headers: getAuthHeaders() }
+      );
+      return data;
+    } catch (err) {
+      console.error("Error fetching favorites:", err);
+      throw err;
+    }
   },
-  isFavorite: async (userId: string, itemId: string): Promise<boolean> => {
-    const { data } = await axios.get(
-      `${API_URL}/${userId}/favorites/${itemId}/check`
-    );
-    return data.isFavorite;
+  isFavorite: async (itemId: string): Promise<boolean> => {
+    try {
+      const { data } = await axios.get(
+        `${API_URL}/me/favorites/${itemId}/check`,
+        { headers: getAuthHeaders() }
+      );
+      return data.isFavorite;
+    } catch (err) {
+      console.error("Error checking favorite:", err);
+      throw err;
+    }
   },
 };

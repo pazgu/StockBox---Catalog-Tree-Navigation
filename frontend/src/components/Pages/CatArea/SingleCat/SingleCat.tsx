@@ -21,8 +21,8 @@ import { DisplayItem } from "../../../../components/models/item.models";
 import { ProductDto } from "../../../../components/models/product.models";
 import MoveProductModal from "../../ProductArea/MoveProductModal/MoveProductModal";
 import MoveCategoryModal from "../../CatArea/Categories/MoveCategoryModal/MoveCategoryModal";
-import { userService } from "../../../../services/UserService";
 
+import { userService } from "../../../../services/UserService";
 function dataURLtoFile(dataUrl: string, filename: string) {
   const arr = dataUrl.split(",");
   const mimeMatch = arr[0].match(/:(.*?);/);
@@ -103,7 +103,7 @@ const SingleCat: FC = () => {
       let userFavorites: string[] = [];
       if (id) {
         try {
-          const favorites = await userService.getFavorites(id);
+          const favorites = await userService.getFavorites();
           userFavorites = favorites.map((fav: any) => fav.id.toString());
         } catch (error) {}
       }
@@ -179,7 +179,7 @@ const SingleCat: FC = () => {
           i.id === itemId ? { ...i, favorite: newFavoriteStatus } : i
         )
       );
-      await userService.toggleFavorite(id, itemId, type);
+      await userService.toggleFavorite( itemId, type);
       if (newFavoriteStatus) {
         toast.success(`${name} נוסף למועדפים`);
       } else {

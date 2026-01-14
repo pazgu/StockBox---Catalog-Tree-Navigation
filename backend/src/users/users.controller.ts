@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import {
   Controller,
   Delete,
@@ -10,11 +9,15 @@ import {
   Post,
   Body,
   UsePipes,
+  UseGuards,
+  ValidationPipe,
+  Req,
+  ForbiddenException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { ValidationPipe } from '@nestjs/common';
 import { CreateUserDto } from './dto/createUser.dto';
 import { FavoriteType } from 'src/schemas/Users.schema';
+import { JwtAuthGuard } from 'src/gaurds/jwt-auth.guard';
 
 @Controller('users')
 export class UsersController {
@@ -55,31 +58,49 @@ export class UsersController {
     return this.usersService.toggleBlockUser(id, isBlocked);
   }
 
-  @Get(':userId/favorites/:itemId/check')
-  async isFavorite(
-    @Param('userId') userId: string,
-    @Param('itemId') itemId: string,
-  ) {
-    const isFav = await this.usersService.isFavorite(userId, itemId);
+  @Get('me/favorites')
+  @UseGuards(JwtAuthGuard)
+  async getMyFavorites(@Req() req: any) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    return this.usersService.getUserFavorites(req.user.userId);
+  }
+  @Get('me/favorites/:itemId/check')
+  @UseGuards(JwtAuthGuard)
+  @UsePipes(new ValidationPipe())
+  async isMyFavorite(@Req() req: any, @Param('itemId') itemId: string) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    const isFav = await this.usersService.isFavorite(req.user.userId, itemId);
     return { isFavorite: isFav };
   }
 
-  @Patch(':userId/favorites/toggle')
-  async toggleFavorite(
-    @Param('userId') userId: string,
+  @Patch('me/favorites/toggle')
+  @UseGuards(JwtAuthGuard)
+  @UsePipes(new ValidationPipe())
+  async toggleMyFavorite(
+    @Req() req: any,
     @Body() body: { itemId: string; type: FavoriteType },
   ) {
     const { itemId, type } = body;
-    const isFavorite = await this.usersService.isFavorite(userId, itemId);
+    const isFavorite = await this.usersService.isFavorite(
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      req.user.userId,
+      itemId,
+    );
     if (isFavorite) {
-      return this.usersService.removeFavorite(userId, itemId);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      return this.usersService.removeFavorite(req.user.userId, itemId);
     } else {
-      return this.usersService.addFavorite(userId, itemId, type);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      return this.usersService.addFavorite(req.user.userId, itemId, type);
     }
   }
 
   @Get(':userId/favorites')
-  async getUserFavorites(@Param('userId') userId: string) {
+  @UseGuards(JwtAuthGuard)
+  async getUserFavorites(@Req() req: any, @Param('userId') userId: string) {
+    if (req.user.userId !== userId && req.user.role !== 'admin') {
+      throw new ForbiddenException('You can only access your own favorites');
+    }
     return this.usersService.getUserFavorites(userId);
   }
 }
