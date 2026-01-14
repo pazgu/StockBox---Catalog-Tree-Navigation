@@ -26,7 +26,9 @@ export const Categories: FC<CategoriesProps> = () => {
   const [showAddCatModal, setShowAddCatModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(
+    null
+  );
   const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
@@ -41,7 +43,7 @@ export const Categories: FC<CategoriesProps> = () => {
     } else {
       setIsLoading(false);
     }
-  };
+  }, [role]);
 
   const fetchCategories = async () => {
     try {
@@ -75,7 +77,7 @@ export const Categories: FC<CategoriesProps> = () => {
       }
     } catch (error) {
       toast.error("שגיאה בעדכון המועדפים");
-      setFavorites((prev) => ({ ...prev, [categoryId]: !prev[categoryId] }));  // ← categoryId
+      setFavorites((prev) => ({ ...prev, [categoryId]: !prev[categoryId] })); // ← categoryId
     }
   };
 

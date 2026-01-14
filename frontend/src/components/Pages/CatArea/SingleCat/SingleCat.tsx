@@ -21,7 +21,7 @@ import { DisplayItem } from "../../../../components/models/item.models";
 import { ProductDto } from "../../../../components/models/product.models";
 import MoveProductModal from "../../ProductArea/MoveProductModal/MoveProductModal";
 import MoveCategoryModal from "../../CatArea/Categories/MoveCategoryModal/MoveCategoryModal";
-import { userService } from "@/services/UserService";
+import { userService } from "../../../../services/UserService";
 
 function dataURLtoFile(dataUrl: string, filename: string) {
   const arr = dataUrl.split(",");
