@@ -12,5 +12,10 @@ export interface User {
   role: UserRole;
   requestSent?: boolean;
   isBlocked?: boolean;
+  favorites?: FavoriteItem[];
+}
 
+export interface FavoriteItem {
+  id: string;
+  type: "product" | "category";
 }

@@ -3,12 +3,11 @@ import axios from "axios";
 import { UserRole, User } from "../../src/components/models/user.models";
 import { environment } from "../environments/environment.development";
 
-
 interface UserContextType {
   user: User | null;
   role: UserRole | null;
+  id: string | null;
   setUser: (user: User | null) => void;
-
   users: User[];
   setUsers: React.Dispatch<React.SetStateAction<User[]>>;
   refreshUsers: () => Promise<void>;
@@ -17,7 +16,7 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType>(null!);
 
-const API_URL = environment.API_URL
+const API_URL = environment.API_URL;
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -25,23 +24,32 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [role, setRole] = useState<UserRole | null>(null);
-
+  const [id, setId] = useState<string | null>(null);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      try {
+        const parsed = JSON.parse(storedUser);
+        setUser(parsed);
+        setId(parsed.id);
+      } catch {
+        localStorage.removeItem("user");
+        setUser(null);
+        setId(null);
+      }
     }
   }, []);
 
   useEffect(() => {
     if (user) {
       localStorage.setItem("user", JSON.stringify(user));
+      setId((user as any).id);
     } else {
       localStorage.removeItem("user");
+      setId(null);
     }
   }, [user]);
-
 
   const refreshUsers = async () => {
     try {
@@ -51,7 +59,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       console.error("Error fetching users:", err);
     }
   };
-
   useEffect(() => {
   const storedUser = localStorage.getItem("user");
 
@@ -64,8 +71,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }
 }, []);
-
-
 
   const blockUser = async (id: string, isBlocked: boolean) => {
   try {
@@ -96,13 +101,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     else localStorage.removeItem("role");
   }, [role]);
 
- 
-
   return (
     <UserContext.Provider
       value={{
         user,
         role: user?.role ?? null,
+        id,
         setUser,
         users,
         setUsers,

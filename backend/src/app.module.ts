@@ -15,6 +15,7 @@ import { AboutModule } from './about/about.module';
 
 import { join } from 'path';
 import { existsSync } from 'fs';
+import { SearchModule } from './search/search.module';
 
 const envPath = existsSync(join(process.cwd(), '.env'))
   ? join(process.cwd(), '.env')
@@ -41,6 +42,8 @@ const envPath = existsSync(join(process.cwd(), '.env'))
     AuthModule,
     UsersModule,
     AboutModule,
+    SearchModule
+    
   ],
   controllers: [PermissionsController, CommonController],
   providers: [CommonService],

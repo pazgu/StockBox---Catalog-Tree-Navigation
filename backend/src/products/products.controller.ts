@@ -1,3 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   Controller as ProductController,
   Get as ProductGet,
@@ -99,10 +104,10 @@ export class ProductsController {
   }
 
   @ProductPatch(':id')
-  @ProductUseInterceptors(FilesInterceptor('newProductImages'))
+  @ProductUseInterceptors(ProductFileInterceptor('newProductImages'))
   async updateProduct(
     @ProductParam('id') id: string,
-    @UploadedFiles() files: Express.Multer.File[],
+    @ProductUploadedFile() files: Express.Multer.File[],
     @ProductBody() body: any,
   ) {
     console.log('raw body:', body);

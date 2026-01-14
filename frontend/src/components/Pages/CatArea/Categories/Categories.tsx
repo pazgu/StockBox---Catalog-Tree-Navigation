@@ -9,6 +9,7 @@ import EditCategoryModal from "./EditCategoryModal/EditCategoryModal/EditCategor
 import Breadcrumbs from "../../../LayoutArea/Breadcrumbs/Breadcrumbs";
 import { categoriesService } from "../../../../services/CategoryService";
 import { AddCategoryResult } from "../../../models/category.models";
+import { userService } from "../../../../services/UserService";
 
 interface CategoriesProps {}
 
@@ -25,14 +26,12 @@ export const Categories: FC<CategoriesProps> = () => {
   const [showAddCatModal, setShowAddCatModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(
-    null
-  );
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
   const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(true);
-  const { role } = useUser();
+  const { role, id } = useUser();
   const navigate = useNavigate();
   const path: string[] = ["categories"];
 
@@ -42,7 +41,7 @@ export const Categories: FC<CategoriesProps> = () => {
     } else {
       setIsLoading(false);
     }
-  }, [role]);
+  };
 
   const fetchCategories = async () => {
     try {
@@ -57,17 +56,27 @@ export const Categories: FC<CategoriesProps> = () => {
     }
   };
 
-  const toggleFavorite = (id: string) => {
-    const cam = categories.find((c) => c._id === id);
+  const toggleFavorite = async (categoryId: string) => {
+    if (!id) {
+      toast.error("יש להתחבר כדי להוסיף למועדפים");
+      return;
+    }
+    const cam = categories.find((c) => c._id === categoryId);
     if (!cam) return;
 
-    const isFavorite = favorites[id];
-    if (isFavorite) {
-      toast.info(`${cam.categoryName} הוסר מהמועדפים`);
-    } else {
-      toast.success(`${cam.categoryName} נוסף למועדפים`);
+    try {
+      const isFavorite = favorites[categoryId];
+      setFavorites((prev) => ({ ...prev, [categoryId]: !isFavorite }));
+      await userService.toggleFavorite(id, categoryId, "category");
+      if (!isFavorite) {
+        toast.success(`${cam.categoryName} נוסף למועדפים`);
+      } else {
+        toast.info(`${cam.categoryName} הוסר מהמועדפים`);
+      }
+    } catch (error) {
+      toast.error("שגיאה בעדכון המועדפים");
+      setFavorites((prev) => ({ ...prev, [categoryId]: !prev[categoryId] }));  // ← categoryId
     }
-    setFavorites((prev) => ({ ...prev, [id]: !isFavorite }));
   };
 
   const handleDelete = (category: Category) => {
