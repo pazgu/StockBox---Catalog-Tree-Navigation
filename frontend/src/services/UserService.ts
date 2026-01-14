@@ -34,4 +34,25 @@ export const userService = {
     const { data } = await axios.patch<User>(`${API_URL}/${id}/block`, { isBlocked });
     return data;
   },
+  toggleFavorite: async (
+    userId: string, 
+    itemId: string, 
+    type: 'product' | 'category'
+  ): Promise<User> => { 
+    const { data } = await axios.patch<User>(
+      `${API_URL}/${userId}/favorites/toggle`, 
+      { itemId, type }
+    );
+    return data;
+  },
+  getFavorites: async (userId: string) => {
+    const { data } = await axios.get(`${API_URL}/${userId}/favorites`);
+    return data;
+  },
+  isFavorite: async (userId: string, itemId: string): Promise<boolean> => {
+    const { data } = await axios.get(
+      `${API_URL}/${userId}/favorites/${itemId}/check`
+    );
+    return data.isFavorite;
+  },
 };

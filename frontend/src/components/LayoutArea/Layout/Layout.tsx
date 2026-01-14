@@ -11,7 +11,7 @@ import SingleProd from "../../Pages/ProductArea/SingleProd/SingleProd";
 import Page404 from "../../Pages/Page404/Page404";
 import { Categories } from "../../Pages/CatArea/Categories/Categories";
 import GroupControl from "../../Pages/UserControlArea/GroupControl/GroupControl";
-// import Favorites from "../../Pages/CatArea/Favorites/Favorites";
+import Favorites from "../../Pages/CatArea/Favorites/Favorites";
 import { Toaster } from "sonner";
 import Footer from "../Footer/Footer";
 interface LayoutProps {}
@@ -32,13 +32,11 @@ const Layout: FC<LayoutProps> = () => {
             element={<SingleCat></SingleCat>}
           />
           <Route path="/categories/*" element={<SingleCat />} />
-
           <Route path="/new-user" element={<NewUser></NewUser>} />
-          <Route path="/product-details" element={<SingleProd></SingleProd>} />
           <Route path="/allUsers" element={<AllUsers></AllUsers>} />
-          <Route path="/Permissions" element={<Permissions></Permissions>} />
-          <Route path="/GroupControl" element={<GroupControl></GroupControl>} /> 
-          {/* <Route path="/Favorites" element={<Favorites></Favorites>} /> */}
+          <Route path="/Favorites" element={<Favorites></Favorites>} />
+          <Route path="/permissions/:type/:id" element={<Permissions></Permissions>} />{" "}
+          <Route path="/GroupControl" element={<GroupControl></GroupControl>} />
           <Route path="*" element={<Page404 />} />
         </Routes>
       </main>
