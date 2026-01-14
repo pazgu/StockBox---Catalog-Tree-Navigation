@@ -38,12 +38,14 @@ export const Categories: FC<CategoriesProps> = () => {
   const path: string[] = ["categories"];
 
   useEffect(() => {
-    if (role) {
-      fetchCategories();
-    } else {
-      setIsLoading(false);
-    }
-  }, [role]);
+  if (role) {
+    fetchCategories();
+    fetchFavorites(); 
+  } else {
+    setIsLoading(false);
+  }
+}, [role, id]);
+
 
   const fetchCategories = async () => {
     try {
@@ -57,6 +59,26 @@ export const Categories: FC<CategoriesProps> = () => {
       setIsLoading(false);
     }
   };
+
+  const fetchFavorites = async () => {
+  if (!id) return;
+
+  try {
+    const favs = await userService.getFavorites(id); 
+    const favMap: Record<string, boolean> = {};
+
+    favs
+      .filter((f: any) => f.type === "category")
+      .forEach((f: any) => {
+        favMap[f.id] = true;
+      });
+
+    setFavorites(favMap);
+  } catch (error) {
+    console.error("Error fetching favorites:", error);
+  }
+};
+
 
   const toggleFavorite = async (categoryId: string) => {
     if (!id) {
