@@ -1,16 +1,16 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import {
   Controller,
   Delete,
   Patch,
   Param,
   Get,
+  Query,
   Post,
   Body,
   UsePipes,
-  ValidationPipe,
   UseGuards,
+  ValidationPipe,
   Req,
   ForbiddenException,
 } from '@nestjs/common';
@@ -29,8 +29,8 @@ export class UsersController {
   }
 
   @Get()
-  GetAllUsers() {
-    return this.usersService.getAllUsers();
+  GetAllUsers(@Query('role') role?: string) {
+    return this.usersService.getAllUsers(role);
   }
 
   @Delete(':id')
@@ -61,12 +61,14 @@ export class UsersController {
   @Get('me/favorites')
   @UseGuards(JwtAuthGuard)
   async getMyFavorites(@Req() req: any) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     return this.usersService.getUserFavorites(req.user.userId);
   }
   @Get('me/favorites/:itemId/check')
   @UseGuards(JwtAuthGuard)
   @UsePipes(new ValidationPipe())
   async isMyFavorite(@Req() req: any, @Param('itemId') itemId: string) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     const isFav = await this.usersService.isFavorite(req.user.userId, itemId);
     return { isFavorite: isFav };
   }
@@ -80,12 +82,15 @@ export class UsersController {
   ) {
     const { itemId, type } = body;
     const isFavorite = await this.usersService.isFavorite(
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       req.user.userId,
       itemId,
     );
     if (isFavorite) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       return this.usersService.removeFavorite(req.user.userId, itemId);
     } else {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       return this.usersService.addFavorite(req.user.userId, itemId, type);
     }
   }

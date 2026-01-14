@@ -42,8 +42,7 @@ const envPath = existsSync(join(process.cwd(), '.env'))
     AuthModule,
     UsersModule,
     AboutModule,
-    SearchModule
-    
+    SearchModule,
   ],
   controllers: [PermissionsController, CommonController],
   providers: [CommonService],

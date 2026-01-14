@@ -26,7 +26,9 @@ export const Categories: FC<CategoriesProps> = () => {
   const [showAddCatModal, setShowAddCatModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(
+    null
+  );
   const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
@@ -72,6 +74,7 @@ export const Categories: FC<CategoriesProps> = () => {
       setIsLoading(false);
     }
   };
+
 
   const toggleFavorite = async (categoryId: string) => {
     if (!id) {
@@ -288,7 +291,7 @@ export const Categories: FC<CategoriesProps> = () => {
                           onClick={(e) => {
                             e.stopPropagation();
                             e.preventDefault();
-                            navigate("/permissions");
+                            navigate(`/permissions/category/${category._id}`);
                           }}
                         >
                           <Lock size={18} />

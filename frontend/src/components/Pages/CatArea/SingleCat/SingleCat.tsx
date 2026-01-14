@@ -55,7 +55,7 @@ const SingleCat: FC = () => {
 
   const location = useLocation();
   const params = useParams();
-  const { role, user , id } = useUser();
+  const { role, user, id } = useUser();
   const navigate = useNavigate();
 
   const getCategoryPathFromUrl = () => {
@@ -99,14 +99,13 @@ const SingleCat: FC = () => {
         products = await ProductsService.getProductsByPath(categoryPath);
       } catch (error) {
         products = [];
-      }     
+      }
       let userFavorites: string[] = [];
       if (id) {
         try {
           const favorites = await userService.getFavorites();
           userFavorites = favorites.map((fav: any) => fav.id.toString());
-        } catch (error) {
-        }
+        } catch (error) {}
       }
       const categoryItems: DisplayItem[] = subCategories.map(
         (cat: CategoryDTO) => ({
@@ -162,7 +161,11 @@ const SingleCat: FC = () => {
     }
   };
 
-  const toggleFavorite = async (itemId: string, name: string, type: "product" | "category") => {
+  const toggleFavorite = async (
+    itemId: string,
+    name: string,
+    type: "product" | "category"
+  ) => {
     if (!id) {
       toast.error("יש להתחבר כדי להוסיף למועדפים");
       return;
@@ -172,7 +175,9 @@ const SingleCat: FC = () => {
       const newFavoriteStatus = !item?.favorite;
 
       setItems((prev) =>
-        prev.map((i) => (i.id === itemId ? { ...i, favorite: newFavoriteStatus } : i))
+        prev.map((i) =>
+          i.id === itemId ? { ...i, favorite: newFavoriteStatus } : i
+        )
       );
       await userService.toggleFavorite( itemId, type);
       if (newFavoriteStatus) {
@@ -182,8 +187,11 @@ const SingleCat: FC = () => {
       }
     } catch (error) {
       toast.error("שגיאה בעדכון המועדפים");
-      setItems((prev) =>
-        prev.map((i) => (i.id === itemId ? { ...i, favorite: !i.favorite } : i))  // ← itemId
+      setItems(
+        (prev) =>
+          prev.map((i) =>
+            i.id === itemId ? { ...i, favorite: !i.favorite } : i
+          ) // ← itemId
       );
     }
   };
@@ -317,8 +325,8 @@ const SingleCat: FC = () => {
     setNewCategoryImage(null);
   };
 
-  const handleManagePermissions = () => {
-    navigate("/permissions");
+  const handleManagePermissions = (id: string, type: string) => {
+    navigate(`/permissions/${type}/${id}`);
   };
 
   const toggleSelectionMode = () => {
@@ -498,7 +506,7 @@ const SingleCat: FC = () => {
             {role === "editor" && !isSelectionMode && (
               <>
                 <button
-                title="מחיקה"
+                  title="מחיקה"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDelete(item);
@@ -566,7 +574,7 @@ const SingleCat: FC = () => {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleManagePermissions();
+                      handleManagePermissions(item.id, item.type);
                     }}
                     className="flex items-center gap-2 text-sm font-medium text-white bg-[#0D305B] px-4 py-2 rounded-xl shadow-md transition-all duration-300 hover:bg-[#16447A] hover:shadow-lg focus:ring-2 focus:ring-[#0D305B]/40"
                   >
