@@ -13,7 +13,7 @@ import { permissionsService } from "../../../../services/permissions.service";
 interface Group {
   _id: string;
   groupName: string;
-  memebers: boolean;
+  memebers: boolean; 
 }
 
 interface ViewerUser {
@@ -22,22 +22,12 @@ interface ViewerUser {
   enabled: boolean;
   groupIds: string[];
 }
+
 interface Permission {
   _id: string;
   allowed: string;
 }
 
-interface RawUser {
-  _id?: string;
-  id?: string;
-  userName: string;
-}
-
-interface RawGroup {
-  id: string;
-  groupName: string;
-  members: { id: string; userName: string }[];
-}
 const Permissions: React.FC = () => {
   const navigate = useNavigate();
   const { role } = useUser();
@@ -48,14 +38,14 @@ const Permissions: React.FC = () => {
   const [isExpandedGroups, setIsExpandedGroups] = useState(false);
   const [users, setUsers] = useState<ViewerUser[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
-  const [existingPermissions, setExistingPermissions] = useState<any[]>([]);
+  const [existingPermissions, setExistingPermissions] = useState<Permission[]>([]);
   const [search, setSearch] = useState("");
-  const [generalAccess, setGeneralAccess] = useState(false);
   const [entityData, setEntityData] = useState<{
     name: string;
     image: string;
   } | null>(null);
 
+  // 1. Load Initial Data
   useEffect(() => {
     if (role !== "editor") {
       navigate("/");
@@ -72,62 +62,40 @@ const Permissions: React.FC = () => {
           permissionsService.getEntityDetails(type as any, cleanId),
         ]);
 
-        interface Permission {
-          _id: string;
-          allowed: string;
-        }
         const perms: Permission[] = permsRaw;
-
         setEntityData(entity);
         setExistingPermissions(perms);
 
-        const {
-          users: rawUsers,
-          groups: rawGroups,
-        }: {
-          users: { userName: string; _id?: string; id?: string }[];
-          groups: {
-            id: string;
-            groupName: string;
-            members: { userName: string; _id?: string; id?: string }[];
-          }[];
-        } = viewersData;
-
+        const { users: rawUsers, groups: rawGroups } = viewersData;
         const userToGroupsMap = new Map<string, string[]>();
-        rawGroups.forEach((group) => {
-          const groupId = group.id;
-          (group.members || []).forEach((member) => {
+        rawGroups.forEach((group: any) => {
+          const groupId = group.id || group._id;
+          (group.members || []).forEach((member: any) => {
             const userId = member._id || member.id;
             if (!userId) return;
-            if (!userToGroupsMap.has(userId))
-              userToGroupsMap.set(userId, []);
+            if (!userToGroupsMap.has(userId)) userToGroupsMap.set(userId, []);
             userToGroupsMap.get(userId)!.push(groupId);
           });
         });
 
-        const mappedUsers: ViewerUser[] = rawUsers.map((u) => {
-          const userId = u._id || u.id || u.userName;
+        const mappedUsers: ViewerUser[] = rawUsers.map((u: any) => {
+          const userId = u._id || u.id;
           return {
             _id: userId,
             userName: u.userName,
             groupIds: userToGroupsMap.get(userId) || [],
-            enabled: perms.some((p: Permission) => p.allowed === userId),
+            enabled: perms.some((p) => p.allowed === userId),
           };
         });
 
-        setUsers(mappedUsers);
-
-        const mappedGroups: Group[] = rawGroups.map((g) => ({
-          _id: g.id,
+        const mappedGroups: Group[] = rawGroups.map((g: any) => ({
+          _id: g.id || g._id,
           groupName: g.groupName,
-          memebers: perms.some((p: Permission) => p.allowed === g.id),
+          memebers: perms.some((p) => p.allowed === (g.id || g._id)),
         }));
 
+        setUsers(mappedUsers);
         setGroups(mappedGroups);
-
-        console.table(
-          mappedUsers.map((u) => ({ user: u.userName, userId: u._id, groups: u.groupIds }))
-        );
       } catch (err) {
         console.error("Load Error:", err);
         toast.error("שגיאה בטעינת הנתונים");
@@ -149,22 +117,6 @@ const Permissions: React.FC = () => {
     }));
   }, [users, enabledGroupIds]);
 
-  const userToGroupsMap = new Map<string, string[]>();
-
-  groups.forEach((group: any) => {
-    const groupId = group._id || group.id;
-
-    (group.members || []).forEach((member: any) => {
-      const userId = member._id || member.id;
-      if (!userId) return;
-
-      if (!userToGroupsMap.has(userId)) {
-        userToGroupsMap.set(userId, []);
-      }
-
-      userToGroupsMap.get(userId)!.push(groupId);
-    });
-  });
 
   const handleToggle = (targetId: string, toggleType: "user" | "group") => {
     if (toggleType === "user") {
@@ -191,20 +143,14 @@ const Permissions: React.FC = () => {
       const finalAllowedIds = [...usersToAllow, ...groupsToAllow];
 
       const currentDbIds = existingPermissions.map((p) => p.allowed);
-      const toCreate = finalAllowedIds.filter(
-        (id) => !currentDbIds.includes(id)
-      );
-      const toDelete = existingPermissions.filter(
-        (p) => !finalAllowedIds.includes(p.allowed)
-      );
+      const toCreate = finalAllowedIds.filter((id) => !currentDbIds.includes(id));
+      const toDelete = existingPermissions.filter((p) => !finalAllowedIds.includes(p.allowed));
 
       await Promise.all([
-        ...toCreate.map((allowedId) => {
-          return permissionsService.createPermission(type, cleanId, allowedId);
-        }),
-        ...toDelete.map((p) => {
-          return permissionsService.deletePermission(p._id);
-        }),
+        ...toCreate.map((allowedId) =>
+          permissionsService.createPermission(type, cleanId, allowedId)
+        ),
+        ...toDelete.map((p) => permissionsService.deletePermission(p._id)),
       ]);
 
       toast.success("השינויים נשמרו בהצלחה");
@@ -215,10 +161,7 @@ const Permissions: React.FC = () => {
   };
 
   return (
-    <div
-      className="rtl px-5 md:px-16 py-20 flex justify-center font-sans mt-8"
-      dir="rtl"
-    >
+    <div className="rtl px-5 md:px-16 py-20 flex justify-center font-sans mt-8" dir="rtl">
       <Card className="w-full max-w-4xl bg-gray-100 border border-gray-200 rounded-xl shadow-md">
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
@@ -235,16 +178,12 @@ const Permissions: React.FC = () => {
             <div className="flex-1 text-right">
               <h2 className="text-xl font-bold text-gray-800">
                 ניהול הרשאות עבור:{" "}
-                <span className="text-blue-700">
-                  {entityData?.name || "טוען..."}
-                </span>
+                <span className="text-blue-700">{entityData?.name || "טוען..."}</span>
               </h2>
             </div>
           </div>
           <div className="flex justify-between items-center p-4 bg-white border rounded-lg mb-4 shadow-sm border-blue-100">
-            <Label className="font-bold text-blue-900 text-sm">
-              אפשר לכולם
-            </Label>
+            <Label className="font-bold text-blue-900 text-sm">אפשר לכולם</Label>
             <Switch
               checked={
                 users.length > 0 &&
@@ -252,12 +191,8 @@ const Permissions: React.FC = () => {
                 groups.every((g) => g.memebers)
               }
               onCheckedChange={(checked) => {
-                setUsers((prev) =>
-                  prev.map((u) => ({ ...u, enabled: checked }))
-                );
-                setGroups((prev) =>
-                  prev.map((g) => ({ ...g, enabled: checked }))
-                );
+                setUsers((prev) => prev.map((u) => ({ ...u, enabled: checked })));
+                setGroups((prev) => prev.map((g) => ({ ...g, memebers: checked })));
               }}
             />
           </div>
@@ -272,12 +207,7 @@ const Permissions: React.FC = () => {
             </Button>
             <AnimatePresence>
               {isExpandedUsers && (
-                <motion.div
-                  initial={{ height: 0 }}
-                  animate={{ height: "auto" }}
-                  exit={{ height: 0 }}
-                  className="overflow-hidden mt-2"
-                >
+                <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} className="overflow-hidden mt-2">
                   <input
                     className="w-full p-2 mb-2 border rounded shadow-sm text-right"
                     placeholder="חפש משתמש..."
@@ -286,21 +216,12 @@ const Permissions: React.FC = () => {
                   />
                   <div className="bg-white border rounded-lg max-h-48 overflow-y-auto">
                     {usersWithEffectiveState
-                      .filter((u) =>
-                        u.userName.toLowerCase().includes(search.toLowerCase())
-                      )
+                      .filter((u) => u.userName.toLowerCase().includes(search.toLowerCase()))
                       .map((user) => (
-                        <div
-                          key={user._id}
-                          className="flex justify-between p-3 border-b hover:bg-slate-50 transition-colors"
-                        >
+                        <div key={user._id} className="flex justify-between p-3 border-b hover:bg-slate-50 transition-colors">
                           <div className="flex items-center">
-                            <Label className="font-medium ml-2">
-                              {user.userName}
-                            </Label>
-                            {user.groupIds?.some((id) =>
-                              enabledGroupIds.has(id)
-                            ) && (
+                            <Label className="font-medium ml-2">{user.userName}</Label>
+                            {user.groupIds?.some((id) => enabledGroupIds.has(id)) && (
                               <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
                                 מורשה מקבוצה
                               </span>
@@ -308,9 +229,7 @@ const Permissions: React.FC = () => {
                           </div>
                           <Switch
                             checked={user.effectiveEnabled}
-                            onCheckedChange={() =>
-                              handleToggle(user._id, "user")
-                            }
+                            onCheckedChange={() => handleToggle(user._id, "user")}
                           />
                         </div>
                       ))}
@@ -331,24 +250,14 @@ const Permissions: React.FC = () => {
             </Button>
             <AnimatePresence>
               {isExpandedGroups && (
-                <motion.div
-                  initial={{ height: 0 }}
-                  animate={{ height: "auto" }}
-                  exit={{ height: 0 }}
-                  className="overflow-hidden mt-2"
-                >
+                <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} className="overflow-hidden mt-2">
                   <div className="bg-white border rounded-lg max-h-48 overflow-y-auto">
                     {groups.map((group) => (
-                      <div
-                        key={group._id}
-                        className="flex justify-between p-3 border-b hover:bg-slate-50 transition-colors"
-                      >
+                      <div key={group._id} className="flex justify-between p-3 border-b hover:bg-slate-50 transition-colors">
                         <Label className="font-medium">{group.groupName}</Label>
                         <Switch
                           checked={group.memebers}
-                          onCheckedChange={() =>
-                            handleToggle(group._id, "group")
-                          }
+                          onCheckedChange={() => handleToggle(group._id, "group")}
                         />
                       </div>
                     ))}
@@ -359,19 +268,8 @@ const Permissions: React.FC = () => {
           </div>
 
           <div className="flex justify-end gap-3 mt-6">
-            <Button
-              variant="outline"
-              className="px-6"
-              onClick={() => navigate(-1)}
-            >
-              ביטול
-            </Button>
-            <Button
-              className="bg-green-600 text-white hover:bg-green-700 px-10 shadow-lg"
-              onClick={handleSave}
-            >
-              שמירה
-            </Button>
+            <Button variant="outline" className="px-6" onClick={() => navigate(-1)}>ביטול</Button>
+            <Button className="bg-green-600 text-white hover:bg-green-700 px-10 shadow-lg" onClick={handleSave}>שמירה</Button>
           </div>
         </CardContent>
       </Card>

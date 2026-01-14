@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { HttpException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -21,24 +20,9 @@ export class PermissionsService {
   }
 
   async createPermission(dto: CreatePermissionDto) {
-    const mainPermission = await this.permissionModel.create(dto);
-    try {
-      const group = await this.groupsService.findById(dto.allowed);
-      if (group) {
-        const memberPermissions = group.members.map((m) => ({
-          entityType: dto.entityType,
-          entityId: dto.entityId,
-          allowed: m.toString(),
-          fromGroupId: dto.allowed,
-        }));
-        await this.permissionModel.insertMany(memberPermissions);
-      }
-    } catch (e) {
-      return await this.permissionModel.create(dto);
-    }
-
-    return mainPermission;
+    return await this.permissionModel.create(dto);
   }
+
   async deletePermission(id: string) {
     return this.permissionModel.findByIdAndDelete(id).exec();
   }
