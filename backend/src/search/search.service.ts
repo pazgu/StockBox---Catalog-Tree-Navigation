@@ -26,9 +26,9 @@ export class SearchService {
   ) {}
 
 
-private async getAllowedPaths(userId: string): Promise<{
+  private async getAllowedPaths(userId: string): Promise<{
   allowedCategoryPaths: string[];
-  allowedProductIds: Set<string>;
+  allowedProductPaths: string[];
 }> {
   const permissions = await this.permissionsService.getPermissionsForUser(userId);
 
@@ -54,7 +54,7 @@ private async getAllowedPaths(userId: string): Promise<{
   for (const path of sortedPaths) {
     const parts = path.split('/').filter(Boolean);
     let valid = true;
-    let current = `/${parts[0]}`; 
+    let current = `/${parts[0]}`;
     for (let i = 1; i < parts.length - 1; i++) {
       current += '/' + parts[i];
       if (!allowedCategoryPaths.has(current)) {
@@ -65,97 +65,126 @@ private async getAllowedPaths(userId: string): Promise<{
     if (valid) allowedCategoryPaths.add(path);
   }
 
+  const allowedProducts = await this.productModel
+    .find({ _id: { $in: productPermissionIds } })
+    .select({ productPath: 1 })
+    .lean()
+    .exec();
+
+  const allowedProductPaths = allowedProducts.map(p => p.productPath);
+
   return {
     allowedCategoryPaths: Array.from(allowedCategoryPaths),
-    allowedProductIds: new Set(productPermissionIds.map(id => id.toString())),
+    allowedProductPaths,
   };
 }
+
 
 async searchEntities(
   userId: string,
   searchTerm: string,
   page = 1,
-  limit = 10,
+  limit = 20,
 ) {
-  const { allowedCategoryPaths, allowedProductIds } =
-    await this.getAllowedPaths(userId);
+  const { allowedCategoryPaths, allowedProductPaths } = await this.getAllowedPaths(userId);
 
-  console.log('Allowed category paths:', allowedCategoryPaths);
-  console.log('Allowed product IDs:', Array.from(allowedProductIds));
-
-  if (!allowedCategoryPaths.length) {
+  if (!allowedCategoryPaths.length && !allowedProductPaths.length) {
     return { items: [], total: 0, page, limit, hasMore: false };
   }
 
-  const categoryQuery: any = {
-    categoryPath: { $in: allowedCategoryPaths },
-  };
-
-  if (searchTerm) {
-    categoryQuery.categoryName = { $regex: searchTerm, $options: 'i' };
-  }
-
-  let productQuery: any | null = null;
-
-  if (allowedProductIds.size > 0) {
-    productQuery = {
-      $and: [
-        {
-          productPath: {
-            $regex: `^(${allowedCategoryPaths.join('|')})(/|$)`,
-          },
-        },
-        { _id: { $in: Array.from(allowedProductIds) } },
-      ],
-    };
-
-    if (searchTerm) {
-      productQuery.productName = { $regex: searchTerm, $options: 'i' };
-    }
-  }
-
-  const [categories, products] = await Promise.all([
-    this.categoryModel
-      .find(categoryQuery)
-      .sort({ categoryName: 1 })
-      .lean(),
-
-    productQuery
-      ? this.productModel
-          .find(productQuery)
-          .sort({ productName: 1 })
-          .lean()
-      : Promise.resolve([]),
-  ]);
-
- 
-  const items = [
-    ...categories.map(c => ({
-      type: 'category' as const,
-      id: c._id.toString(),
-      label: c.categoryName,
-      paths: [c.categoryPath],
-    })),
-    ...products.map(p => ({
-      type: 'product' as const,
-      id: p._id.toString(),
-      label: p.productName,
-      paths: [p.productPath],
-    })),
-  ];
-
-
-  const total = items.length;
   const skip = (page - 1) * limit;
 
+  // -------------------------------
+  // 🔹 Build aggregation pipeline
+  // -------------------------------
+  const pipeline: any[] = [
+    // CATEGORY SEARCH
+    {
+      $match: {
+        categoryPath: { $in: allowedCategoryPaths },
+        ...(searchTerm ? { $text: { $search: searchTerm } } : {}),
+      },
+    },
+    {
+      $addFields: {
+        type: 'category',
+        label: '$categoryName',
+        path: '$categoryPath',
+        score: searchTerm ? { $meta: 'textScore' } : 0,
+      },
+    },
+    {
+      $project: { _id: 1, type: 1, label: 1, path: 1, score: 1 },
+    },
+
+    // -------------------------------
+    // UNION PRODUCTS
+    // -------------------------------
+    {
+      $unionWith: {
+        coll: 'products',
+        pipeline: [
+          {
+            $match: {
+              productPath: { $in: allowedProductPaths },
+              ...(searchTerm ? { $text: { $search: searchTerm } } : {}),
+            },
+          },
+          {
+            $addFields: {
+              type: 'product',
+              label: '$productName',
+              path: '$productPath',
+              score: searchTerm ? { $meta: 'textScore' } : 0,
+            },
+          },
+          {
+            $project: { _id: 1, type: 1, label: 1, path: 1, score: 1 },
+          },
+        ],
+      },
+    },
+
+    // -------------------------------
+    // SORT BY RELEVANCE AND TYPE
+    // -------------------------------
+    {
+      $sort: {
+        score: -1,       // higher textScore first
+        type: 1,         // products before categories if tie
+        label: 1,        // alphabetical fallback
+      },
+    },
+
+    // -------------------------------
+    // PAGINATION
+    // -------------------------------
+    { $skip: skip },
+    { $limit: limit + 1 }, // fetch one extra to check hasMore
+  ];
+
+  // Run aggregation on category collection (start point)
+  const results = await this.categoryModel.aggregate(pipeline);
+
+  const hasMore = results.length > limit;
+  if (hasMore) results.pop();
+
   return {
-    items: items.slice(skip, skip + limit),
-    total,
+    items: results.map(r => ({
+      type: r.type,
+      id: r._id.toString(),
+      label: r.label,
+      paths: [r.path],
+    })),
+    total: results.length,
     page,
     limit,
-    hasMore: skip + limit < total,
+    hasMore,
   };
 }
+
+
+
 
 
 }
