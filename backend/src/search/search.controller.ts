@@ -7,25 +7,32 @@ import { SearchQueryDto } from './dtos/searchQuery.dto';
 export class SearchController {
   constructor(private readonly searchService: SearchService) {}
 
-  @Get('dropdown')
-  @UseGuards(AuthGuard('jwt'))
-  async dropdown(@Query() query: SearchQueryDto, @Req() req) {
-    const user = { userId: req.user!.userId, role: req.user!.role };
-    const limit = Math.min(query.limit || 10, 10);
+@Get('dropdown')
+@UseGuards(AuthGuard('jwt'))
+async dropdown(@Query() query: SearchQueryDto, @Req() req) {
+  const userId = req.user.userId;
+  const limit = Math.min(query.limit ?? 10, 10);
+  return this.searchService.searchEntities(
+    userId,
+    query.q,
+    1,      
+    limit,  
+  );
+}
 
-    const results = await this.searchService.searchEntities(user.userId, query.q, 1, limit);
-    return results;
-  }
 
-  @Get()
-  @UseGuards(AuthGuard('jwt'))
-  async fullSearch(@Query() query: SearchQueryDto, @Req() req) {
-    const user = { userId: req.user!.userId, role: req.user!.role };
+@Get()
+@UseGuards(AuthGuard('jwt'))
+async fullSearch(@Query() query: SearchQueryDto, @Req() req) {
+  const page = query.page || 1;
+  const limit = query.limit || 20;
 
-    const page = query.page || 1;
-    const limit = query.limit || 20;
+  return this.searchService.searchEntities(
+    req.user.userId,
+    query.q,
+    page,
+    limit,
+  );
+}
 
-    const results = await this.searchService.searchEntities(user.userId, query.q, page, limit);
-    return results;
-  }
 }
