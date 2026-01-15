@@ -86,7 +86,6 @@ const AccordionSection: FC<AccordionSectionProps> = ({
   showAccordionTypeSelector,
   setShowAccordionTypeSelector,
 }) => {
-  const [openFolders, setOpenFolders] = useState<Set<string>>(new Set());
   return (
     <div className="lg:col-span-2 order-1 lg:order-2">
       <Accordion type="single" collapsible className="w-full space-y-2">
@@ -343,33 +342,6 @@ const AccordionSection: FC<AccordionSectionProps> = ({
                         className="hidden"
                       />
                     </label>
-
-                    {folder.files.length > 0 && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const detailsElement =
-                            e.currentTarget.closest("details");
-                          if (detailsElement) {
-                            detailsElement.open = !detailsElement.open;
-                            setOpenFolders((prev) => {
-                              const newSet = new Set(prev);
-                              if (newSet.has(folder.uiId)) {
-                                newSet.delete(folder.uiId);
-                              } else {
-                                newSet.add(folder.uiId);
-                              }
-                              return newSet;
-                            });
-                          }
-                        }}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-stockblue text-white rounded-lg hover:bg-stockblue/90 cursor-pointer transition-all text-sm"
-                      >
-                        {openFolders.has(folder.uiId)
-                          ? "הסתר קבצים"
-                          : "צפה בקבצים"}
-                      </button>
-                    )}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();

@@ -546,7 +546,7 @@ const SingleProd: FC<SingleProdProps> = () => {
                 <div className="relative z-10">
                   <Link
                     to={`/permissions/product/${product?._id}`}
-                    className="block w-full text-center py-3 px-4 rounded-lg font-semibold text-white bg-orange-600 hover:bg-orange-700 shadow-md transition-all duration-300 transform hover:scale-105"
+                    className="block w-full text-center py-3 px-4 rounded-lg font-semibold text-white bg-green-600 hover:bg-orange-700 shadow-md transition-all duration-300 transform hover:scale-105"
                   >
                     נהל הרשאות
                   </Link>
