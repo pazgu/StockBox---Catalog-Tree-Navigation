@@ -21,7 +21,7 @@ import { DisplayItem } from "../../../../components/models/item.models";
 import { ProductDto } from "../../../../components/models/product.models";
 import MoveProductModal from "../../ProductArea/MoveProductModal/MoveProductModal";
 import MoveCategoryModal from "../../CatArea/Categories/MoveCategoryModal/MoveCategoryModal";
-
+import EditCategoryModal from "../../CatArea/Categories/EditCategoryModal/EditCategoryModal/EditCategoryModal";
 import { userService } from "../../../../services/UserService";
 function dataURLtoFile(dataUrl: string, filename: string) {
   const arr = dataUrl.split(",");
@@ -52,6 +52,8 @@ const SingleCat: FC = () => {
   const [newProductImage, setNewProductImage] = useState<string | null>(null);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryImage, setNewCategoryImage] = useState<string | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [itemToEdit, setItemToEdit] = useState<DisplayItem | null>(null);
 
   const location = useLocation();
   const params = useParams();
@@ -132,6 +134,28 @@ const SingleCat: FC = () => {
       toast.error("שגיאה בטעינת התוכן");
     } finally {
       setLoading(false);
+    }
+  };
+  const handleEdit = (item: DisplayItem) => {
+    setItemToEdit(item);
+    setShowEditModal(true);
+  };
+  const handleEditSuccess = async (updatedCategory: any) => {
+    try {
+      const result = await categoriesService.updateCategory(
+        updatedCategory._id,
+        {
+          categoryName: updatedCategory.categoryName,
+          categoryPath: updatedCategory.categoryPath,
+          imageFile: updatedCategory.imageFile,
+        }
+      );
+      await loadAllContent();
+      setShowEditModal(false);
+      setItemToEdit(null);
+      toast.success(`הקטגוריה "${result.categoryName}" עודכנה בהצלחה!`);
+    } catch (error) {
+      toast.error("שגיאה בעדכון הקטגוריה");
     }
   };
 
@@ -315,6 +339,8 @@ const SingleCat: FC = () => {
     setShowDeleteAllModal(false);
     setShowMoveModal(false);
     setItemToMove(null);
+    setShowEditModal(false);
+    setItemToEdit(null);
   };
 
   const resetForm = () => {
@@ -505,25 +531,37 @@ const SingleCat: FC = () => {
             {role === "editor" && !isSelectionMode && (
               <>
                 <button
-                  title="מחיקה"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(item);
-                  }}
-                  className="absolute bottom-3 left-3 group-hover:opacity-100 transition-all duration-200 h-9 w-9  text-gray-700 flex items-center justify-center hover:text-red-500 hover:scale-110"
-                >
-                  <Trash size={18} />
-                </button>
-                <button
                   title="העברה לקטגוריה אחרת"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleMove(item);
                   }}
-                  className="absolute bottom-3 left-12 group-hover:opacity-100 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-blue-500 hover:scale-110"
+                  className="absolute bottom-3 right-3 group-hover:opacity-100 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-blue-500 hover:scale-110"
                 >
                   <FolderInput size={18} />
                 </button>
+                <button
+                  title="מחיקה"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(item);
+                  }}
+                  className="absolute bottom-3 left-3 group-hover:opacity-100 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-red-500 hover:scale-110"
+                >
+                  <Trash size={18} />
+                </button>
+                {item.type === "category" && (
+                  <button
+                    title="עריכת קטגוריה"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEdit(item);
+                    }}
+                    className="absolute bottom-3 left-12 group-hover:opacity-100 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-green-500 hover:scale-110"
+                  >
+                    <Pen size={18} />
+                  </button>
+                )}
               </>
             )}
 
@@ -832,6 +870,22 @@ const SingleCat: FC = () => {
             />
           )}
         </>
+      )}
+      {showEditModal && itemToEdit && itemToEdit.type === "category" && (
+        <EditCategoryModal
+          isOpen={showEditModal}
+          category={{
+            _id: itemToEdit.id,
+            categoryName: itemToEdit.name,
+            categoryPath: itemToEdit.path,
+            categoryImage: itemToEdit.image,
+          }}
+          onClose={() => {
+            setShowEditModal(false);
+            setItemToEdit(null);
+          }}
+          onSave={handleEditSuccess}
+        />
       )}
     </div>
   );
