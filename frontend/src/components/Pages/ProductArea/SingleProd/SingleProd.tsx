@@ -93,7 +93,6 @@ const SingleProd: FC<SingleProdProps> = () => {
     if (!product?.productPath) return [];
 
     return [
-      "categories",
       ...product.productPath
         .replace(/^categories\//, "")
         .split("/")
