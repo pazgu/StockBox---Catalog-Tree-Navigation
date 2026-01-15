@@ -196,7 +196,7 @@ export const Favorites: React.FC = () => {
                     className="fill-red-500 text-red-500"
                   />
                 </button>
-                <Link to={`/categories${cat.categoryPath}`}>
+                <Link to={`${cat.categoryPath}`}>
                   <img
                     src={cat.categoryImage}
                     alt={cat.categoryName}
@@ -231,7 +231,7 @@ export const Favorites: React.FC = () => {
                     className="fill-red-500 text-red-500"
                   />
                 </button>
-                <Link to={`/products${product.productPath}`}>
+                <Link to={`${product.productPath}`}>
                   <img
                     src={product.productImages?.[0] || "/placeholder.png"}
                     alt={product.productName}
