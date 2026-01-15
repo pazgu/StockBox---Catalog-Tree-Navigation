@@ -21,8 +21,8 @@ import { DisplayItem } from "../../../../components/models/item.models";
 import { ProductDto } from "../../../../components/models/product.models";
 import MoveProductModal from "../../ProductArea/MoveProductModal/MoveProductModal";
 import MoveCategoryModal from "../../CatArea/Categories/MoveCategoryModal/MoveCategoryModal";
+import EditCategoryModal from "../../CatArea/Categories/EditCategoryModal/EditCategoryModal/EditCategoryModal";
 import { userService } from "../../../../services/UserService";
-
 function dataURLtoFile(dataUrl: string, filename: string) {
   const arr = dataUrl.split(",");
   const mimeMatch = arr[0].match(/:(.*?);/);
@@ -52,6 +52,8 @@ const SingleCat: FC = () => {
   const [newProductImage, setNewProductImage] = useState<string | null>(null);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryImage, setNewCategoryImage] = useState<string | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [itemToEdit, setItemToEdit] = useState<DisplayItem | null>(null);
 
   const location = useLocation();
   const params = useParams();
@@ -83,7 +85,7 @@ const SingleCat: FC = () => {
 
   useEffect(() => {
     loadAllContent();
-  }, [categoryPath, user]);
+  }, [categoryPath, id]);
   const loadAllContent = async () => {
     try {
       setLoading(true);
@@ -103,7 +105,7 @@ const SingleCat: FC = () => {
       let userFavorites: string[] = [];
       if (id) {
         try {
-          const favorites = await userService.getFavorites(id);
+          const favorites = await userService.getFavorites();
           userFavorites = favorites.map((fav: any) => fav.id.toString());
         } catch (error) {}
       }
@@ -132,6 +134,28 @@ const SingleCat: FC = () => {
       toast.error("שגיאה בטעינת התוכן");
     } finally {
       setLoading(false);
+    }
+  };
+  const handleEdit = (item: DisplayItem) => {
+    setItemToEdit(item);
+    setShowEditModal(true);
+  };
+  const handleEditSuccess = async (updatedCategory: any) => {
+    try {
+      const result = await categoriesService.updateCategory(
+        updatedCategory._id,
+        {
+          categoryName: updatedCategory.categoryName,
+          categoryPath: updatedCategory.categoryPath,
+          imageFile: updatedCategory.imageFile,
+        }
+      );
+      await loadAllContent();
+      setShowEditModal(false);
+      setItemToEdit(null);
+      toast.success(`הקטגוריה "${result.categoryName}" עודכנה בהצלחה!`);
+    } catch (error) {
+      toast.error("שגיאה בעדכון הקטגוריה");
     }
   };
 
@@ -170,16 +194,16 @@ const SingleCat: FC = () => {
       toast.error("יש להתחבר כדי להוסיף למועדפים");
       return;
     }
+    const item = items.find((i) => i.id === itemId);
+    const previousFavoriteStatus = item?.favorite || false;
+    const newFavoriteStatus = !previousFavoriteStatus;
     try {
-      const item = items.find((i) => i.id === itemId);
-      const newFavoriteStatus = !item?.favorite;
-
       setItems((prev) =>
         prev.map((i) =>
           i.id === itemId ? { ...i, favorite: newFavoriteStatus } : i
         )
       );
-      await userService.toggleFavorite(id, itemId, type);
+      await userService.toggleFavorite( itemId, type);
       if (newFavoriteStatus) {
         toast.success(`${name} נוסף למועדפים`);
       } else {
@@ -190,8 +214,8 @@ const SingleCat: FC = () => {
       setItems(
         (prev) =>
           prev.map((i) =>
-            i.id === itemId ? { ...i, favorite: !i.favorite } : i
-          ) // ← itemId
+            i.id === itemId ? { ...i, favorite: previousFavoriteStatus } : i
+          )
       );
     }
   };
@@ -315,6 +339,8 @@ const SingleCat: FC = () => {
     setShowDeleteAllModal(false);
     setShowMoveModal(false);
     setItemToMove(null);
+    setShowEditModal(false);
+    setItemToEdit(null);
   };
 
   const resetForm = () => {
@@ -470,7 +496,6 @@ const SingleCat: FC = () => {
                 ? "bg-[#0D305B]/10 rounded-sm"
                 : "border-gray-200"
             } ${!isSelectionMode ? "cursor-pointer" : ""}`}
-            onClick={() => !isSelectionMode && handleItemClick(item)}
           >
             <div
               className={`absolute top-2 left-2 px-3 py-1 text-xs font-medium rounded-full ${
@@ -506,25 +531,37 @@ const SingleCat: FC = () => {
             {role === "editor" && !isSelectionMode && (
               <>
                 <button
-                  title="מחיקה"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(item);
-                  }}
-                  className="absolute bottom-3 left-3 group-hover:opacity-100 transition-all duration-200 h-9 w-9  text-gray-700 flex items-center justify-center hover:text-red-500 hover:scale-110"
-                >
-                  <Trash size={18} />
-                </button>
-                <button
                   title="העברה לקטגוריה אחרת"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleMove(item);
                   }}
-                  className="absolute bottom-3 left-12 group-hover:opacity-100 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-blue-500 hover:scale-110"
+                  className="absolute bottom-3 right-3 group-hover:opacity-100 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-blue-500 hover:scale-110"
                 >
                   <FolderInput size={18} />
                 </button>
+                <button
+                  title="מחיקה"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(item);
+                  }}
+                  className="absolute bottom-3 left-3 group-hover:opacity-100 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-red-500 hover:scale-110"
+                >
+                  <Trash size={18} />
+                </button>
+                {item.type === "category" && (
+                  <button
+                    title="עריכת קטגוריה"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEdit(item);
+                    }}
+                    className="absolute bottom-3 left-12 group-hover:opacity-100 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-green-500 hover:scale-110"
+                  >
+                    <Pen size={18} />
+                  </button>
+                )}
               </>
             )}
 
@@ -551,7 +588,7 @@ const SingleCat: FC = () => {
               className="h-[140px] w-full flex justify-center items-center p-5 cursor-pointer"
               onClick={() => {
                 if (item.type === "product") {
-                  navigate(`${item.id}`);
+                  navigate(`/products/${item.id}`);
                 } else {
                   navigate(`${item.path}`);
                 }
@@ -833,6 +870,22 @@ const SingleCat: FC = () => {
             />
           )}
         </>
+      )}
+      {showEditModal && itemToEdit && itemToEdit.type === "category" && (
+        <EditCategoryModal
+          isOpen={showEditModal}
+          category={{
+            _id: itemToEdit.id,
+            categoryName: itemToEdit.name,
+            categoryPath: itemToEdit.path,
+            categoryImage: itemToEdit.image,
+          }}
+          onClose={() => {
+            setShowEditModal(false);
+            setItemToEdit(null);
+          }}
+          onSave={handleEditSuccess}
+        />
       )}
     </div>
   );

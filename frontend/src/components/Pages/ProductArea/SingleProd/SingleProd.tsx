@@ -91,14 +91,11 @@ const SingleProd: FC<SingleProdProps> = () => {
 
   const breadcrumbPath = useMemo(() => {
     if (!product?.productPath) return [];
+    const cleanPath = product.productPath
+      .replace(/^\/categories\//, "")
+      .replace(/^categories\//, "");
 
-    return [
-      "categories",
-      ...product.productPath
-        .replace(/^categories\//, "")
-        .split("/")
-        .filter(Boolean),
-    ];
+    return ["categories", ...cleanPath.split("/").filter(Boolean)];
   }, [product]);
 
   const nextImage = () => {

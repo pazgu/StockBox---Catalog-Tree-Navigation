@@ -13,3 +13,9 @@ export class Category {
 }
 
 export const CategorySchema = SchemaFactory.createForClass(Category);
+CategorySchema.index(
+  { categoryName: 'text' },
+  { name: 'category_text_search' }
+);
+
+CategorySchema.index({ categoryPath: 1 });

@@ -7,11 +7,9 @@ import { Product } from 'src/schemas/Products.schema';
 import { Category } from 'src/schemas/Categories.schema';
 import { EntityType } from 'src/schemas/Permissions.schema';
 
-// Define document types
 export type ProductDocument = Product & Document;
 export type CategoryDocument = Category & Document;
 
-// Define unified search item type
 export type SearchResultItem = {
   type: 'product' | 'category';
   id: string;
@@ -27,119 +25,166 @@ export class SearchService {
     private readonly permissionsService: PermissionsService,
   ) {}
 
-  async search(
-    query: string,
-    user: { userId: string; role: string },
-    options?: { limit?: number; page?: number },
-  ): Promise<{ items: SearchResultItem[]; limit: number; hasMore: boolean, page: number;
-  total: number; }> {
-    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-    let productCandidates = await this.productModel
-      .find({ productName: new RegExp(escapedQuery, 'i') })
-      .exec();
+  private async getAllowedPaths(userId: string): Promise<{
+  allowedCategoryPaths: string[];
+  allowedProductPaths: string[];
+}> {
+  const permissions = await this.permissionsService.getPermissionsForUser(userId);
 
-    let categoryCandidates = await this.categoryModel
-      .find({ categoryName: new RegExp(escapedQuery, 'i') })
-      .exec();
+  const categoryPermissionIds = permissions
+    .filter(p => p.entityType === EntityType.CATEGORY)
+    .map(p => p.entityId);
 
-    let allowedProductIds = new Set<string>();
-    let allowedCategoryIds = new Set<string>();
-    let categoriesMap = new Map<string, CategoryDocument>();
+  const productPermissionIds = permissions
+    .filter(p => p.entityType === EntityType.PRODUCT)
+    .map(p => p.entityId);
 
-    if (user.role === 'viewer') {
-      const permissions = await this.permissionsService.getPermissionsForUser(user.userId);
+  const categories = await this.categoryModel
+    .find({ _id: { $in: categoryPermissionIds } })
+    .select({ categoryPath: 1 })
+    .lean()
+    .exec();
 
-      allowedProductIds = new Set(
-        permissions
-          .filter(
-            (p) =>
-              p.entityType === EntityType.PRODUCT &&
-              p.allowed.toString() === user.userId,
-          )
-          .map((p) => p.entityId.toString()),
-      );
+  const sortedPaths = categories
+    .map(c => c.categoryPath)
+    .sort((a, b) => a.split('/').length - b.split('/').length);
 
-      allowedCategoryIds = new Set(
-        permissions
-          .filter(
-            (p) =>
-              p.entityType === EntityType.CATEGORY &&
-              p.allowed.toString() === user.userId,
-          )
-          .map((p) => p.entityId.toString()),
-      );
-
-      const allCategories = await this.categoryModel.find().exec();
-      categoriesMap = new Map(allCategories.map((c) => [c.categoryPath, c]));
-    }
-
-    if (user.role === 'viewer') {
-      productCandidates = productCandidates.filter((product) => {
-        if (!allowedProductIds.has(product._id.toString())) return false;
-
-      
-        return this.isCategoryPathReachable(product.productPath, allowedCategoryIds, categoriesMap);
-      });
-
-      categoryCandidates = categoryCandidates.filter((cat) =>
-        allowedCategoryIds.has(cat._id.toString()),
-      );
-    }
-
-    const items: SearchResultItem[] = [
-      ...productCandidates.map((p) => ({
-        type: 'product' as const,
-        id: p._id.toString(),
-        label: p.productName,
-        paths: [p.productPath],
-      })),
-      ...categoryCandidates.map((c) => ({
-        type: 'category' as const,
-        id: c._id.toString(),
-        label: c.categoryName,
-        paths: [c.categoryPath],
-      })),
-    ];
-
-    items.sort((a, b) => {
-      if (a.type === b.type) return a.label.localeCompare(b.label);
-      return a.type === 'product' ? -1 : 1; 
-    });
-
-const page = options?.page || 1;
-const limit = options?.limit || items.length; 
-
-const startIndex = (page - 1) * limit;
-const paginatedItems = items.slice(startIndex, startIndex + limit);
-
-const hasMore = startIndex + limit < items.length;
-
-return {
-  items: paginatedItems,
-  limit,
-  page,
-  hasMore,
-  total: items.length, 
-};
-
-  }
-
-  
-  private isCategoryPathReachable(
-    path: string,
-    allowedCategoryIds: Set<string>,
-    categoriesMap: Map<string, CategoryDocument>,
-  ): boolean {
-    const parts = path.split('/').filter(Boolean); 
-    let pathSoFar = '';
-    for (let i = 0; i < parts.length - 1; i++) {
-      pathSoFar += '/' + parts[i];
-      const category = categoriesMap.get(pathSoFar);
-      if (category && !allowedCategoryIds.has(category._id.toString())) {
-        return false; 
+  const allowedCategoryPaths = new Set<string>();
+  for (const path of sortedPaths) {
+    const parts = path.split('/').filter(Boolean);
+    let valid = true;
+    let current = `/${parts[0]}`;
+    for (let i = 1; i < parts.length - 1; i++) {
+      current += '/' + parts[i];
+      if (!allowedCategoryPaths.has(current)) {
+        valid = false;
+        break;
       }
     }
-    return true; 
+    if (valid) allowedCategoryPaths.add(path);
   }
+
+  const allowedProducts = await this.productModel
+    .find({ _id: { $in: productPermissionIds } })
+    .select({ productPath: 1 })
+    .lean()
+    .exec();
+
+  const allowedProductPaths = allowedProducts.map(p => p.productPath);
+
+  return {
+    allowedCategoryPaths: Array.from(allowedCategoryPaths),
+    allowedProductPaths,
+  };
+}
+
+
+async searchEntities(
+  userId: string,
+  searchTerm: string,
+  page = 1,
+  limit = 20,
+) {
+  const { allowedCategoryPaths, allowedProductPaths } = await this.getAllowedPaths(userId);
+
+  if (!allowedCategoryPaths.length && !allowedProductPaths.length) {
+    return { items: [], total: 0, page, limit, hasMore: false };
+  }
+
+  const skip = (page - 1) * limit;
+
+  // -------------------------------
+  // 🔹 Build aggregation pipeline
+  // -------------------------------
+  const pipeline: any[] = [
+    // CATEGORY SEARCH
+    {
+      $match: {
+        categoryPath: { $in: allowedCategoryPaths },
+        ...(searchTerm ? { $text: { $search: searchTerm } } : {}),
+      },
+    },
+    {
+      $addFields: {
+        type: 'category',
+        label: '$categoryName',
+        path: '$categoryPath',
+        score: searchTerm ? { $meta: 'textScore' } : 0,
+      },
+    },
+    {
+      $project: { _id: 1, type: 1, label: 1, path: 1, score: 1 },
+    },
+
+    // -------------------------------
+    // UNION PRODUCTS
+    // -------------------------------
+    {
+      $unionWith: {
+        coll: 'products',
+        pipeline: [
+          {
+            $match: {
+              productPath: { $in: allowedProductPaths },
+              ...(searchTerm ? { $text: { $search: searchTerm } } : {}),
+            },
+          },
+          {
+            $addFields: {
+              type: 'product',
+              label: '$productName',
+              path: '$productPath',
+              score: searchTerm ? { $meta: 'textScore' } : 0,
+            },
+          },
+          {
+            $project: { _id: 1, type: 1, label: 1, path: 1, score: 1 },
+          },
+        ],
+      },
+    },
+
+    // -------------------------------
+    // SORT BY RELEVANCE AND TYPE
+    // -------------------------------
+    {
+      $sort: {
+        score: -1,       // higher textScore first
+        type: 1,         // products before categories if tie
+        label: 1,        // alphabetical fallback
+      },
+    },
+
+    // -------------------------------
+    // PAGINATION
+    // -------------------------------
+    { $skip: skip },
+    { $limit: limit + 1 }, // fetch one extra to check hasMore
+  ];
+
+  // Run aggregation on category collection (start point)
+  const results = await this.categoryModel.aggregate(pipeline);
+
+  const hasMore = results.length > limit;
+  if (hasMore) results.pop();
+
+  return {
+    items: results.map(r => ({
+      type: r.type,
+      id: r._id.toString(),
+      label: r.label,
+      paths: [r.path],
+    })),
+    total: results.length,
+    page,
+    limit,
+    hasMore,
+  };
+}
+
+
+
+
+
 }
