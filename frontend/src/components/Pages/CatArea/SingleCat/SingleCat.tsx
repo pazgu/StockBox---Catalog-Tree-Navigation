@@ -83,7 +83,7 @@ const SingleCat: FC = () => {
 
   useEffect(() => {
     loadAllContent();
-  }, [categoryPath, user]);
+  }, [categoryPath, id]);
   const loadAllContent = async () => {
     try {
       setLoading(true);
@@ -170,10 +170,10 @@ const SingleCat: FC = () => {
       toast.error("יש להתחבר כדי להוסיף למועדפים");
       return;
     }
+    const item = items.find((i) => i.id === itemId);
+    const previousFavoriteStatus = item?.favorite || false;
+    const newFavoriteStatus = !previousFavoriteStatus;
     try {
-      const item = items.find((i) => i.id === itemId);
-      const newFavoriteStatus = !item?.favorite;
-
       setItems((prev) =>
         prev.map((i) =>
           i.id === itemId ? { ...i, favorite: newFavoriteStatus } : i
@@ -190,8 +190,8 @@ const SingleCat: FC = () => {
       setItems(
         (prev) =>
           prev.map((i) =>
-            i.id === itemId ? { ...i, favorite: !i.favorite } : i
-          ) // ← itemId
+            i.id === itemId ? { ...i, favorite: previousFavoriteStatus } : i
+          )
       );
     }
   };
