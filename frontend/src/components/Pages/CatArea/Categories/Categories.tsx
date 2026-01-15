@@ -38,20 +38,35 @@ export const Categories: FC<CategoriesProps> = () => {
   const path: string[] = ["categories"];
 
   useEffect(() => {
-  if (role) {
-    fetchCategories();
-    fetchFavorites(); 
-  } else {
-    setIsLoading(false);
-  }
-}, [role, id]);
+    if (role !== undefined) {
+      if (role) {
+        loadCategoriesAndFavorites();
+      } else {
+        setIsLoading(false);
+      }
+    }
+  }, [role, id]);
 
-
-  const fetchCategories = async () => {
+  const loadCategoriesAndFavorites = async () => {
     try {
       setIsLoading(true);
-      const data = await categoriesService.getCategories();
-      setCategories(data);
+      const categoriesData = await categoriesService.getCategories();
+      setCategories(categoriesData);
+      if (id) {
+        try {
+          const userFavorites = await userService.getFavorites();
+          const favoritesMap: Record<string, boolean> = {};
+          
+          userFavorites.forEach((fav: any) => {
+            if (fav.type === 'category') {
+              favoritesMap[fav.id.toString()] = true;
+            }
+          });
+          setFavorites(favoritesMap);
+        } catch (error) {
+          console.error("Error loading favorites:", error);
+        }
+      }
     } catch (error) {
       toast.error("שגיאה בטעינת קטגוריות");
       console.error("Error fetching categories:", error);
@@ -60,46 +75,27 @@ export const Categories: FC<CategoriesProps> = () => {
     }
   };
 
-  const fetchFavorites = async () => {
-  if (!id) return;
-
-  try {
-    const favs = await userService.getFavorites(id); 
-    const favMap: Record<string, boolean> = {};
-
-    favs
-      .filter((f: any) => f.type === "category")
-      .forEach((f: any) => {
-        favMap[f.id] = true;
-      });
-
-    setFavorites(favMap);
-  } catch (error) {
-    console.error("Error fetching favorites:", error);
-  }
-};
-
 
   const toggleFavorite = async (categoryId: string) => {
     if (!id) {
       toast.error("יש להתחבר כדי להוסיף למועדפים");
       return;
     }
-    const cam = categories.find((c) => c._id === categoryId);
-    if (!cam) return;
+    const category = categories.find((c) => c._id === categoryId);
+    if (!category) return;
 
+    const wasFavorite = favorites[categoryId];
     try {
-      const isFavorite = favorites[categoryId];
-      setFavorites((prev) => ({ ...prev, [categoryId]: !isFavorite }));
-      await userService.toggleFavorite(id, categoryId, "category");
-      if (!isFavorite) {
-        toast.success(`${cam.categoryName} נוסף למועדפים`);
+      setFavorites((prev) => ({ ...prev, [categoryId]: !wasFavorite }));
+      await userService.toggleFavorite(categoryId, "category");
+      if (!wasFavorite) {
+        toast.success(`${category.categoryName} נוסף למועדפים`);
       } else {
-        toast.info(`${cam.categoryName} הוסר מהמועדפים`);
+        toast.info(`${category.categoryName} הוסר מהמועדפים`);
       }
     } catch (error) {
       toast.error("שגיאה בעדכון המועדפים");
-      setFavorites((prev) => ({ ...prev, [categoryId]: !prev[categoryId] })); // ← categoryId
+      setFavorites((prev) => ({ ...prev, [categoryId]: wasFavorite }));
     }
   };
 
@@ -189,6 +185,13 @@ export const Categories: FC<CategoriesProps> = () => {
     return (
       <div className="mt-12 p-4 flex items-center justify-center min-h-[400px]">
         <div className="text-slate-700 text-xl">טוען קטגוריות...</div>
+      </div>
+    );
+  }
+  if (!role) {
+    return (
+      <div className="mt-12 p-4 flex items-center justify-center min-h-[400px]">
+        <div className="text-slate-700 text-xl">יש להתחבר כדי לצפות בקטגוריות</div>
       </div>
     );
   }

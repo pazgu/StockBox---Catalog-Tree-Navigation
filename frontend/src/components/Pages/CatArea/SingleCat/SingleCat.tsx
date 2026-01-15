@@ -21,8 +21,8 @@ import { DisplayItem } from "../../../../components/models/item.models";
 import { ProductDto } from "../../../../components/models/product.models";
 import MoveProductModal from "../../ProductArea/MoveProductModal/MoveProductModal";
 import MoveCategoryModal from "../../CatArea/Categories/MoveCategoryModal/MoveCategoryModal";
-import { userService } from "../../../../services/UserService";
 
+import { userService } from "../../../../services/UserService";
 function dataURLtoFile(dataUrl: string, filename: string) {
   const arr = dataUrl.split(",");
   const mimeMatch = arr[0].match(/:(.*?);/);
@@ -83,7 +83,7 @@ const SingleCat: FC = () => {
 
   useEffect(() => {
     loadAllContent();
-  }, [categoryPath, user]);
+  }, [categoryPath, id]);
   const loadAllContent = async () => {
     try {
       setLoading(true);
@@ -103,7 +103,7 @@ const SingleCat: FC = () => {
       let userFavorites: string[] = [];
       if (id) {
         try {
-          const favorites = await userService.getFavorites(id);
+          const favorites = await userService.getFavorites();
           userFavorites = favorites.map((fav: any) => fav.id.toString());
         } catch (error) {}
       }
@@ -170,16 +170,16 @@ const SingleCat: FC = () => {
       toast.error("יש להתחבר כדי להוסיף למועדפים");
       return;
     }
+    const item = items.find((i) => i.id === itemId);
+    const previousFavoriteStatus = item?.favorite || false;
+    const newFavoriteStatus = !previousFavoriteStatus;
     try {
-      const item = items.find((i) => i.id === itemId);
-      const newFavoriteStatus = !item?.favorite;
-
       setItems((prev) =>
         prev.map((i) =>
           i.id === itemId ? { ...i, favorite: newFavoriteStatus } : i
         )
       );
-      await userService.toggleFavorite(id, itemId, type);
+      await userService.toggleFavorite( itemId, type);
       if (newFavoriteStatus) {
         toast.success(`${name} נוסף למועדפים`);
       } else {
@@ -190,8 +190,8 @@ const SingleCat: FC = () => {
       setItems(
         (prev) =>
           prev.map((i) =>
-            i.id === itemId ? { ...i, favorite: !i.favorite } : i
-          ) // ← itemId
+            i.id === itemId ? { ...i, favorite: previousFavoriteStatus } : i
+          )
       );
     }
   };
@@ -470,7 +470,6 @@ const SingleCat: FC = () => {
                 ? "bg-[#0D305B]/10 rounded-sm"
                 : "border-gray-200"
             } ${!isSelectionMode ? "cursor-pointer" : ""}`}
-            onClick={() => !isSelectionMode && handleItemClick(item)}
           >
             <div
               className={`absolute top-2 left-2 px-3 py-1 text-xs font-medium rounded-full ${
@@ -551,7 +550,7 @@ const SingleCat: FC = () => {
               className="h-[140px] w-full flex justify-center items-center p-5 cursor-pointer"
               onClick={() => {
                 if (item.type === "product") {
-                  navigate(`${item.id}`);
+                  navigate(`/products/${item.id}`);
                 } else {
                   navigate(`${item.path}`);
                 }
