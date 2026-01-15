@@ -166,6 +166,28 @@ export class CategoriesService {
 
     const oldCategoryPath = category.categoryPath;
 
+    if (
+      updateCategoryDto.categoryName &&
+      updateCategoryDto.categoryName !== category.categoryName
+    ) {
+      const parentPath = this.getParentPath(oldCategoryPath);
+      const newSlug = this.slugify(updateCategoryDto.categoryName);
+      const newCategoryPath = `${parentPath}/${newSlug}`;
+
+      const dup = await this.categoryModel.findOne({
+        categoryPath: newCategoryPath,
+        _id: { $ne: id },
+      });
+
+      if (dup) {
+        throw new BadRequestException(
+          'A category with this name already exists in this location',
+        );
+      }
+
+      updateCategoryDto.categoryPath = newCategoryPath;
+    }
+
     if (file?.buffer) {
       const uploaded = await uploadBufferToCloudinary(
         file.buffer,
@@ -349,5 +371,19 @@ export class CategoriesService {
       throw new NotFoundException('Category not found');
     }
     return category;
+  }
+
+  private slugify(name: string): string {
+    return name
+      .trim()
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-');
+  }
+
+  private getParentPath(fullCategoryPath: string): string {
+    const idx = fullCategoryPath.lastIndexOf('/');
+    return idx === -1 ? '' : fullCategoryPath.substring(0, idx);
   }
 }

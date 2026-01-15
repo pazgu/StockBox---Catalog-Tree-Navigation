@@ -143,16 +143,35 @@ export class ProductsService {
   async update(id: string, dto: UpdateProductDto) {
     console.log('the dto:', dto);
 
+    const existing = await this.productModel.findById(id);
+    if (!existing) throw new NotFoundException('Product not found');
+
     if (dto.customFields && Array.isArray(dto.customFields)) {
       dto.customFields = dto.customFields.map((field) => {
         if (field._id?.startsWith('new-')) {
-          return {
-            ...field,
-            _id: new Types.ObjectId().toString(),
-          };
+          return { ...field, _id: new Types.ObjectId().toString() };
         }
         return field;
       });
+    }
+
+    if (dto.productName && dto.productName !== existing.productName) {
+      const parentPath = this.getParentPath(existing.productPath);
+      const newSlug = this.slugify(dto.productName);
+      const newPath = `${parentPath}/${newSlug}`;
+
+      const dup = await this.productModel.findOne({
+        productPath: newPath,
+        _id: { $ne: id },
+      });
+
+      if (dup) {
+        throw new BadRequestException(
+          'A product with this name already exists in this category',
+        );
+      }
+
+      dto.productPath = newPath;
     }
 
     const updatedProduct = await this.productModel.findByIdAndUpdate(
@@ -229,5 +248,19 @@ export class ProductsService {
     } catch {
       return null;
     }
+  }
+
+  private slugify(name: string): string {
+    return name
+      .trim()
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-');
+  }
+
+  private getParentPath(fullProductPath: string): string {
+    const idx = fullProductPath.lastIndexOf('/');
+    return idx === -1 ? '' : fullProductPath.substring(0, idx);
   }
 }
