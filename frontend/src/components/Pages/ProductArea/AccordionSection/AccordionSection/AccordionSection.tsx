@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-no-target-blank */
 import React, { FC, useState } from "react";
 import {
   Accordion,
@@ -379,14 +380,30 @@ const AccordionSection: FC<AccordionSectionProps> = ({
                           </div>
                         </div>
                         <div className="flex items-center gap-2 mr-2">
-                          <a
-                            href={file.url}
-                            download={file.name}
+                          <button
+                            onClick={async (e) => {
+                              e.preventDefault();
+                              try {
+                                const response = await fetch(file.url);
+                                const blob = await response.blob();
+                                const url = window.URL.createObjectURL(blob);
+                                const a = document.createElement("a");
+                                a.href = url;
+                                a.download = file.name;
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                window.URL.revokeObjectURL(url);
+                              } catch (error) {
+                                console.error("Download failed:", error);
+                                window.open(file.url, "_blank");
+                              }
+                            }}
                             className="p-2 text-stockblue hover:bg-stockblue/10 rounded-lg transition-all"
                             title="הורד קובץ"
                           >
                             <Download size={18} />
-                          </a>
+                          </button>
                           {isEditing && (
                             <button
                               onClick={() =>
