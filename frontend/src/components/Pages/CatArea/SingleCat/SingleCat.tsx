@@ -470,7 +470,6 @@ const SingleCat: FC = () => {
                 ? "bg-[#0D305B]/10 rounded-sm"
                 : "border-gray-200"
             } ${!isSelectionMode ? "cursor-pointer" : ""}`}
-            onClick={() => !isSelectionMode && handleItemClick(item)}
           >
             <div
               className={`absolute top-2 left-2 px-3 py-1 text-xs font-medium rounded-full ${
@@ -551,7 +550,7 @@ const SingleCat: FC = () => {
               className="h-[140px] w-full flex justify-center items-center p-5 cursor-pointer"
               onClick={() => {
                 if (item.type === "product") {
-                  navigate(`${item.id}`);
+                  navigate(`/products/${item.id}`);
                 } else {
                   navigate(`${item.path}`);
                 }
