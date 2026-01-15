@@ -15,7 +15,7 @@ const AddUsersModal: React.FC<AddUsersModalProps> = ({ group, allUsers, onClose,
 
   const usersNotInGroup = useMemo(() => {
     return allUsers
-      .filter((user) => !group.members.includes(user._id!))
+      .filter((user) => !group.members.includes(user._id!) && user.role === 'viewer')
       .filter(
         (user) =>
           modalSearch === '' ||
