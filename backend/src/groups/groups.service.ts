@@ -94,4 +94,23 @@ export class GroupsService {
       throw new NotFoundException(`Group with ID ${id} not found`);
     }
   }
+
+ async getOrCreateDefaultGroup(): Promise<GroupDocument> {
+  const groupName =
+    process.env.DEFAULT_NEW_USER_GROUP_NAME || 'New Users';
+
+  let group = await this.groupModel.findOne({ groupName }).exec();
+
+  if (!group) {
+    group = new this.groupModel({
+      groupName,          // ✅ REQUIRED FIELD
+      members: [],        // optional, but good practice
+    });
+
+    await group.save();
+  }
+
+  return group;
+}
+
 }
