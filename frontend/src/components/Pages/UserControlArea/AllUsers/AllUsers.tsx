@@ -202,7 +202,7 @@ const AllUsers: FC<AllUsersProps> = () => {
             </div>
           </div>
           <div
-            className="w-15 h-15 bg-[#2c3e50] rounded-full flex items-center justify-center text-white text-3xl font-light cursor-pointer transition-transform hover:scale-105 hover:bg-[#34495e]"
+            className="w-15 h-15 bg-[#2c3e50] rounded-full flex items-center justify-center text-white text-3xl font-light cursor-pointer transition-transform hover:bg-[#34495e]"
             onClick={handleAddClick}
           >
             <svg
@@ -237,7 +237,7 @@ const AllUsers: FC<AllUsersProps> = () => {
             >
               {!user.approved && (
                 <div
-                  className="absolute top-2 left-2 text-red-600 bg-red-100 px-3 py-1 rounded-full text-xs font-medium cursor-pointer hover:bg-red-200 transition"
+                  className="absolute top-2 left-2 text-red-600 bg-red-100 px-3 py-1 rounded-full text-xs font-medium cursor-pointer hover:bg-red-200 "
                   onClick={() => handleApproveClick(index)}
                 >
                   ממתין לאישור
@@ -289,7 +289,7 @@ const AllUsers: FC<AllUsersProps> = () => {
 
                 {user.approved && (
                   <button
-                    className={`p-1 w-6 h-6 rounded transition ${
+                    className={`p-1 rounded transition ${
                       user.isBlocked
                         ? "bg-red-600 text-white hover:bg-red-700"
                         : "hover:bg-gray-100 opacity-60 hover:opacity-100"
