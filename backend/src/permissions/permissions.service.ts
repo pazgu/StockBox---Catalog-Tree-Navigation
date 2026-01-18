@@ -32,6 +32,23 @@ export class PermissionsService {
   }
 
   async deletePermission(id: string) {
+    const permission = await this.permissionModel.findById(id).exec();
+
+    if (!permission) {
+      return null;
+    }
+    const directChildren = await this.getDirectChildrenToDelete(
+      permission.entityId.toString(),
+    );
+    if (directChildren.length > 0) {
+      const childIds = directChildren.map((child) => child._id.toString());
+      await this.permissionModel
+        .deleteMany({
+          entityId: { $in: childIds },
+          entityType: EntityType.CATEGORY,
+        })
+        .exec();
+    }
     return this.permissionModel.findByIdAndDelete(id).exec();
   }
 
@@ -109,5 +126,32 @@ export class PermissionsService {
     if (permissions.length) {
       await this.permissionModel.insertMany(permissions);
     }
+  }
+
+  async getDirectChildrenToDelete(categoryId: string) {
+    if (!categoryId) return [];
+    const category = await this.categoryModel.findById(categoryId);
+    if (!category) return [];
+    let cleanPath = category.categoryPath;
+    if (cleanPath.startsWith('/')) {
+      cleanPath = cleanPath.substring(1);
+    }
+    const fullPath = cleanPath.startsWith('categories/')
+      ? `/${cleanPath}`
+      : `/categories/${cleanPath}`;
+
+    const allChildren = await this.categoryModel.find({
+      categoryPath: new RegExp(
+        `^${fullPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/`,
+      ),
+    });
+
+    const directChildren = allChildren.filter((cat) => {
+      const remainingPath = cat.categoryPath.substring(fullPath.length + 1);
+      const slashCount = (remainingPath.match(/\//g) || []).length;
+      return slashCount === 0;
+    });
+
+    return directChildren;
   }
 }
