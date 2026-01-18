@@ -23,9 +23,6 @@ export class Product {
   uploadFolders: UploadGroup[];
 }
 export const ProductSchema = SchemaFactory.createForClass(Product);
-ProductSchema.index(
-  { productName: 'text' },
-  { name: 'product_text_search' }
-);
+ProductSchema.index({ productName: 'text' }, { name: 'product_text_search' });
 
 ProductSchema.index({ productPath: 1 });
