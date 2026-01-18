@@ -28,24 +28,24 @@ export class CategoriesService {
   ) {}
 
   async createCategory(
-  createCategoryDto: CreateCategoryDto,
-  file?: Express.Multer.File,
-) {
-  if (file?.buffer) {
-    const uploaded = await uploadBufferToCloudinary(
-      file.buffer,
-      'stockbox/categories',
-    );
-    createCategoryDto.categoryImage = uploaded.secure_url;
+    createCategoryDto: CreateCategoryDto,
+    file?: Express.Multer.File,
+  ) {
+    if (file?.buffer) {
+      const uploaded = await uploadBufferToCloudinary(
+        file.buffer,
+        'stockbox/categories',
+      );
+      createCategoryDto.categoryImage = uploaded.secure_url;
+    }
+
+    const newCategory = new this.categoryModel(createCategoryDto);
+    const savedCategory = await newCategory.save();
+
+    await this.permissionsService.assignPermissionsForNewEntity(savedCategory);
+
+    return savedCategory;
   }
-
-  const newCategory = new this.categoryModel(createCategoryDto);
-  const savedCategory = await newCategory.save();
-
-  await this.permissionsService.assignPermissionsForNewEntity(savedCategory);
-
-  return savedCategory;
-}
 
   async getCategories(user: { userId: string; role: string }) {
     const categories = await this.categoryModel.find({
