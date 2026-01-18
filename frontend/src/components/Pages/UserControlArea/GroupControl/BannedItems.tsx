@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
-import { ShieldBan, Package, FolderTree, Tag, Settings } from 'lucide-react';
-import ManageBannedItemsModal from './ManageBannedItemsModal';
-import { BannedItem } from '../../../../types/types';
+import React, { useState } from "react";
+import { ShieldBan, Package, FolderTree, Settings } from "lucide-react";
+import ManageBannedItemsModal from "./ManageBannedItemsModal";
+import { BannedItem } from "../../../../types/types";
 
 interface BannedItemsProps {
+  currentGroupId: string;
   currentGroupName: string;
   bannedItems: BannedItem[];
   onUpdateBannedItems?: (items: BannedItem[]) => void;
 }
 
 const BannedItems: React.FC<BannedItemsProps> = ({
+  currentGroupId,
   currentGroupName,
   bannedItems,
   onUpdateBannedItems,
@@ -18,12 +20,10 @@ const BannedItems: React.FC<BannedItemsProps> = ({
 
   const getItemIcon = (type: string) => {
     switch (type) {
-      case 'product':
+      case "product":
         return <Package className="w-4 h-4 text-red-500" />;
-      case 'category':
+      case "category":
         return <FolderTree className="w-4 h-4 text-orange-500" />;
-      case 'subcategory':
-        return <Tag className="w-4 h-4 text-yellow-600" />;
       default:
         return <Package className="w-4 h-4 text-gray-500" />;
     }
@@ -31,12 +31,10 @@ const BannedItems: React.FC<BannedItemsProps> = ({
 
   const getItemTypeLabel = (type: string) => {
     switch (type) {
-      case 'product':
-        return 'מוצר';
-      case 'category':
-        return 'קטגוריה';
-      case 'subcategory':
-        return 'תת-קטגוריה';
+      case "product":
+        return "מוצר";
+      case "category":
+        return "קטגוריה";
       default:
         return type;
     }
@@ -61,7 +59,8 @@ const BannedItems: React.FC<BannedItemsProps> = ({
 
       <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
         <p className="text-sm text-gray-600 mb-4">
-          קבוצה: <span className="font-semibold text-gray-800">{currentGroupName}</span>
+          קבוצה:{" "}
+          <span className="font-semibold text-gray-800">{currentGroupName}</span>
         </p>
 
         {bannedItems.length === 0 ? (
@@ -74,7 +73,7 @@ const BannedItems: React.FC<BannedItemsProps> = ({
           <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2">
             {bannedItems.map((item) => (
               <div
-                key={item.id}
+                key={`${item.type}:${item.id}`}
                 className="flex items-start gap-3 p-3 bg-red-50 border border-red-100 rounded-lg hover:bg-red-100 transition-colors"
               >
                 <div className="mt-0.5">{getItemIcon(item.type)}</div>
@@ -94,13 +93,16 @@ const BannedItems: React.FC<BannedItemsProps> = ({
         <div className="mt-4 pt-4 border-t border-gray-200">
           <div className="flex justify-between items-center text-sm text-gray-600">
             <span>סה״כ פריטים חסומים:</span>
-            <span className="font-semibold text-red-600">{bannedItems.length}</span>
+            <span className="font-semibold text-red-600">
+              {bannedItems.length}
+            </span>
           </div>
         </div>
       </div>
 
       {showManageModal && onUpdateBannedItems && (
         <ManageBannedItemsModal
+          groupId={currentGroupId}
           groupName={currentGroupName}
           bannedItems={bannedItems}
           onClose={() => setShowManageModal(false)}

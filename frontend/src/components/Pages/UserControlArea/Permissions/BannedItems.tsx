@@ -20,8 +20,6 @@ const BannedItems: React.FC<BannedItemsProps> = ({
         return "מוצר";
       case "category":
         return "קטגוריה";
-      case "subcategory":
-        return "תת קטגוריה";
       default:
         return "";
     }

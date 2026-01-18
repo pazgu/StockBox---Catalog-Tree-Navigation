@@ -12,10 +12,10 @@ import { PermissionsModule } from '../permissions/permissions.module';
       { name: Product.name, schema: ProductSchema },
       { name: Category.name, schema: CategorySchema },
     ]),
-    PermissionsModule, 
+    PermissionsModule,
   ],
   controllers: [SearchController],
   providers: [SearchService],
-  exports: [SearchService], 
+  exports: [SearchService],
 })
 export class SearchModule {}

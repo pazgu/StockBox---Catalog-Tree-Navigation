@@ -195,4 +195,11 @@ export class ProductsService {
       throw new Error("Failed to delete product");
     }
   }
+
+  static async getAllProducts(): Promise<ProductDto[]> {
+  const response = await fetch(this.baseUrl, this.getAuthHeaders());
+  if (!response.ok) throw new Error("Failed to fetch products");
+  return response.json();
+}
+
 }
