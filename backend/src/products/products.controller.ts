@@ -108,8 +108,6 @@ export class ProductsController {
     @ProductUploadedFile() files: Express.Multer.File[],
     @ProductBody() body: any,
   ) {
-    console.log('raw body:', body);
-    console.log('files:', files);
 
     const dto: UpdateProductDto = {
       productName: body.productName,

@@ -12,7 +12,7 @@ import { PermissionsModule } from 'src/permissions/permissions.module';
     AuthModule,
     MongooseModule.forFeature([
       { name: Product.name, schema: ProductSchema },
-      { name: Category.name, schema: CategorySchema }, // Add Category model
+      { name: Category.name, schema: CategorySchema }, 
     ]),
     PermissionsModule,
   ],

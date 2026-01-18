@@ -90,25 +90,30 @@ export class ProductsService {
     return [];
   }
 
-  async create(createProductDto: CreateProductDto, file?: Express.Multer.File) {
-    if (file?.buffer) {
-      const uploaded = await uploadBufferToCloudinary(
-        file.buffer,
-        'stockbox/products',
-      );
-
-      createProductDto.productImages = [uploaded.secure_url];
-    }
-
-    if (!createProductDto.productImages) {
-      createProductDto.productImages = [];
-    }
-
-    const newProduct = new this.productModel(createProductDto);
-    const saved = await newProduct.save();
-
-    return saved;
+ async create(
+  createProductDto: CreateProductDto,
+  file?: Express.Multer.File,
+) {
+  if (file?.buffer) {
+    const uploaded = await uploadBufferToCloudinary(
+      file.buffer,
+      'stockbox/products',
+    );
+    createProductDto.productImages = [uploaded.secure_url];
   }
+
+  if (!createProductDto.productImages) {
+    createProductDto.productImages = [];
+  }
+
+  const newProduct = new this.productModel(createProductDto);
+  const savedProduct = await newProduct.save();
+
+  await this.permissionsService.assignPermissionsForNewEntity(savedProduct);
+
+  return savedProduct;
+}
+
 
   async delete(id: string): Promise<{ success: boolean; message: string }> {
     const product = await this.productModel.findById(id);
@@ -141,7 +146,6 @@ export class ProductsService {
   }
 
   async update(id: string, dto: UpdateProductDto) {
-    console.log('the dto:', dto);
 
     const existing = await this.productModel.findById(id);
     if (!existing) throw new NotFoundException('Product not found');
