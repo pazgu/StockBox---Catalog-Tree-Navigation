@@ -11,9 +11,21 @@ import { toast } from "sonner";
 import { Group } from "../../../models/group.models";
 import axios from "axios";
 import { environment } from "../../../../environments/environment.development";
+import { categoriesService } from "../../../../services/CategoryService";
+
 const api = axios.create({
   baseURL: environment.API_URL,
 });
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers = config.headers ?? {};
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 
 const GroupControl: React.FC = () => {
   const [selectedGroup, setSelectedGroup] = useState("");
@@ -34,6 +46,17 @@ const GroupControl: React.FC = () => {
   const [editedGroupName, setEditedGroupName] = useState("");
 
   const [groups, setGroups] = useState<Group[]>([]);
+  const [isBannedLoading, setIsBannedLoading] = useState(false);
+
+
+
+useEffect(() => {
+  if (selectedGroup) {
+    loadBlockedItemsForGroup(selectedGroup);
+  }
+}, [selectedGroup]);
+
+
 
   useEffect(() => {
     if (role !== "editor") {
@@ -75,6 +98,69 @@ const GroupControl: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  const loadBlockedItemsForGroup = async (groupId: string) => {
+  try {
+    setIsBannedLoading(true);
+
+    const [productsRes, categories, permsRes] = await Promise.all([
+      api.get("/products"),
+      categoriesService.getCategories(),
+      api.get(`/permissions/by-group/${groupId}`),
+    ]);
+
+    const products = productsRes.data;
+
+    const permissions = permsRes.data as any[];
+
+    const allowedProductIds = new Set(
+      permissions
+        .filter((p) => p.entityType === "product")
+        .map((p) => String(p.entityId))
+    );
+
+    const allowedCategoryIds = new Set(
+      permissions
+        .filter((p) => p.entityType === "category")
+        .map((p) => String(p.entityId))
+    );
+
+    const blockedProducts = products.filter(
+      (p: any) => !allowedProductIds.has(String(p._id ?? p.id))
+    );
+
+    const blockedCategories = categories.filter(
+      (c: any) => !allowedCategoryIds.has(String(c._id ?? c.id))
+    );
+
+    const bannedItems: BannedItem[] = [
+      ...blockedProducts.map((p: any) => ({
+        id: p._id ?? p.id,
+        name: p.productName,
+        type: "product",
+        image: p.productImages?.[0],
+        groupId,
+      })),
+      ...blockedCategories.map((c: any) => ({
+        id: c._id ?? c.id,
+        name: c.categoryName,
+        type: "category",
+        image: c.categoryImage,
+        groupId,
+      })),
+    ];
+
+    setGroups((prev) =>
+      prev.map((g) => (g.id === groupId ? { ...g, bannedItems } : g))
+    );
+  } catch (err) {
+    console.error("Failed loading blocked items:", err);
+    toast.error("שגיאה בטעינת פריטים חסומים");
+  } finally {
+    setIsBannedLoading(false);
+  }
+};
+
 
   const currentGroup = useMemo(
     () => groups.find((g) => g.id === selectedGroup),
@@ -359,6 +445,7 @@ const GroupControl: React.FC = () => {
             onRemoveUsers={handleRemoveUsersFromGroup}
           />
           <BannedItems
+            currentGroupId={selectedGroup}
             currentGroupName={currentGroup?.name || ""}
             bannedItems={currentGroup?.bannedItems || []}
             onUpdateBannedItems={(items: BannedItem[]) =>
