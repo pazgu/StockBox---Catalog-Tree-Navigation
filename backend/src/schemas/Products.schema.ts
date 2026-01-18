@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { CustomField } from './CustomFields.schema';
 import { UploadGroup } from './UploadGroup.schema';
+import { HydratedDocument } from 'mongoose';
 
 @Schema({ timestamps: true })
 export class Product {
@@ -27,5 +28,6 @@ ProductSchema.index(
   { productName: 'text' },
   { name: 'product_text_search' }
 );
+export type ProductDocument = HydratedDocument<Product>;
 
 ProductSchema.index({ productPath: 1 });
