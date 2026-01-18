@@ -146,7 +146,6 @@ export class ProductsService {
   }
 
   async update(id: string, dto: UpdateProductDto) {
-    console.log('the dto:', dto);
 
     if (dto.customFields && Array.isArray(dto.customFields)) {
       dto.customFields = dto.customFields.map((field) => {

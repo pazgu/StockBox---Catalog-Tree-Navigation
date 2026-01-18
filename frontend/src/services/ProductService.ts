@@ -45,7 +45,6 @@ export class ProductsService {
   ): Promise<ProductDto> {
     const fd = new FormData();
     fd.append("productName", payload.productName);
-    console.log("from service product path:", payload.productPath);
     fd.append("productPath", payload.productPath);
 
     if (payload.productDescription) {
@@ -104,7 +103,6 @@ export class ProductsService {
     payload: UpdateProductPayload
   ): Promise<ProductDataDto> {
     const fd = new FormData();
-    console.log("UpdateProductPayload from service:");
     if (payload.productName) fd.append("productName", payload.productName);
     if (payload.productDescription)
       fd.append("productDescription", payload.productDescription);
@@ -159,12 +157,7 @@ export class ProductsService {
       });
     }
 
-    console.log("---- FormData entries ----");
-    Array.from(fd.entries()).forEach(([key, value]) => {
-      console.log(key, value);
-    });
-    console.log("---------------------------");
-
+  
     const response = await fetch(`${this.baseUrl}/${productId}`, {
       method: "PATCH",
       headers: this.getAuthHeader(),

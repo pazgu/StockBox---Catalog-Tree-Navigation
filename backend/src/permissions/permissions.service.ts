@@ -43,7 +43,6 @@ export class PermissionsService {
       { $group: { _id: '$allowed' } }, 
       { $project: { _id: 1 } },
     ]);
-    console.log('Allowed users for entity:', allowedUsers);
     return allowedUsers.map(u => u._id.toString());
   }
 
@@ -57,7 +56,6 @@ async assignPermissionsForNewEntity(
 
   const rawParts = path.split('/').filter(Boolean);
   const normalizedParts = rawParts[0] === 'categories' ? rawParts.slice(1) : rawParts;
-  console.log('Normalized path parts:', normalizedParts);
 
   if (!isProduct && normalizedParts.length === 1) {
     const allUsers = await this.usersService.getAllUserIds();
@@ -84,8 +82,6 @@ async assignPermissionsForNewEntity(
     .lean();
 
   if (!parentCategory) return;
-
-  console.log('Parent category found:', parentCategory);
 
   const allowedUsers = await this.getAllowedUsersForEntity(
     parentCategory._id.toString(),
