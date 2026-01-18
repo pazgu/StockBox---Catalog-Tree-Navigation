@@ -30,4 +30,10 @@ export class PermissionsService {
   async getPermissionsByEntityType(entityId: string) {
     return await this.permissionModel.find({ entityId: entityId }).exec();
   }
+
+  async getPermissionsForAllowedId(allowedId: string) {
+    return await this.permissionModel
+      .find({ allowed: new Types.ObjectId(allowedId) })
+      .exec();
+  }
 }
