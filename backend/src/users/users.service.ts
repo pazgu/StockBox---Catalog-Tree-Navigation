@@ -156,4 +156,10 @@ export class UsersService {
       throw new InternalServerErrorException('Failed to check favorite status');
     }
   }
+
+  async getAllUserIds(): Promise<string[]> {
+    const users = await this.userModel.find().select('_id').lean();
+    return users.map(u => u._id.toString());
+  }
+  
 }
