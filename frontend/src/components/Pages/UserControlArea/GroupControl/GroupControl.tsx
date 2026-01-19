@@ -9,22 +9,9 @@ import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
 import { Group } from "../../../models/group.models";
-import axios from "axios";
-import { environment } from "../../../../environments/environment.development";
 import { categoriesService } from "../../../../services/CategoryService";
+import api from "../../../../services/axios";
 
-const api = axios.create({
-  baseURL: environment.API_URL,
-});
-
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers = config.headers ?? {};
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
 
 
 const GroupControl: React.FC = () => {

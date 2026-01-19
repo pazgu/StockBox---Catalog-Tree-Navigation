@@ -1,4 +1,3 @@
-import axios from "axios";
 import {
   CategoryDTO,
   CreateCategoryDTO,
@@ -6,6 +5,7 @@ import {
   UpdateCategoryDTO,
 } from "../components/models/category.models";
 import { environment } from "./../environments/environment.development";
+import api from "./axios";
 
 class CategoriesService {
   private baseUrl = `${environment.API_URL}/categories`;
@@ -21,7 +21,7 @@ class CategoriesService {
 
   async getCategories(): Promise<CategoryDTO[]> {
     try {
-      const response = await axios.get<CategoryDTO[]>(
+      const response = await api.get<CategoryDTO[]>(
         this.baseUrl,
         this.getAuthHeaders()
       );
@@ -34,7 +34,7 @@ class CategoriesService {
 
   async getSubCategories(slug: string): Promise<CategoryDTO[]> {
     try {
-      const response = await axios.get<CategoryDTO[]>(
+      const response = await api.get<CategoryDTO[]>(
         `${this.baseUrl}/children/${slug}`,
         this.getAuthHeaders()
       );
@@ -56,7 +56,7 @@ class CategoriesService {
         cleanPath = cleanPath.substring("categories/".length);
       }
 
-      const response = await axios.get<CategoryDTO[]>(
+      const response = await api.get<CategoryDTO[]>(
         `${this.baseUrl}/children/${cleanPath}`,
         this.getAuthHeaders()
       );
@@ -78,7 +78,7 @@ class CategoriesService {
         fd.append("categoryImageFile", category.imageFile);
       }
 
-      const response = await axios.post<CategoryDTO>(this.baseUrl, fd, {
+      const response = await api.post<CategoryDTO>(this.baseUrl, fd, {
         headers: {
           "Content-Type": "multipart/form-data",
           ...this.getAuthHeaders().headers,
@@ -94,7 +94,7 @@ class CategoriesService {
 
   async deleteCategory(id: string): Promise<DeleteCategoryResponse> {
     try {
-      const response = await axios.delete<DeleteCategoryResponse>(
+      const response = await api.delete<DeleteCategoryResponse>(
         `${this.baseUrl}/${id}`,
         this.getAuthHeaders()
       );
@@ -119,7 +119,7 @@ class CategoriesService {
         fd.append("categoryImageFile", category.imageFile);
       }
 
-      const response = await axios.patch<CategoryDTO>(
+      const response = await api.patch<CategoryDTO>(
         `${this.baseUrl}/${id}`,
         fd,
         {
@@ -142,7 +142,7 @@ class CategoriesService {
     newParentPath: string
   ): Promise<{ success: boolean; message: string; category: CategoryDTO }> {
     try {
-      const response = await axios.patch(
+      const response = await api.patch(
         `${this.baseUrl}/${id}/move`,
         { newParentPath },
         this.getAuthHeaders()
@@ -155,7 +155,7 @@ class CategoriesService {
   }
   async getCategoryById(id: string): Promise<CategoryDTO | null> {
     try {
-      const response = await axios.get<CategoryDTO>(
+      const response = await api.get<CategoryDTO>(
         `${this.baseUrl}/${id}`,
         this.getAuthHeaders()
       );

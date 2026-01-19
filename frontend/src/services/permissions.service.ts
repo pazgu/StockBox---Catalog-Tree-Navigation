@@ -1,5 +1,5 @@
-import axios from "axios";
 import { environment } from "../environments/environment.development";
+import api from "./axios";
 
 const API_URL = `${environment.API_URL}/permissions`;
 
@@ -9,7 +9,7 @@ const getAuthHeader = () => ({
 
 export const permissionsService = {
   getPermissionsByEntity: async (entityId: string) => {
-    const response = await axios.get(`${API_URL}/${entityId}`, getAuthHeader());
+    const response = await api.get(`${API_URL}/${entityId}`, getAuthHeader());
     return response.data;
   },
 
@@ -18,7 +18,7 @@ export const permissionsService = {
     entityId: string,
     allowedId: string
   ) => {
-    return axios.post(
+    return api.post(
       API_URL,
       {
         entityType: entityType,
@@ -30,13 +30,13 @@ export const permissionsService = {
   },
 
   deletePermission: async (permissionId: string) => {
-    return axios.delete(`${API_URL}/${permissionId}`, getAuthHeader());
+    return api.delete(`${API_URL}/${permissionId}`, getAuthHeader());
   },
 
   getPotentialViewers: async () => {
     const [users, groups] = await Promise.all([
-      axios.get(`${environment.API_URL}/users?role=viewer`, getAuthHeader()),
-      axios.get(`${environment.API_URL}/groups`, getAuthHeader()),
+      api.get(`${environment.API_URL}/users?role=viewer`, getAuthHeader()),
+      api.get(`${environment.API_URL}/groups`, getAuthHeader()),
     ]);
     return { users: users.data, groups: groups.data };
   },
@@ -46,7 +46,7 @@ export const permissionsService = {
 
     const endpoint = type === "category" ? "categories" : "products";
 
-    const response = await axios.get(
+    const response = await api.get(
       `${environment.API_URL}/${endpoint}/${cleanId}`,
       getAuthHeader()
     );

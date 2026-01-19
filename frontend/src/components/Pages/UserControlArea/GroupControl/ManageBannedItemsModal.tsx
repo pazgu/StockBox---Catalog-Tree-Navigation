@@ -9,10 +9,10 @@ import {
   Settings,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import axios from "axios";
 import { environment } from "../../../../environments/environment.development";
 import { categoriesService } from "../../../../services/CategoryService";
 import { BannedItem } from "../../../../types/types";
+import api from "../../../../services/axios";
 
 interface ManageBannedItemsModalProps {
   groupId: string;
@@ -22,12 +22,7 @@ interface ManageBannedItemsModalProps {
   onUpdateBannedItems: (items: BannedItem[]) => void;
 }
 
-const api = axios.create({ baseURL: environment.API_URL });
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
+
 
 const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
   groupId,

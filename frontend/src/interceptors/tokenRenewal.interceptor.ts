@@ -1,0 +1,64 @@
+import api from "../services/axios";
+
+import { InternalAxiosRequestConfig } from "axios";
+
+let isRenewing = false;
+let renewQueue: ((token: string) => void)[] = [];
+
+export async function tokenRenewInterceptor(
+  config: InternalAxiosRequestConfig
+): Promise<InternalAxiosRequestConfig> {
+  let token = localStorage.getItem("accessToken");
+
+  if (!token) return config;
+
+  const tokenExp = getTokenExpiration(token);
+  const now = Date.now() / 1000;
+
+  if (tokenExp - now < 2 * 24 * 60 * 60) {
+    if (!isRenewing) {
+      isRenewing = true;
+      try {
+        const newToken = await renewToken(token);
+        localStorage.setItem("accessToken", newToken);
+        console.log("Token renewed", newToken);
+        renewQueue.forEach((cb) => cb(newToken));
+        renewQueue = [];
+        token = newToken;
+      } catch (err) {
+        console.error("Token renewal failed", err);
+      } finally {
+        isRenewing = false;
+      }
+    } else {
+      await new Promise<string>((resolve) => {
+        renewQueue.push(resolve);
+      }).then((newToken) => {
+        token = newToken;
+      });
+    }
+  }
+
+  if (!config.headers) {
+    config.headers = config.headers ?? {};
+  }
+  (config.headers as any).Authorization = `Bearer ${token}`;
+
+  return config;
+}
+
+function getTokenExpiration(token: string): number {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.exp;
+  } catch {
+    return 0;
+  }
+}
+
+async function renewToken(token: string): Promise<string> {
+  const response = await api.post<{ accessToken: string }>("/auth/renew", {
+    token,
+  });
+  return response.data.accessToken;
+}
