@@ -1,5 +1,5 @@
 import React, { FC, useState, useCallback, useMemo } from "react";
-import { Heart, PencilLine, MailQuestionIcon, Check } from "lucide-react";
+import { Heart, PencilLine, MailQuestionIcon, Check , Upload } from "lucide-react";
 import { useUser } from "../../../../context/UserContext";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -16,6 +16,8 @@ import { CloudinaryService } from "../../../../services/Cloudinary.service";
 import { FileFolder, UploadedFile } from "../../../models/files.models";
 import bulletIcon from "../../../../assets/bullets.png";
 import contentIcon from "../../../../assets/font.png";
+import { Spinner } from "../../../../components/ui/spinner";
+
 interface SingleProdProps {}
 
 const SingleProd: FC<SingleProdProps> = () => {
@@ -25,7 +27,7 @@ const SingleProd: FC<SingleProdProps> = () => {
   const [description, setDescription] = useState("");
   const [product, setProduct] = useState<ProductDto | null>(null);
   const [originalProduct, setOriginalProduct] = useState<ProductDto | null>(
-    null
+    null,
   );
   const [newAccordionType, setNewAccordionType] = useState<
     "bullets" | "content" | null
@@ -42,6 +44,10 @@ const SingleProd: FC<SingleProdProps> = () => {
   const [folders, setFolders] = useState<FileFolder[]>([]);
   const contentIconUrl = contentIcon;
   const bulletsIconUrl = bulletIcon;
+  const [isSaving, setIsSaving] = useState(false);
+  const addImagesInputRef = React.useRef<HTMLInputElement>(null);
+
+
 
   const { productId } = useParams<{ productId: string }>();
 
@@ -99,16 +105,18 @@ const SingleProd: FC<SingleProdProps> = () => {
   }, [product]);
 
   const nextImage = () => {
-    setCurrentImageIndex((prev) =>
-      prev === productImages.length - 1 ? 0 : prev + 1
-    );
-  };
+  if (productImages.length === 0) return;
+  setCurrentImageIndex((prev) =>
+    prev === productImages.length - 1 ? 0 : prev + 1
+  );
+};
 
   const prevImage = () => {
-    setCurrentImageIndex((prev) =>
-      prev === 0 ? productImages.length - 1 : prev - 1
-    );
-  };
+  if (productImages.length === 0) return;
+  setCurrentImageIndex((prev) =>
+    prev === 0 ? productImages.length - 1 : prev - 1
+  );
+};
 
   const handleAddImages = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -120,7 +128,7 @@ const SingleProd: FC<SingleProdProps> = () => {
       try {
         const result = await CloudinaryService.uploadFile(
           file,
-          "products/images"
+          "products/images",
         );
         uploadedImages.push(result.url); // only store the Cloudinary URL
       } catch (err) {
@@ -139,10 +147,10 @@ const SingleProd: FC<SingleProdProps> = () => {
     try {
       const result = await CloudinaryService.uploadFile(
         files[0],
-        "products/images"
+        "products/images",
       );
       setProductImages((prev) =>
-        prev.map((img, i) => (i === currentImageIndex ? result.url : img))
+        prev.map((img, i) => (i === currentImageIndex ? result.url : img)),
       );
     } catch (err) {
       console.error("Image replacement failed", err);
@@ -151,15 +159,19 @@ const SingleProd: FC<SingleProdProps> = () => {
   };
 
   const handleDeleteImage = () => {
-    setProductImages((prev) => {
-      if (prev.length === 1) return prev;
-      const updated = prev.filter((_, i) => i !== currentImageIndex);
-      setCurrentImageIndex((prevIndex) =>
-        prevIndex === updated.length ? updated.length - 1 : prevIndex
-      );
-      return updated;
-    });
-  };
+  setProductImages((prev) => {
+    const updated = prev.filter((_, i) => i !== currentImageIndex);
+    if (updated.length === 0) {
+      setCurrentImageIndex(0);
+      return [];
+    }
+    setCurrentImageIndex((prevIndex) =>
+      prevIndex >= updated.length ? updated.length - 1 : prevIndex
+    );
+    return updated;
+  });
+};
+
 
   const toggleFavorite = () => {
     if (isFavorite) {
@@ -172,16 +184,16 @@ const SingleProd: FC<SingleProdProps> = () => {
   const handleAccordionContentChange = (uiId: string, newContent: string) => {
     setAccordionData((prevData) =>
       prevData.map((item) =>
-        item.uiId === uiId ? { ...item, content: newContent } : item
-      )
+        item.uiId === uiId ? { ...item, content: newContent } : item,
+      ),
     );
   };
 
   const handleAccordionTitleChange = (uiId: string, newTitle: string) => {
     setAccordionData((prevData) =>
       prevData.map((item) =>
-        item.uiId === uiId ? { ...item, title: newTitle } : item
-      )
+        item.uiId === uiId ? { ...item, title: newTitle } : item,
+      ),
     );
   };
 
@@ -207,7 +219,7 @@ const SingleProd: FC<SingleProdProps> = () => {
 
   const removeAccordion = (uiId: string) => {
     setAccordionData((prevData) =>
-      prevData.filter((item) => item.uiId !== uiId)
+      prevData.filter((item) => item.uiId !== uiId),
     );
   };
 
@@ -226,10 +238,10 @@ const SingleProd: FC<SingleProdProps> = () => {
       const newItems = [...prevData];
 
       const draggedIndex = newItems.findIndex(
-        (item) => item.uiId === draggedItem.uiId
+        (item) => item.uiId === draggedItem.uiId,
       );
       const targetIndex = newItems.findIndex(
-        (item) => item.uiId === targetItem.uiId
+        (item) => item.uiId === targetItem.uiId,
       );
 
       if (draggedIndex === -1 || targetIndex === -1) return prevData;
@@ -246,7 +258,7 @@ const SingleProd: FC<SingleProdProps> = () => {
   const features = useMemo(() => {
     try {
       const data = accordionData.find(
-        (item) => item.uiId === "features"
+        (item) => item.uiId === "features",
       )?.content;
 
       return data ? JSON.parse(data) : [];
@@ -323,7 +335,7 @@ const SingleProd: FC<SingleProdProps> = () => {
               field.type === "bullets"
                 ? JSON.stringify(field.bullets)
                 : field.content,
-          }))
+          })),
         ) ||
       JSON.stringify(productImages) !==
         JSON.stringify(originalProduct?.productImages) ||
@@ -338,7 +350,7 @@ const SingleProd: FC<SingleProdProps> = () => {
               url: f.link,
               size: 0,
             })),
-          })) || []
+          })) || [],
         );
 
     if (!hasChanges) {
@@ -347,15 +359,19 @@ const SingleProd: FC<SingleProdProps> = () => {
       return;
     }
 
-    try {
-      await ProductsService.updateProduct(productId!, payload);
-      toast.success("שינויים נשמרו בהצלחה");
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to save product. Please try again.");
-    }
+   try {
+  setIsSaving(true);
+  await ProductsService.updateProduct(productId!, payload);
+  toast.success("שינויים נשמרו בהצלחה");
+  setIsEditing(false);
+} catch (err) {
+  console.error(err);
+toast.error("לא הצלחנו לשמור את המוצר. נסה שוב בבקשה.");
+} finally {
+  setIsSaving(false);
+}
 
-    setIsEditing(!isEditing);
+
   };
 
   const formatFileSize = (bytes: number): string => {
@@ -380,7 +396,7 @@ const SingleProd: FC<SingleProdProps> = () => {
 
   const handleFileUpload = async (
     folderUiId: string,
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -407,8 +423,8 @@ const SingleProd: FC<SingleProdProps> = () => {
       prev.map((folder) =>
         folder.uiId === folderUiId
           ? { ...folder, files: [...folder.files, ...uploadedFiles] }
-          : folder
-      )
+          : folder,
+      ),
     );
   };
 
@@ -420,8 +436,8 @@ const SingleProd: FC<SingleProdProps> = () => {
               ...folder,
               files: folder.files.filter((f) => f.uiId !== fileUiId),
             }
-          : folder
-      )
+          : folder,
+      ),
     );
   };
 
@@ -448,7 +464,6 @@ const SingleProd: FC<SingleProdProps> = () => {
     <div className="pt-16 px-6 pb-10 font-sans-['Noto_Sans_Hebrew'] rtl">
       <Breadcrumbs path={breadcrumbPath} />
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
         <div className="flex justify-between items-center mb-4 text-right">
           <div className="flex-1">
             {isEditing ? (
@@ -466,17 +481,19 @@ const SingleProd: FC<SingleProdProps> = () => {
           </div>
 
           {role === "editor" && (
-            <button
-              onClick={handleSaveClick}
-              aria-label={isEditing ? "סיום עריכה" : "עריכת דף"}
-              className="fixed bottom-8 left-6 flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300"
-            >
-              {isEditing ? <Check size={22} /> : <PencilLine size={22} />}
-            </button>
+           <button
+  onClick={handleSaveClick}
+  disabled={isSaving}
+  aria-label={isEditing ? "סיום עריכה" : "עריכת דף"}
+  className={`fixed bottom-8 left-6 flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300
+    ${isSaving ? "opacity-70 cursor-not-allowed" : ""}`}
+>
+  {isSaving ? <Spinner className="size-6 text-white" /> : isEditing ? <Check size={22} /> : <PencilLine size={22} />}
+</button>
+
           )}
         </div>
 
-        {/* Secondary Description */}
         <div className="text-right mb-12">
           {isEditing ? (
             <textarea
@@ -495,21 +512,88 @@ const SingleProd: FC<SingleProdProps> = () => {
             <div className="group relative bg-white p-6 rounded-2xl border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-stockblue to-stockblue"></div>
 
-              {/* === IMAGE CAROUSEL START === */}
-              <ImageCarousel
-                productImages={productImages}
-                currentImageIndex={currentImageIndex}
-                setCurrentImageIndex={setCurrentImageIndex}
-                prevImage={prevImage}
-                nextImage={nextImage}
-                isEditing={isEditing}
-                handleReplaceImage={handleReplaceImage}
-                handleAddImages={handleAddImages}
-                handleDeleteImage={handleDeleteImage}
-                title={title}
-              />
+{productImages.length > 0 ? (
+  <ImageCarousel
+    productImages={productImages}
+    currentImageIndex={currentImageIndex}
+    setCurrentImageIndex={setCurrentImageIndex}
+    prevImage={prevImage}
+    nextImage={nextImage}
+    isEditing={isEditing}
+    handleReplaceImage={handleReplaceImage}
+    handleAddImages={handleAddImages}
+    handleDeleteImage={handleDeleteImage}
+    title={title}
+  />
+) : (
+  <div className="relative mb-4">
+    {/* outer soft card */}
+    <div
+      className={`relative overflow-hidden rounded-[32px] p-[14px] shadow-[0_18px_55px_rgba(15,23,42,0.12)]
+        ${
+          isEditing
+            ? "cursor-pointer"
+            : "cursor-not-allowed opacity-80"
+        }`}
+    >
+      {/* dreamy background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#f7fbff] via-white to-[#eaf1ff]" />
+      <div className="absolute -top-10 -left-10 w-40 h-40 rounded-full bg-blue-200/25 blur-3xl" />
+      <div className="absolute -bottom-14 -right-14 w-48 h-48 rounded-full bg-indigo-200/25 blur-3xl" />
 
-              {/* Buttons */}
+      {/* inner dashed area */}
+      <button
+        type="button"
+        onClick={() => {
+          if (!isEditing) {
+            toast.info("כדי להעלות תמונות יש להיכנס למצב עריכה ✏️");
+            return;
+          }
+          addImagesInputRef.current?.click();
+        }}
+        className={`relative z-10 w-full h-[320px] rounded-[28px]
+          border-2 border-dashed border-slate-300/80
+          bg-white/55 backdrop-blur-sm
+          flex flex-col items-center justify-center gap-3
+          transition-all
+          ${
+            isEditing
+              ? "hover:bg-white/70 hover:border-slate-400/90"
+              : ""
+          }`}
+        title={isEditing ? "לחצו כדי להעלות תמונות" : "היכנסו לעריכה כדי להעלות"}
+        aria-label="העלאת תמונות מוצר"
+      >
+        {/* upload icon bubble */}
+        <div className="h-14 w-14 rounded-2xl bg-white/70 shadow-sm grid place-items-center">
+          <Upload className="h-7 w-7 text-slate-500" />
+        </div>
+
+        <div className="text-center leading-snug">
+          <div className="text-[18px] font-semibold text-slate-500">
+            אין תמונות כרגע – לחצו כדי להעלות
+          </div>
+          <div className="mt-2 text-[13px] tracking-wide text-slate-400">
+            PNG · JPG · JPEG
+          </div>
+        </div>
+      </button>
+
+      <input
+        ref={addImagesInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={handleAddImages}
+      />
+    </div>
+  </div>
+)}
+
+
+
+
               {role === "viewer" ? (
                 <div className="space-y-2 relative z-10 flex flex-row justify-center gap-12">
                   <button
@@ -546,7 +630,7 @@ const SingleProd: FC<SingleProdProps> = () => {
                 <div className="relative z-10">
                   <Link
                     to={`/permissions/product/${product?._id}`}
-                    className="block w-full text-center py-3 px-4 rounded-lg font-semibold text-white bg-green-600 hover:bg-orange-700 shadow-md transition-all duration-300 transform hover:scale-105"
+                    className="block w-full text-center py-3 px-4 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-800 shadow-md transition-all duration-300"
                   >
                     נהל הרשאות
                   </Link>
@@ -554,8 +638,6 @@ const SingleProd: FC<SingleProdProps> = () => {
               ) : null}
             </div>
           </div>
-
-          {/* Right: Accordion List */}
 
           <AccordionSection
             isEditing={isEditing}

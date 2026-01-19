@@ -16,26 +16,27 @@ import { GroupsService } from 'src/groups/groups.service';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectModel(User.name) private userModel: Model<User>,
-  private groupsService: GroupsService) {}
+  constructor(
+    @InjectModel(User.name) private userModel: Model<User>,
+    private groupsService: GroupsService,
+  ) {}
 
   async getAllUsers(role?: string) {
     const filter = role ? { role } : {};
     return this.userModel.find(filter).exec();
   }
   async createUser(createUserDto: CreateUserDto) {
-   const newUser = new this.userModel(createUserDto);
-  const savedUser = await newUser.save();
+    const newUser = new this.userModel(createUserDto);
+    const savedUser = await newUser.save();
 
-  if (savedUser.role !== UserRole.EDITOR) {
-    const defaultGroup =
-      await this.groupsService.getOrCreateDefaultGroup();
+    if (savedUser.role !== UserRole.EDITOR) {
+      const defaultGroup = await this.groupsService.getOrCreateDefaultGroup();
 
-    defaultGroup.members.push(savedUser._id.toString());
-    await defaultGroup.save();
-  }
+      defaultGroup.members.push(savedUser._id.toString());
+      await defaultGroup.save();
+    }
 
-  return savedUser;
+    return savedUser;
   }
 
   async createUserFromLogin(createUserFromLoginDto: CreateUserDto) {
@@ -171,7 +172,6 @@ export class UsersService {
 
   async getAllUserIds(): Promise<string[]> {
     const users = await this.userModel.find().select('_id').lean();
-    return users.map(u => u._id.toString());
+    return users.map((u) => u._id.toString());
   }
-  
 }

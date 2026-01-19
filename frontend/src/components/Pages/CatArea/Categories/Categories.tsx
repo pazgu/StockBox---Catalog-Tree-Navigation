@@ -10,6 +10,7 @@ import Breadcrumbs from "../../../LayoutArea/Breadcrumbs/Breadcrumbs";
 import { categoriesService } from "../../../../services/CategoryService";
 import { AddCategoryResult } from "../../../models/category.models";
 import { userService } from "../../../../services/UserService";
+import { Spinner } from "../../../ui/spinner";
 
 interface CategoriesProps {}
 
@@ -27,7 +28,7 @@ export const Categories: FC<CategoriesProps> = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(
-    null
+    null,
   );
   const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -36,6 +37,8 @@ export const Categories: FC<CategoriesProps> = () => {
   const { role, id } = useUser();
   const navigate = useNavigate();
   const path: string[] = ["categories"];
+  const [isDeleting, setIsDeleting] = useState(false);
+
 
   useEffect(() => {
     if (role !== undefined) {
@@ -56,9 +59,9 @@ export const Categories: FC<CategoriesProps> = () => {
         try {
           const userFavorites = await userService.getFavorites();
           const favoritesMap: Record<string, boolean> = {};
-          
+
           userFavorites.forEach((fav: any) => {
-            if (fav.type === 'category') {
+            if (fav.type === "category") {
               favoritesMap[fav.id.toString()] = true;
             }
           });
@@ -74,7 +77,6 @@ export const Categories: FC<CategoriesProps> = () => {
       setIsLoading(false);
     }
   };
-
 
   const toggleFavorite = async (categoryId: string) => {
     if (!id) {
@@ -105,26 +107,33 @@ export const Categories: FC<CategoriesProps> = () => {
   };
 
   const confirmDelete = async () => {
-    if (!categoryToDelete) return;
+  if (!categoryToDelete) return;
 
-    try {
-      await categoriesService.deleteCategory(categoryToDelete._id);
+  try {
+    setIsDeleting(true);
+    await new Promise((r) => setTimeout(r, 800));
 
-      setCategories(
-        categories.filter((cat) => cat._id !== categoryToDelete._id)
-      );
 
-      toast.success(
-        `הקטגוריה "${categoryToDelete.categoryName}" וכל התכנים שבה נמחקו בהצלחה!`
-      );
-    } catch (error) {
-      toast.error("שגיאה במחיקת הקטגוריה");
-      console.error("Error deleting category:", error);
-    } finally {
-      setShowDeleteModal(false);
-      setCategoryToDelete(null);
-    }
-  };
+    await categoriesService.deleteCategory(categoryToDelete._id);
+
+    setCategories(
+      categories.filter((cat) => cat._id !== categoryToDelete._id)
+    );
+
+    toast.success(
+      `הקטגוריה "${categoryToDelete.categoryName}" וכל התכנים שבה נמחקו בהצלחה!`
+    );
+
+    setShowDeleteModal(false);
+    setCategoryToDelete(null);
+  } catch (error) {
+    toast.error("שגיאה במחיקת הקטגוריה");
+    console.error("Error deleting category:", error);
+  } finally {
+    setIsDeleting(false);
+  }
+};
+
 
   const handleEdit = (category: Category) => {
     setCategoryToEdit(category);
@@ -161,11 +170,11 @@ export const Categories: FC<CategoriesProps> = () => {
           categoryName: updatedCategory.categoryName,
           categoryPath: updatedCategory.categoryPath,
           imageFile: updatedCategory.imageFile,
-        }
+        },
       );
 
       setCategories((prev) =>
-        prev.map((c) => (c._id === result._id ? result : c))
+        prev.map((c) => (c._id === result._id ? result : c)),
       );
 
       setShowEditModal(false);
@@ -191,14 +200,16 @@ export const Categories: FC<CategoriesProps> = () => {
   if (!role) {
     return (
       <div className="mt-12 p-4 flex items-center justify-center min-h-[400px]">
-        <div className="text-slate-700 text-xl">יש להתחבר כדי לצפות בקטגוריות</div>
+        <div className="text-slate-700 text-xl">
+          יש להתחבר כדי לצפות בקטגוריות
+        </div>
       </div>
     );
   }
 
   return (
     <div
-      className="mt-12 p-4 font-system direction-rtl text-right"
+      className="mt-12 p-4 font-system direction-rtl text-right overflow-x-hidden"
       style={{ direction: "rtl" }}
     >
       <Breadcrumbs path={path} />
@@ -218,7 +229,7 @@ export const Categories: FC<CategoriesProps> = () => {
           )}
         </div>
       ) : (
-        <div className="w-full flex justify-center flex-wrap gap-10 my-12">
+        <div className="mx-auto flex justify-center flex-wrap gap-10 my-12 px-4 sm:px-8">
           {categories.map((category) => (
             <div
               key={category._id}
@@ -252,8 +263,8 @@ export const Categories: FC<CategoriesProps> = () => {
                   />
 
                   {role === "editor" && (
-                    <div className="w-60 absolute inset-0 flex mr-16 gap-3 mb-4">
-                      <div className="relative">
+                    <div className="absolute inset-0 flex gap-3 mb-4 justify-end items-start p-3 pointer-events-none">
+                      <div className="relative pointer-events-auto">
                         <button
                           className="peer -mt-1.5 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl"
                           onClick={(e) => {
@@ -269,7 +280,7 @@ export const Categories: FC<CategoriesProps> = () => {
                         </span>
                       </div>
 
-                      <div className="relative">
+                      <div className="relative pointer-events-auto">
                         <button
                           className="peer opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl mt-2.1"
                           onClick={(e) => {
@@ -285,9 +296,9 @@ export const Categories: FC<CategoriesProps> = () => {
                         </span>
                       </div>
 
-                      <div className="relative">
+                      <div className="relative pointer-events-auto">
                         <button
-                          className="peer mt-8 -mr-2.5 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl"
+                          className="peer opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl"
                           onClick={(e) => {
                             e.stopPropagation();
                             e.preventDefault();
@@ -364,18 +375,31 @@ export const Categories: FC<CategoriesProps> = () => {
 
                 <div className="flex justify-between gap-3 mt-5">
                   <button
-                    onClick={closeAllModals}
-                    className="flex-1 p-3 border-none rounded-lg text-base font-medium cursor-pointer transition-all duration-200 bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"
-                  >
-                    ביטול
-                  </button>
+  onClick={closeAllModals}
+  disabled={isDeleting}
+  className={`flex-1 p-3 border-none rounded-lg text-base font-medium transition-all duration-200
+    ${isDeleting ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"}`}
+>
+  ביטול
+</button>
+
 
                   <button
-                    onClick={confirmDelete}
-                    className="flex-1 p-3 border-none rounded-lg text-base font-medium cursor-pointer transition-all duration-200 bg-red-600 text-white shadow-md hover:bg-red-700 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"
-                  >
-                    מחק
-                  </button>
+  onClick={confirmDelete}
+  disabled={isDeleting}
+  className={`flex-1 p-3 border-none rounded-lg text-base font-medium transition-all duration-200 shadow-md
+    ${isDeleting ? "bg-red-400 cursor-not-allowed text-white" : "bg-red-600 text-white hover:bg-red-700 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"}`}
+>
+  {isDeleting ? (
+    <span className="flex items-center justify-center gap-2">
+      <Spinner className="size-4 text-white" />
+      מוחק...
+    </span>
+  ) : (
+    "מחק"
+  )}
+</button>
+
                 </div>
               </div>
             </div>

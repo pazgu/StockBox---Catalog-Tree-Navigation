@@ -31,6 +31,32 @@ export class PermissionsService {
     return await this.permissionModel.create(dto);
   }
 
+  async getDirectChildrenToDelete(categoryId: string) {
+    if (!categoryId) return [];
+    const category = await this.categoryModel.findById(categoryId);
+    if (!category) return [];
+    let cleanPath = category.categoryPath;
+    if (cleanPath.startsWith('/')) {
+      cleanPath = cleanPath.substring(1);
+    }
+    const fullPath = cleanPath.startsWith('categories/')
+      ? `/${cleanPath}`
+      : `/categories/${cleanPath}`;
+
+    const allChildren = await this.categoryModel.find({
+      categoryPath: new RegExp(
+        `^${fullPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/`,
+      ),
+    });
+
+    const directChildren = allChildren.filter((cat) => {
+      const remainingPath = cat.categoryPath.substring(fullPath.length + 1);
+      const slashCount = (remainingPath.match(/\//g) || []).length;
+      return slashCount === 0;
+    });
+
+    return directChildren;
+  }
   async deletePermission(id: string) {
     const permission = await this.permissionModel.findById(id).exec();
 
@@ -73,6 +99,7 @@ export class PermissionsService {
       { $group: { _id: '$allowed' } },
       { $project: { _id: 1 } },
     ]);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return allowedUsers.map((u) => u._id.toString());
   }
 
@@ -126,32 +153,5 @@ export class PermissionsService {
     if (permissions.length) {
       await this.permissionModel.insertMany(permissions);
     }
-  }
-
-  async getDirectChildrenToDelete(categoryId: string) {
-    if (!categoryId) return [];
-    const category = await this.categoryModel.findById(categoryId);
-    if (!category) return [];
-    let cleanPath = category.categoryPath;
-    if (cleanPath.startsWith('/')) {
-      cleanPath = cleanPath.substring(1);
-    }
-    const fullPath = cleanPath.startsWith('categories/')
-      ? `/${cleanPath}`
-      : `/categories/${cleanPath}`;
-
-    const allChildren = await this.categoryModel.find({
-      categoryPath: new RegExp(
-        `^${fullPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/`,
-      ),
-    });
-
-    const directChildren = allChildren.filter((cat) => {
-      const remainingPath = cat.categoryPath.substring(fullPath.length + 1);
-      const slashCount = (remainingPath.match(/\//g) || []).length;
-      return slashCount === 0;
-    });
-
-    return directChildren;
   }
 }

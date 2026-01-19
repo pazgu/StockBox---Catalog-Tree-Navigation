@@ -1,4 +1,12 @@
-import { IsString, IsOptional, MinLength, IsInt, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  MinLength,
+  IsInt,
+  Min,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  Max,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class SearchQueryDto {
@@ -10,11 +18,11 @@ export class SearchQueryDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  limit?: number; 
+  limit?: number;
 
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  page?: number = 1; 
+  page?: number = 1;
 }

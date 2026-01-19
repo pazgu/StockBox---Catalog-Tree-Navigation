@@ -1,22 +1,19 @@
 import React from "react";
 import { toast } from "sonner";
-import useBlockBrowserZoom from "../../useBlockBrowserZoom";
-import { AddCategoryResult } from "../../../../../models/category.models";
-import { Spinner } from "../../../../../ui/spinner";
-
+import useBlockBrowserZoom from "../../Categories/useBlockBrowserZoom";
 
 type Props = {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (result: AddCategoryResult) => Promise<void>;
+  onSave: (result: { name: string; imageFile: File }) => void;
 };
 
 const CROP_BOX = 256;
 
-
 function getBaseCoverScale(imgW: number, imgH: number, box: number) {
   return Math.max(box / imgW, box / imgH);
 }
+
 function dataURLtoFile(dataUrl: string, filename: string) {
   const arr = dataUrl.split(",");
   const mimeMatch = arr[0].match(/:(.*?);/);
@@ -28,13 +25,12 @@ function dataURLtoFile(dataUrl: string, filename: string) {
   return new File([u8arr], filename, { type: mime });
 }
 
-
 function clampOffsetToCircle(
   offset: { x: number; y: number },
   imgW: number,
   imgH: number,
   zoom: number,
-  box: number
+  box: number,
 ) {
   const baseScale = getBaseCoverScale(imgW, imgH, box);
   const dispW = imgW * baseScale * zoom;
@@ -46,7 +42,6 @@ function clampOffsetToCircle(
 
   const maxX = Math.max(0, halfW - radius);
   const maxY = Math.max(0, halfH - radius);
-  
 
   return {
     x: Math.min(maxX, Math.max(-maxX, offset.x)),
@@ -61,7 +56,7 @@ function anchoredZoom(
   cursorInBox: { x: number; y: number },
   imgW: number,
   imgH: number,
-  box: number
+  box: number,
 ) {
   const baseScale = getBaseCoverScale(imgW, imgH, box);
   const u = cursorInBox.x - box / 2;
@@ -70,29 +65,33 @@ function anchoredZoom(
   const newOffsetX = u - (newZoom / oldZoom) * (u - offset.x);
   const newOffsetY = v - (newZoom / oldZoom) * (v - offset.y);
 
-  return clampOffsetToCircle({ x: newOffsetX, y: newOffsetY }, imgW, imgH, newZoom, box);
+  return clampOffsetToCircle(
+    { x: newOffsetX, y: newOffsetY },
+    imgW,
+    imgH,
+    newZoom,
+    box,
+  );
 }
 
-const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
-  const [newCatName, setNewCatName] = React.useState("");
+const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
+  const [categoryName, setCategoryName] = React.useState("");
   const [rawImage, setRawImage] = React.useState<HTMLImageElement | null>(null);
   const [zoom, setZoom] = React.useState(1);
   const [offset, setOffset] = React.useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = React.useState(false);
   const [startPan, setStartPan] = React.useState({ x: 0, y: 0 });
   const [isCropperOpen, setIsCropperOpen] = React.useState(false);
-  const [committedPreview, setCommittedPreview] = React.useState<string | null>(null);
-  const [isSaving, setIsSaving] = React.useState(false);
-
-
+  const [committedPreview, setCommittedPreview] = React.useState<string | null>(
+    null,
+  );
 
   const cropRef = React.useRef<HTMLDivElement>(null!);
   useBlockBrowserZoom(cropRef);
 
   React.useEffect(() => {
     if (!isOpen) {
-      // reset when closing
-      setNewCatName("");
+      setCategoryName("");
       setRawImage(null);
       setZoom(1);
       setOffset({ x: 0, y: 0 });
@@ -130,7 +129,7 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
           img.naturalWidth,
           img.naturalHeight,
           1,
-          CROP_BOX
+          CROP_BOX,
         );
         setOffset(clamped);
         setIsCropperOpen(true);
@@ -180,56 +179,43 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     return dataUrl;
   };
 
-  const handleSave = async () => {
-  if (!newCatName.trim()) {
-    toast.error("שם קטגוריה חובה");
-    return;
-  }
+  const handleSave = () => {
+    if (!categoryName.trim()) {
+      toast.error("שם תת-קטגוריה חובה");
+      return;
+    }
+    let finalImage = committedPreview;
+    if (!finalImage && (isCropperOpen || rawImage)) {
+      finalImage = commitCrop();
+    }
+    if (!finalImage) {
+      toast.error("נא לבחור תמונה ולהחיל את החיתוך");
+      return;
+    }
+    const safeName = categoryName.trim().toLowerCase().replace(/\s+/g, "-");
+    const file = dataURLtoFile(finalImage, `${safeName}.jpg`);
 
-  let finalImage = committedPreview;
-
-  if (!finalImage && (isCropperOpen || rawImage)) {
-    finalImage = commitCrop();
-  }
-
-  if (!finalImage) {
-    toast.error("נא לבחור תמונה ולהחיל את החיתוך");
-    return;
-  }
-
-  const safeName = newCatName.trim().toLowerCase().replace(/\s+/g, "-");
-  const file = dataURLtoFile(finalImage, `${safeName}.jpg`);
-
-  try {
-    setIsSaving(true);
-    await onSave({ name: newCatName.trim(), imageFile: file });
-  } finally {
-    setIsSaving(false);
-  }
-};
-
+    onSave({ name: categoryName.trim(), imageFile: file });
+  };
 
   return (
     <div
       className="fixed inset-0 bg-slate-900 bg-opacity-85 backdrop-blur-xl flex items-center justify-center z-50 transition-all duration-300 p-4"
-      onClick={() => {
-  if (!isSaving) onClose();
-}}
-
+      onClick={onClose}
     >
       <div
         className="bg-white p-8 rounded-xl w-[800px] max-w-[95%] max-h-[90vh] overflow-y-auto shadow-2xl text-center transform translate-y-[-2px]"
         onClick={(e) => e.stopPropagation()}
       >
         <h4 className="m-0 mb-5 text-xl text-slate-700 font-semibold tracking-tight">
-          הוסף קטגוריה חדשה
+          הוסף תת-קטגוריה חדשה
         </h4>
 
         <input
           type="text"
-          placeholder="שם קטגוריה"
-          value={newCatName}
-          onChange={(e) => setNewCatName(e.target.value)}
+          placeholder="שם תת-קטגוריה"
+          value={categoryName}
+          onChange={(e) => setCategoryName(e.target.value)}
           className="w-full p-3 border-2 border-gray-200 rounded-lg mb-5 text-base transition-all duration-200 outline-none focus:border-slate-700 focus:ring focus:ring-slate-700 focus:ring-opacity-10"
         />
 
@@ -257,10 +243,18 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
                 if (!rawImage) return;
                 e.preventDefault();
                 e.stopPropagation();
-                const rect = (cropRef.current as HTMLDivElement).getBoundingClientRect();
-                const cursor = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+                const rect = (
+                  cropRef.current as HTMLDivElement
+                ).getBoundingClientRect();
+                const cursor = {
+                  x: e.clientX - rect.left,
+                  y: e.clientY - rect.top,
+                };
                 const delta = Math.sign(e.deltaY) * -0.1;
-                const next = Math.min(4, Math.max(1, +(zoom + delta).toFixed(3)));
+                const next = Math.min(
+                  4,
+                  Math.max(1, +(zoom + delta).toFixed(3)),
+                );
                 if (next === zoom) return;
                 const newOff = anchoredZoom(
                   zoom,
@@ -269,7 +263,7 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
                   cursor,
                   rawImage.naturalWidth,
                   rawImage.naturalHeight,
-                  CROP_BOX
+                  CROP_BOX,
                 );
                 setZoom(next);
                 setOffset(newOff);
@@ -277,19 +271,25 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
               onMouseDown={(e) => {
                 e.preventDefault();
                 setIsPanning(true);
-                setStartPan({ x: e.clientX - offset.x, y: e.clientY - offset.y });
+                setStartPan({
+                  x: e.clientX - offset.x,
+                  y: e.clientY - offset.y,
+                });
               }}
               onMouseMove={(e) => {
                 if (!isPanning || !rawImage) return;
-                const next = { x: e.clientX - startPan.x, y: e.clientY - startPan.y };
+                const next = {
+                  x: e.clientX - startPan.x,
+                  y: e.clientY - startPan.y,
+                };
                 setOffset(
                   clampOffsetToCircle(
                     next,
                     rawImage.naturalWidth,
                     rawImage.naturalHeight,
                     zoom,
-                    CROP_BOX
-                  )
+                    CROP_BOX,
+                  ),
                 );
               }}
               onMouseUp={() => setIsPanning(false)}
@@ -297,20 +297,26 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
               onTouchStart={(e) => {
                 const t = e.touches[0];
                 setIsPanning(true);
-                setStartPan({ x: t.clientX - offset.x, y: t.clientY - offset.y });
+                setStartPan({
+                  x: t.clientX - offset.x,
+                  y: t.clientY - offset.y,
+                });
               }}
               onTouchMove={(e) => {
                 if (!isPanning || !rawImage) return;
                 const t = e.touches[0];
-                const next = { x: t.clientX - startPan.x, y: t.clientY - startPan.y };
+                const next = {
+                  x: t.clientX - startPan.x,
+                  y: t.clientY - startPan.y,
+                };
                 setOffset(
                   clampOffsetToCircle(
                     next,
                     rawImage.naturalWidth,
                     rawImage.naturalHeight,
                     zoom,
-                    CROP_BOX
-                  )
+                    CROP_BOX,
+                  ),
                 );
               }}
               onTouchEnd={() => setIsPanning(false)}
@@ -335,11 +341,13 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
                   transformOrigin: "center center",
                   width:
                     rawImage.naturalWidth >= rawImage.naturalHeight
-                      ? (CROP_BOX * rawImage.naturalWidth) / rawImage.naturalHeight
+                      ? (CROP_BOX * rawImage.naturalWidth) /
+                        rawImage.naturalHeight
                       : CROP_BOX,
                   height:
                     rawImage.naturalHeight > rawImage.naturalWidth
-                      ? (CROP_BOX * rawImage.naturalHeight) / rawImage.naturalWidth
+                      ? (CROP_BOX * rawImage.naturalHeight) /
+                        rawImage.naturalWidth
                       : CROP_BOX,
                 }}
               />
@@ -358,15 +366,21 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
             <div className="flex items-center gap-2 mt-3">
               <button
                 type="button"
-                onClick={() => setZoom((z) => Math.max(1, +(z - 0.1).toFixed(2)))}
+                onClick={() =>
+                  setZoom((z) => Math.max(1, +(z - 0.1).toFixed(2)))
+                }
                 className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-slate-700"
               >
                 -
               </button>
-              <div className="px-2 text-sm text-slate-600">זום: {zoom.toFixed(2)}</div>
+              <div className="px-2 text-sm text-slate-600">
+                זום: {zoom.toFixed(2)}
+              </div>
               <button
                 type="button"
-                onClick={() => setZoom((z) => Math.min(4, +(z + 0.1).toFixed(2)))}
+                onClick={() =>
+                  setZoom((z) => Math.min(4, +(z + 0.1).toFixed(2)))
+                }
                 className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-slate-700"
               >
                 +
@@ -382,8 +396,8 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
                         rawImage.naturalWidth,
                         rawImage.naturalHeight,
                         1,
-                        CROP_BOX
-                      )
+                        CROP_BOX,
+                      ),
                     );
                   } else {
                     setOffset({ x: 0, y: 0 });
@@ -408,49 +422,30 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
           <img
             src={committedPreview}
             alt="preview"
-            className="max-w-full mt-2.5 rounded-lg mb-4 h-40 object-cover"
+            className="max-w-full mt-2.5 rounded-full mb-4 h-40 object-cover"
           />
         )}
 
         <div className="flex justify-between gap-3">
           <button
-  onClick={handleSave}
-  disabled={isSaving || (isCropperOpen && !committedPreview)}
-  className={`flex-1 p-3 rounded-lg text-base font-medium transition-all duration-200 text-white shadow-md
-    ${
-      isSaving || (isCropperOpen && !committedPreview)
-        ? "bg-slate-400 cursor-not-allowed"
-        : "bg-slate-700 hover:bg-slate-600 hover:-translate-y-px hover:shadow-lg"
-    }`}
->
-  {isSaving ? (
-    <span className="flex items-center justify-center gap-2">
-      <Spinner className="size-4 text-white" />
-      מוסיף...
-    </span>
-  ) : (
-    "שמור"
-  )}
-</button>
+            onClick={handleSave}
+            disabled={isCropperOpen && !committedPreview}
+            className={`flex-1 p-3 rounded-lg text-base font-medium transition-all duration-200 text-white shadow-md
+              ${isCropperOpen && !committedPreview ? "bg-slate-400 cursor-not-allowed" : "bg-slate-700 hover:bg-slate-600 hover:-translate-y-px hover:shadow-lg"}`}
+          >
+            שמור
+          </button>
 
-
-         <button
-  onClick={onClose}
-  disabled={isSaving}
-  className={`flex-1 p-3 border-none rounded-lg text-base font-medium transition-all duration-200 border
-    ${
-      isSaving
-        ? "bg-gray-100 text-gray-300 cursor-not-allowed border-gray-200"
-        : "bg-gray-100 text-gray-500 border border-gray-300 hover:bg-gray-300 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"
-    }`}
->
-  ביטול
-</button>
-
+          <button
+            onClick={onClose}
+            className="flex-1 p-3 border-none rounded-lg text-base font-medium cursor-pointer transition-all duration-200 bg-gray-100 text-gray-500 border border-gray-300 hover:bg-gray-300 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"
+          >
+            ביטול
+          </button>
         </div>
       </div>
     </div>
   );
 };
 
-export default AddCategoryModal;
+export default AddSubCategoryModal;

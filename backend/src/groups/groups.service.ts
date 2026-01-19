@@ -95,22 +95,20 @@ export class GroupsService {
     }
   }
 
- async getOrCreateDefaultGroup(): Promise<GroupDocument> {
-  const groupName =
-    process.env.DEFAULT_NEW_USER_GROUP_NAME || 'New Users';
+  async getOrCreateDefaultGroup(): Promise<GroupDocument> {
+    const groupName = process.env.DEFAULT_NEW_USER_GROUP_NAME || 'New Users';
 
-  let group = await this.groupModel.findOne({ groupName }).exec();
+    let group = await this.groupModel.findOne({ groupName }).exec();
 
-  if (!group) {
-    group = new this.groupModel({
-      groupName,          // ✅ REQUIRED FIELD
-      members: [],        // optional, but good practice
-    });
+    if (!group) {
+      group = new this.groupModel({
+        groupName,
+        members: [],
+      });
 
-    await group.save();
+      await group.save();
+    }
+
+    return group;
   }
-
-  return group;
-}
-
 }
