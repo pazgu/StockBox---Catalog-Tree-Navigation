@@ -145,14 +145,14 @@ export class SearchService {
 
       {
         $sort: {
-          score: -1, // higher textScore first
-          type: 1, // products before categories if tie
-          label: 1, // alphabetical fallback
+          score: -1,
+          type: 1,
+          label: 1,
         },
       },
 
       { $skip: skip },
-      { $limit: limit + 1 }, // fetch one extra to check hasMore
+      { $limit: limit + 1 },
     ];
 
     const results = await this.categoryModel.aggregate(pipeline);
