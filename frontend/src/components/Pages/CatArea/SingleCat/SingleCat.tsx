@@ -25,23 +25,15 @@ import EditCategoryModal from "../../CatArea/Categories/EditCategoryModal/EditCa
 import { userService } from "../../../../services/UserService";
 import { Spinner } from "../../../../components/ui/spinner";
 
-function dataURLtoFile(dataUrl: string, filename: string) {
-  const arr = dataUrl.split(",");
-  const mimeMatch = arr[0].match(/:(.*?);/);
-  const mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
-  const bstr = atob(arr[1]);
-  let n = bstr.length;
-  const u8arr = new Uint8Array(n);
-  while (n--) u8arr[n] = bstr.charCodeAt(n);
-  return new File([u8arr], filename, { type: mime });
-}
+import AddProductModal from "./AddProductModal/AddProductModal";
+import AddSubCategoryModal from "./AddSubCategoryModal/AddSubCategoryModal";
 
 const SingleCat: FC = () => {
   const [items, setItems] = useState<DisplayItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [categoryInfo, setCategoryInfo] = useState<CategoryDTO | null>(null);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [modalType, setModalType] = useState<"product" | "category">("product");
+  const [showAddProductModal, setShowAddProductModal] = useState(false);
+  const [showAddSubCategoryModal, setShowAddSubCategoryModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
   const [showMoveModal, setShowMoveModal] = useState(false);
@@ -49,11 +41,6 @@ const SingleCat: FC = () => {
   const [itemToMove, setItemToMove] = useState<DisplayItem | null>(null);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const [newProductName, setNewProductName] = useState("");
-  const [newProductDesc, setNewProductDesc] = useState("");
-  const [newProductImage, setNewProductImage] = useState<string | null>(null);
-  const [newCategoryName, setNewCategoryName] = useState("");
-  const [newCategoryImage, setNewCategoryImage] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [itemToEdit, setItemToEdit] = useState<DisplayItem | null>(null);
   const [isSavingProduct, setIsSavingProduct] = useState(false);
@@ -122,7 +109,7 @@ const SingleCat: FC = () => {
           type: "category",
           path: cat.categoryPath,
           favorite: userFavorites.includes(cat._id),
-        })
+        }),
       );
       const productItems: DisplayItem[] = products.map((prod: ProductDto) => ({
         id: prod._id!,
@@ -153,7 +140,7 @@ const SingleCat: FC = () => {
           categoryName: updatedCategory.categoryName,
           categoryPath: updatedCategory.categoryPath,
           imageFile: updatedCategory.imageFile,
-        }
+        },
       );
       await loadAllContent();
       setShowEditModal(false);
@@ -175,25 +162,10 @@ const SingleCat: FC = () => {
     }
   };
 
-  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (modalType === "product") {
-          setNewProductImage(reader.result as string);
-        } else {
-          setNewCategoryImage(reader.result as string);
-        }
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   const toggleFavorite = async (
     itemId: string,
     name: string,
-    type: "product" | "category"
+    type: "product" | "category",
   ) => {
     if (!id) {
       toast.error("יש להתחבר כדי להוסיף למועדפים");
@@ -205,10 +177,10 @@ const SingleCat: FC = () => {
     try {
       setItems((prev) =>
         prev.map((i) =>
-          i.id === itemId ? { ...i, favorite: newFavoriteStatus } : i
-        )
+          i.id === itemId ? { ...i, favorite: newFavoriteStatus } : i,
+        ),
       );
-      await userService.toggleFavorite( itemId, type);
+      await userService.toggleFavorite(itemId, type);
       if (newFavoriteStatus) {
         toast.success(`${name} נוסף למועדפים`);
       } else {
@@ -216,11 +188,10 @@ const SingleCat: FC = () => {
       }
     } catch (error) {
       toast.error("שגיאה בעדכון המועדפים");
-      setItems(
-        (prev) =>
-          prev.map((i) =>
-            i.id === itemId ? { ...i, favorite: previousFavoriteStatus } : i
-          )
+      setItems((prev) =>
+        prev.map((i) =>
+          i.id === itemId ? { ...i, favorite: previousFavoriteStatus } : i,
+        ),
       );
     }
   };
@@ -231,32 +202,26 @@ const SingleCat: FC = () => {
   };
 
   const confirmDelete = async () => {
-  if (!itemToDelete) return;
-
-  try {
-    setIsDeletingItem(true);
-
-    if (itemToDelete.type === "category") {
-      await categoriesService.deleteCategory(itemToDelete.id);
-    } else {
-      await ProductsService.deleteProduct(itemToDelete.id);
+    if (!itemToDelete) return;
+    try {
+      if (itemToDelete.type === "category") {
+        await categoriesService.deleteCategory(itemToDelete.id);
+      } else {
+        await ProductsService.deleteProduct(itemToDelete.id);
+      }
+      setItems(items.filter((item) => item.id !== itemToDelete.id));
+      toast.success(
+        `${itemToDelete.type === "category" ? "הקטגוריה" : "המוצר"} "${
+          itemToDelete.name
+        }" נמחק בהצלחה!`,
+      );
+    } catch (error) {
+      toast.error("שגיאה במחיקה");
+    } finally {
+      setShowDeleteModal(false);
+      setItemToDelete(null);
     }
-
-    setItems(items.filter((item) => item.id !== itemToDelete.id));
-    toast.success(
-      `${itemToDelete.type === "category" ? "הקטגוריה" : "המוצר"} "${
-        itemToDelete.name
-      }" נמחק בהצלחה!`
-    );
-  } catch (error) {
-    toast.error("שגיאה במחיקה");
-  } finally {
-    setIsDeletingItem(false);
-    setShowDeleteModal(false);
-    setItemToDelete(null);
-  }
-};
-
+  };
 
   const handleMove = (item: DisplayItem) => {
     setItemToMove(item);
@@ -269,27 +234,22 @@ const SingleCat: FC = () => {
     setItemToMove(null);
   };
 
-  const handleSaveProduct = async () => {
-  if (!newProductName || !newProductImage) {
-    toast.error("אנא מלא את כל השדות החובה");
-    return;
-  }
-
-  try {
-    setIsSavingProduct(true);
-
-    const safe =
-      newProductName.trim().toLowerCase().replace(/\s+/g, "-") || "product";
-    const file = dataURLtoFile(newProductImage, `${safe}.jpg`);
-    const newpath = `${categoryPath}/${safe}`;
-
-    const createdProduct = await ProductsService.createProduct({
-      productName: newProductName,
-      productPath: newpath,
-      productDescription: newProductDesc,
-      customFields: [],
-      imageFile: file,
-    });
+  const handleSaveProduct = async (data: {
+    name: string;
+    description: string;
+    imageFile: File;
+  }) => {
+    try {
+      const safe =
+        data.name.trim().toLowerCase().replace(/\s+/g, "-") || "product";
+      const newpath = `${categoryPath}/${safe}`;
+      const createdProduct = await ProductsService.createProduct({
+        productName: data.name,
+        productPath: newpath,
+        productDescription: data.description,
+        customFields: [],
+        imageFile: data.imageFile,
+      });
 
     const newItem: DisplayItem = {
       id: createdProduct._id!,
@@ -303,33 +263,25 @@ const SingleCat: FC = () => {
       description: createdProduct.productDescription,
     };
 
-    setItems([...items, newItem]);
-    toast.success(`המוצר "${newProductName}" נוסף בהצלחה!`);
-    closeAllModals();
-    resetForm();
-  } catch (error) {
-    toast.error("שגיאה בהוספת המוצר");
-  } finally {
-    setIsSavingProduct(false);
-  }
-};
-
-
-  const handleSaveCategory = async () => {
-    if (!newCategoryName || !newCategoryImage) {
-      toast.error("אנא מלא את כל השדות החובה");
-      return;
+      setItems([...items, newItem]);
+      toast.success(`המוצר "${data.name}" נוסף בהצלחה!`);
+      setShowAddProductModal(false);
+    } catch (error) {
+      toast.error("שגיאה בהוספת המוצר");
     }
+  };
+
+  const handleSaveCategory = async (data: {
+    name: string;
+    imageFile: File;
+  }) => {
     try {
-      const newCategoryPath = `${categoryPath}/${newCategoryName.toLowerCase().replace(/\s+/g, "-")}`;
-      const safe =
-        newCategoryName.trim().toLowerCase().replace(/\s+/g, "-") || "category";
-      const file = dataURLtoFile(newCategoryImage, `${safe}.jpg`);
+      const newCategoryPath = `${categoryPath}/${data.name.toLowerCase().replace(/\s+/g, "-")}`;
 
       const newCategory = await categoriesService.createCategory({
-        categoryName: newCategoryName,
+        categoryName: data.name,
         categoryPath: newCategoryPath,
-        imageFile: file,
+        imageFile: data.imageFile,
       });
 
       const newItem: DisplayItem = {
@@ -341,9 +293,8 @@ const SingleCat: FC = () => {
         favorite: false,
       };
       setItems([...items, newItem]);
-      toast.success(`הקטגוריה "${newCategoryName}" נוספה בהצלחה!`);
-      closeAllModals();
-      resetForm();
+      toast.success(`הקטגוריה "${data.name}" נוספה בהצלחה!`);
+      setShowAddSubCategoryModal(false);
     } catch (error) {
       toast.error("שגיאה בהוספת קטגוריה");
     }
@@ -352,20 +303,13 @@ const SingleCat: FC = () => {
   const closeAllModals = () => {
     setShowDeleteModal(false);
     setItemToDelete(null);
-    setShowAddModal(false);
+    setShowAddProductModal(false);
+    setShowAddSubCategoryModal(false);
     setShowDeleteAllModal(false);
     setShowMoveModal(false);
     setItemToMove(null);
     setShowEditModal(false);
     setItemToEdit(null);
-  };
-
-  const resetForm = () => {
-    setNewProductName("");
-    setNewProductDesc("");
-    setNewProductImage(null);
-    setNewCategoryName("");
-    setNewCategoryImage(null);
   };
 
   const handleManagePermissions = (id: string, type: string) => {
@@ -379,7 +323,9 @@ const SingleCat: FC = () => {
 
   const toggleItemSelection = (id: string) => {
     setSelectedItems((prev) =>
-      prev.includes(id) ? prev.filter((itemId) => itemId !== id) : [...prev, id]
+      prev.includes(id)
+        ? prev.filter((itemId) => itemId !== id)
+        : [...prev, id],
     );
   };
 
@@ -418,7 +364,7 @@ const SingleCat: FC = () => {
   const confirmMove = (destination: string) => {
     setItems((prev) => prev.filter((item) => !selectedItems.includes(item.id)));
     toast.success(
-      `${selectedItems.length} פריטים הועברו בהצלחה לקטגוריה: ${destination}`
+      `${selectedItems.length} פריטים הועברו בהצלחה לקטגוריה: ${destination}`,
     );
     setSelectedItems([]);
     setIsSelectionMode(false);
@@ -655,8 +601,7 @@ const SingleCat: FC = () => {
 
           <button
             onClick={() => {
-              setModalType("product");
-              setShowAddModal(true);
+              setShowAddProductModal(true);
             }}
             className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 ease-in-out scale-0 group-hover:scale-100 -translate-y-14 group-hover:translate-y-0 pointer-events-none group-hover:pointer-events-auto relative"
             title="הוסף מוצר"
@@ -669,8 +614,7 @@ const SingleCat: FC = () => {
 
           <button
             onClick={() => {
-              setModalType("category");
-              setShowAddModal(true);
+              setShowAddSubCategoryModal(true);
             }}
             className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 ease-in-out scale-0 group-hover:scale-100 -translate-y-14 group-hover:translate-y-0 pointer-events-none group-hover:pointer-events-auto relative"
             title="הוסף תת-קטגוריה"
@@ -695,100 +639,19 @@ const SingleCat: FC = () => {
           </button>
         </div>
       )}
-      {role === "editor" && showAddModal && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-          onClick={closeAllModals}
-        >
-          <div
-            className="bg-white p-6 rounded-lg w-full max-w-md"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h4 className="text-lg font-semibold mb-4">
-              {modalType === "product"
-                ? "הוסף מוצר חדש"
-                : "הוסף תת-קטגוריה חדשה"}
-            </h4>
-            {modalType === "product" ? (
-              <>
-                <input
-                  type="text"
-                  placeholder="שם מוצר"
-                  value={newProductName}
-                  onChange={(e) => setNewProductName(e.target.value)}
-                  className="w-full mb-3 p-2 border rounded"
-                />
-                <input
-                  type="text"
-                  placeholder="תיאור מוצר"
-                  value={newProductDesc}
-                  onChange={(e) => setNewProductDesc(e.target.value)}
-                  className="w-full mb-3 p-2 border rounded"
-                />
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="w-full mb-3"
-                />
-                {newProductImage && (
-                  <img
-                    src={newProductImage}
-                    alt="preview"
-                    className="w-40 mt-2 rounded mr-28"
-                  />
-                )}
-              </>
-            ) : (
-              <>
-                <input
-                  type="text"
-                  placeholder="שם תת-קטגוריה"
-                  value={newCategoryName}
-                  onChange={(e) => setNewCategoryName(e.target.value)}
-                  className="w-full mb-3 p-2 border rounded"
-                />
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="w-full mb-3"
-                />
-                {newCategoryImage && (
-                  <img
-                    src={newCategoryImage}
-                    alt="preview"
-                    className="w-40 h-40 mt-2 rounded-full mx-auto object-cover"
-                  />
-                )}
-              </>
-            )}
-            <div className="flex justify-end gap-3 mt-4">
-              <button
-  onClick={modalType === "product" ? handleSaveProduct : handleSaveCategory}
-  disabled={modalType === "product" && isSavingProduct}
-  className={`bg-[#0D305B] text-white px-4 py-2 rounded transition-colors
-    ${modalType === "product" && isSavingProduct ? "opacity-70 cursor-not-allowed" : "hover:bg-[#1e3a5f]"}`}
->
-  {modalType === "product" && isSavingProduct ? (
-    <span className="flex items-center gap-2">
-      <Spinner className="size-4 text-white" />
-      שומר...
-    </span>
-  ) : (
-    "שמור"
-  )}
-</button>
-
-              <button
-                onClick={closeAllModals}
-                className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400 transition-colors"
-              >
-                ביטול
-              </button>
-            </div>
-          </div>
-        </div>
+      {role === "editor" && (
+        <>
+          <AddProductModal
+            isOpen={showAddProductModal}
+            onClose={() => setShowAddProductModal(false)}
+            onSave={handleSaveProduct}
+          />
+          <AddSubCategoryModal
+            isOpen={showAddSubCategoryModal}
+            onClose={() => setShowAddSubCategoryModal(false)}
+            onSave={handleSaveCategory}
+          />
+        </>
       )}
 
       {role === "editor" && showDeleteModal && itemToDelete && (

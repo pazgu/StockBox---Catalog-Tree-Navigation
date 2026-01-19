@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-redundant-type-constituents */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { HttpException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
@@ -29,7 +31,50 @@ export class PermissionsService {
     return await this.permissionModel.create(dto);
   }
 
+  async getDirectChildrenToDelete(categoryId: string) {
+    if (!categoryId) return [];
+    const category = await this.categoryModel.findById(categoryId);
+    if (!category) return [];
+    let cleanPath = category.categoryPath;
+    if (cleanPath.startsWith('/')) {
+      cleanPath = cleanPath.substring(1);
+    }
+    const fullPath = cleanPath.startsWith('categories/')
+      ? `/${cleanPath}`
+      : `/categories/${cleanPath}`;
+
+    const allChildren = await this.categoryModel.find({
+      categoryPath: new RegExp(
+        `^${fullPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/`,
+      ),
+    });
+
+    const directChildren = allChildren.filter((cat) => {
+      const remainingPath = cat.categoryPath.substring(fullPath.length + 1);
+      const slashCount = (remainingPath.match(/\//g) || []).length;
+      return slashCount === 0;
+    });
+
+    return directChildren;
+  }
   async deletePermission(id: string) {
+    const permission = await this.permissionModel.findById(id).exec();
+
+    if (!permission) {
+      return null;
+    }
+    const directChildren = await this.getDirectChildrenToDelete(
+      permission.entityId.toString(),
+    );
+    if (directChildren.length > 0) {
+      const childIds = directChildren.map((child) => child._id.toString());
+      await this.permissionModel
+        .deleteMany({
+          entityId: { $in: childIds },
+          entityType: EntityType.CATEGORY,
+        })
+        .exec();
+    }
     return this.permissionModel.findByIdAndDelete(id).exec();
   }
 

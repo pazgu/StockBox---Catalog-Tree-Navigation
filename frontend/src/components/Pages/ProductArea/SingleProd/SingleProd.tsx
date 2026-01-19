@@ -27,7 +27,7 @@ const SingleProd: FC<SingleProdProps> = () => {
   const [description, setDescription] = useState("");
   const [product, setProduct] = useState<ProductDto | null>(null);
   const [originalProduct, setOriginalProduct] = useState<ProductDto | null>(
-    null
+    null,
   );
   const [newAccordionType, setNewAccordionType] = useState<
     "bullets" | "content" | null
@@ -128,7 +128,7 @@ const SingleProd: FC<SingleProdProps> = () => {
       try {
         const result = await CloudinaryService.uploadFile(
           file,
-          "products/images"
+          "products/images",
         );
         uploadedImages.push(result.url); // only store the Cloudinary URL
       } catch (err) {
@@ -147,10 +147,10 @@ const SingleProd: FC<SingleProdProps> = () => {
     try {
       const result = await CloudinaryService.uploadFile(
         files[0],
-        "products/images"
+        "products/images",
       );
       setProductImages((prev) =>
-        prev.map((img, i) => (i === currentImageIndex ? result.url : img))
+        prev.map((img, i) => (i === currentImageIndex ? result.url : img)),
       );
     } catch (err) {
       console.error("Image replacement failed", err);
@@ -184,16 +184,16 @@ const SingleProd: FC<SingleProdProps> = () => {
   const handleAccordionContentChange = (uiId: string, newContent: string) => {
     setAccordionData((prevData) =>
       prevData.map((item) =>
-        item.uiId === uiId ? { ...item, content: newContent } : item
-      )
+        item.uiId === uiId ? { ...item, content: newContent } : item,
+      ),
     );
   };
 
   const handleAccordionTitleChange = (uiId: string, newTitle: string) => {
     setAccordionData((prevData) =>
       prevData.map((item) =>
-        item.uiId === uiId ? { ...item, title: newTitle } : item
-      )
+        item.uiId === uiId ? { ...item, title: newTitle } : item,
+      ),
     );
   };
 
@@ -219,7 +219,7 @@ const SingleProd: FC<SingleProdProps> = () => {
 
   const removeAccordion = (uiId: string) => {
     setAccordionData((prevData) =>
-      prevData.filter((item) => item.uiId !== uiId)
+      prevData.filter((item) => item.uiId !== uiId),
     );
   };
 
@@ -238,10 +238,10 @@ const SingleProd: FC<SingleProdProps> = () => {
       const newItems = [...prevData];
 
       const draggedIndex = newItems.findIndex(
-        (item) => item.uiId === draggedItem.uiId
+        (item) => item.uiId === draggedItem.uiId,
       );
       const targetIndex = newItems.findIndex(
-        (item) => item.uiId === targetItem.uiId
+        (item) => item.uiId === targetItem.uiId,
       );
 
       if (draggedIndex === -1 || targetIndex === -1) return prevData;
@@ -258,7 +258,7 @@ const SingleProd: FC<SingleProdProps> = () => {
   const features = useMemo(() => {
     try {
       const data = accordionData.find(
-        (item) => item.uiId === "features"
+        (item) => item.uiId === "features",
       )?.content;
 
       return data ? JSON.parse(data) : [];
@@ -335,7 +335,7 @@ const SingleProd: FC<SingleProdProps> = () => {
               field.type === "bullets"
                 ? JSON.stringify(field.bullets)
                 : field.content,
-          }))
+          })),
         ) ||
       JSON.stringify(productImages) !==
         JSON.stringify(originalProduct?.productImages) ||
@@ -350,7 +350,7 @@ const SingleProd: FC<SingleProdProps> = () => {
               url: f.link,
               size: 0,
             })),
-          })) || []
+          })) || [],
         );
 
     if (!hasChanges) {
@@ -396,7 +396,7 @@ toast.error("לא הצלחנו לשמור את המוצר. נסה שוב בבק�
 
   const handleFileUpload = async (
     folderUiId: string,
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -423,8 +423,8 @@ toast.error("לא הצלחנו לשמור את המוצר. נסה שוב בבק�
       prev.map((folder) =>
         folder.uiId === folderUiId
           ? { ...folder, files: [...folder.files, ...uploadedFiles] }
-          : folder
-      )
+          : folder,
+      ),
     );
   };
 
@@ -436,8 +436,8 @@ toast.error("לא הצלחנו לשמור את המוצר. נסה שוב בבק�
               ...folder,
               files: folder.files.filter((f) => f.uiId !== fileUiId),
             }
-          : folder
-      )
+          : folder,
+      ),
     );
   };
 
@@ -464,7 +464,6 @@ toast.error("לא הצלחנו לשמור את המוצר. נסה שוב בבק�
     <div className="pt-16 px-6 pb-10 font-sans-['Noto_Sans_Hebrew'] rtl">
       <Breadcrumbs path={breadcrumbPath} />
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
         <div className="flex justify-between items-center mb-4 text-right">
           <div className="flex-1">
             {isEditing ? (
@@ -495,7 +494,6 @@ toast.error("לא הצלחנו לשמור את המוצר. נסה שוב בבק�
           )}
         </div>
 
-        {/* Secondary Description */}
         <div className="text-right mb-12">
           {isEditing ? (
             <textarea
@@ -596,7 +594,6 @@ toast.error("לא הצלחנו לשמור את המוצר. נסה שוב בבק�
 
 
 
-              {/* Buttons */}
               {role === "viewer" ? (
                 <div className="space-y-2 relative z-10 flex flex-row justify-center gap-12">
                   <button
@@ -633,7 +630,7 @@ toast.error("לא הצלחנו לשמור את המוצר. נסה שוב בבק�
                 <div className="relative z-10">
                   <Link
                     to={`/permissions/product/${product?._id}`}
-                    className="block w-full text-center py-3 px-4 rounded-lg font-semibold text-white bg-green-600 hover:bg-orange-700 shadow-md transition-all duration-300 transform hover:scale-105"
+                    className="block w-full text-center py-3 px-4 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-800 shadow-md transition-all duration-300"
                   >
                     נהל הרשאות
                   </Link>
@@ -641,8 +638,6 @@ toast.error("לא הצלחנו לשמור את המוצר. נסה שוב בבק�
               ) : null}
             </div>
           </div>
-
-          {/* Right: Accordion List */}
 
           <AccordionSection
             isEditing={isEditing}
