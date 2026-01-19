@@ -25,20 +25,19 @@ const SearchResultsPage = () => {
       try {
         console.log("Search Term:", searchTerm);
         const response = await searchService.getFullSearch(searchTerm);
-        setIsLoading(false);
         setResults(response.items);
       } catch (err) {
         setError("שגיאה בטעינת תוצאות החיפוש.");
       }
+      finally {
+        setIsLoading(false);
+      }
     };
     fetchResults();
-  }, [searchTerm],);
+  }, [searchTerm]);
 
   return (
-    <div
-      className="min-h-screen py-10 px-4 md:px-20 font-sans mt-20"
-      dir="rtl"
-    >
+    <div className="min-h-screen py-10 px-4 md:px-20 font-sans mt-20" dir="rtl">
       <div className="max-w-3xl">
         {" "}
         {/* Narrower width like Google Search */}
