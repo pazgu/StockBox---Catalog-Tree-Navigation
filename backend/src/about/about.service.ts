@@ -189,4 +189,25 @@ export class AboutService {
   private toImageUrls(images: any[] = []) {
     return images.map((x) => x.url);
   }
+
+  async deleteImageByPublicId(publicId: string) {
+    const doc = await this.getOrCreateSingleton();
+
+    const arr = doc.images ?? [];
+    const idx = arr.findIndex((x) => x.public_id === publicId);
+    if (idx === -1) throw new NotFoundException('Image not found');
+
+    const removed = arr[idx];
+    doc.images = arr.filter((_, i) => i !== idx);
+
+    const saved = await doc.save();
+
+    await this.safeCloudinaryDestroy(removed?.public_id);
+
+    return {
+      blocks: saved.blocks ?? [],
+      images: this.toImageUrls(saved.images ?? []),
+      updatedAt: saved.updatedAt,
+    };
+  }
 }
