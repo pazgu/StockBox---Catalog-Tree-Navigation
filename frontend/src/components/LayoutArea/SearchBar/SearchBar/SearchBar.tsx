@@ -1,71 +1,234 @@
-import { Search } from "lucide-react";
+import { Search, X, Loader2, Package, FolderTree } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
-import { useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { searchService } from "../../../../services/search.service";
+import type { SearchResponse, SearchResult } from "../../../../types/types";
 
 export interface SearchHeaderProps {
-  placeholder?: string; // text for the search input
-  maxVisibleResults?: number; // how many results to show in dropdown before "Show All"
-  redirectToSearchPage?: string; // URL for the "Show All" link
-  onSearch?: (query: string) => void;
-  onSelectResult?: (item: {
-    _id: string;
-    name: string;
-    path: string;
-    type: "product" | "category";
-  }) => void; // callback when a result is clicked
+  placeholder?: string;
+  maxVisibleResults?: number;
+  onSelectResult?: (item: SearchResult) => void;
+  onShowAll?: (query: string) => void;
 }
 
 const SearchBar: React.FC<SearchHeaderProps> = ({
-  onSearch,
+  placeholder = "חפש מוצר...",
+  maxVisibleResults = 1,
+  onSelectResult,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string>("");
+  const [showResults, setShowResults] = useState(false);
+  const [totalResults, setTotalResults] = useState(0);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+
   const searchRef = useRef<HTMLInputElement>(null);
-  const location = useLocation();
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [location]);
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node) &&
+        searchRef.current &&
+        !searchRef.current.contains(event.target as Node)
+      ) {
+        setShowResults(false);
+      }
+    };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim() && onSearch) {
-      onSearch(searchQuery.trim());
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchQuery.trim().length > 0) {
+        performSearch(searchQuery.trim());
+      } else {
+        setResults([]);
+        setShowResults(false);
+        setError("");
+      }
+    });
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const performSearch = async (query: string) => {
+    if (query.length === 0) return;
+
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        throw new Error("נדרשת התחברות");
+      }
+
+
+
+      const response = await searchService.getDropdownResults(query);
+
+      setResults(response.items);
+
+      setShowResults(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "שגיאה בחיפוש");
+      setResults([]);
+      setShowResults(true);
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  const handleSelectResult = (item: SearchResult) => {
+    setShowResults(false);
+    setSearchQuery("");
+
+    if (onSelectResult) {
+      onSelectResult(item);
+    }
+  };
+
+  const handleShowAll = () => {
+    navigate(`/search-all?q=${encodeURIComponent(searchQuery)}`);
+    setShowResults(false);
+  };
+
+  const handleClear = () => {
+    setSearchQuery("");
+    setResults([]);
+    setShowResults(false);
+    setError("");
+    searchRef.current?.focus();
+  };
+
+  const handleSearchSubmit = () => {
+    if (results.length > 0) {
+      handleShowAll();
+    }
+  };
+
   return (
-    <>
-      <form
-        onSubmit={handleSearch}
-        className={`${
-          isMobileMenuOpen ? "hidden" : "hidden md:flex"
-        } items-center backdrop-blur-sm rounded-full px-1 py-1 transition-all duration-300 ${
+    <div className="relative">
+      <div
+        className={`hidden md:flex items-center backdrop-blur-sm rounded-full px-1 py-1 transition-all duration-300 ${
           isSearchFocused
             ? "bg-white/20 shadow-lg"
             : "bg-white/10 hover:bg-white/15"
         }`}
       >
-        <input
-          ref={searchRef}
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          onFocus={() => setIsSearchFocused(true)}
-          onBlur={() => setIsSearchFocused(false)}
-          placeholder="חפש מוצר..."
-          className="bg-transparent text-white placeholder-white/70 px-4 py-2 outline-none w-48 lg:w-64 text-right"
-          dir="rtl"
-        />
+        <div className="relative flex-1">
+          <input
+            ref={searchRef}
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => {
+              setIsSearchFocused(true);
+              if (results.length > 0 || error) {
+                setShowResults(true);
+              }
+            }}
+            onBlur={() => setIsSearchFocused(false)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleSearchSubmit();
+              }
+            }}
+            placeholder={placeholder}
+            className="bg-transparent text-white placeholder-white/70 px-4 py-2 outline-none w-48 lg:w-64 text-right"
+            dir="rtl"
+          />
+
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={handleClear}
+              className="absolute left-2 top-1/2 -translate-y-1/2 text-white/70 hover:text-white"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
+
         <button
-          type="submit"
-          className="bg-gradient-to-r from-[#edd7b8] to-[#beaa88] text-[#0D305B] px-4 py-2 rounded-full transition-all duration-300 flex items-center gap-2 transform active:scale-95"
+          type="button"
+          onClick={handleSearchSubmit}
+          disabled={isLoading}
+          className="bg-gradient-to-r from-[#edd7b8] to-[#beaa88] text-[#0D305B] px-4 py-2 rounded-full transition-all duration-300 flex items-center gap-2 transform active:scale-95 disabled:opacity-50"
         >
-          <Search size={18} />
+          {isLoading ? (
+            <Loader2 size={18} className="animate-spin" />
+          ) : (
+            <Search size={18} />
+          )}
           <span>חפש</span>
         </button>
-      </form>
-    </>
+      </div>
+
+      {/* Results Dropdown */}
+      {showResults && (
+        <div
+          ref={dropdownRef}
+          className="absolute top-full mt-2 w-full md:w-96 bg-white rounded-lg shadow-2xl z-50 max-h-96 overflow-y-auto"
+          dir="rtl"
+        >
+          {error ? (
+            <div className="p-4 text-center text-gray-500">{error}</div>
+          ) : results.length > 0 ? (
+            <>
+              <div className="py-2">
+                {results.map((item) => (
+                  <button
+                    key={`${item.type}-${item.id}`}
+                    onClick={() => handleSelectResult(item)}
+                    className="w-full px-4 py-3 hover:bg-gray-50 flex items-start gap-3 text-right transition-colors"
+                  >
+                    <div className="mt-1">
+                      {item.type === "product" ? (
+                        <Package size={18} className="text-blue-600" />
+                      ) : (
+                        <FolderTree size={18} className="text-green-600" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-gray-900 truncate">
+                        {item.label}
+                      </div>
+                      <div className="text-sm text-gray-500 truncate">
+                        {item.type === "product" ? "מוצר" : "קטגוריה"} •{" "}
+                        {item.paths[0]}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {results.length > maxVisibleResults && (
+                <div className="border-t border-gray-200">
+                  <button
+                    onClick={handleShowAll}
+                    className="w-full px-4 py-3 text-center text-blue-600 hover:bg-blue-50 font-medium"
+                  >
+                    הצג הכל{" "}
+                  </button>
+                </div>
+              )}
+            </>
+          ) : null}
+        </div>
+      )}
+    </div>
   );
 };
+
 export default SearchBar;
