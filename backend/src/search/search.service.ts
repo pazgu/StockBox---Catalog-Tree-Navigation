@@ -30,10 +30,32 @@ export class SearchService {
     private readonly permissionsService: PermissionsService,
   ) {}
 
-  private async getAllowedPaths(userId: string): Promise<{
+  private async getAllowedPaths(
+    userId: string,
+    userRole?: string,
+  ): Promise<{
     allowedCategoryPaths: string[];
     allowedProductPaths: string[];
   }> {
+    if (userRole === 'editor') {
+      const allCategories = await this.categoryModel
+        .find({})
+        .select({ categoryPath: 1 })
+        .lean()
+        .exec();
+
+      const allProducts = await this.productModel
+        .find({})
+        .select({ productPath: 1 })
+        .lean()
+        .exec();
+
+      return {
+        allowedCategoryPaths: allCategories.map((c) => c.categoryPath),
+        allowedProductPaths: allProducts.map((p) => p.productPath),
+      };
+    }
+
     const permissions =
       await this.permissionsService.getPermissionsForUser(userId);
 
@@ -89,9 +111,10 @@ export class SearchService {
     searchTerm: string,
     page = 1,
     limit = 20,
+    userRole?: string,
   ) {
     const { allowedCategoryPaths, allowedProductPaths } =
-      await this.getAllowedPaths(userId);
+      await this.getAllowedPaths(userId, userRole);
 
     if (!allowedCategoryPaths.length && !allowedProductPaths.length) {
       return { items: [], total: 0, page, limit, hasMore: false };
@@ -152,7 +175,7 @@ export class SearchService {
       },
 
       { $skip: skip },
-      { $limit: limit + 1 },
+      { $limit: limit + 1 }, 
     ];
 
     const results = await this.categoryModel.aggregate(pipeline);
