@@ -1,4 +1,4 @@
-import axios from "./axios"; // This should be your axios instance with the interceptor
+import axios from "./axios"; 
 import type { SearchResponse } from "../types/types";
 import { environment } from "../environments/environment.development";
 class SearchService {
