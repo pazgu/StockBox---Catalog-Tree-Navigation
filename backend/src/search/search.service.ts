@@ -175,7 +175,7 @@ export class SearchService {
       },
 
       { $skip: skip },
-      { $limit: limit + 1 }, 
+      { $limit: limit + 1 },
     ];
 
     const results = await this.categoryModel.aggregate(pipeline);

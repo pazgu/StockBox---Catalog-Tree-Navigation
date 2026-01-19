@@ -72,8 +72,6 @@ const SearchBar: React.FC<SearchHeaderProps> = ({
         throw new Error("נדרשת התחברות");
       }
 
-
-
       const response = await searchService.getDropdownResults(query);
 
       setResults(response.items);
@@ -224,7 +222,13 @@ const SearchBar: React.FC<SearchHeaderProps> = ({
                 </div>
               )}
             </>
-          ) : null}
+          ) : (
+            <div className="p-4 text-center text-gray-500">
+              לא נמצאו תוצאות
+              <br></br>
+              <small>יש לוודא שהוזנה מילה שלמה</small>
+            </div>
+          )}
         </div>
       )}
     </div>
