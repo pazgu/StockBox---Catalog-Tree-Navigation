@@ -113,7 +113,7 @@ const SearchResultsPage = () => {
                 {/* 3. The "Snippet" / Description */}
                 <p className="text-[14px] text-[#4d5156] leading-relaxed line-clamp-2">
                   {item.type === "product"
-                    ? `צפה בפרטי המוצר המלאים במערכת סטוקבוקס. מזהה פריט: ${item.id}.`
+                    ? `צפה בפרטי המוצר המלאים במערכת. מזהה פריט: ${item.id}.`
                     : `עיון בקטגוריית ${item.label}. לחץ לצפייה בכל המוצרים והתת-קטגוריות המשוייכים לנתיב זה.`}
                 </p>
                 <div className="border-b border-gray-00 my-4" />
