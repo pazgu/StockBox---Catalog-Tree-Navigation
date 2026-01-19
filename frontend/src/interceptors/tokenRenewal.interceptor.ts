@@ -8,7 +8,8 @@ let renewQueue: ((token: string) => void)[] = [];
 export async function tokenRenewInterceptor(
   config: InternalAxiosRequestConfig
 ): Promise<InternalAxiosRequestConfig> {
-  let token = localStorage.getItem("accessToken");
+  let token = localStorage.getItem("token");
+  console.log("🚀 Interceptor triggered for URL:", config.url);
 
   if (!token) return config;
 
@@ -20,7 +21,7 @@ export async function tokenRenewInterceptor(
       isRenewing = true;
       try {
         const newToken = await renewToken(token);
-        localStorage.setItem("accessToken", newToken);
+        localStorage.setItem("token", newToken);
         console.log("Token renewed", newToken);
         renewQueue.forEach((cb) => cb(newToken));
         renewQueue = [];

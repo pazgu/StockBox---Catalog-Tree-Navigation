@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import {
   Search,
   X,
@@ -9,10 +9,10 @@ import {
   Settings,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { environment } from "../../../../environments/environment.development";
 import { categoriesService } from "../../../../services/CategoryService";
-import { BannedItem } from "../../../../types/types";
-import api from "../../../../services/axios";
+import { groupService } from "../../../../services/GroupService";
+import { BannedItem, BannedEntityType } from "../../../../types/types";
+import { permissionsService } from "../../../../services/permissions.service";
 
 interface ManageBannedItemsModalProps {
   groupId: string;
@@ -85,18 +85,15 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
     }
   };
 
-  const load = async () => {
+  const load = useCallback(async (shouldNotify = false) => {
     try {
       setIsLoading(true);
 
-      const [productsRes, categories, permsRes] = await Promise.all([
-        api.get("/products"),
+      const [products, categories, permissions] = await Promise.all([
+        groupService.getProducts(),
         categoriesService.getCategories(),
-        api.get(`/permissions/by-group/${groupId}`),
+        groupService.getGroupPermissions(groupId),
       ]);
-
-      const products = productsRes.data as any[];
-      const permissions = permsRes.data as any[];
 
       const permIdMap: Record<string, string> = {};
       const allowedKeySet = new Set<string>();
@@ -111,18 +108,18 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
 
       setPermissionIdByKey(permIdMap);
 
-      const items: BannedItem[] = [
-        ...products.map((p) => ({
+      const items = [
+        ...products.map((p): BannedItem => ({
           id: p._id,
           name: p.productName,
-          type: "product" as const,
+          type: "product" as BannedEntityType,
           image: p.productImages?.[0],
           groupId,
         })),
-        ...categories.map((c) => ({
+        ...categories.map((c): BannedItem => ({
           id: c._id,
           name: c.categoryName,
-          type: "category" as const,
+          type: "category" as BannedEntityType,
           image: c.categoryImage,
           groupId,
         })),
@@ -135,46 +132,19 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
       );
 
       setLocalBannedItems(blocked);
-      onUpdateBannedItems(blocked);
+      if (shouldNotify) {
+        onUpdateBannedItems(blocked);
+      }
     } catch (e) {
       console.error("Failed loading modal data:", e);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [groupId, onUpdateBannedItems]);
+
   useEffect(() => {
     load();
-  }, [groupId]);
-
-  const handleUnblockItem = async (item: BannedItem) => {
-    const key = keyOf(item.type, item.id);
-
-    try {
-      await api.post("/permissions", {
-        entityType: item.type,
-        entityId: String(item.id),
-        allowed: groupId,
-      });
-
-      // add permission into our map (reload to get the id OR just refetch permissions)
-      // easiest + safest: reload modal data by calling load() again
-    } catch (e) {
-      console.error("Failed to unblock:", e);
-    }
-  };
-
-  const handleBlockItem = async (item: BannedItem) => {
-    const key = keyOf(item.type, item.id);
-    const permId = permissionIdByKey[key];
-
-    try {
-      if (permId) {
-        await api.delete(`/permissions/${permId}`);
-      }
-    } catch (e) {
-      console.error("Failed to block:", e);
-    }
-  };
+  }, [load]);
 
   const filteredBannedItems = useMemo(() => {
     return localBannedItems.filter(
@@ -203,13 +173,9 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
     try {
       setIsLoading(true);
 
-      await api.post("/permissions", {
-        entityType: item.type,
-        entityId: String(item.id),
-        allowed: groupId,
-      });
+      await permissionsService.createPermission(item.type, String(item.id), groupId);
 
-      await load();
+      await load(true);
     } catch (e) {
       console.error("Failed to unblock:", e);
     } finally {
@@ -224,10 +190,10 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
     try {
       setIsLoading(true);
       if (permId) {
-        await api.delete(`/permissions/${permId}`);
+        await permissionsService.deletePermission(permId);
       }
 
-      await load();
+      await load(true);
       setSearchQuery("");
     } catch (e) {
       console.error("Failed to block:", e);
@@ -254,23 +220,34 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
     else setSelectedItems(new Set(allIds));
   };
 
-  const handleBulkAction = () => {
-    if (activeTab === "banned") {
-      setLocalBannedItems((prev) =>
-        prev.filter((item) => !selectedItems.has(item.id))
-      );
-    } else {
-      const itemsToAdd = availableItems.filter((item) =>
-        selectedItems.has(item.id)
-      );
-      setLocalBannedItems((prev) => [...prev, ...itemsToAdd]);
+  const handleBulkAction = async () => {
+    setIsLoading(true);
+    try {
+      const promises = Array.from(selectedItems).map(async (itemId) => {
+        const item = activeTab === "banned" 
+          ? localBannedItems.find(i => i.id === itemId)
+          : availableItems.find(i => i.id === itemId);
+        
+        if (!item) return;
+        
+        if (activeTab === "banned") {
+          await permissionsService.createPermission(item.type, String(item.id), groupId);
+        } else {
+          const key = keyOf(item.type, item.id);
+          const permId = permissionIdByKey[key];
+          if (permId) {
+            await permissionsService.deletePermission(permId);
+          }
+        }
+      });
+      await Promise.all(promises);
+      await load(true);
+      setSelectedItems(new Set());
+    } catch (e) {
+      console.error("Bulk action failed:", e);
+    } finally {
+      setIsLoading(false);
     }
-    setSelectedItems(new Set());
-  };
-
-  const handleSave = () => {
-    onUpdateBannedItems(localBannedItems);
-    onClose();
   };
 
   return (
@@ -357,7 +334,6 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
             />
           </div>
 
-          {/* Filter Buttons (NO subcategory) */}
           <div className="flex gap-3 mb-2 flex-wrap flex-shrink-0">
             <button
               onClick={() => setFilterType("all")}
@@ -418,13 +394,21 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
                   </span>
                   <button
                     onClick={handleBulkAction}
+                    disabled={isLoading}
                     className={`py-1 px-3 rounded-md text-[11px] font-medium transition-all shadow-sm hover:shadow-md ${
                       activeTab === "banned"
-                        ? "bg-red-500 text-white hover:bg-red-600"
-                        : "bg-green-500 text-white hover:bg-green-600"
+                        ? "bg-red-500 text-white hover:bg-red-600 disabled:bg-red-300"
+                        : "bg-green-500 text-white hover:bg-green-600 disabled:bg-green-300"
                     }`}
                   >
                     {activeTab === "banned" ? "הסר" : "הוסף"}
+                  </button>
+                  <button
+                    onClick={() => setSelectedItems(new Set())}
+                    disabled={isLoading}
+                    className="py-1 px-3 rounded-md text-[11px] font-medium bg-gray-400 text-white hover:bg-gray-500 disabled:bg-gray-300 transition-all shadow-sm hover:shadow-md"
+                  >
+                    בטל בחירה
                   </button>
                 </>
               )}
@@ -458,12 +442,23 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
                         key={`${item.type}:${item.id}`}
                         className={`group relative rounded overflow-hidden transition-all cursor-pointer ${
                           selectedItems.has(item.id)
-                            ? "ring-1 ring-blue-400 shadow-md"
+                            ? "ring-2 ring-blue-500 shadow-md"
                             : "hover:shadow-md shadow-sm"
                         }`}
                         onClick={() => handleToggleSelection(item.id)}
                       >
                         <div className="relative w-full h-24 bg-gray-100 overflow-hidden">
+                          <div className={`absolute top-1 right-1 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all z-10 ${
+                            selectedItems.has(item.id)
+                              ? "bg-blue-500 border-blue-500"
+                              : "bg-white/90 border-gray-300 group-hover:border-blue-400"
+                          }`}>
+                            {selectedItems.has(item.id) && (
+                              <svg className="w-3 h-3 text-white" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" viewBox="0 0 24 24" stroke="currentColor">
+                                <path d="M5 13l4 4L19 7"></path>
+                              </svg>
+                            )}
+                          </div>                
                           <img
                             src={
                               item.image || "/assets/images/default-product.jpg"
@@ -530,12 +525,23 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
                       key={`${item.type}:${item.id}`}
                       className={`group relative rounded overflow-hidden transition-all cursor-pointer ${
                         selectedItems.has(item.id)
-                          ? "ring-1 ring-blue-400 shadow-md"
+                          ? "ring-2 ring-blue-500 shadow-md"
                           : "hover:shadow-md shadow-sm"
                       }`}
                       onClick={() => handleToggleSelection(item.id)}
                     >
                       <div className="relative w-full h-24 bg-gray-100 overflow-hidden">
+                        <div className={`absolute top-1 right-1 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all z-10 ${
+                          selectedItems.has(item.id)
+                            ? "bg-blue-500 border-blue-500"
+                            : "bg-white/90 border-gray-300 group-hover:border-blue-400"
+                        }`}>
+                          {selectedItems.has(item.id) && (
+                            <svg className="w-3 h-3 text-white" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" viewBox="0 0 24 24" stroke="currentColor">
+                              <path d="M5 13l4 4L19 7"></path>
+                            </svg>
+                          )}
+                        </div>
                         <img
                           src={
                             item.image || "/assets/images/default-product.jpg"
@@ -590,23 +596,6 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
           )}
         </div>
 
-        {/* Footer */}
-        <div className="border-t border-gray-200 p-2 bg-gray-50 flex-shrink-0">
-          <div className="flex gap-2">
-            <button
-              onClick={handleSave}
-              className="flex-1 py-2 px-4 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-all font-medium text-[14px]"
-            >
-              שמור שינויים
-            </button>
-            <button
-              onClick={onClose}
-              className="flex-1 py-2 px-4 bg-white text-gray-600 border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-all font-medium text-[14px]"
-            >
-              ביטול
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );
