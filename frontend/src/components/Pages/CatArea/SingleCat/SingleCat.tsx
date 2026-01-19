@@ -23,6 +23,8 @@ import MoveProductModal from "../../ProductArea/MoveProductModal/MoveProductModa
 import MoveCategoryModal from "../../CatArea/Categories/MoveCategoryModal/MoveCategoryModal";
 import EditCategoryModal from "../../CatArea/Categories/EditCategoryModal/EditCategoryModal/EditCategoryModal";
 import { userService } from "../../../../services/UserService";
+import { Spinner } from "../../../../components/ui/spinner";
+
 function dataURLtoFile(dataUrl: string, filename: string) {
   const arr = dataUrl.split(",");
   const mimeMatch = arr[0].match(/:(.*?);/);
@@ -54,6 +56,9 @@ const SingleCat: FC = () => {
   const [newCategoryImage, setNewCategoryImage] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [itemToEdit, setItemToEdit] = useState<DisplayItem | null>(null);
+  const [isSavingProduct, setIsSavingProduct] = useState(false);
+  const [isDeletingItem, setIsDeletingItem] = useState(false);
+
 
   const location = useLocation();
   const params = useParams();
@@ -226,26 +231,32 @@ const SingleCat: FC = () => {
   };
 
   const confirmDelete = async () => {
-    if (!itemToDelete) return;
-    try {
-      if (itemToDelete.type === "category") {
-        await categoriesService.deleteCategory(itemToDelete.id);
-      } else {
-        await ProductsService.deleteProduct(itemToDelete.id);
-      }
-      setItems(items.filter((item) => item.id !== itemToDelete.id));
-      toast.success(
-        `${itemToDelete.type === "category" ? "הקטגוריה" : "המוצר"} "${
-          itemToDelete.name
-        }" נמחק בהצלחה!`
-      );
-    } catch (error) {
-      toast.error("שגיאה במחיקה");
-    } finally {
-      setShowDeleteModal(false);
-      setItemToDelete(null);
+  if (!itemToDelete) return;
+
+  try {
+    setIsDeletingItem(true);
+
+    if (itemToDelete.type === "category") {
+      await categoriesService.deleteCategory(itemToDelete.id);
+    } else {
+      await ProductsService.deleteProduct(itemToDelete.id);
     }
-  };
+
+    setItems(items.filter((item) => item.id !== itemToDelete.id));
+    toast.success(
+      `${itemToDelete.type === "category" ? "הקטגוריה" : "המוצר"} "${
+        itemToDelete.name
+      }" נמחק בהצלחה!`
+    );
+  } catch (error) {
+    toast.error("שגיאה במחיקה");
+  } finally {
+    setIsDeletingItem(false);
+    setShowDeleteModal(false);
+    setItemToDelete(null);
+  }
+};
+
 
   const handleMove = (item: DisplayItem) => {
     setItemToMove(item);
@@ -259,44 +270,50 @@ const SingleCat: FC = () => {
   };
 
   const handleSaveProduct = async () => {
-    if (!newProductName || !newProductImage) {
-      toast.error("אנא מלא את כל השדות החובה");
-      return;
-    }
+  if (!newProductName || !newProductImage) {
+    toast.error("אנא מלא את כל השדות החובה");
+    return;
+  }
 
-    try {
-      const safe =
-        newProductName.trim().toLowerCase().replace(/\s+/g, "-") || "product";
-      const file = dataURLtoFile(newProductImage, `${safe}.jpg`);
-      const newpath = `${categoryPath}/${safe}`;
-      const createdProduct = await ProductsService.createProduct({
-        productName: newProductName,
-        productPath: newpath,
-        productDescription: newProductDesc,
-        customFields: [],
-        imageFile: file,
-      });
+  try {
+    setIsSavingProduct(true);
 
-      const newItem: DisplayItem = {
-        id: createdProduct._id!,
-        name: createdProduct.productName,
-        image:
-          createdProduct.productImages?.[0] ?? "/assets/images/placeholder.png",
-        type: "product",
-        path: createdProduct.productPath,
-        favorite: false,
-        customFields: createdProduct.customFields,
-        description: createdProduct.productDescription,
-      };
+    const safe =
+      newProductName.trim().toLowerCase().replace(/\s+/g, "-") || "product";
+    const file = dataURLtoFile(newProductImage, `${safe}.jpg`);
+    const newpath = `${categoryPath}/${safe}`;
 
-      setItems([...items, newItem]);
-      toast.success(`המוצר "${newProductName}" נוסף בהצלחה!`);
-      closeAllModals();
-      resetForm();
-    } catch (error) {
-      toast.error("שגיאה בהוספת המוצר");
-    }
-  };
+    const createdProduct = await ProductsService.createProduct({
+      productName: newProductName,
+      productPath: newpath,
+      productDescription: newProductDesc,
+      customFields: [],
+      imageFile: file,
+    });
+
+    const newItem: DisplayItem = {
+      id: createdProduct._id!,
+      name: createdProduct.productName,
+      image:
+        createdProduct.productImages?.[0] ?? "/assets/images/placeholder.png",
+      type: "product",
+      path: createdProduct.productPath,
+      favorite: false,
+      customFields: createdProduct.customFields,
+      description: createdProduct.productDescription,
+    };
+
+    setItems([...items, newItem]);
+    toast.success(`המוצר "${newProductName}" נוסף בהצלחה!`);
+    closeAllModals();
+    resetForm();
+  } catch (error) {
+    toast.error("שגיאה בהוספת המוצר");
+  } finally {
+    setIsSavingProduct(false);
+  }
+};
+
 
   const handleSaveCategory = async () => {
     if (!newCategoryName || !newCategoryImage) {
@@ -748,15 +765,21 @@ const SingleCat: FC = () => {
             )}
             <div className="flex justify-end gap-3 mt-4">
               <button
-                onClick={
-                  modalType === "product"
-                    ? handleSaveProduct
-                    : handleSaveCategory
-                }
-                className="bg-[#0D305B] text-white px-4 py-2 rounded hover:bg-[#1e3a5f] transition-colors"
-              >
-                שמור
-              </button>
+  onClick={modalType === "product" ? handleSaveProduct : handleSaveCategory}
+  disabled={modalType === "product" && isSavingProduct}
+  className={`bg-[#0D305B] text-white px-4 py-2 rounded transition-colors
+    ${modalType === "product" && isSavingProduct ? "opacity-70 cursor-not-allowed" : "hover:bg-[#1e3a5f]"}`}
+>
+  {modalType === "product" && isSavingProduct ? (
+    <span className="flex items-center gap-2">
+      <Spinner className="size-4 text-white" />
+      שומר...
+    </span>
+  ) : (
+    "שמור"
+  )}
+</button>
+
               <button
                 onClick={closeAllModals}
                 className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400 transition-colors"
@@ -787,18 +810,31 @@ const SingleCat: FC = () => {
             </p>
             <small className="text-gray-500">לא יהיה ניתן לבטל פעולה זו</small>
             <div className="flex justify-end gap-3 mt-4">
-              <button
-                onClick={confirmDelete}
-                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors"
-              >
-                מחק
-              </button>
-              <button
-                onClick={closeAllModals}
-                className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400 transition-colors"
-              >
-                ביטול
-              </button>
+             <button
+  onClick={confirmDelete}
+  disabled={isDeletingItem}
+  className={`bg-red-600 text-white px-4 py-2 rounded transition-colors
+    ${isDeletingItem ? "opacity-70 cursor-not-allowed" : "hover:bg-red-700"}`}
+>
+  {isDeletingItem ? (
+    <span className="flex items-center gap-2">
+      <Spinner className="size-4 text-white" />
+      מוחק...
+    </span>
+  ) : (
+    "מחק"
+  )}
+</button>
+
+             <button
+  onClick={closeAllModals}
+  disabled={isDeletingItem}
+  className={`bg-gray-300 px-4 py-2 rounded transition-colors
+    ${isDeletingItem ? "opacity-70 cursor-not-allowed" : "hover:bg-gray-400"}`}
+>
+  ביטול
+</button>
+
             </div>
           </div>
         </div>

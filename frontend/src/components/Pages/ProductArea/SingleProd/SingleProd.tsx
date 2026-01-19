@@ -16,6 +16,8 @@ import { CloudinaryService } from "../../../../services/Cloudinary.service";
 import { FileFolder, UploadedFile } from "../../../models/files.models";
 import bulletIcon from "../../../../assets/bullets.png";
 import contentIcon from "../../../../assets/font.png";
+import { Spinner } from "../../../../components/ui/spinner";
+
 interface SingleProdProps {}
 
 const SingleProd: FC<SingleProdProps> = () => {
@@ -42,6 +44,8 @@ const SingleProd: FC<SingleProdProps> = () => {
   const [folders, setFolders] = useState<FileFolder[]>([]);
   const contentIconUrl = contentIcon;
   const bulletsIconUrl = bulletIcon;
+  const [isSaving, setIsSaving] = useState(false);
+
 
   const { productId } = useParams<{ productId: string }>();
 
@@ -347,15 +351,19 @@ const SingleProd: FC<SingleProdProps> = () => {
       return;
     }
 
-    try {
-      await ProductsService.updateProduct(productId!, payload);
-      toast.success("שינויים נשמרו בהצלחה");
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to save product. Please try again.");
-    }
+   try {
+  setIsSaving(true);
+  await ProductsService.updateProduct(productId!, payload);
+  toast.success("שינויים נשמרו בהצלחה");
+  setIsEditing(false);
+} catch (err) {
+  console.error(err);
+toast.error("לא הצלחנו לשמור את המוצר. נסה שוב בבקשה.");
+} finally {
+  setIsSaving(false);
+}
 
-    setIsEditing(!isEditing);
+
   };
 
   const formatFileSize = (bytes: number): string => {
@@ -466,13 +474,16 @@ const SingleProd: FC<SingleProdProps> = () => {
           </div>
 
           {role === "editor" && (
-            <button
-              onClick={handleSaveClick}
-              aria-label={isEditing ? "סיום עריכה" : "עריכת דף"}
-              className="fixed bottom-8 left-6 flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300"
-            >
-              {isEditing ? <Check size={22} /> : <PencilLine size={22} />}
-            </button>
+           <button
+  onClick={handleSaveClick}
+  disabled={isSaving}
+  aria-label={isEditing ? "סיום עריכה" : "עריכת דף"}
+  className={`fixed bottom-8 left-6 flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300
+    ${isSaving ? "opacity-70 cursor-not-allowed" : ""}`}
+>
+  {isSaving ? <Spinner className="size-6 text-white" /> : isEditing ? <Check size={22} /> : <PencilLine size={22} />}
+</button>
+
           )}
         </div>
 
