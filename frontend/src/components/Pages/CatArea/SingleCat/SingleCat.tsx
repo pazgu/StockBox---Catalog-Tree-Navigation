@@ -23,6 +23,8 @@ import MoveProductModal from "../../ProductArea/MoveProductModal/MoveProductModa
 import MoveCategoryModal from "../../CatArea/Categories/MoveCategoryModal/MoveCategoryModal";
 import EditCategoryModal from "../../CatArea/Categories/EditCategoryModal/EditCategoryModal/EditCategoryModal";
 import { userService } from "../../../../services/UserService";
+import { Spinner } from "../../../../components/ui/spinner";
+
 import AddProductModal from "./AddProductModal/AddProductModal";
 import AddSubCategoryModal from "./AddSubCategoryModal/AddSubCategoryModal";
 
@@ -41,6 +43,9 @@ const SingleCat: FC = () => {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [itemToEdit, setItemToEdit] = useState<DisplayItem | null>(null);
+  const [isSavingProduct, setIsSavingProduct] = useState(false);
+  const [isDeletingItem, setIsDeletingItem] = useState(false);
+
 
   const location = useLocation();
   const params = useParams();
@@ -246,17 +251,17 @@ const SingleCat: FC = () => {
         imageFile: data.imageFile,
       });
 
-      const newItem: DisplayItem = {
-        id: createdProduct._id!,
-        name: createdProduct.productName,
-        image:
-          createdProduct.productImages?.[0] ?? "/assets/images/placeholder.png",
-        type: "product",
-        path: createdProduct.productPath,
-        favorite: false,
-        customFields: createdProduct.customFields,
-        description: createdProduct.productDescription,
-      };
+    const newItem: DisplayItem = {
+      id: createdProduct._id!,
+      name: createdProduct.productName,
+      image:
+        createdProduct.productImages?.[0] ?? "/assets/images/placeholder.png",
+      type: "product",
+      path: createdProduct.productPath,
+      favorite: false,
+      customFields: createdProduct.customFields,
+      description: createdProduct.productDescription,
+    };
 
       setItems([...items, newItem]);
       toast.success(`המוצר "${data.name}" נוסף בהצלחה!`);
@@ -668,18 +673,31 @@ const SingleCat: FC = () => {
             </p>
             <small className="text-gray-500">לא יהיה ניתן לבטל פעולה זו</small>
             <div className="flex justify-end gap-3 mt-4">
-              <button
-                onClick={confirmDelete}
-                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors"
-              >
-                מחק
-              </button>
-              <button
-                onClick={closeAllModals}
-                className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400 transition-colors"
-              >
-                ביטול
-              </button>
+             <button
+  onClick={confirmDelete}
+  disabled={isDeletingItem}
+  className={`bg-red-600 text-white px-4 py-2 rounded transition-colors
+    ${isDeletingItem ? "opacity-70 cursor-not-allowed" : "hover:bg-red-700"}`}
+>
+  {isDeletingItem ? (
+    <span className="flex items-center gap-2">
+      <Spinner className="size-4 text-white" />
+      מוחק...
+    </span>
+  ) : (
+    "מחק"
+  )}
+</button>
+
+             <button
+  onClick={closeAllModals}
+  disabled={isDeletingItem}
+  className={`bg-gray-300 px-4 py-2 rounded transition-colors
+    ${isDeletingItem ? "opacity-70 cursor-not-allowed" : "hover:bg-gray-400"}`}
+>
+  ביטול
+</button>
+
             </div>
           </div>
         </div>
