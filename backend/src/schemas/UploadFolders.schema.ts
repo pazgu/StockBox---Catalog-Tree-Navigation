@@ -1,6 +1,5 @@
-import { Prop, Schema } from "@nestjs/mongoose";
-import { UploadFile } from "./UploadFiles.schema";
-
+import { Prop, Schema } from '@nestjs/mongoose';
+import { UploadFile } from './UploadFiles.schema';
 
 @Schema()
 export class UploadFolder {
