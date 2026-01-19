@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
@@ -14,6 +15,7 @@ import { EditorGuard } from 'src/gaurds/editor.guard';
 @Module({
   imports: [
     ConfigModule,
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     PassportModule.register({ defaultStrategy: 'jwt' }),
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
     UsersModule,

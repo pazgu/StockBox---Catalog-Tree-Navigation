@@ -5,4 +5,3 @@ export class MoveCategoryDto {
   @IsNotEmpty()
   newParentPath: string;
 }
-
