@@ -14,9 +14,12 @@ import GroupControl from "../../Pages/UserControlArea/GroupControl/GroupControl"
 import Favorites from "../../Pages/CatArea/Favorites/Favorites";
 import { Toaster } from "sonner";
 import Footer from "../Footer/Footer";
+import SearchResultsPage from "../SearchBar/SearchBar/SearchAllPage";
+import { useNavigate } from "react-router-dom";
 interface LayoutProps {}
 
 const Layout: FC<LayoutProps> = () => {
+  const navigate = useNavigate();
   return (
     <div className="Layout">
       <Header></Header>
@@ -25,15 +28,22 @@ const Layout: FC<LayoutProps> = () => {
         <Routes>
           <Route path="/" element={<About></About>} />
           <Route path="/login" element={<Login></Login>} />
-          <Route path="/products/:productId" element={<SingleProd></SingleProd>} />
+          <Route
+            path="/products/:productId"
+            element={<SingleProd></SingleProd>}
+          />
           <Route path="/categories" element={<Categories></Categories>} />
           <Route path="/categories/*" element={<SingleCat />} />
           <Route path="/new-user" element={<NewUser></NewUser>} />
           <Route path="/allUsers" element={<AllUsers></AllUsers>} />
           <Route path="/Favorites" element={<Favorites></Favorites>} />
-          <Route path="/permissions/:type/:id" element={<Permissions></Permissions>} />{" "}
+          <Route
+            path="/permissions/:type/:id"
+            element={<Permissions></Permissions>}
+          />{" "}
           <Route path="/GroupControl" element={<GroupControl></GroupControl>} />
           <Route path="*" element={<Page404 />} />
+          <Route path="/search-all" element={<SearchResultsPage></SearchResultsPage>} />
         </Routes>
       </main>
       <Toaster richColors />
