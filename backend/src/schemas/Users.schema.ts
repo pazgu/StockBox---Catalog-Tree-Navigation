@@ -1,9 +1,23 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Types } from 'mongoose';
 
 export enum UserRole {
   EDITOR = 'editor',
   VIEWER = 'viewer',
 }
+export enum FavoriteType {
+  PRODUCT = 'product',
+  CATEGORY = 'category',
+}
+@Schema({ _id: false })
+export class FavoriteItem {
+  @Prop({ type: Types.ObjectId, required: true })
+  id: Types.ObjectId;
+
+  @Prop({ type: String, enum: FavoriteType, required: true })
+  type: FavoriteType;
+}
+const FavoriteItemSchema = SchemaFactory.createForClass(FavoriteItem);
 
 @Schema({ timestamps: true })
 export class User {
@@ -26,8 +40,11 @@ export class User {
   })
   role: UserRole;
 
-  // @Prop({ type: [String], default: [] })
-  // favorites: string[];
+  @Prop({
+    type: [FavoriteItemSchema],
+    default: [],
+  })
+  favorites: FavoriteItem[];
 
   @Prop({ required: true, default: false })
   approved: boolean;
@@ -42,3 +59,4 @@ export class User {
 export const UserSchema = SchemaFactory.createForClass(User);
 UserSchema.index({ approved: 1 });
 UserSchema.index({ isBlocked: 1 });
+UserSchema.index({ 'favorites.id': 1 });

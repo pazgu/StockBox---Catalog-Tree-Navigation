@@ -1,8 +1,11 @@
 import axios from "axios";
 import { environment } from "./../environments/environment.development";
-import { CreateProductPayload, ProductDataDto, ProductDto, UpdateProductPayload } from "../components/models/product.models";
-
-
+import {
+  CreateProductPayload,
+  ProductDataDto,
+  ProductDto,
+  UpdateProductPayload,
+} from "../components/models/product.models";
 
 export class ProductsService {
   private static readonly baseUrl = `${environment.API_URL}/products`;
@@ -37,19 +40,20 @@ export class ProductsService {
     return response.json();
   }
 
-static async createProduct(payload: CreateProductPayload): Promise<ProductDto> {
-  const fd = new FormData();
-  fd.append("productName", payload.productName);
-  console.log("from service product path:",payload.productPath)
-  fd.append("productPath", payload.productPath);
+  static async createProduct(
+    payload: CreateProductPayload
+  ): Promise<ProductDto> {
+    const fd = new FormData();
+    fd.append("productName", payload.productName);
+    fd.append("productPath", payload.productPath);
 
-  if (payload.productDescription) {
-    fd.append("productDescription", payload.productDescription);
-  }
+    if (payload.productDescription) {
+      fd.append("productDescription", payload.productDescription);
+    }
 
-  if (payload.customFields) {
-    fd.append("customFields", JSON.stringify(payload.customFields));
-  }
+    if (payload.customFields) {
+      fd.append("customFields", JSON.stringify(payload.customFields));
+    }
 
     if (payload.imageFile) {
       fd.append("productImageFile", payload.imageFile);
@@ -73,20 +77,32 @@ static async createProduct(payload: CreateProductPayload): Promise<ProductDto> {
     return response.json();
   }
 
-   static async getById(id: string): Promise<ProductDataDto> {
-  const { data } = await axios.get(
-    `${environment.API_URL}/products/${id}`
-  );
-  return data;
-}
+  static async getById(id: string): Promise<ProductDataDto> {
+    const { data } = await axios.get(`${environment.API_URL}/products/${id}`);
+    return data;
+  }
 
-
+  static async moveProduct(
+    productId: string,
+    newCategoryPath: string
+  ): Promise<{ success: boolean; message: string; product: ProductDto }> {
+    try {
+      const response = await axios.post(
+        `${this.baseUrl}/${productId}/move`,
+        { newCategoryPath },
+        this.getAuthHeaders()
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error moving product:", error);
+      throw error;
+    }
+  }
   static async updateProduct(
     productId: string,
     payload: UpdateProductPayload
   ): Promise<ProductDataDto> {
     const fd = new FormData();
-console.log("UpdateProductPayload from service:");
     if (payload.productName) fd.append("productName", payload.productName);
     if (payload.productDescription)
       fd.append("productDescription", payload.productDescription);
@@ -112,8 +128,12 @@ console.log("UpdateProductPayload from service:");
         if (group._id) fd.append(`uploadFolders[${gi}][_id]`, group._id);
 
         group.folders.forEach((folder, fi) => {
-          fd.append(`uploadFolders[${gi}][folders][${fi}][folderName]`, folder.folderName);
-          if (folder._id) fd.append(`uploadFolders[${gi}][folders][${fi}][_id]`, folder._id);
+          fd.append(
+            `uploadFolders[${gi}][folders][${fi}][folderName]`,
+            folder.folderName
+          );
+          if (folder._id)
+            fd.append(`uploadFolders[${gi}][folders][${fi}][_id]`, folder._id);
 
           folder.files.forEach((file, fli) => {
             if (file.file instanceof File) {
@@ -127,21 +147,17 @@ console.log("UpdateProductPayload from service:");
                 file.link
               );
             }
-            if (file._id) fd.append(
-              `uploadFolders[${gi}][folders][${fi}][files][${fli}][_id]`,
-              file._id
-            );
+            if (file._id)
+              fd.append(
+                `uploadFolders[${gi}][folders][${fi}][files][${fli}][_id]`,
+                file._id
+              );
           });
         });
       });
     }
 
-console.log("---- FormData entries ----");
-Array.from(fd.entries()).forEach(([key, value]) => {
-  console.log(key, value);
-});
-console.log("---------------------------");
-
+  
     const response = await fetch(`${this.baseUrl}/${productId}`, {
       method: "PATCH",
       headers: this.getAuthHeader(),
@@ -149,15 +165,16 @@ console.log("---------------------------");
     });
 
     if (!response.ok) {
-      if (response.status === 401) throw new Error("Unauthorized - please login");
-      if (response.status === 403) throw new Error("Only editors can update products");
+      if (response.status === 401)
+        throw new Error("Unauthorized - please login");
+      if (response.status === 403)
+        throw new Error("Only editors can update products");
       if (response.status === 404) throw new Error("Product not found");
       throw new Error("Failed to update product");
     }
 
     return response.json();
   }
-
 
   static async deleteProduct(id: string): Promise<void> {
     const response = await fetch(`${this.baseUrl}/${id}`, {
@@ -178,4 +195,11 @@ console.log("---------------------------");
       throw new Error("Failed to delete product");
     }
   }
+
+  static async getAllProducts(): Promise<ProductDto[]> {
+  const response = await fetch(this.baseUrl, this.getAuthHeaders());
+  if (!response.ok) throw new Error("Failed to fetch products");
+  return response.json();
+}
+
 }

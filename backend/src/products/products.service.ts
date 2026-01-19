@@ -1,23 +1,30 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 import {
   Injectable,
   NotFoundException,
   InternalServerErrorException,
+  BadRequestException,
 } from '@nestjs/common';
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Product } from '../schemas/Products.schema';
 import { CreateProductDto } from './dtos/CreateProduct.dto';
+import { MoveProductDto } from './dtos/MoveProduct.dto';
 import { uploadBufferToCloudinary } from 'src/utils/cloudinary/upload.util';
 import { deleteFromCloudinary } from 'src/utils/cloudinary/delete.util';
 import { PermissionsService } from 'src/permissions/permissions.service';
-import { EntityType } from 'src/schemas/Permissions.schema';import { UpdateProductDto } from './dtos/UpdateProduct.dto';
+import { EntityType } from 'src/schemas/Permissions.schema';
+import { UpdateProductDto } from './dtos/UpdateProduct.dto';
+import { Category } from 'src/schemas/Categories.schema';
 
 @Injectable()
 export class ProductsService {
   constructor(
     @InjectModel(Product.name) private productModel: Model<Product>,
+    @InjectModel(Category.name) private categoryModel: Model<Category>,
     private permissionsService: PermissionsService,
   ) {}
 
@@ -37,7 +44,7 @@ export class ProductsService {
 
   async findByPath(
     path: string,
-    user?: { userId: string; role: string }, // accept user
+    user?: { userId: string; role: string },
   ): Promise<Product[]> {
     if (!user) {
       return [];
@@ -83,25 +90,30 @@ export class ProductsService {
     return [];
   }
 
-  async create(createProductDto: CreateProductDto, file?: Express.Multer.File) {
-    if (file?.buffer) {
-      const uploaded = await uploadBufferToCloudinary(
-        file.buffer,
-        'stockbox/products',
-      );
-
-      createProductDto.productImages = [uploaded.secure_url];
-    }
-
-    if (!createProductDto.productImages) {
-      createProductDto.productImages = [];
-    }
-
-    const newProduct = new this.productModel(createProductDto);
-    const saved = await newProduct.save();
-
-    return saved;
+ async create(
+  createProductDto: CreateProductDto,
+  file?: Express.Multer.File,
+) {
+  if (file?.buffer) {
+    const uploaded = await uploadBufferToCloudinary(
+      file.buffer,
+      'stockbox/products',
+    );
+    createProductDto.productImages = [uploaded.secure_url];
   }
+
+  if (!createProductDto.productImages) {
+    createProductDto.productImages = [];
+  }
+
+  const newProduct = new this.productModel(createProductDto);
+  const savedProduct = await newProduct.save();
+
+  await this.permissionsService.assignPermissionsForNewEntity(savedProduct);
+
+  return savedProduct;
+}
+
 
   async delete(id: string): Promise<{ success: boolean; message: string }> {
     const product = await this.productModel.findById(id);
@@ -133,36 +145,92 @@ export class ProductsService {
     }
   }
 
+  async update(id: string, dto: UpdateProductDto) {
 
+    const existing = await this.productModel.findById(id);
+    if (!existing) throw new NotFoundException('Product not found');
 
+    if (dto.customFields && Array.isArray(dto.customFields)) {
+      dto.customFields = dto.customFields.map((field) => {
+        if (field._id?.startsWith('new-')) {
+          return { ...field, _id: new Types.ObjectId().toString() };
+        }
+        return field;
+      });
+    }
 
-async update(id: string, dto: UpdateProductDto) {
-  console.log("the dto:", dto);
+    if (dto.productName && dto.productName !== existing.productName) {
+      const parentPath = this.getParentPath(existing.productPath);
+      const newSlug = this.slugify(dto.productName);
+      const newPath = `${parentPath}/${newSlug}`;
 
-  if (dto.customFields && Array.isArray(dto.customFields)) {
-    dto.customFields = dto.customFields.map((field) => {
-      if (field._id?.startsWith('new-')) {
-        return {
-          ...field,
-          _id: new Types.ObjectId().toString(), // convert to string
-        };
+      const dup = await this.productModel.findOne({
+        productPath: newPath,
+        _id: { $ne: id },
+      });
+
+      if (dup) {
+        throw new BadRequestException(
+          'A product with this name already exists in this category',
+        );
       }
-      return field;
+
+      dto.productPath = newPath;
+    }
+
+    const updatedProduct = await this.productModel.findByIdAndUpdate(
+      id,
+      { $set: dto },
+      { new: true },
+    );
+
+    if (!updatedProduct) {
+      throw new NotFoundException('Product not found');
+    }
+
+    return updatedProduct;
+  }
+
+  async moveProduct(id: string, moveProductDto: MoveProductDto) {
+    const product = await this.productModel.findById(id);
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    const { newCategoryPath } = moveProductDto;
+
+    const categoryExists = await this.categoryModel.findOne({
+      categoryPath: newCategoryPath,
     });
+
+    if (!categoryExists) {
+      throw new BadRequestException('Target category does not exist');
+    }
+
+    const oldPath = product.productPath;
+    const productName = product.productName.toLowerCase().replace(/\s+/g, '-');
+    const newPath = `${newCategoryPath}/${productName}`;
+
+    const existingProduct = await this.productModel.findOne({
+      productPath: newPath,
+      _id: { $ne: id },
+    });
+
+    if (existingProduct) {
+      throw new BadRequestException(
+        'A product with this name already exists at the destination',
+      );
+    }
+
+    product.productPath = newPath;
+    await product.save();
+
+    return {
+      success: true,
+      message: `Product moved successfully from ${oldPath} to ${newPath}`,
+      product: await this.productModel.findById(id),
+    };
   }
-
-  const updatedProduct = await this.productModel.findByIdAndUpdate(
-    id,
-    { $set: dto },
-    { new: true }
-  );
-
-  if (!updatedProduct) {
-    throw new NotFoundException('Product not found');
-  }
-
-  return updatedProduct;
-}
 
   private async deleteProductImage(imageUrl: string): Promise<void> {
     try {
@@ -184,5 +252,19 @@ async update(id: string, dto: UpdateProductDto) {
     } catch {
       return null;
     }
+  }
+
+  private slugify(name: string): string {
+    return name
+      .trim()
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-');
+  }
+
+  private getParentPath(fullProductPath: string): string {
+    const idx = fullProductPath.lastIndexOf('/');
+    return idx === -1 ? '' : fullProductPath.substring(0, idx);
   }
 }

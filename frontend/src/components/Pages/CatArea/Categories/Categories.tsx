@@ -1,12 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { FC, useState, useEffect } from "react";
-import {
-  Pen,
-  Trash,
-  Lock,
-  Heart,
-  LucideFileChartColumnIncreasing,
-} from "lucide-react";
+import { Pen, Trash, Lock, Heart } from "lucide-react";
 import { useUser } from "../../../../context/UserContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -15,6 +9,7 @@ import EditCategoryModal from "./EditCategoryModal/EditCategoryModal/EditCategor
 import Breadcrumbs from "../../../LayoutArea/Breadcrumbs/Breadcrumbs";
 import { categoriesService } from "../../../../services/CategoryService";
 import { AddCategoryResult } from "../../../models/category.models";
+import { userService } from "../../../../services/UserService";
 
 interface CategoriesProps {}
 
@@ -38,23 +33,40 @@ export const Categories: FC<CategoriesProps> = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(true);
-  const { role } = useUser();
+  const { role, id } = useUser();
   const navigate = useNavigate();
   const path: string[] = ["categories"];
 
   useEffect(() => {
-    if (role) {
-      fetchCategories();
-    } else {
-      setIsLoading(false); // Add this!
+    if (role !== undefined) {
+      if (role) {
+        loadCategoriesAndFavorites();
+      } else {
+        setIsLoading(false);
+      }
     }
-  }, [role]);
+  }, [role, id]);
 
-  const fetchCategories = async () => {
+  const loadCategoriesAndFavorites = async () => {
     try {
       setIsLoading(true);
-      const data = await categoriesService.getCategories();
-      setCategories(data);
+      const categoriesData = await categoriesService.getCategories();
+      setCategories(categoriesData);
+      if (id) {
+        try {
+          const userFavorites = await userService.getFavorites();
+          const favoritesMap: Record<string, boolean> = {};
+          
+          userFavorites.forEach((fav: any) => {
+            if (fav.type === 'category') {
+              favoritesMap[fav.id.toString()] = true;
+            }
+          });
+          setFavorites(favoritesMap);
+        } catch (error) {
+          console.error("Error loading favorites:", error);
+        }
+      }
     } catch (error) {
       toast.error("שגיאה בטעינת קטגוריות");
       console.error("Error fetching categories:", error);
@@ -63,17 +75,28 @@ export const Categories: FC<CategoriesProps> = () => {
     }
   };
 
-  const toggleFavorite = (id: string) => {
-    const cam = categories.find((c) => c._id === id);
-    if (!cam) return;
 
-    const isFavorite = favorites[id];
-    if (isFavorite) {
-      toast.info(`${cam.categoryName} הוסר מהמועדפים`);
-    } else {
-      toast.success(`${cam.categoryName} נוסף למועדפים`);
+  const toggleFavorite = async (categoryId: string) => {
+    if (!id) {
+      toast.error("יש להתחבר כדי להוסיף למועדפים");
+      return;
     }
-    setFavorites((prev) => ({ ...prev, [id]: !isFavorite }));
+    const category = categories.find((c) => c._id === categoryId);
+    if (!category) return;
+
+    const wasFavorite = favorites[categoryId];
+    try {
+      setFavorites((prev) => ({ ...prev, [categoryId]: !wasFavorite }));
+      await userService.toggleFavorite(categoryId, "category");
+      if (!wasFavorite) {
+        toast.success(`${category.categoryName} נוסף למועדפים`);
+      } else {
+        toast.info(`${category.categoryName} הוסר מהמועדפים`);
+      }
+    } catch (error) {
+      toast.error("שגיאה בעדכון המועדפים");
+      setFavorites((prev) => ({ ...prev, [categoryId]: wasFavorite }));
+    }
   };
 
   const handleDelete = (category: Category) => {
@@ -165,6 +188,13 @@ export const Categories: FC<CategoriesProps> = () => {
       </div>
     );
   }
+  if (!role) {
+    return (
+      <div className="mt-12 p-4 flex items-center justify-center min-h-[400px]">
+        <div className="text-slate-700 text-xl">יש להתחבר כדי לצפות בקטגוריות</div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -181,10 +211,11 @@ export const Categories: FC<CategoriesProps> = () => {
 
       {categories.length === 0 ? (
         <div className="w-full h-40 flex justify-center items-center my-12 text-slate-500">
-         {role === "editor" ? ( <p  className="text-lg">אין קטגוריות להצגה. הוסף קטגוריה חדשה!</p>
-         ):
-         (<p  className="text-lg">אין קטגוריות להצגה!</p>)}
-         
+          {role === "editor" ? (
+            <p className="text-lg">אין קטגוריות להצגה. הוסף קטגוריה חדשה!</p>
+          ) : (
+            <p className="text-lg">אין קטגוריות להצגה!</p>
+          )}
         </div>
       ) : (
         <div className="w-full flex justify-center flex-wrap gap-10 my-12">
@@ -222,7 +253,6 @@ export const Categories: FC<CategoriesProps> = () => {
 
                   {role === "editor" && (
                     <div className="w-60 absolute inset-0 flex mr-16 gap-3 mb-4">
-                      {/* Delete Button */}
                       <div className="relative">
                         <button
                           className="peer -mt-1.5 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl"
@@ -239,7 +269,6 @@ export const Categories: FC<CategoriesProps> = () => {
                         </span>
                       </div>
 
-                      {/* Edit Button */}
                       <div className="relative">
                         <button
                           className="peer opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl mt-2.1"
@@ -256,14 +285,13 @@ export const Categories: FC<CategoriesProps> = () => {
                         </span>
                       </div>
 
-                      {/* Lock Button */}
                       <div className="relative">
                         <button
                           className="peer mt-8 -mr-2.5 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl"
                           onClick={(e) => {
                             e.stopPropagation();
                             e.preventDefault();
-                            navigate("/permissions");
+                            navigate(`/permissions/category/${category._id}`);
                           }}
                         >
                           <Lock size={18} />

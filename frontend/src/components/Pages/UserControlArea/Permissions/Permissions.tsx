@@ -1,581 +1,275 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Switch } from "../../../ui/switch";
 import { Button } from "../../../ui/button";
 import { Card, CardContent } from "../../../ui/card";
 import { Label } from "../../../ui/label";
-import { useNavigate } from "react-router-dom";
-import camera from "../../../../assets/camera.png";
-import AddGroup from "../AddGroup/AddGroup/AddGroup";
+import { useNavigate, useParams } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
-import BackButton from "../../../ui/BackButton";
-
-
-
+import { permissionsService } from "../../../../services/permissions.service";
 
 interface Group {
-  name: string;
-  members: string[];
-  enabled: boolean;
-  exception?: boolean;
+  _id: string;
+  groupName: string;
+  memebers: boolean; 
 }
 
-interface User {
-  name: string;
+interface ViewerUser {
+  _id: string;
+  userName: string;
   enabled: boolean;
-  exception?: boolean;
+  groupIds: string[];
 }
 
-interface PermissionItem {
-  id: string;
-  label: string;
-  enabled: boolean;
-  exception?: boolean;
-}
-
-interface UserPermissions {
-  generalAccess: boolean;
-  specificUsers: string;
-  onlyRegistered: boolean;
-  permissions: PermissionItem[];
+interface Permission {
+  _id: string;
+  allowed: string;
 }
 
 const Permissions: React.FC = () => {
   const navigate = useNavigate();
+  const { role } = useUser();
+  const { type, id } = useParams<{ type: string; id: string }>();
+  const cleanId = useMemo(() => id?.replace(/^:/, ""), [id]);
+
   const [isExpandedUsers, setIsExpandedUsers] = useState(false);
   const [isExpandedGroups, setIsExpandedGroups] = useState(false);
-  const [userSearch, setUserSearch] = useState("");
+  const [users, setUsers] = useState<ViewerUser[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
+  const [existingPermissions, setExistingPermissions] = useState<Permission[]>([]);
+  const [search, setSearch] = useState("");
+  const [entityData, setEntityData] = useState<{
+    name: string;
+    image: string;
+  } | null>(null);
 
-  const [users, setUsers] = useState<User[]>([
-    { name: "Alice", enabled: false, exception: false },
-    { name: "Bob", enabled: false, exception: false },
-    { name: "Charlie", enabled: false, exception: false },
-    { name: "Dana", enabled: false, exception: false },
-  ]);
-
-  const [isExpandedExceptionUsers, setIsExpandedExceptionUsers] =
-    useState(false);
-  const [isExpandedExceptionGroups, setIsExpandedExceptionGroups] =
-    useState(false);
-  const [exceptionSearch, setExceptionSearch] = useState("");
-  const [userPermissions, setUserPermissions] = useState<UserPermissions>({
-    generalAccess: false,
-    specificUsers: "",
-    onlyRegistered: true,
-    permissions: [
-      { id: "finance", label: "פיננסים", enabled: false, exception: false },
-      { id: "hr", label: "משאבי אנוש", enabled: false, exception: false },
-      { id: "security", label: "אבטחה", enabled: false, exception: false },
-    ],
-  });
-  const [isOpen, setIsOpen] = useState(false);
-  const { role } = useUser();
-
+  // 1. Load Initial Data
   useEffect(() => {
     if (role !== "editor") {
       navigate("/");
+      return;
     }
-  }, [navigate]);
 
-  const filteredUsers = users.filter((user) =>
-    user.name.toLowerCase().includes(userSearch.toLowerCase())
-  );
-  const filteredExceptionUsers = users.filter((user) =>
-    user.name.toLowerCase().includes(exceptionSearch.toLowerCase())
-  );
+    const loadData = async () => {
+      try {
+        if (!cleanId || !type) return;
 
-  const handlePermissionToggle = (permissionId: string) => {
-    setUserPermissions((prev) => ({
-      ...prev,
-      permissions: prev.permissions.map((permission) =>
-        permission.id === permissionId
-          ? { ...permission, enabled: !permission.enabled }
-          : permission
-      ),
+        const [permsRaw, viewersData, entity] = await Promise.all([
+          permissionsService.getPermissionsByEntity(cleanId),
+          permissionsService.getPotentialViewers(),
+          permissionsService.getEntityDetails(type as any, cleanId),
+        ]);
+
+        const perms: Permission[] = permsRaw;
+        setEntityData(entity);
+        setExistingPermissions(perms);
+
+        const { users: rawUsers, groups: rawGroups } = viewersData;
+        const userToGroupsMap = new Map<string, string[]>();
+        rawGroups.forEach((group: any) => {
+          const groupId = group.id || group._id;
+          (group.members || []).forEach((member: any) => {
+            const userId = member._id || member.id;
+            if (!userId) return;
+            if (!userToGroupsMap.has(userId)) userToGroupsMap.set(userId, []);
+            userToGroupsMap.get(userId)!.push(groupId);
+          });
+        });
+
+        const mappedUsers: ViewerUser[] = rawUsers.map((u: any) => {
+          const userId = u._id || u.id;
+          return {
+            _id: userId,
+            userName: u.userName,
+            groupIds: userToGroupsMap.get(userId) || [],
+            enabled: perms.some((p) => p.allowed === userId),
+          };
+        });
+
+        const mappedGroups: Group[] = rawGroups.map((g: any) => ({
+          _id: g.id || g._id,
+          groupName: g.groupName,
+          memebers: perms.some((p) => p.allowed === (g.id || g._id)),
+        }));
+
+        setUsers(mappedUsers);
+        setGroups(mappedGroups);
+      } catch (err) {
+        console.error("Load Error:", err);
+        toast.error("שגיאה בטעינת הנתונים");
+      }
+    };
+
+    loadData();
+  }, [cleanId, type, role, navigate]);
+
+  const enabledGroupIds = useMemo(() => {
+    return new Set(groups.filter((g) => g.memebers).map((g) => g._id));
+  }, [groups]);
+
+  const usersWithEffectiveState = useMemo(() => {
+    return users.map((user) => ({
+      ...user,
+      effectiveEnabled:
+        user.enabled || user.groupIds?.some((gid) => enabledGroupIds.has(gid)),
     }));
+  }, [users, enabledGroupIds]);
+
+
+  const handleToggle = (targetId: string, toggleType: "user" | "group") => {
+    if (toggleType === "user") {
+      setUsers((prev) =>
+        prev.map((u) =>
+          String(u._id) === String(targetId) ? { ...u, enabled: !u.enabled } : u
+        )
+      );
+    } else {
+      setGroups((prev) =>
+        prev.map((g) =>
+          String(g._id) === String(targetId) ? { ...g, memebers: !g.memebers } : g
+        )
+      );
+    }
   };
 
-  const handlePermissionExceptionToggle = (permissionId: string) => {
-    setUserPermissions((prev) => ({
-      ...prev,
-      permissions: prev.permissions.map((permission) =>
-        permission.id === permissionId
-          ? { ...permission, exception: !permission.exception }
-          : permission
-      ),
-    }));
-  };
+  const handleSave = async () => {
+    try {
+      if (!cleanId || !type) return;
 
-  const handleUserToggle = (name: string) => {
-    setUsers((prev) =>
-      prev.map((user) =>
-        user.name === name ? { ...user, enabled: !user.enabled } : user
-      )
-    );
-  };
+      const usersToAllow = users.filter((u) => u.enabled).map((u) => u._id);
+      const groupsToAllow = groups.filter((g) => g.memebers).map((g) => g._id);
+      const finalAllowedIds = [...usersToAllow, ...groupsToAllow];
 
-  const handleUserExceptionToggle = (name: string) => {
-    setUsers((prev) =>
-      prev.map((user) =>
-        user.name === name ? { ...user, exception: !user.exception } : user
-      )
-    );
-  };
+      const currentDbIds = existingPermissions.map((p) => p.allowed);
+      const toCreate = finalAllowedIds.filter((id) => !currentDbIds.includes(id));
+      const toDelete = existingPermissions.filter((p) => !finalAllowedIds.includes(p.allowed));
 
-  const handleGroupToggle = (groupName: string) => {
-    setGroups((prev) =>
-      prev.map((group) =>
-        group.name === groupName ? { ...group, enabled: !group.enabled } : group
-      )
-    );
-  };
+      await Promise.all([
+        ...toCreate.map((allowedId) =>
+          permissionsService.createPermission(type, cleanId, allowedId)
+        ),
+        ...toDelete.map((p) => permissionsService.deletePermission(p._id)),
+      ]);
 
-  const handleGroupExceptionToggle = (groupName: string) => {
-    setGroups((prev) =>
-      prev.map((group) =>
-        group.name === groupName
-          ? { ...group, exception: !group.exception }
-          : group
-      )
-    );
-  };
-
-  const handleGeneralAccessToggle = () => {
-    setUserPermissions((prev) => ({
-      ...prev,
-      generalAccess: !prev.generalAccess,
-    }));
-    setIsExpandedUsers(false);
-    setIsExpandedGroups(false);
-    setIsExpandedExceptionUsers(false);
-    setIsExpandedExceptionGroups(false);
-  };
-
-  const handleOnlyRegisteredToggle = () => {
-    setUserPermissions((prev) => ({
-      ...prev,
-      onlyRegistered: !prev.onlyRegistered,
-    }));
+      toast.success("השינויים נשמרו בהצלחה");
+      navigate(-1);
+    } catch (err) {
+      toast.error("שגיאה בשמירה");
+    }
   };
 
   return (
-    <div className="rtl px-5 md:px-16 py-20 flex justify-center font-sans">
-    <Card className="w-full max-w-4xl bg-gray-100 border border-gray-200 rounded-xl shadow-md mt-8">
-
-      <CardContent className="p-4 md:p-4">
-       {/* BACK BUTTON */}
-      <div className="flex justify-start mb-3" dir="ltr">
-        <BackButton />
-      </div>
-
-
-          {/* Header */}
-          <div className="flex flex-col md:flex-row items-center md:items-start gap-3 mb-4">
-            <div className="flex-shrink-0">
+    <div className="rtl px-5 md:px-16 py-20 flex justify-center font-sans mt-8" dir="rtl">
+      <Card className="w-full max-w-4xl bg-gray-100 border border-gray-200 rounded-xl shadow-md">
+        <CardContent className="p-4">
+          <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
+            <div className="relative">
               <img
-                src={camera}
-                alt="User permissions"
-                className="w-16 h-16 md:w-16 md:h-16 rounded-full object-cover border-2 border-white shadow-md"
+                src={entityData?.image || "/placeholder-image.png"}
+                className="w-20 h-20 rounded-xl border-2 border-white shadow-lg object-cover bg-white"
+                alt="entity"
               />
+              <span className="absolute -bottom-2 -left-2 bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded-full uppercase font-bold">
+                {type === "category" ? "קטגוריה" : "מוצר"}
+              </span>
             </div>
             <div className="flex-1 text-right">
-              <h2 className="text-lg md:text-xl font-semibold text-gray-800 mb-3">
-                ניהול הרשאות עבור: קטגורית שמע
+              <h2 className="text-xl font-bold text-gray-800">
+                ניהול הרשאות עבור:{" "}
+                <span className="text-blue-700">{entityData?.name || "טוען..."}</span>
               </h2>
-              <Label className="block mb-3 font-bold text-gray-800 text-base">
-                מוסתרת מ:
-              </Label>
-              <div className="flex justify-between items-center p-3 bg-white border border-gray-200 rounded-lg">
-                <Label
-                  htmlFor="general-access"
-                  className="text-sm font-medium text-gray-700"
-                >
-                  כל המשתמשים
-                </Label>
-                <Switch
-                  id="general-access"
-                  checked={userPermissions.generalAccess}
-                  onCheckedChange={handleGeneralAccessToggle}
-                  className="ltr"
-                />
-              </div>
             </div>
           </div>
-
-          {userPermissions.generalAccess && (
-            <>
-              {/* Exception Users Section */}
-              <div className="mb-4">
-                <Button
-                  variant="ghost"
-                  onClick={() =>
-                    setIsExpandedExceptionUsers(!isExpandedExceptionUsers)
-                  }
-                  className="flex justify-between items-center w-full p-3 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  <span>למעט משתמשים ספציפיים:</span>
-                  {isExpandedExceptionUsers ? (
-                    <ChevronUp className="w-4 h-4" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4" />
-                  )}
-                </Button>
-                <AnimatePresence>
-                  {isExpandedExceptionUsers && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className="mt-2"
-                    >
-                      <Label className="block mb-2 text-sm font-medium text-gray-700">
-                        חפש משתמש:
-                      </Label>
-                      <input
-                        type="text"
-                        placeholder="הקלד שם..."
-                        value={exceptionSearch}
-                        onChange={(e) => setExceptionSearch(e.target.value)}
-                        className="w-full p-2 mb-3 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-900 focus:border-indigo-900"
-                      />
-                      <Label className="block mb-2 text-sm font-medium text-gray-700">
-                        זמין למשתמשים:
-                      </Label>
-                      <div
-                        className="bg-white border border-gray-200 rounded-lg max-h-48 overflow-y-auto"
-                        dir="ltr"
-                      >
-                        <div dir="rtl">
-                          {filteredExceptionUsers.map((user) => (
-                            <div
-                              key={user.name}
-                              className="flex justify-between items-center px-4 py-3 border-b last:border-b-0"
-                            >
-                              <Label
-                                htmlFor={`exception-${user.name}`}
-                                className="text-sm font-medium text-gray-700"
-                              >
-                                {user.name}
-                              </Label>
-                              <Switch
-                                id={`exception-${user.name}`}
-                                checked={user.exception || false}
-                                onCheckedChange={() =>
-                                  handleUserExceptionToggle(user.name)
-                                }
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Exception Groups Section */}
-              <div className="mb-4">
-                <Button
-                  variant="ghost"
-                  onClick={() =>
-                    setIsExpandedExceptionGroups(!isExpandedExceptionGroups)
-                  }
-                  className="flex justify-between items-center w-full p-3 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  <span>למעט קבוצות ספציפיות:</span>
-                  {isExpandedExceptionGroups ? (
-                    <ChevronUp className="w-4 h-4" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4" />
-                  )}
-                </Button>
-                <AnimatePresence>
-                  {isExpandedExceptionGroups && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className="mt-2"
-                    >
-                      <Label className="block mb-2 text-sm font-medium text-gray-700">
-                        זמין לקבוצות:
-                      </Label>
-                      <div
-                        className="bg-white border border-gray-200 rounded-lg max-h-32 overflow-y-auto"
-                        dir="ltr"
-                      >
-                        <div dir="rtl">
-                          {userPermissions.permissions.map((permission) => (
-                            <div
-                              key={permission.id}
-                              className="flex justify-between items-center px-4 py-3 border-b last:border-b-0"
-                            >
-                              <Label
-                                htmlFor={`exception-${permission.id}`}
-                                className="text-sm font-medium text-gray-700"
-                              >
-                                {permission.label}
-                              </Label>
-                              <Switch
-                                id={`exception-${permission.id}`}
-                                checked={permission.exception || false}
-                                onCheckedChange={() =>
-                                  handlePermissionExceptionToggle(permission.id)
-                                }
-                              />
-                            </div>
-                          ))}
-                          {groups.map((group, index) => (
-                            <div
-                              key={index}
-                              className="flex justify-between items-center px-4 py-3 border-b last:border-b-0"
-                            >
-                              <Label
-                                htmlFor={`exception-group-${index}`}
-                                className="text-sm font-medium text-gray-700"
-                              >
-                                {group.name}
-                              </Label>
-                              <Switch
-                                id={`exception-group-${index}`}
-                                checked={group.exception || false}
-                                onCheckedChange={() =>
-                                  handleGroupExceptionToggle(group.name)
-                                }
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Add Group Button */}
-                      <div className="flex justify-center mt-4">
-                        <button
-                          className="px-2 py-1 bg-indigo-900 text-white text-sm rounded-sm hover:bg-indigo-800 transition"
-                          onClick={() => setIsOpen(true)}
-                        >
-                          לחץ להוסיף קבוצה
-                        </button>
-                        {isOpen && (
-                          <AddGroup
-                            onClose={() => setIsOpen(false)}
-                            onSave={(newGroup: Group) => {
-                              setGroups((prev) => [
-                                ...prev,
-                                { ...newGroup, enabled: false },
-                              ]);
-                              setIsOpen(false);
-                            }}
-                          />
-                        )}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </>
-          )}
-
-          {!userPermissions.generalAccess && (
-            <>
-              {/* Expand Users */}
-              <div className="mb-4">
-                <Button
-                  variant="ghost"
-                  onClick={() => setIsExpandedUsers(!isExpandedUsers)}
-                  className="flex justify-between items-center w-full p-3 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  <span>משתמשים ספציפיים:</span>
-                  {isExpandedUsers ? (
-                    <ChevronUp className="w-4 h-4" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4" />
-                  )}
-                </Button>
-                <AnimatePresence>
-                  {isExpandedUsers && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className="mt-2"
-                    >
-                      <Label
-                        htmlFor="user-search"
-                        className="block mb-2 text-sm font-medium text-gray-700"
-                      >
-                        חפש משתמש:
-                      </Label>
-                      <input
-                        id="user-search"
-                        type="text"
-                        placeholder="הקלד שם..."
-                        value={userSearch}
-                        onChange={(e) => setUserSearch(e.target.value)}
-                        className="w-full p-2 mb-3 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-900 focus:border-indigo-900"
-                      />
-                      <Label
-                        htmlFor="only-registered"
-                        className="block mb-2 text-sm font-medium text-gray-700"
-                      >
-                        מוסתרת מהמשתמשים:
-                      </Label>
-                      <div
-                        className="bg-white border border-gray-200 rounded-lg max-h-48 overflow-y-auto"
-                        dir="ltr"
-                      >
-                        <div dir="rtl">
-                          {filteredUsers.map((user) => (
-                            <div
-                              key={user.name}
-                              className="flex justify-between items-center px-4 py-3 border-b last:border-b-0"
-                            >
-                              <Label
-                                htmlFor={user.name}
-                                className="text-sm font-medium text-gray-700"
-                              >
-                                {user.name}
-                              </Label>
-                              <Switch
-                                id={user.name}
-                                checked={user.enabled}
-                                onCheckedChange={() =>
-                                  handleUserToggle(user.name)
-                                }
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Expand Groups */}
-              <div className="mb-4">
-                <Button
-                  variant="ghost"
-                  onClick={() => setIsExpandedGroups(!isExpandedGroups)}
-                  className="flex justify-between items-center w-full p-3 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  <span>קבוצות ספציפיות:</span>
-                  {isExpandedGroups ? (
-                    <ChevronUp className="w-4 h-4" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4" />
-                  )}
-                </Button>
-                <AnimatePresence>
-                  {isExpandedGroups && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className="mt-2"
-                    >
-                      <Label className="block mb-2 text-sm font-medium text-gray-700">
-                        מוסתרת מהקבוצות:
-                      </Label>
-                      <div
-                        className="bg-white border border-gray-200 rounded-lg max-h-32 overflow-y-auto"
-                        dir="ltr"
-                      >
-                        <div dir="rtl">
-                          {userPermissions.permissions.map((permission) => (
-                            <div
-                              key={permission.id}
-                              className="flex justify-between items-center px-4 py-3 border-b last:border-b-0"
-                            >
-                              <Label
-                                htmlFor={permission.id}
-                                className="text-sm font-medium text-gray-700"
-                              >
-                                {permission.label}
-                              </Label>
-                              <Switch
-                                id={permission.id}
-                                checked={permission.enabled}
-                                onCheckedChange={() =>
-                                  handlePermissionToggle(permission.id)
-                                }
-                              />
-                            </div>
-                          ))}
-                          {groups.map((group, index) => (
-                            <div
-                              key={index}
-                              className="flex justify-between items-center px-4 py-3 border-b last:border-b-0"
-                            >
-                              <Label
-                                htmlFor={`group-${index}`}
-                                className="text-sm font-medium text-gray-700"
-                              >
-                                {group.name}
-                              </Label>
-                              <Switch
-                                id={`group-${index}`}
-                                checked={group.enabled}
-                                onCheckedChange={() =>
-                                  handleGroupToggle(group.name)
-                                } // Use the new group-specific handler
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Add Group Button */}
-                      <div className="flex justify-center mt-4">
-                        <button
-                          className="px-2 py-1 bg-indigo-900 text-white text-sm rounded-sm hover:bg-indigo-800 transition"
-                          onClick={() => setIsOpen(true)}
-                        >
-                          לחץ להוסיף קבוצה
-                        </button>
-                        {isOpen && (
-                          <AddGroup
-                            onClose={() => setIsOpen(false)}
-                            onSave={(newGroup: Group) => {
-                              setGroups((prev) => [
-                                ...prev,
-                                { ...newGroup, enabled: false },
-                              ]);
-                              setIsOpen(false);
-                            }}
-                          />
-                        )}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </>
-          )}
-
-          <div className="flex flex-col md:flex-row md:justify-end gap-3 mt-6">
-            <Button
-              variant="outline"
-              className="px-6 py-2 w-full md:w-auto border border-gray-300 text-gray-700 rounded hover:bg-gray-50 hover:border-gray-400"
-              onClick={() => navigate(-1)}
-            >
-              ביטול
-            </Button>
-            <Button
-              className="px-6 py-2 w-full md:w-auto bg-green-500 text-white rounded hover:bg-green-600"
-              onClick={() => {
-                toast.success("השינויים בהרשאות נשמרו בהצלחה!");
+          <div className="flex justify-between items-center p-4 bg-white border rounded-lg mb-4 shadow-sm border-blue-100">
+            <Label className="font-bold text-blue-900 text-sm">אפשר לכולם</Label>
+            <Switch
+              checked={
+                users.length > 0 &&
+                users.every((u) => u.enabled) &&
+                groups.every((g) => g.memebers)
+              }
+              onCheckedChange={(checked) => {
+                setUsers((prev) => prev.map((u) => ({ ...u, enabled: checked })));
+                setGroups((prev) => prev.map((g) => ({ ...g, memebers: checked })));
               }}
+            />
+          </div>
+          <div className="mb-4">
+            <Button
+              variant="ghost"
+              className="w-full justify-between bg-white border"
+              onClick={() => setIsExpandedUsers(!isExpandedUsers)}
             >
-              שמירה
+              <span className="font-medium">משתמשים:</span>
+              {isExpandedUsers ? <ChevronUp /> : <ChevronDown />}
             </Button>
+            <AnimatePresence>
+              {isExpandedUsers && (
+                <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} className="overflow-hidden mt-2">
+                  <input
+                    className="w-full p-2 mb-2 border rounded shadow-sm text-right"
+                    placeholder="חפש משתמש..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                  <div className="bg-white border rounded-lg max-h-48 overflow-y-auto">
+                    {usersWithEffectiveState
+                      .filter((u) => u.userName.toLowerCase().includes(search.toLowerCase()))
+                      .map((user) => (
+                        <div key={user._id} className="flex justify-between p-3 border-b hover:bg-slate-50 transition-colors">
+                          <div className="flex items-center">
+                            <Label className="font-medium ml-2">{user.userName}</Label>
+                            {user.groupIds?.some((id) => enabledGroupIds.has(id)) && (
+                              <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                                מורשה מקבוצה
+                              </span>
+                            )}
+                          </div>
+                          <Switch
+                            checked={user.effectiveEnabled}
+                            onCheckedChange={() => handleToggle(user._id, "user")}
+                          />
+                        </div>
+                      ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          <div className="mb-4">
+            <Button
+              variant="ghost"
+              className="w-full justify-between bg-white border"
+              onClick={() => setIsExpandedGroups(!isExpandedGroups)}
+            >
+              <span className="font-medium">קבוצות:</span>
+              {isExpandedGroups ? <ChevronUp /> : <ChevronDown />}
+            </Button>
+            <AnimatePresence>
+              {isExpandedGroups && (
+                <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} className="overflow-hidden mt-2">
+                  <div className="bg-white border rounded-lg max-h-48 overflow-y-auto">
+                    {groups.map((group) => (
+                      <div key={group._id} className="flex justify-between p-3 border-b hover:bg-slate-50 transition-colors">
+                        <Label className="font-medium">{group.groupName}</Label>
+                        <Switch
+                          checked={group.memebers}
+                          onCheckedChange={() => handleToggle(group._id, "group")}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          <div className="flex justify-end gap-3 mt-6">
+            <Button variant="outline" className="px-6" onClick={() => navigate(-1)}>ביטול</Button>
+            <Button className="bg-green-600 text-white hover:bg-green-700 px-10 shadow-lg" onClick={handleSave}>שמירה</Button>
           </div>
         </CardContent>
       </Card>

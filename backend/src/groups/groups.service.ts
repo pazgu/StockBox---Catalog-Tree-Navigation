@@ -19,7 +19,7 @@ export class GroupsService {
   async findAll(): Promise<GroupDocument[]> {
     return this.groupModel
       .find()
-      .populate('members', 'username firstName lastName')
+      .populate('members', 'userName firstName lastName')
       .exec();
   }
 
@@ -27,7 +27,7 @@ export class GroupsService {
     const query = this.groupModel.findById(id);
 
     if (populateMembers) {
-      query.populate('members', 'username firstName lastName');
+      query.populate('members', 'userName firstName lastName');
     }
 
     const group = await query.exec();
@@ -94,4 +94,23 @@ export class GroupsService {
       throw new NotFoundException(`Group with ID ${id} not found`);
     }
   }
+
+ async getOrCreateDefaultGroup(): Promise<GroupDocument> {
+  const groupName =
+    process.env.DEFAULT_NEW_USER_GROUP_NAME || 'New Users';
+
+  let group = await this.groupModel.findOne({ groupName }).exec();
+
+  if (!group) {
+    group = new this.groupModel({
+      groupName,          // ✅ REQUIRED FIELD
+      members: [],        // optional, but good practice
+    });
+
+    await group.save();
+  }
+
+  return group;
+}
+
 }

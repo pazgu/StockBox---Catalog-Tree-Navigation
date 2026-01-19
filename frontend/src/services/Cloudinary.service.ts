@@ -37,7 +37,6 @@ export const CloudinaryService = {
       type: data.resource_type,  
       originalName: data.original_name,
     };
-    console.log("Cloudinary upload result:", result);
     return result;
   },
 };

@@ -1,22 +1,28 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { FC, useState, ChangeEvent, useEffect } from "react";
-import { Heart, Pen, Trash, PackageCheck, Boxes } from "lucide-react";
+import {
+  Heart,
+  Pen,
+  Trash,
+  PackageCheck,
+  Boxes,
+  FolderInput,
+} from "lucide-react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
 import Breadcrumbs from "../../../LayoutArea/Breadcrumbs/Breadcrumbs";
-import {
-  ProductsService,
-} from "../../../../services/ProductService";
-import {
-  categoriesService,
-} from "../../../../services/CategoryService";
+import { ProductsService } from "../../../../services/ProductService";
+import { categoriesService } from "../../../../services/CategoryService";
 import { FilePlus2Icon } from "lucide-react";
 import { CategoryDTO } from "../../../../components/models/category.models";
 import { DisplayItem } from "../../../../components/models/item.models";
 import { ProductDto } from "../../../../components/models/product.models";
-
+import MoveProductModal from "../../ProductArea/MoveProductModal/MoveProductModal";
+import MoveCategoryModal from "../../CatArea/Categories/MoveCategoryModal/MoveCategoryModal";
+import EditCategoryModal from "../../CatArea/Categories/EditCategoryModal/EditCategoryModal/EditCategoryModal";
+import { userService } from "../../../../services/UserService";
 function dataURLtoFile(dataUrl: string, filename: string) {
   const arr = dataUrl.split(",");
   const mimeMatch = arr[0].match(/:(.*?);/);
@@ -38,6 +44,7 @@ const SingleCat: FC = () => {
   const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
   const [showMoveModal, setShowMoveModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<DisplayItem | null>(null);
+  const [itemToMove, setItemToMove] = useState<DisplayItem | null>(null);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [newProductName, setNewProductName] = useState("");
@@ -45,10 +52,12 @@ const SingleCat: FC = () => {
   const [newProductImage, setNewProductImage] = useState<string | null>(null);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryImage, setNewCategoryImage] = useState<string | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [itemToEdit, setItemToEdit] = useState<DisplayItem | null>(null);
 
   const location = useLocation();
   const params = useParams();
-  const { role } = useUser();
+  const { role, user, id } = useUser();
   const navigate = useNavigate();
 
   const getCategoryPathFromUrl = () => {
@@ -63,7 +72,7 @@ const SingleCat: FC = () => {
       return `/categories/${pathParts.slice(categoryIndex + 1).join("/")}`;
     }
 
-    return '';
+    return "";
   };
 
   const categoryPath = getCategoryPathFromUrl();
@@ -76,8 +85,7 @@ const SingleCat: FC = () => {
 
   useEffect(() => {
     loadAllContent();
-  }, [categoryPath]);
-
+  }, [categoryPath, id]);
   const loadAllContent = async () => {
     try {
       setLoading(true);
@@ -94,6 +102,13 @@ const SingleCat: FC = () => {
       } catch (error) {
         products = [];
       }
+      let userFavorites: string[] = [];
+      if (id) {
+        try {
+          const favorites = await userService.getFavorites();
+          userFavorites = favorites.map((fav: any) => fav.id.toString());
+        } catch (error) {}
+      }
       const categoryItems: DisplayItem[] = subCategories.map(
         (cat: CategoryDTO) => ({
           id: cat._id,
@@ -101,17 +116,18 @@ const SingleCat: FC = () => {
           image: cat.categoryImage,
           type: "category",
           path: cat.categoryPath,
-          favorite: false,
+          favorite: userFavorites.includes(cat._id),
         })
       );
       const productItems: DisplayItem[] = products.map((prod: ProductDto) => ({
         id: prod._id!,
         name: prod.productName,
         image: prod.productImages?.[0] ?? "/assets/images/placeholder.png",
-        type: 'product',
+        type: "product",
         path: prod.productPath,
         description: prod.productDescription,
         customFields: prod.customFields,
+        favorite: userFavorites.includes(prod._id!),
       }));
       setItems([...categoryItems, ...productItems]);
     } catch (error) {
@@ -120,17 +136,40 @@ const SingleCat: FC = () => {
       setLoading(false);
     }
   };
+  const handleEdit = (item: DisplayItem) => {
+    setItemToEdit(item);
+    setShowEditModal(true);
+  };
+  const handleEditSuccess = async (updatedCategory: any) => {
+    try {
+      const result = await categoriesService.updateCategory(
+        updatedCategory._id,
+        {
+          categoryName: updatedCategory.categoryName,
+          categoryPath: updatedCategory.categoryPath,
+          imageFile: updatedCategory.imageFile,
+        }
+      );
+      await loadAllContent();
+      setShowEditModal(false);
+      setItemToEdit(null);
+      toast.success(`הקטגוריה "${result.categoryName}" עודכנה בהצלחה!`);
+    } catch (error) {
+      toast.error("שגיאה בעדכון הקטגוריה");
+    }
+  };
 
   const handleItemClick = (item: DisplayItem) => {
-  if (isSelectionMode) return;
-    const cleanPath = item.path.startsWith('/') ? item.path : `/${item.path}`;
+    if (isSelectionMode) return;
+    const cleanPath = item.path.startsWith("/") ? item.path : `/${item.path}`;
 
-  if (item.type === "category") {
-    navigate(cleanPath);
-  } else {
-    navigate(`/products/${item.id}`);
-  }
-};
+    if (item.type === "category") {
+      navigate(cleanPath);
+    } else {
+      navigate(`/products/${item.id}`);
+    }
+  };
+
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -146,19 +185,39 @@ const SingleCat: FC = () => {
     }
   };
 
-  const toggleFavorite = (id: string) => {
-    const item = items.find((i) => i.id === id);
-    if (!item) return;
-
-    if (item.favorite) {
-      toast.info(`${item.name} הוסר מהמועדפים`);
-    } else {
-      toast.success(`${item.name} נוסף למועדפים`);
+  const toggleFavorite = async (
+    itemId: string,
+    name: string,
+    type: "product" | "category"
+  ) => {
+    if (!id) {
+      toast.error("יש להתחבר כדי להוסיף למועדפים");
+      return;
     }
-
-    setItems((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, favorite: !i.favorite } : i))
-    );
+    const item = items.find((i) => i.id === itemId);
+    const previousFavoriteStatus = item?.favorite || false;
+    const newFavoriteStatus = !previousFavoriteStatus;
+    try {
+      setItems((prev) =>
+        prev.map((i) =>
+          i.id === itemId ? { ...i, favorite: newFavoriteStatus } : i
+        )
+      );
+      await userService.toggleFavorite( itemId, type);
+      if (newFavoriteStatus) {
+        toast.success(`${name} נוסף למועדפים`);
+      } else {
+        toast.info(`${name} הוסר מהמועדפים`);
+      }
+    } catch (error) {
+      toast.error("שגיאה בעדכון המועדפים");
+      setItems(
+        (prev) =>
+          prev.map((i) =>
+            i.id === itemId ? { ...i, favorite: previousFavoriteStatus } : i
+          )
+      );
+    }
   };
 
   const handleDelete = (item: DisplayItem) => {
@@ -188,45 +247,56 @@ const SingleCat: FC = () => {
     }
   };
 
-const handleSaveProduct = async () => {
-  if (!newProductName || !newProductImage) {
-    toast.error("אנא מלא את כל השדות החובה");
-    return;
-  }
-  
+  const handleMove = (item: DisplayItem) => {
+    setItemToMove(item);
+    setShowMoveModal(true);
+  };
 
-  try {
-    const safe = newProductName.trim().toLowerCase().replace(/\s+/g, "-") || "product";
-    const file = dataURLtoFile(newProductImage, `${safe}.jpg`);
-    const newpath = `${categoryPath}/${safe}`;
-    const createdProduct = await ProductsService.createProduct({
-      productName: newProductName,
-      productPath: newpath,
-      productDescription: newProductDesc, 
-      customFields: [], 
-      imageFile: file, 
-    });
+  const handleMoveSuccess = async () => {
+    await loadAllContent();
+    setShowMoveModal(false);
+    setItemToMove(null);
+  };
 
-    const newItem: DisplayItem = {
-      id: createdProduct._id!,
-      name: createdProduct.productName,
-      image: createdProduct.productImages?.[0] ?? "/assets/images/placeholder.png",
-      type: "product",
-      path: createdProduct.productPath,
-      favorite: false,
-      customFields: createdProduct.customFields,
-      description: createdProduct.productDescription,
-    };
+  const handleSaveProduct = async () => {
+    if (!newProductName || !newProductImage) {
+      toast.error("אנא מלא את כל השדות החובה");
+      return;
+    }
 
-    setItems([...items, newItem]);
-    toast.success(`המוצר "${newProductName}" נוסף בהצלחה!`);
-    closeAllModals();
-    resetForm();
-  } catch (error) {
-    toast.error("שגיאה בהוספת המוצר");
-  }
-};
+    try {
+      const safe =
+        newProductName.trim().toLowerCase().replace(/\s+/g, "-") || "product";
+      const file = dataURLtoFile(newProductImage, `${safe}.jpg`);
+      const newpath = `${categoryPath}/${safe}`;
+      const createdProduct = await ProductsService.createProduct({
+        productName: newProductName,
+        productPath: newpath,
+        productDescription: newProductDesc,
+        customFields: [],
+        imageFile: file,
+      });
 
+      const newItem: DisplayItem = {
+        id: createdProduct._id!,
+        name: createdProduct.productName,
+        image:
+          createdProduct.productImages?.[0] ?? "/assets/images/placeholder.png",
+        type: "product",
+        path: createdProduct.productPath,
+        favorite: false,
+        customFields: createdProduct.customFields,
+        description: createdProduct.productDescription,
+      };
+
+      setItems([...items, newItem]);
+      toast.success(`המוצר "${newProductName}" נוסף בהצלחה!`);
+      closeAllModals();
+      resetForm();
+    } catch (error) {
+      toast.error("שגיאה בהוספת המוצר");
+    }
+  };
 
   const handleSaveCategory = async () => {
     if (!newCategoryName || !newCategoryImage) {
@@ -235,7 +305,6 @@ const handleSaveProduct = async () => {
     }
     try {
       const newCategoryPath = `${categoryPath}/${newCategoryName.toLowerCase().replace(/\s+/g, "-")}`;
-
       const safe =
         newCategoryName.trim().toLowerCase().replace(/\s+/g, "-") || "category";
       const file = dataURLtoFile(newCategoryImage, `${safe}.jpg`);
@@ -269,6 +338,9 @@ const handleSaveProduct = async () => {
     setShowAddModal(false);
     setShowDeleteAllModal(false);
     setShowMoveModal(false);
+    setItemToMove(null);
+    setShowEditModal(false);
+    setItemToEdit(null);
   };
 
   const resetForm = () => {
@@ -279,8 +351,8 @@ const handleSaveProduct = async () => {
     setNewCategoryImage(null);
   };
 
-  const handleManagePermissions = () => {
-    navigate("/permissions");
+  const handleManagePermissions = (id: string, type: string) => {
+    navigate(`/permissions/${type}/${id}`);
   };
 
   const toggleSelectionMode = () => {
@@ -364,7 +436,6 @@ const handleSaveProduct = async () => {
             מוצרים: {items.filter((i) => i.type === "product").length}
           </span>
         </div>
-    
       </header>
 
       {role === "editor" && items.length !== 0 && (
@@ -386,7 +457,6 @@ const handleSaveProduct = async () => {
                   ? "בטל בחירת הכל"
                   : "בחר הכל"}
               </button>
-
               {selectedItems.length > 0 && (
                 <>
                   <span className="text-gray-400">|</span>
@@ -396,7 +466,6 @@ const handleSaveProduct = async () => {
                   >
                     מחק ({selectedItems.length})
                   </button>
-
                   <span className="text-gray-400">|</span>
                   <button
                     onClick={handleMoveSelected}
@@ -406,7 +475,6 @@ const handleSaveProduct = async () => {
                   </button>
                 </>
               )}
-
               <span className="text-gray-400">|</span>
               <button
                 onClick={toggleSelectionMode}
@@ -428,7 +496,6 @@ const handleSaveProduct = async () => {
                 ? "bg-[#0D305B]/10 rounded-sm"
                 : "border-gray-200"
             } ${!isSelectionMode ? "cursor-pointer" : ""}`}
-            onClick={() => !isSelectionMode && handleItemClick(item)}
           >
             <div
               className={`absolute top-2 left-2 px-3 py-1 text-xs font-medium rounded-full ${
@@ -462,22 +529,47 @@ const handleSaveProduct = async () => {
             )}
 
             {role === "editor" && !isSelectionMode && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete(item);
-                }}
-                className="absolute bottom-3 left-3 group-hover:opacity-100 transition-all duration-200 h-9 w-9  text-gray-700 flex items-center justify-center hover:text-red-500 hover:scale-110"
-              >
-                <Trash size={18} />
-              </button>
+              <>
+                <button
+                  title="העברה לקטגוריה אחרת"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleMove(item);
+                  }}
+                  className="absolute bottom-3 right-3 group-hover:opacity-100 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-blue-500 hover:scale-110"
+                >
+                  <FolderInput size={18} />
+                </button>
+                <button
+                  title="מחיקה"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(item);
+                  }}
+                  className="absolute bottom-3 left-3 group-hover:opacity-100 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-red-500 hover:scale-110"
+                >
+                  <Trash size={18} />
+                </button>
+                {item.type === "category" && (
+                  <button
+                    title="עריכת קטגוריה"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEdit(item);
+                    }}
+                    className="absolute bottom-3 left-12 group-hover:opacity-100 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-green-500 hover:scale-110"
+                  >
+                    <Pen size={18} />
+                  </button>
+                )}
+              </>
             )}
 
             {!isSelectionMode && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  toggleFavorite(item.id);
+                  toggleFavorite(item.id, item.name, item.type);
                 }}
                 className="absolute right-3 group-hover:opacity-100 transition-all duration-200 h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110"
               >
@@ -493,17 +585,15 @@ const handleSaveProduct = async () => {
               </button>
             )}
             <div
-                className="h-[140px] w-full flex justify-center items-center p-5 cursor-pointer"
-                onClick={() => {
-                  if (item.type === "product") {
-                    navigate(`${item.id}`);
-                  } else {
-                    navigate(`${item.path}`);
-                  }
-                }}
-              >
-
-              
+              className="h-[140px] w-full flex justify-center items-center p-5 cursor-pointer"
+              onClick={() => {
+                if (item.type === "product") {
+                  navigate(`/products/${item.id}`);
+                } else {
+                  navigate(`${item.path}`);
+                }
+              }}
+            >
               <img
                 src={item.image}
                 alt={item.name}
@@ -515,14 +605,13 @@ const handleSaveProduct = async () => {
 
             <div className="w-full text-center pt-4 border-t border-gray-200">
               <h2 className="text-[1.1rem] text-[#0D305B] mb-2">{item.name}</h2>
-            
-              {/* Manage permissions button - only for editor*/}
+
               {role === "editor" && !isSelectionMode && (
                 <div className="mt-2 flex justify-center">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleManagePermissions();
+                      handleManagePermissions(item.id, item.type);
                     }}
                     className="flex items-center gap-2 text-sm font-medium text-white bg-[#0D305B] px-4 py-2 rounded-xl shadow-md transition-all duration-300 hover:bg-[#16447A] hover:shadow-lg focus:ring-2 focus:ring-[#0D305B]/40"
                   >
@@ -589,7 +678,6 @@ const handleSaveProduct = async () => {
           </button>
         </div>
       )}
-
       {role === "editor" && showAddModal && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
@@ -680,7 +768,6 @@ const handleSaveProduct = async () => {
         </div>
       )}
 
-      {/* Delete modal */}
       {role === "editor" && showDeleteModal && itemToDelete && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
@@ -717,7 +804,6 @@ const handleSaveProduct = async () => {
         </div>
       )}
 
-      {/* Delete selected modal */}
       {role === "editor" && showDeleteAllModal && isSelectionMode && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
@@ -753,50 +839,53 @@ const handleSaveProduct = async () => {
         </div>
       )}
 
-      {/* Move modal */}
-      {role === "editor" && showMoveModal && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-          onClick={closeAllModals}
-        >
-          <div
-            className="bg-white p-6 rounded-lg w-full max-w-md"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h4 className="text-lg font-semibold mb-4">
-              העבר {selectedItems.length} פריטים לקטגוריה אחרת
-            </h4>
-            <p className="mb-4 text-gray-600">בחר קטגוריית יעד:</p>
-            <div className="space-y-3">
-              <button
-                onClick={() => confirmMove("מחשבים")}
-                className="w-full p-3 text-right border-2 border-gray-200 rounded-lg hover:border-[#0D305B] hover:bg-blue-50 transition-all"
-              >
-                מחשבים
-              </button>
-              <button
-                onClick={() => confirmMove("אביזרים")}
-                className="w-full p-3 text-right border-2 border-gray-200 rounded-lg hover:border-[#0D305B] hover:bg-blue-50 transition-all"
-              >
-                אביזרים
-              </button>
-              <button
-                onClick={() => confirmMove("אלקטרוניקה")}
-                className="w-full p-3 text-right border-2 border-gray-200 rounded-lg hover:border-[#0D305B] hover:bg-blue-50 transition-all"
-              >
-                אלקטרוניקה
-              </button>
-            </div>
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={closeAllModals}
-                className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400 transition-colors"
-              >
-                ביטול
-              </button>
-            </div>
-          </div>
-        </div>
+      {showMoveModal && itemToMove && (
+        <>
+          {itemToMove.type === "product" ? (
+            <MoveProductModal
+              isOpen={showMoveModal}
+              productId={itemToMove.id}
+              productName={itemToMove.name}
+              currentPath={itemToMove.path || categoryPath}
+              onClose={() => {
+                setShowMoveModal(false);
+                setItemToMove(null);
+              }}
+              onSuccess={handleMoveSuccess}
+            />
+          ) : (
+            <MoveCategoryModal
+              isOpen={showMoveModal}
+              category={{
+                _id: itemToMove.id,
+                categoryName: itemToMove.name,
+                categoryPath: itemToMove.path,
+                categoryImage: itemToMove.image,
+              }}
+              onClose={() => {
+                setShowMoveModal(false);
+                setItemToMove(null);
+              }}
+              onSuccess={handleMoveSuccess}
+            />
+          )}
+        </>
+      )}
+      {showEditModal && itemToEdit && itemToEdit.type === "category" && (
+        <EditCategoryModal
+          isOpen={showEditModal}
+          category={{
+            _id: itemToEdit.id,
+            categoryName: itemToEdit.name,
+            categoryPath: itemToEdit.path,
+            categoryImage: itemToEdit.image,
+          }}
+          onClose={() => {
+            setShowEditModal(false);
+            setItemToEdit(null);
+          }}
+          onSave={handleEditSuccess}
+        />
       )}
     </div>
   );

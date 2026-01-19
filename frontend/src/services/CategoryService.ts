@@ -1,3 +1,4 @@
+import axios from "axios";
 import {
   CategoryDTO,
   CreateCategoryDTO,
@@ -5,7 +6,6 @@ import {
   UpdateCategoryDTO,
 } from "../components/models/category.models";
 import { environment } from "./../environments/environment.development";
-import axios from "axios";
 
 class CategoriesService {
   private baseUrl = `${environment.API_URL}/categories`;
@@ -33,19 +33,13 @@ class CategoriesService {
   }
 
   async getSubCategories(slug: string): Promise<CategoryDTO[]> {
-    const token = localStorage.getItem("token");
-
     try {
       const response = await axios.get<CategoryDTO[]>(
         `${this.baseUrl}/children/${slug}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        this.getAuthHeaders()
       );
 
-      return await response.data;
+      return response.data;
     } catch (error) {
       console.error("Error fetching subcategories:", error);
       throw error;
@@ -64,14 +58,10 @@ class CategoriesService {
 
       const response = await axios.get<CategoryDTO[]>(
         `${this.baseUrl}/children/${cleanPath}`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
+        this.getAuthHeaders()
       );
 
-      return await response.data;
+      return response.data;
     } catch (error) {
       console.error("Error fetching direct children:", error);
       throw error;
@@ -89,7 +79,10 @@ class CategoriesService {
       }
 
       const response = await axios.post<CategoryDTO>(this.baseUrl, fd, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: {
+          "Content-Type": "multipart/form-data",
+          ...this.getAuthHeaders().headers,
+        },
       });
 
       return response.data;
@@ -102,7 +95,8 @@ class CategoriesService {
   async deleteCategory(id: string): Promise<DeleteCategoryResponse> {
     try {
       const response = await axios.delete<DeleteCategoryResponse>(
-        `${this.baseUrl}/${id}`
+        `${this.baseUrl}/${id}`,
+        this.getAuthHeaders()
       );
       return response.data;
     } catch (error) {
@@ -115,24 +109,61 @@ class CategoriesService {
     id: string,
     category: UpdateCategoryDTO & { imageFile?: File }
   ): Promise<CategoryDTO> {
-    const fd = new FormData();
+    try {
+      const fd = new FormData();
 
-    if (category.categoryName) fd.append("categoryName", category.categoryName);
-    if (category.categoryPath) fd.append("categoryPath", category.categoryPath);
+      if (category.categoryName) fd.append("categoryName", category.categoryName);
+      if (category.categoryPath) fd.append("categoryPath", category.categoryPath);
 
-    if (category.imageFile) {
-      fd.append("categoryImageFile", category.imageFile);
-    }
-
-    const response = await axios.patch<CategoryDTO>(
-      `${this.baseUrl}/${id}`,
-      fd,
-      {
-        headers: { "Content-Type": "multipart/form-data" },
+      if (category.imageFile) {
+        fd.append("categoryImageFile", category.imageFile);
       }
-    );
 
-    return response.data;
+      const response = await axios.patch<CategoryDTO>(
+        `${this.baseUrl}/${id}`,
+        fd,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            ...this.getAuthHeaders().headers,
+          },
+        }
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error("Error updating category:", error);
+      throw error;
+    }
+  }
+
+  async moveCategory(
+    id: string,
+    newParentPath: string
+  ): Promise<{ success: boolean; message: string; category: CategoryDTO }> {
+    try {
+      const response = await axios.patch(
+        `${this.baseUrl}/${id}/move`,
+        { newParentPath },
+        this.getAuthHeaders()
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error moving category:", error);
+      throw error;
+    }
+  }
+  async getCategoryById(id: string): Promise<CategoryDTO | null> {
+    try {
+      const response = await axios.get<CategoryDTO>(
+        `${this.baseUrl}/${id}`,
+        this.getAuthHeaders()
+      );
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching category ${id}:`, error);
+      return null;
+    }
   }
 }
 
