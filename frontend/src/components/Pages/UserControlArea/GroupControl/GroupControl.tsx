@@ -1,31 +1,16 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { Users, Save } from "lucide-react";
+import { Users } from "lucide-react";
 import GroupList from "./GroupList";
 import UsersList from "../AllUsers/UsersList";
 import BannedItems from "./BannedItems";
 import AddUsersModal from "./AddUsersModal";
-import { BannedItem} from "../../../../types/types";
+import { BannedItem, BannedEntityType } from "../../../../types/types";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
 import { Group } from "../../../models/group.models";
-import axios from "axios";
-import { environment } from "../../../../environments/environment.development";
 import { categoriesService } from "../../../../services/CategoryService";
-
-const api = axios.create({
-  baseURL: environment.API_URL,
-});
-
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers = config.headers ?? {};
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
+import { groupService } from "../../../../services/GroupService";
 
 const GroupControl: React.FC = () => {
   const [selectedGroup, setSelectedGroup] = useState("");
@@ -48,15 +33,11 @@ const GroupControl: React.FC = () => {
   const [groups, setGroups] = useState<Group[]>([]);
   const [isBannedLoading, setIsBannedLoading] = useState(false);
 
-
-
 useEffect(() => {
   if (selectedGroup) {
     loadBlockedItemsForGroup(selectedGroup);
   }
 }, [selectedGroup]);
-
-
 
   useEffect(() => {
     if (role !== "editor") {
@@ -74,17 +55,7 @@ useEffect(() => {
   const fetchGroups = async () => {
     try {
       setIsLoading(true);
-      const response = await api.get("/groups");
-
-      const transformedGroups: Group[] = response.data.map((g: any) => ({
-        id: g._id || g.id,
-        name: g.groupName,
-        members: g.members?.map((m: any) => 
-          typeof m === 'string' ? m : (m._id || m.id)
-        ) || [],
-        permissions: [],
-        bannedItems: [],
-      }));
+      const transformedGroups = await groupService.getGroups();
       
       setGroups(transformedGroups);
       
@@ -103,15 +74,11 @@ useEffect(() => {
   try {
     setIsBannedLoading(true);
 
-    const [productsRes, categories, permsRes] = await Promise.all([
-      api.get("/products"),
+    const [products, categories, permissions] = await Promise.all([
+      groupService.getProducts(),
       categoriesService.getCategories(),
-      api.get(`/permissions/by-group/${groupId}`),
+      groupService.getGroupPermissions(groupId),
     ]);
-
-    const products = productsRes.data;
-
-    const permissions = permsRes.data as any[];
 
     const allowedProductIds = new Set(
       permissions
@@ -133,18 +100,18 @@ useEffect(() => {
       (c: any) => !allowedCategoryIds.has(String(c._id ?? c.id))
     );
 
-    const bannedItems: BannedItem[] = [
-      ...blockedProducts.map((p: any) => ({
+    const bannedItems = [
+      ...blockedProducts.map((p: any): BannedItem => ({
         id: p._id ?? p.id,
         name: p.productName,
-        type: "product",
+        type: "product" as BannedEntityType,
         image: p.productImages?.[0],
         groupId,
       })),
-      ...blockedCategories.map((c: any) => ({
+      ...blockedCategories.map((c: any): BannedItem => ({
         id: c._id ?? c.id,
         name: c.categoryName,
-        type: "category",
+        type: "category" as BannedEntityType,
         image: c.categoryImage,
         groupId,
       })),
@@ -160,7 +127,6 @@ useEffect(() => {
     setIsBannedLoading(false);
   }
 };
-
 
   const currentGroup = useMemo(
     () => groups.find((g) => g.id === selectedGroup),
@@ -182,18 +148,7 @@ useEffect(() => {
     }
 
     try {
-      const response = await api.post("/groups", {
-        groupName: trimmedName,
-        members: [],
-      });
-
-      const newGroup: Group = {
-        id: response.data._id || response.data.id,
-        name: response.data.groupName,
-        members: [],
-        permissions: [],
-        bannedItems: [],
-      };
+      const newGroup = await groupService.createGroup(trimmedName);
 
       setGroups((prev) => [...prev, newGroup]);
       setSelectedGroup(newGroup.id);
@@ -256,7 +211,7 @@ useEffect(() => {
         (memberId) => !userIdsArray.includes(memberId)
       );
 
-      await api.patch(`/groups/${selectedGroup}`, { members: newMembers });
+      await groupService.updateGroupMembers(selectedGroup, newMembers);
 
       setGroups((prev) =>
         prev.map((g) =>
@@ -278,11 +233,7 @@ useEffect(() => {
       if (!group) return;
 
       const newMembers = Array.from(new Set([...group.members, ...userIds]));
-      const response = await api.patch(`/groups/${groupId}`, { members: newMembers });
-      const updatedMembers = response.data.members?.map((m: any) => 
-        
-        typeof m === 'string' ? m : (m._id || m.id)
-      ) || [];
+      const updatedMembers = await groupService.updateGroupMembers(groupId, newMembers);
 
       setGroups((prev) =>
         prev.map((g) =>
@@ -329,9 +280,7 @@ useEffect(() => {
     }
 
     try {
-      await api.patch(`/groups/${groupToEdit.id}`, {
-        groupName: trimmedName,
-      });
+      await groupService.updateGroupName(groupToEdit.id, trimmedName);
 
       setGroups((prev) =>
         prev.map((g) =>
@@ -359,7 +308,7 @@ useEffect(() => {
     if (!groupToDelete) return;
 
     try {
-      await api.delete(`/groups/${groupToDelete.id}`);
+      await groupService.deleteGroup(groupToDelete.id);
 
       setGroups((prevGroups) => {
         const newGroups = prevGroups.filter((g) => g.id !== groupToDelete.id);
