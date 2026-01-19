@@ -1,6 +1,7 @@
+import { environment } from "../environments/environment.development";
 import api from "../services/axios";
 
-import { InternalAxiosRequestConfig } from "axios";
+import axios, { InternalAxiosRequestConfig } from "axios";
 
 let isRenewing = false;
 let renewQueue: ((token: string) => void)[] = [];
@@ -58,8 +59,13 @@ function getTokenExpiration(token: string): number {
 }
 
 async function renewToken(token: string): Promise<string> {
-  const response = await api.post<{ accessToken: string }>("/auth/renew", {
-    token,
-  });
+  const response = await axios.post<{ accessToken: string }>(
+    `${environment.API_URL}/auth/renew`, 
+    { token },
+    {
+      withCredentials: true, 
+    }
+  );
+
   return response.data.accessToken;
 }
