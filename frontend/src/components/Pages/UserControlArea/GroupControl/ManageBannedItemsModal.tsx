@@ -1,5 +1,13 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { Search, X, Plus, Trash2, Package, FolderTree, Settings } from "lucide-react";
+import {
+  Search,
+  X,
+  Plus,
+  Trash2,
+  Package,
+  FolderTree,
+  Settings,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import { environment } from "../../../../environments/environment.development";
@@ -28,19 +36,24 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
   onClose,
   onUpdateBannedItems,
 }) => {
-  const [localBannedItems, setLocalBannedItems] = useState<BannedItem[]>(bannedItems);
+  const [localBannedItems, setLocalBannedItems] =
+    useState<BannedItem[]>(bannedItems);
   const [allItems, setAllItems] = useState<BannedItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"banned" | "available">("banned");
-  const [filterType, setFilterType] = useState<"all" | "product" | "category">("all");
-  const [selectedItems, setSelectedItems] = useState<Set<string | number>>(new Set());
+  const [filterType, setFilterType] = useState<"all" | "product" | "category">(
+    "all"
+  );
+  const [selectedItems, setSelectedItems] = useState<Set<string | number>>(
+    new Set()
+  );
   const [isLoading, setIsLoading] = useState(false);
-  const [permissionIdByKey, setPermissionIdByKey] = useState<Record<string, string>>({});
+  const [permissionIdByKey, setPermissionIdByKey] = useState<
+    Record<string, string>
+  >({});
 
   const keyOf = (type: "product" | "category", id: string | number) =>
-  `${type}:${String(id)}`;
-
-
+    `${type}:${String(id)}`;
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -77,97 +90,96 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
     }
   };
 
-const load = async () => {
-  try {
-    setIsLoading(true);
+  const load = async () => {
+    try {
+      setIsLoading(true);
 
-    const [productsRes, categories, permsRes] = await Promise.all([
-      api.get("/products"),
-      categoriesService.getCategories(),
-      api.get(`/permissions/by-group/${groupId}`),
-    ]);
+      const [productsRes, categories, permsRes] = await Promise.all([
+        api.get("/products"),
+        categoriesService.getCategories(),
+        api.get(`/permissions/by-group/${groupId}`),
+      ]);
 
-    const products = productsRes.data as any[];
-    const permissions = permsRes.data as any[];
+      const products = productsRes.data as any[];
+      const permissions = permsRes.data as any[];
 
-    const permIdMap: Record<string, string> = {};
-    const allowedKeySet = new Set<string>();
+      const permIdMap: Record<string, string> = {};
+      const allowedKeySet = new Set<string>();
 
-    permissions.forEach((p) => {
-      const type = String(p.entityType) as "product" | "category";
-      const entityId = String(p.entityId);
-      const key = keyOf(type, entityId);
-      allowedKeySet.add(key);
-      permIdMap[key] = String(p._id);
-    });
+      permissions.forEach((p) => {
+        const type = String(p.entityType) as "product" | "category";
+        const entityId = String(p.entityId);
+        const key = keyOf(type, entityId);
+        allowedKeySet.add(key);
+        permIdMap[key] = String(p._id);
+      });
 
-    setPermissionIdByKey(permIdMap);
+      setPermissionIdByKey(permIdMap);
 
-    const items: BannedItem[] = [
-      ...products.map((p) => ({
-        id: p._id,
-        name: p.productName,
-        type: "product" as const,
-        image: p.productImages?.[0],
-        groupId,
-      })),
-      ...categories.map((c) => ({
-        id: c._id,
-        name: c.categoryName,
-        type: "category" as const,
-        image: c.categoryImage,
-        groupId,
-      })),
-    ];
+      const items: BannedItem[] = [
+        ...products.map((p) => ({
+          id: p._id,
+          name: p.productName,
+          type: "product" as const,
+          image: p.productImages?.[0],
+          groupId,
+        })),
+        ...categories.map((c) => ({
+          id: c._id,
+          name: c.categoryName,
+          type: "category" as const,
+          image: c.categoryImage,
+          groupId,
+        })),
+      ];
 
-    setAllItems(items);
+      setAllItems(items);
 
-    const blocked = items.filter((it) => !allowedKeySet.has(keyOf(it.type, it.id)));
+      const blocked = items.filter(
+        (it) => !allowedKeySet.has(keyOf(it.type, it.id))
+      );
 
-    setLocalBannedItems(blocked);
-    onUpdateBannedItems(blocked);
-  } catch (e) {
-    console.error("Failed loading modal data:", e);
-  } finally {
-    setIsLoading(false);
-  }
-};
-useEffect(() => {
-  load();
-}, [groupId]);
-
-
-const handleUnblockItem = async (item: BannedItem) => {
-  const key = keyOf(item.type, item.id);
-
-  try {
-    await api.post("/permissions", {
-      entityType: item.type,
-      entityId: String(item.id),
-      allowed: groupId,
-    });
-
-    // add permission into our map (reload to get the id OR just refetch permissions)
-    // easiest + safest: reload modal data by calling load() again
-  } catch (e) {
-    console.error("Failed to unblock:", e);
-  }
-};
-
-const handleBlockItem = async (item: BannedItem) => {
-  const key = keyOf(item.type, item.id);
-  const permId = permissionIdByKey[key];
-
-  try {
-    if (permId) {
-      await api.delete(`/permissions/${permId}`);
+      setLocalBannedItems(blocked);
+      onUpdateBannedItems(blocked);
+    } catch (e) {
+      console.error("Failed loading modal data:", e);
+    } finally {
+      setIsLoading(false);
     }
-  } catch (e) {
-    console.error("Failed to block:", e);
-  }
-};
+  };
+  useEffect(() => {
+    load();
+  }, [groupId]);
 
+  const handleUnblockItem = async (item: BannedItem) => {
+    const key = keyOf(item.type, item.id);
 
+    try {
+      await api.post("/permissions", {
+        entityType: item.type,
+        entityId: String(item.id),
+        allowed: groupId,
+      });
+
+      // add permission into our map (reload to get the id OR just refetch permissions)
+      // easiest + safest: reload modal data by calling load() again
+    } catch (e) {
+      console.error("Failed to unblock:", e);
+    }
+  };
+
+  const handleBlockItem = async (item: BannedItem) => {
+    const key = keyOf(item.type, item.id);
+    const permId = permissionIdByKey[key];
+
+    try {
+      if (permId) {
+        await api.delete(`/permissions/${permId}`);
+      }
+    } catch (e) {
+      console.error("Failed to block:", e);
+    }
+  };
 
   const filteredBannedItems = useMemo(() => {
     return localBannedItems.filter(
@@ -178,7 +190,9 @@ const handleBlockItem = async (item: BannedItem) => {
   }, [localBannedItems, searchQuery, filterType]);
 
   const availableItems = useMemo(() => {
-    const bannedKeys = new Set(localBannedItems.map((i) => `${i.type}:${String(i.id)}`));
+    const bannedKeys = new Set(
+      localBannedItems.map((i) => `${i.type}:${String(i.id)}`)
+    );
 
     return allItems.filter((item) => {
       const key = `${item.type}:${String(item.id)}`;
@@ -191,43 +205,41 @@ const handleBlockItem = async (item: BannedItem) => {
   }, [allItems, localBannedItems, searchQuery, filterType]);
 
   const handleRemoveItem = async (item: BannedItem) => {
-  try {
-    setIsLoading(true);
+    try {
+      setIsLoading(true);
 
-    await api.post("/permissions", {
-      entityType: item.type,
-      entityId: String(item.id),
-      allowed: groupId,
-    });
+      await api.post("/permissions", {
+        entityType: item.type,
+        entityId: String(item.id),
+        allowed: groupId,
+      });
 
-    await load(); 
-  } catch (e) {
-    console.error("Failed to unblock:", e);
-  } finally {
-    setIsLoading(false);
-  }
-};
-
+      await load();
+    } catch (e) {
+      console.error("Failed to unblock:", e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleAddItem = async (item: BannedItem) => {
-  const key = keyOf(item.type, item.id);
-  const permId = permissionIdByKey[key];
+    const key = keyOf(item.type, item.id);
+    const permId = permissionIdByKey[key];
 
-  try {
-    setIsLoading(true);
-    if (permId) {
-      await api.delete(`/permissions/${permId}`);
+    try {
+      setIsLoading(true);
+      if (permId) {
+        await api.delete(`/permissions/${permId}`);
+      }
+
+      await load();
+      setSearchQuery("");
+    } catch (e) {
+      console.error("Failed to block:", e);
+    } finally {
+      setIsLoading(false);
     }
-
-    await load(); 
-    setSearchQuery("");
-  } catch (e) {
-    console.error("Failed to block:", e);
-  } finally {
-    setIsLoading(false);
-  }
-};
-
+  };
 
   const handleToggleSelection = (itemId: string | number) => {
     setSelectedItems((prev) => {
@@ -239,7 +251,8 @@ const handleBlockItem = async (item: BannedItem) => {
   };
 
   const handleSelectAll = () => {
-    const currentItems = activeTab === "banned" ? filteredBannedItems : availableItems;
+    const currentItems =
+      activeTab === "banned" ? filteredBannedItems : availableItems;
     const allIds = currentItems.map((item) => item.id);
 
     if (selectedItems.size === currentItems.length) setSelectedItems(new Set());
@@ -248,9 +261,13 @@ const handleBlockItem = async (item: BannedItem) => {
 
   const handleBulkAction = () => {
     if (activeTab === "banned") {
-      setLocalBannedItems((prev) => prev.filter((item) => !selectedItems.has(item.id)));
+      setLocalBannedItems((prev) =>
+        prev.filter((item) => !selectedItems.has(item.id))
+      );
     } else {
-      const itemsToAdd = availableItems.filter((item) => selectedItems.has(item.id));
+      const itemsToAdd = availableItems.filter((item) =>
+        selectedItems.has(item.id)
+      );
       setLocalBannedItems((prev) => [...prev, ...itemsToAdd]);
     }
     setSelectedItems(new Set());
@@ -279,7 +296,10 @@ const handleBlockItem = async (item: BannedItem) => {
             </h3>
             <p className="text-slate-300 text-xs">קבוצה: {groupName}</p>
           </div>
-          <button onClick={onClose} className="p-1.5 hover:bg-white/10 rounded-lg transition-all">
+          <button
+            onClick={onClose}
+            className="p-1.5 hover:bg-white/10 rounded-lg transition-all"
+          >
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -289,7 +309,8 @@ const handleBlockItem = async (item: BannedItem) => {
           <button
             onClick={() => {
               setActiveTab("banned");
-              scrollContainerRef.current && (scrollContainerRef.current.scrollTop = 0);
+              scrollContainerRef.current &&
+                (scrollContainerRef.current.scrollTop = 0);
             }}
             className={`flex-1 py-2.5 px-4.5 text-sm font-medium transition-all ${
               activeTab === "banned"
@@ -306,7 +327,8 @@ const handleBlockItem = async (item: BannedItem) => {
           <button
             onClick={() => {
               setActiveTab("available");
-              scrollContainerRef.current && (scrollContainerRef.current.scrollTop = 0);
+              scrollContainerRef.current &&
+                (scrollContainerRef.current.scrollTop = 0);
             }}
             className={`flex-1 py-2.5 px-4.5 text-sm font-medium transition-all ${
               activeTab === "available"
@@ -328,7 +350,11 @@ const handleBlockItem = async (item: BannedItem) => {
             <Search className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3" />
             <input
               type="text"
-              placeholder={activeTab === "banned" ? "חפש בפריטים חסומים..." : "חפש פריטים להוספה..."}
+              placeholder={
+                activeTab === "banned"
+                  ? "חפש בפריטים חסומים..."
+                  : "חפש פריטים להוספה..."
+              }
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pr-7 pl-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-slate-700 focus:ring-1 focus:ring-slate-700 transition-all"
@@ -341,7 +367,9 @@ const handleBlockItem = async (item: BannedItem) => {
             <button
               onClick={() => setFilterType("all")}
               className={`px-8 py-1.5 rounded-md text-[13px] font-medium transition-all ${
-                filterType === "all" ? "bg-slate-700 text-white shadow-md" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                filterType === "all"
+                  ? "bg-slate-700 text-white shadow-md"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
             >
               הכל
@@ -350,7 +378,9 @@ const handleBlockItem = async (item: BannedItem) => {
             <button
               onClick={() => setFilterType("product")}
               className={`px-8 py-1.5 rounded-md text-[13px] font-medium flex items-center gap-0.5 transition-all ${
-                filterType === "product" ? "bg-blue-500 text-white shadow-md" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                filterType === "product"
+                  ? "bg-blue-500 text-white shadow-md"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
             >
               <Package className="w-2.5 h-2.5" />
@@ -360,7 +390,9 @@ const handleBlockItem = async (item: BannedItem) => {
             <button
               onClick={() => setFilterType("category")}
               className={`px-8 py-1.5 rounded-md text-[13px] font-medium flex items-center gap-0.5 transition-all ${
-                filterType === "category" ? "bg-purple-500 text-white shadow-md" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                filterType === "category"
+                  ? "bg-purple-500 text-white shadow-md"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
             >
               <FolderTree className="w-2.5 h-2.5" />
@@ -377,7 +409,9 @@ const handleBlockItem = async (item: BannedItem) => {
                 className="py-1 px-5 rounded-md text-[11px] font-medium bg-blue-500 text-white hover:bg-blue-600 transition-all shadow-sm hover:shadow-md"
               >
                 {selectedItems.size ===
-                (activeTab === "banned" ? filteredBannedItems.length : availableItems.length)
+                (activeTab === "banned"
+                  ? filteredBannedItems.length
+                  : availableItems.length)
                   ? "בטל הכל"
                   : "בחר הכל"}
               </button>
@@ -404,15 +438,22 @@ const handleBlockItem = async (item: BannedItem) => {
 
           {/* Loading */}
           {isLoading ? (
-            <div className="text-center py-12 text-gray-500">טוען נתונים...</div>
+            <div className="text-center py-12 text-gray-500">
+              טוען נתונים...
+            </div>
           ) : (
-            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto min-h-0 pr-1">
+            <div
+              ref={scrollContainerRef}
+              className="flex-1 overflow-y-auto min-h-0 pr-1"
+            >
               {activeTab === "banned" ? (
                 filteredBannedItems.length === 0 ? (
                   <div className="text-center py-12 text-gray-400">
                     <Package className="w-12 h-12 mx-auto mb-3 text-gray-300" />
                     <p className="font-bold text-gray-700 text-sm">
-                      {searchQuery ? "לא נמצאו פריטים תואמים" : "אין פריטים חסומים"}
+                      {searchQuery
+                        ? "לא נמצאו פריטים תואמים"
+                        : "אין פריטים חסומים"}
                     </p>
                   </div>
                 ) : (
@@ -429,7 +470,9 @@ const handleBlockItem = async (item: BannedItem) => {
                       >
                         <div className="relative w-full h-24 bg-gray-100 overflow-hidden">
                           <img
-                            src={item.image || "/assets/images/default-product.jpg"}
+                            src={
+                              item.image || "/assets/images/default-product.jpg"
+                            }
                             alt={item.name}
                             className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105"
                             onError={(e) => {
@@ -480,7 +523,9 @@ const handleBlockItem = async (item: BannedItem) => {
                 <div className="text-center py-12 text-gray-400">
                   <Package className="w-12 h-12 mx-auto mb-3 text-gray-300" />
                   <p className="font-bold text-gray-700 text-sm">
-                    {searchQuery ? "לא נמצאו פריטים תואמים" : "כל הפריטים כבר חסומים"}
+                    {searchQuery
+                      ? "לא נמצאו פריטים תואמים"
+                      : "כל הפריטים כבר חסומים"}
                   </p>
                 </div>
               ) : (
@@ -497,7 +542,9 @@ const handleBlockItem = async (item: BannedItem) => {
                     >
                       <div className="relative w-full h-24 bg-gray-100 overflow-hidden">
                         <img
-                          src={item.image || "/assets/images/default-product.jpg"}
+                          src={
+                            item.image || "/assets/images/default-product.jpg"
+                          }
                           alt={item.name}
                           className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105"
                           onError={(e) => {

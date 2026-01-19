@@ -12,7 +12,7 @@ import { UsersModule } from 'src/users/users.module';
   imports: [
     MongooseModule.forFeature([
       { name: Permission.name, schema: PermissionSchema },
-      { name: Category.name, schema: CategorySchema }
+      { name: Category.name, schema: CategorySchema },
     ]),
     GroupsModule,
     UsersModule,
