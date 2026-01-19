@@ -25,7 +25,7 @@ const SingleProd: FC<SingleProdProps> = () => {
   const [description, setDescription] = useState("");
   const [product, setProduct] = useState<ProductDto | null>(null);
   const [originalProduct, setOriginalProduct] = useState<ProductDto | null>(
-    null
+    null,
   );
   const [newAccordionType, setNewAccordionType] = useState<
     "bullets" | "content" | null
@@ -100,13 +100,13 @@ const SingleProd: FC<SingleProdProps> = () => {
 
   const nextImage = () => {
     setCurrentImageIndex((prev) =>
-      prev === productImages.length - 1 ? 0 : prev + 1
+      prev === productImages.length - 1 ? 0 : prev + 1,
     );
   };
 
   const prevImage = () => {
     setCurrentImageIndex((prev) =>
-      prev === 0 ? productImages.length - 1 : prev - 1
+      prev === 0 ? productImages.length - 1 : prev - 1,
     );
   };
 
@@ -120,7 +120,7 @@ const SingleProd: FC<SingleProdProps> = () => {
       try {
         const result = await CloudinaryService.uploadFile(
           file,
-          "products/images"
+          "products/images",
         );
         uploadedImages.push(result.url); // only store the Cloudinary URL
       } catch (err) {
@@ -139,10 +139,10 @@ const SingleProd: FC<SingleProdProps> = () => {
     try {
       const result = await CloudinaryService.uploadFile(
         files[0],
-        "products/images"
+        "products/images",
       );
       setProductImages((prev) =>
-        prev.map((img, i) => (i === currentImageIndex ? result.url : img))
+        prev.map((img, i) => (i === currentImageIndex ? result.url : img)),
       );
     } catch (err) {
       console.error("Image replacement failed", err);
@@ -155,7 +155,7 @@ const SingleProd: FC<SingleProdProps> = () => {
       if (prev.length === 1) return prev;
       const updated = prev.filter((_, i) => i !== currentImageIndex);
       setCurrentImageIndex((prevIndex) =>
-        prevIndex === updated.length ? updated.length - 1 : prevIndex
+        prevIndex === updated.length ? updated.length - 1 : prevIndex,
       );
       return updated;
     });
@@ -172,16 +172,16 @@ const SingleProd: FC<SingleProdProps> = () => {
   const handleAccordionContentChange = (uiId: string, newContent: string) => {
     setAccordionData((prevData) =>
       prevData.map((item) =>
-        item.uiId === uiId ? { ...item, content: newContent } : item
-      )
+        item.uiId === uiId ? { ...item, content: newContent } : item,
+      ),
     );
   };
 
   const handleAccordionTitleChange = (uiId: string, newTitle: string) => {
     setAccordionData((prevData) =>
       prevData.map((item) =>
-        item.uiId === uiId ? { ...item, title: newTitle } : item
-      )
+        item.uiId === uiId ? { ...item, title: newTitle } : item,
+      ),
     );
   };
 
@@ -207,7 +207,7 @@ const SingleProd: FC<SingleProdProps> = () => {
 
   const removeAccordion = (uiId: string) => {
     setAccordionData((prevData) =>
-      prevData.filter((item) => item.uiId !== uiId)
+      prevData.filter((item) => item.uiId !== uiId),
     );
   };
 
@@ -226,10 +226,10 @@ const SingleProd: FC<SingleProdProps> = () => {
       const newItems = [...prevData];
 
       const draggedIndex = newItems.findIndex(
-        (item) => item.uiId === draggedItem.uiId
+        (item) => item.uiId === draggedItem.uiId,
       );
       const targetIndex = newItems.findIndex(
-        (item) => item.uiId === targetItem.uiId
+        (item) => item.uiId === targetItem.uiId,
       );
 
       if (draggedIndex === -1 || targetIndex === -1) return prevData;
@@ -246,7 +246,7 @@ const SingleProd: FC<SingleProdProps> = () => {
   const features = useMemo(() => {
     try {
       const data = accordionData.find(
-        (item) => item.uiId === "features"
+        (item) => item.uiId === "features",
       )?.content;
 
       return data ? JSON.parse(data) : [];
@@ -323,7 +323,7 @@ const SingleProd: FC<SingleProdProps> = () => {
               field.type === "bullets"
                 ? JSON.stringify(field.bullets)
                 : field.content,
-          }))
+          })),
         ) ||
       JSON.stringify(productImages) !==
         JSON.stringify(originalProduct?.productImages) ||
@@ -338,7 +338,7 @@ const SingleProd: FC<SingleProdProps> = () => {
               url: f.link,
               size: 0,
             })),
-          })) || []
+          })) || [],
         );
 
     if (!hasChanges) {
@@ -380,7 +380,7 @@ const SingleProd: FC<SingleProdProps> = () => {
 
   const handleFileUpload = async (
     folderUiId: string,
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -407,8 +407,8 @@ const SingleProd: FC<SingleProdProps> = () => {
       prev.map((folder) =>
         folder.uiId === folderUiId
           ? { ...folder, files: [...folder.files, ...uploadedFiles] }
-          : folder
-      )
+          : folder,
+      ),
     );
   };
 
@@ -420,8 +420,8 @@ const SingleProd: FC<SingleProdProps> = () => {
               ...folder,
               files: folder.files.filter((f) => f.uiId !== fileUiId),
             }
-          : folder
-      )
+          : folder,
+      ),
     );
   };
 
@@ -448,7 +448,6 @@ const SingleProd: FC<SingleProdProps> = () => {
     <div className="pt-16 px-6 pb-10 font-sans-['Noto_Sans_Hebrew'] rtl">
       <Breadcrumbs path={breadcrumbPath} />
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
         <div className="flex justify-between items-center mb-4 text-right">
           <div className="flex-1">
             {isEditing ? (
@@ -476,7 +475,6 @@ const SingleProd: FC<SingleProdProps> = () => {
           )}
         </div>
 
-        {/* Secondary Description */}
         <div className="text-right mb-12">
           {isEditing ? (
             <textarea
@@ -495,7 +493,6 @@ const SingleProd: FC<SingleProdProps> = () => {
             <div className="group relative bg-white p-6 rounded-2xl border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-stockblue to-stockblue"></div>
 
-              {/* === IMAGE CAROUSEL START === */}
               <ImageCarousel
                 productImages={productImages}
                 currentImageIndex={currentImageIndex}
@@ -509,7 +506,6 @@ const SingleProd: FC<SingleProdProps> = () => {
                 title={title}
               />
 
-              {/* Buttons */}
               {role === "viewer" ? (
                 <div className="space-y-2 relative z-10 flex flex-row justify-center gap-12">
                   <button
@@ -546,7 +542,7 @@ const SingleProd: FC<SingleProdProps> = () => {
                 <div className="relative z-10">
                   <Link
                     to={`/permissions/product/${product?._id}`}
-                    className="block w-full text-center py-3 px-4 rounded-lg font-semibold text-white bg-green-600 hover:bg-orange-700 shadow-md transition-all duration-300 transform hover:scale-105"
+                    className="block w-full text-center py-3 px-4 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-800 shadow-md transition-all duration-300"
                   >
                     נהל הרשאות
                   </Link>
@@ -554,8 +550,6 @@ const SingleProd: FC<SingleProdProps> = () => {
               ) : null}
             </div>
           </div>
-
-          {/* Right: Accordion List */}
 
           <AccordionSection
             isEditing={isEditing}

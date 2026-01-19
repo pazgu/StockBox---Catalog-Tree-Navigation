@@ -30,30 +30,10 @@ export class SearchService {
     private readonly permissionsService: PermissionsService,
   ) {}
 
-  private async getAllowedPaths(
-    userId: string,
-    userRole: string,
-  ): Promise<{
+  private async getAllowedPaths(userId: string): Promise<{
     allowedCategoryPaths: string[];
     allowedProductPaths: string[];
   }> {
-    if (userRole === 'editor') {
-      const allProductPaths = await this.productModel
-        .find()
-        .select({ productPath: 1 })
-        .lean()
-        .exec();
-      const allCategoryPaths = await this.categoryModel
-        .find()
-        .select({ categoryPath: 1 })
-        .lean()
-        .exec();
-      return {
-        allowedCategoryPaths: allCategoryPaths.map((c) => c.categoryPath),
-        allowedProductPaths: allProductPaths.map((p) => p.productPath),
-      };
-    }
-
     const permissions =
       await this.permissionsService.getPermissionsForUser(userId);
 
@@ -103,15 +83,15 @@ export class SearchService {
       allowedProductPaths,
     };
   }
+
   async searchEntities(
     userId: string,
     searchTerm: string,
     page = 1,
     limit = 20,
-    userRole: string,
   ) {
     const { allowedCategoryPaths, allowedProductPaths } =
-      await this.getAllowedPaths(userId, userRole);
+      await this.getAllowedPaths(userId);
 
     if (!allowedCategoryPaths.length && !allowedProductPaths.length) {
       return { items: [], total: 0, page, limit, hasMore: false };
@@ -165,14 +145,14 @@ export class SearchService {
 
       {
         $sort: {
-          score: -1,
-          type: 1,
-          label: 1,
+          score: -1, // higher textScore first
+          type: 1, // products before categories if tie
+          label: 1, // alphabetical fallback
         },
       },
 
       { $skip: skip },
-      { $limit: limit + 1 },
+      { $limit: limit + 1 }, // fetch one extra to check hasMore
     ];
 
     const results = await this.categoryModel.aggregate(pipeline);

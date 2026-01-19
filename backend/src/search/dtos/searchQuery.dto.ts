@@ -1,4 +1,12 @@
-import { IsString, IsOptional, MinLength, IsInt, Min } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  MinLength,
+  IsInt,
+  Min,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  Max,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class SearchQueryDto {
