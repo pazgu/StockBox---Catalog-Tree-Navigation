@@ -69,7 +69,11 @@ const Breadcrumbs: FC<BreadcrumbsProps> = ({ path }) => {
           const isLast = index === pathSegments.length - 1;
 
           return (
-            <span className="flex items-center gap-1">
+  <span
+    key={`${segment}-${index}`}
+    className="flex items-center gap-1"
+  >
+
               <span
                 role="img"
                 aria-label="Cute cat peeking"
