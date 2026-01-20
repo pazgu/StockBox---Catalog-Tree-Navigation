@@ -1,18 +1,22 @@
-import api from "../services/axios";
+import { environment } from "../environments/environment.development";
 
-import { InternalAxiosRequestConfig } from "axios";
+import axios, { InternalAxiosRequestConfig } from "axios";
 
 let isRenewing = false;
 let renewQueue: ((token: string) => void)[] = [];
 
 export async function tokenRenewInterceptor(
-  config: InternalAxiosRequestConfig
+  config: InternalAxiosRequestConfig,
 ): Promise<InternalAxiosRequestConfig> {
   let token = localStorage.getItem("token");
-  console.log("🚀 Interceptor triggered for URL:", config.url);
 
   if (!token) return config;
-
+  if (
+    config.url?.includes("/auth/login") ||
+    config.url?.includes("/auth/renew")
+  ) {
+    return config;
+  }
   const tokenExp = getTokenExpiration(token);
   const now = Date.now() / 1000;
 
@@ -39,12 +43,8 @@ export async function tokenRenewInterceptor(
       });
     }
   }
-
-  if (!config.headers) {
-    config.headers = config.headers ?? {};
-  }
+  config.headers = config.headers ?? {};
   (config.headers as any).Authorization = `Bearer ${token}`;
-
   return config;
 }
 
@@ -58,8 +58,16 @@ function getTokenExpiration(token: string): number {
 }
 
 async function renewToken(token: string): Promise<string> {
-  const response = await api.post<{ accessToken: string }>("/auth/renew", {
-    token,
-  });
+  const response = await axios.post<{ accessToken: string }>(
+    `${environment.API_URL}/auth/renew`,
+    {},
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      withCredentials: true,
+    },
+  );
+
   return response.data.accessToken;
 }

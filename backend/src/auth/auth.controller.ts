@@ -31,7 +31,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Post('renew')
   async renew(@Req() req) {
-    const userId = req.user.sub;
+    const userId = req.user.userId;
     const role = req.user.role;
 
     const newToken = await this.authService.renewToken(userId, role);
