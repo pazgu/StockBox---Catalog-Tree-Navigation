@@ -267,9 +267,12 @@ const AllUsers: FC<AllUsersProps> = () => {
                 </button>
 
                 <button
-                  className="p-1 w-6 h-6 rounded hover:bg-red-500 hover:text-white opacity-60 hover:opacity-100 transition"
-                  onClick={() => handleDeleteClick(index)}
-                >
+  className="w-6 h-6 rounded flex items-center justify-center
+             hover:bg-red-500 hover:text-white
+             opacity-60 hover:opacity-100 transition"
+  onClick={() => handleDeleteClick(index)}
+>
+
                   <svg
                     width="14"
                     height="14"
