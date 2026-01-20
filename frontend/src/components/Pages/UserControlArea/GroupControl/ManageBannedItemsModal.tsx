@@ -22,6 +22,8 @@ interface ManageBannedItemsModalProps {
   onUpdateBannedItems: (items: BannedItem[]) => void;
 }
 
+
+
 const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
   groupId,
   groupName,

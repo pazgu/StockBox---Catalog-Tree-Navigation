@@ -1,4 +1,3 @@
-import axios from "axios";
 import { environment } from "./../environments/environment.development";
 import {
   CreateProductPayload,
@@ -6,6 +5,7 @@ import {
   ProductDto,
   UpdateProductPayload,
 } from "../components/models/product.models";
+import api from "./axios";
 
 export class ProductsService {
   private static readonly baseUrl = `${environment.API_URL}/products`;
@@ -78,7 +78,7 @@ export class ProductsService {
   }
 
   static async getById(id: string): Promise<ProductDataDto> {
-    const { data } = await axios.get(`${environment.API_URL}/products/${id}`);
+    const { data } = await api.get(`${environment.API_URL}/products/${id}`);
     return data;
   }
 
@@ -87,7 +87,7 @@ export class ProductsService {
     newCategoryPath: string
   ): Promise<{ success: boolean; message: string; product: ProductDto }> {
     try {
-      const response = await axios.post(
+      const response = await api.post(
         `${this.baseUrl}/${productId}/move`,
         { newCategoryPath },
         this.getAuthHeaders()

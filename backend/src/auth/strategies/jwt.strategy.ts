@@ -30,6 +30,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   validate(payload: JwtPayload): RequestUser {
     if (!payload.sub || !payload.role) {
+      console.error('Invalid JWT payload:', payload);
       throw new UnauthorizedException('Invalid token payload');
     }
     return {

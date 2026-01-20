@@ -9,13 +9,10 @@ import { User,USER_ROLES  } from "../../../models/user.models";
 import { Group } from "../../../models/group.models";
 import { useNavigate } from "react-router-dom";
 import { X, UserRound } from "lucide-react";
-import axios from "axios";
 
 import { useUser } from "../../../../context/UserContext";
-import { environment } from "../../../../environments/environment.development";
-const api = axios.create({
-  baseURL: environment.API_URL,
-});
+import api from "../../../../services/axios";
+
 
 const userSchema = z.object({
   userName: z
