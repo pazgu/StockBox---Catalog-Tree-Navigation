@@ -45,7 +45,7 @@ const SingleCat: FC = () => {
   const [itemToEdit, setItemToEdit] = useState<DisplayItem | null>(null);
   const [isSavingProduct, setIsSavingProduct] = useState(false);
   const [isDeletingItem, setIsDeletingItem] = useState(false);
-
+  const [showFabButtons, setShowFabButtons] = useState(false);
 
   const location = useLocation();
   const params = useParams();
@@ -611,57 +611,69 @@ const SingleCat: FC = () => {
         ))}
       </main>
 
-      {role === "editor" && !isSelectionMode && (
-        <div className="fixed bottom-10 left-4 flex flex-col-reverse gap-3 group">
-          <button
-            className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 z-10"
-            title="הוסף"
-          >
-            <span className="text-3xl font-light transition-transform duration-300 group-hover:rotate-45">
-              +
-            </span>
-          </button>
+{role === "editor" && !isSelectionMode && (
+  <div 
+    className="fixed bottom-10 left-4 flex flex-col-reverse gap-3"
+    onMouseLeave={() => setShowFabButtons(false)}
+  >
+    <button
+      onMouseEnter={() => setShowFabButtons(true)}
+      className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 z-10"
+      title="הוסף"
+    >
+      <span className={`text-3xl font-light transition-transform duration-300 ${showFabButtons ? 'rotate-45' : ''}`}>
+        +
+      </span>
+    </button>
 
-          <button
-            onClick={() => {
-              setShowAddProductModal(true);
-            }}
-            className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 ease-in-out scale-0 group-hover:scale-100 -translate-y-14 group-hover:translate-y-0 pointer-events-none group-hover:pointer-events-auto relative"
-            title="הוסף מוצר"
-          >
-            <FilePlus2Icon size={24} />
-            <span className="absolute left-16 bg-gray-800 text-white text-xs px-3 py-1 rounded opacity-0 hover:opacity-100 transition-all duration-200 whitespace-nowrap">
-              הוסף מוצר
-            </span>
-          </button>
+    <button
+      onClick={() => {
+        setShowAddProductModal(true);
+      }}
+      className={`w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 ease-in-out relative ${
+        showFabButtons 
+          ? 'scale-100 translate-y-0 pointer-events-auto' 
+          : 'scale-0 -translate-y-14 pointer-events-none'
+      }`}
+      title="הוסף מוצר"
+    >
+      <FilePlus2Icon size={24} />
+      <span className="absolute left-16 bg-gray-800 text-white text-xs px-3 py-1 rounded opacity-0 hover:opacity-100 transition-all duration-200 whitespace-nowrap">
+        הוסף מוצר
+      </span>
+    </button>
 
-          <button
-            onClick={() => {
-              setShowAddSubCategoryModal(true);
-            }}
-            className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 ease-in-out scale-0 group-hover:scale-100 -translate-y-14 group-hover:translate-y-0 pointer-events-none group-hover:pointer-events-auto relative"
-            title="הוסף תת-קטגוריה"
-          >
-            <svg
-              color="white"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              width="24"
-              height="24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2zm-10-8v6m-3-3h6" />
-            </svg>
-            <span className="absolute left-16 bg-gray-800 text-white text-xs px-3 py-1 rounded opacity-0 hover:opacity-100 transition-all duration-200 whitespace-nowrap">
-              הוסף תת-קטגוריה
-            </span>
-          </button>
-        </div>
-      )}
+    <button
+      onClick={() => {
+        setShowAddSubCategoryModal(true);
+      }}
+      className={`w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 ease-in-out relative ${
+        showFabButtons 
+          ? 'scale-100 translate-y-0 pointer-events-auto' 
+          : 'scale-0 -translate-y-14 pointer-events-none'
+      }`}
+      title="הוסף תת-קטגוריה"
+    >
+      <svg
+        color="white"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        width="24"
+        height="24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2zm-10-8v6m-3-3h6" />
+      </svg>
+      <span className="absolute left-16 bg-gray-800 text-white text-xs px-3 py-1 rounded opacity-0 hover:opacity-100 transition-all duration-200 whitespace-nowrap">
+        הוסף תת-קטגוריה
+      </span>
+    </button>
+  </div>
+)}
       {role === "editor" && (
         <>
           <AddProductModal

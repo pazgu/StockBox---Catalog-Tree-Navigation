@@ -254,23 +254,28 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
             </>
           ) : (
             <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-6">
-             <button
-  onClick={() => {
-    if (!isEditing) return;
-    addRef.current?.click();
-  }}
-  className={`group w-full h-full rounded-[3rem] border-2 border-dashed border-stockblue/30 bg-white/70 backdrop-blur-sm flex flex-col items-center justify-center gap-3 transition
-    ${isEditing ? "hover:border-stockblue/50 hover:bg-white" : "opacity-70 cursor-not-allowed"}
-  `}
-  title={isEditing ? "העלה תמונה" : "היכנסו לעריכה כדי להעלות"}
-  aria-label="העלאת תמונה"
->
-  <Upload size={32} className="opacity-70 group-hover:opacity-100" />
-  <span className="text-stockblue/80 font-semibold">
-    אין תמונות כרגע – לחצו כדי להעלות
-  </span>
-  <span className="text-xs text-slate-500">PNG · JPG · JPEG</span>
-</button>
+            <button
+              onClick={() => {
+                if (!isEditing) return;
+                addRef.current?.click();
+              }}
+              className={`group w-full h-full rounded-[3rem] border-2 border-dashed border-stockblue/30 bg-white/70 backdrop-blur-sm flex flex-col items-center justify-center gap-3 transition
+                ${isEditing ? "hover:border-stockblue/50 hover:bg-white" : "opacity-70 cursor-not-allowed"}
+              `}
+              title={isEditing ? "העלה תמונה" : "היכנסו לעריכה כדי להעלות"}
+              aria-label="העלאת תמונה"
+            >
+              <Upload size={32} className="opacity-70 group-hover:opacity-100" />
+              <span className="text-stockblue/80 font-semibold">
+                {role === "editor" 
+                  ? "אין תמונות כרגע - לחצו כדי להעלות"
+                  : "אין תמונות כרגע"
+                }
+              </span>
+              {role === "editor" && (
+                <span className="text-xs text-slate-500">PNG · JPG · JPEG</span>
+              )}
+            </button>
 
               <input
                 ref={addRef}
