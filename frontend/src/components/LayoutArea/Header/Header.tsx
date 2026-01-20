@@ -125,7 +125,7 @@ const Header: React.FC<HeaderProps> = ({
                 if (item.type === "product") {
                   navigate(`/products/${item.id}`);
                 } else if (item.type === "category") {
-                  navigate(`/categories/${item.label}`);
+                  navigate(`/categories/${item.paths[0]}`);
                 }
               }}
             />
