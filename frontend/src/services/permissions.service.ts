@@ -63,7 +63,7 @@ export const permissionsService = {
     };
   },
   getBlockedItemsForGroup: async (groupId: string) => {
-    const response = await axios.get(
+    const response = await api.get(
       `${API_URL}/blocked-items/${groupId}`,
       getAuthHeader()
     );
