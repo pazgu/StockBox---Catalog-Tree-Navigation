@@ -4,7 +4,7 @@ import React, { FC, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
-import { Compass, Edit2, Check, GripVertical, Trash2 } from "lucide-react";
+import { Compass, Edit2, Check, GripVertical, Trash2, X } from "lucide-react";
 import { ICONS_HE } from "../../../../mockdata/icons";
 import FeaturesSection from "./FeaturesSection/FeaturesSection";
 import AboutImagesPanel from "./AboutImagesPanel/AboutImagesPanel";
@@ -12,6 +12,7 @@ import AddSectionButton from "./AddSectionButton/AddSectionButton/AddSectionButt
 import { aboutApi } from "../../../../services/aboutApi";
 import BulletsSection from "./BulletsSection/BulletsSection";
 import { AboutBlock } from "@/components/models/about.models";
+
 
 const uid = () => crypto.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
 type FeatureItem = {
@@ -515,92 +516,182 @@ const About: FC<AboutProps> = () => {
     }
   };
 
+ const cancelEdit = async () => {
+  try {
+    await aboutApi.replace({
+      blocks: sectionsToBlocks(originalData.sections),
+      images: originalData.images,
+    });
+
+    setSections(originalData.sections);
+    setEditableImages(originalData.images);
+
+    const snap = buildSnapshotFromSections(originalData.sections);
+    setConfirmedSnapshot(snap);
+    setDirtyKeys(new Set());
+
+    setCurrentImageIndex(0);
+    setIsEditing(false);
+
+    toast.success("העריכה בוטלה בהצלחה");
+  } catch (e) {
+    toast.error("שגיאה בביטול העריכה. נסה שוב.");
+  }
+};
+
+
+  const buildSnapshotFromSections = (secs: SectionType[]) => {
+  const snap: Record<string, string> = {};
+
+  secs.forEach((s) => {
+    snap[mkKey("sectionTitle", s.id)] = s.title ?? "";
+
+    if (s.type === "intro") snap[mkKey("introContent", s.id)] = s.content ?? "";
+    if (s.type === "paragraph")
+      snap[mkKey("paragraphContent", s.id)] = s.content ?? "";
+
+    if (s.type === "features") {
+      snap[mkKey("featuresTitle", s.id)] = s.title ?? "";
+      (s.features ?? []).forEach((f) => {
+        snap[mkKey("featureCard", s.id, f.id)] = JSON.stringify({
+          title: f.title ?? "",
+          description: f.description ?? "",
+          icon: f.icon ?? "",
+        });
+      });
+    }
+
+    if (s.type === "bullets") {
+      snap[mkKey("bulletsTitle", s.id)] = s.title ?? "";
+      (s.bullets ?? []).forEach((b) => {
+        snap[mkKey("bulletText", s.id, b.id)] = b.text ?? "";
+      });
+    }
+  });
+
+  return snap;
+};
+
+
   useEffect(() => {
     sectionRefs.current = sectionRefs.current.slice(0, sections.length);
   }, [sections.length]);
 
-  const handleReplaceImage = async (
-    index: number,
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+ const handleReplaceImage = async (
+  index: number,
+  event: React.ChangeEvent<HTMLInputElement>
+) => {
+  if (!isEditing) {
+  event.target.value = "";
+  return;
+}
 
-    try {
-      const res = await aboutApi.replaceImageAt(index, file);
 
-      setEditableImages(res.images ?? []);
-      setCurrentImageIndex(Math.min(index, (res.images?.length ?? 1) - 1));
-    } catch (e) {
-      toast.error("Failed to replace image");
-    } finally {
-      event.target.value = "";
-    }
-  };
+  const file = event.target.files?.[0];
+  if (!file) return;
 
-  const handleAddImages = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const files = Array.from(event.target.files || []);
-    if (!files.length) return;
+  try {
+    const res = await aboutApi.replaceImageAt(index, file);
+    setEditableImages(res.images ?? []);
+    setCurrentImageIndex(Math.min(index, (res.images?.length ?? 1) - 1));
+  } catch (e) {
+    toast.error("Failed to replace image");
+  } finally {
+    event.target.value = "";
+  }
+};
 
-    try {
-      const res = await aboutApi.uploadImages(files);
 
-      setEditableImages(res.images ?? []);
-      setCurrentImageIndex((res.images?.length ?? 1) - 1);
-    } catch (e) {
-      toast.error("Failed to upload images");
-    } finally {
-      event.target.value = "";
-    }
-  };
+  const handleAddImages = async (event: React.ChangeEvent<HTMLInputElement>) => {
+ if (!isEditing) {
+  event.target.value = "";
+  return;
+}
+
+
+  const files = Array.from(event.target.files || []);
+  if (!files.length) return;
+
+  try {
+    const res = await aboutApi.uploadImages(files);
+    setEditableImages(res.images ?? []);
+    setCurrentImageIndex((res.images?.length ?? 1) - 1);
+  } catch (e) {
+    toast.error("Failed to upload images");
+  } finally {
+    event.target.value = "";
+  }
+};
+
 
   const removeImage = async (index: number) => {
-    try {
-      const res = await aboutApi.deleteImageAt(index);
+  if (!isEditing) {
+    return;
+  }
 
-      setEditableImages(res.images ?? []);
+  try {
+    const res = await aboutApi.deleteImageAt(index);
+    setEditableImages(res.images ?? []);
+    setCurrentImageIndex((cur) => {
+      const len = res.images?.length ?? 0;
+      if (len === 0) return 0;
+      return Math.min(cur, len - 1);
+    });
+  } catch (e) {
+    toast.error("Failed to delete image");
+  }
+};
 
-      setCurrentImageIndex((cur) => {
-        const len = res.images?.length ?? 0;
-        if (len === 0) return 0;
-        return Math.min(cur, len - 1);
-      });
-    } catch (e) {
-      toast.error("Failed to delete image");
-    }
-  };
 
   const clearAllImages = async () => {
-    try {
-      const res = await aboutApi.clearImages();
-      setEditableImages(res.images ?? []);
-      setCurrentImageIndex(0);
-    } catch (e) {
-      toast.error("Failed to clear images");
-    }
-  };
+  if (!isEditing) {
+    return;
+  }
+
+  try {
+    const res = await aboutApi.clearImages();
+    setEditableImages(res.images ?? []);
+    setCurrentImageIndex(0);
+  } catch (e) {
+    toast.error("Failed to clear images");
+  }
+};
+
 
   return (
     <div className="pt-8 min-h-screen font-['Arial'] direction-rtl" dir="rtl">
       <div className="max-w-6xl mx-auto flex items-start gap-15 py-10 flex-wrap lg:flex-nowrap">
         <div className="flex-1 p-5 lg:ml-[400px] order-2 lg:order-1">
-          {role === "editor" && (
-            <button
-              onClick={() => {
-                if (isEditing) {
-                  handleSaveChanges();
-                  return;
-                }
+         {role === "editor" && (
+  <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-50">
+    {isEditing && (
+      <button
+        onClick={cancelEdit}
+        className="inline-flex items-center justify-center w-12 h-12 rounded-full border border-red-500/30 bg-white text-red-600 shadow-md hover:bg-red-50 transition-all duration-300"
+        title="ביטול עריכה"
+        aria-label="ביטול עריכה"
+      >
+        <X size={18} />
+      </button>
+    )}
 
-                setIsEditing(true);
-              }}
-              className="fixed bottom-6 right-6 inline-flex items-center justify-center w-12 h-12 rounded-full border border-stockblue/30 bg-white text-xl font-semibold text-stockblue shadow-md hover:bg-stockblue hover:text-white transition-all duration-300 z-50"
-            >
-              {isEditing ? <Check size={18} /> : <Edit2 size={18} />}
-            </button>
-          )}
+    <button
+      onClick={() => {
+        if (isEditing) {
+          handleSaveChanges();
+          return;
+        }
+        setIsEditing(true);
+      }}
+      className="inline-flex items-center justify-center w-12 h-12 rounded-full border border-stockblue/30 bg-white text-xl font-semibold text-stockblue shadow-md hover:bg-stockblue hover:text-white transition-all duration-300"
+      aria-label={isEditing ? "שמור שינויים" : "ערוך"}
+      title={isEditing ? "שמור שינויים" : "ערוך"}
+    >
+      {isEditing ? <Check size={18} /> : <Edit2 size={18} />}
+    </button>
+  </div>
+)}
+
 
           {/* Render all sections dynamically */}
           {sections.map((section, sectionIndex) => (

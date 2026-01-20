@@ -1,9 +1,8 @@
 import React, { FC, useState, useCallback, useMemo } from "react";
-import { Heart, PencilLine, MailQuestionIcon, Check , Upload } from "lucide-react";
+import { Heart, PencilLine, MailQuestionIcon, Check, Upload, X, File, Video, Music, FileText } from "lucide-react";
 import { useUser } from "../../../../context/UserContext";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { File, Video, Music, FileText } from "lucide-react";
 import { AccordionData } from "../../../models/accordion.models";
 import AccordionSection from "../AccordionSection/AccordionSection/AccordionSection";
 import ImageCarousel from "../ImageCarousel/ImageCarousel/ImageCarousel";
@@ -103,6 +102,47 @@ const SingleProd: FC<SingleProdProps> = () => {
 
     return ["categories", ...cleanPath.split("/").filter(Boolean)];
   }, [product]);
+
+  type EditSnapshot = {
+  title: string;
+  description: string;
+  productImages: string[];
+  accordionData: AccordionData[];
+  folders: FileFolder[];
+};
+
+const [editSnapshot, setEditSnapshot] = useState<EditSnapshot | null>(null);
+const enterEditMode = () => {
+  setEditSnapshot({
+    title,
+    description,
+    productImages: [...productImages],
+    accordionData: JSON.parse(JSON.stringify(accordionData)),
+    folders: JSON.parse(JSON.stringify(folders)),
+  });
+  setIsEditing(true);
+};
+
+const cancelEdit = () => {
+  if (!editSnapshot) {
+    setIsEditing(false);
+    return;
+  }
+
+  setTitle(editSnapshot.title);
+  setDescription(editSnapshot.description);
+  setProductImages(editSnapshot.productImages);
+  setAccordionData(editSnapshot.accordionData);
+  setFolders(editSnapshot.folders);
+
+  setCurrentImageIndex(0);
+  setIsEditing(false);
+  setEditSnapshot(null);
+
+  toast.success("העריכה בוטלה בהצלחה");
+};
+
+
 
   const nextImage = () => {
   if (productImages.length === 0) return;
@@ -283,6 +323,7 @@ const SingleProd: FC<SingleProdProps> = () => {
 
   const handleSaveClick = async () => {
     if (!isEditing) {
+      enterEditMode(); 
       setIsEditing(true);
       return;
     }
@@ -363,6 +404,7 @@ const SingleProd: FC<SingleProdProps> = () => {
   setIsSaving(true);
   await ProductsService.updateProduct(productId!, payload);
   toast.success("שינויים נשמרו בהצלחה");
+  setEditSnapshot(null); 
   setIsEditing(false);
 } catch (err) {
   console.error(err);
@@ -480,18 +522,39 @@ toast.error("לא הצלחנו לשמור את המוצר. נסה שוב בבק�
             )}
           </div>
 
-          {role === "editor" && (
-           <button
-  onClick={handleSaveClick}
-  disabled={isSaving}
-  aria-label={isEditing ? "סיום עריכה" : "עריכת דף"}
-  className={`fixed bottom-8 left-6 flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300
-    ${isSaving ? "opacity-70 cursor-not-allowed" : ""}`}
->
-  {isSaving ? <Spinner className="size-6 text-white" /> : isEditing ? <Check size={22} /> : <PencilLine size={22} />}
-</button>
+         {role === "editor" && (
+  <div className="fixed bottom-8 left-6 flex flex-col gap-3 z-50">
+    {isEditing && (
+      <button
+        onClick={cancelEdit}
+        disabled={isSaving}
+        aria-label="ביטול עריכה"
+        title="ביטול עריכה"
+        className={`flex items-center justify-center w-14 h-14 rounded-full font-semibold bg-white text-red-600 shadow-lg ring-2 ring-red-500/20 hover:ring-red-500/30 hover:bg-red-50 transition-all duration-300
+          ${isSaving ? "opacity-70 cursor-not-allowed" : ""}`}
+      >
+        <X size={22} />
+      </button>
+    )}
 
-          )}
+    <button
+      onClick={handleSaveClick}
+      disabled={isSaving}
+      aria-label={isEditing ? "סיום עריכה" : "עריכת דף"}
+      className={`flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300
+        ${isSaving ? "opacity-70 cursor-not-allowed" : ""}`}
+    >
+      {isSaving ? (
+        <Spinner className="size-6 text-white" />
+      ) : isEditing ? (
+        <Check size={22} />
+      ) : (
+        <PencilLine size={22} />
+      )}
+    </button>
+  </div>
+)}
+
         </div>
 
         <div className="text-right mb-12">
@@ -546,7 +609,7 @@ toast.error("לא הצלחנו לשמור את המוצר. נסה שוב בבק�
         type="button"
         onClick={() => {
           if (!isEditing) {
-            toast.info("כדי להעלות תמונות יש להיכנס למצב עריכה ✏️");
+            toast.info("כדי להעלות תמונות יש להיכנס למצב עריכה");
             return;
           }
           addImagesInputRef.current?.click();

@@ -67,4 +67,9 @@ export class AboutController {
   clearImages() {
     return this.aboutService.clearImages();
   }
+
+  @Delete('images/by-public-id/:publicId')
+  deleteByPublicId(@Param('publicId') publicId: string) {
+    return this.aboutService.deleteImageByPublicId(publicId);
+  }
 }

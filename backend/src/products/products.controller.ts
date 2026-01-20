@@ -21,8 +21,12 @@ import {
   Param as ProductParam,
   UseGuards as ProductUseGuards,
   Patch as ProductPatch,
+  UploadedFiles,
 } from '@nestjs/common';
-import { FileInterceptor as ProductFileInterceptor } from '@nestjs/platform-express';
+import {
+  FilesInterceptor,
+  FileInterceptor as ProductFileInterceptor,
+} from '@nestjs/platform-express';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dtos/CreateProduct.dto';
 import { MoveProductDto } from './dtos/MoveProduct.dto';
@@ -89,7 +93,6 @@ export class ProductsController {
     return this.productsService.delete(id);
   }
 
-  // IMPORTANT: Move endpoint MUST come BEFORE the :id PATCH route
   @ProductPost(':id/move')
   @ProductUseGuards(JwtAuthGuard, EditorGuard)
   @HttpCode(HttpStatus.OK)
@@ -102,12 +105,18 @@ export class ProductsController {
   }
 
   @ProductPatch(':id')
-  @ProductUseInterceptors(ProductFileInterceptor('newProductImages'))
+  @ProductUseInterceptors(
+    FilesInterceptor('newProductImages', 20, productUploadsOptions),
+  )
   async updateProduct(
     @ProductParam('id') id: string,
-    @ProductUploadedFile() files: Express.Multer.File[],
+    @UploadedFiles() files: Express.Multer.File[],
     @ProductBody() body: any,
   ) {
+    const existingImages: string[] = body.existingProductImages
+      ? JSON.parse(body.existingProductImages)
+      : [];
+
     const dto: UpdateProductDto = {
       productName: body.productName,
       productDescription: body.productDescription,
@@ -115,10 +124,7 @@ export class ProductsController {
       customFields: body.customFields
         ? JSON.parse(body.customFields)
         : undefined,
-      productImages: body.existingProductImages
-        ? [].concat(body.existingProductImages)
-        : undefined,
-
+      productImages: existingImages,
       uploadFolders: body.uploadFolders
         ? [].concat(body.uploadFolders).map((group: any) => ({
             title: group.title,
@@ -133,7 +139,6 @@ export class ProductsController {
           }))
         : undefined,
     };
-
     return this.productsService.update(id, dto);
   }
 }

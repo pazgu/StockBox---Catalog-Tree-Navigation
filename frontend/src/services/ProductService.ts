@@ -108,15 +108,18 @@ export class ProductsService {
       fd.append("productDescription", payload.productDescription);
     if (payload.productPath) fd.append("productPath", payload.productPath);
 
-    if (payload.productImages && payload.productImages.length > 0) {
-      payload.productImages.forEach((img, i) => {
-        if (img instanceof File) {
-          fd.append("newProductImages", img);
-        } else {
-          fd.append("existingProductImages", img);
-        }
-      });
-    }
+const imgs = payload.productImages ?? [];
+
+const existing = imgs.filter((x): x is string => typeof x === "string");
+fd.append("existingProductImages", JSON.stringify(existing));
+
+imgs.forEach((img) => {
+  if (img instanceof File) {
+    fd.append("newProductImages", img);
+  }
+});
+
+
 
     if (payload.customFields) {
       fd.append("customFields", JSON.stringify(payload.customFields));

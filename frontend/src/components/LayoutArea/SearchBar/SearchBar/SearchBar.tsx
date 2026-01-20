@@ -54,7 +54,7 @@ const SearchBar: React.FC<SearchHeaderProps> = ({
         setShowResults(false);
         setError("");
       }
-    });
+    }, 300);
 
     return () => clearTimeout(timer);
   }, [searchQuery]);
@@ -109,9 +109,7 @@ const SearchBar: React.FC<SearchHeaderProps> = ({
   };
 
   const handleSearchSubmit = () => {
-    if (results.length > 0) {
-      handleShowAll();
-    }
+    handleShowAll();
   };
 
   return (
