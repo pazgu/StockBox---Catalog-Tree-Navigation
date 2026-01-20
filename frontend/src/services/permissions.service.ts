@@ -62,4 +62,11 @@ export const permissionsService = {
           : data.categoryImage || "/placeholder-image.png",
     };
   },
+  getBlockedItemsForGroup: async (groupId: string) => {
+    const response = await axios.get(
+      `${API_URL}/blocked-items/${groupId}`,
+      getAuthHeader()
+    );
+    return response.data;
+  },
 };
