@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-enum-comparison */
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
@@ -18,13 +21,17 @@ import { MoveCategoryDto } from './dtos/MoveCategory.dto';
 import { uploadBufferToCloudinary } from 'src/utils/cloudinary/upload.util';
 import { EntityType } from 'src/schemas/Permissions.schema';
 import { PermissionsService } from 'src/permissions/permissions.service';
+import { UsersService } from 'src/users/users.service';
+import { Group } from 'src/schemas/Groups.schema';
 
 @Injectable()
 export class CategoriesService {
   constructor(
     @InjectModel(Category.name) private categoryModel: Model<Category>,
     @InjectModel(Product.name) private productModel: Model<Product>,
+    @InjectModel(Group.name) private groupModel: Model<Category>,
     private readonly permissionsService: PermissionsService,
+    private readonly usersService: UsersService,
   ) {}
 
   async createCategory(
@@ -57,16 +64,29 @@ export class CategoriesService {
     }
 
     if (user.role === 'viewer') {
+      const userGroups = await this.groupModel
+        .find({ members: user.userId })
+        .select('_id')
+        .lean();
+      const userGroupIds = userGroups.map((g) => g._id.toString());
       const permissions = await this.permissionsService.getPermissionsForUser(
         user.userId,
+        userGroupIds,
       );
-      const allowedCategoryIds = permissions
-        .filter((p) => p.allowed.toString() === user.userId)
-        .map((p) => p.entityId.toString());
-
-      const visibleCategories = categories.filter((cat) =>
-        allowedCategoryIds.includes(cat._id.toString()),
-      );
+      const visibleCategories = categories.filter((cat) => {
+        const categoryId = cat._id.toString();
+        const anyGroupBlocks = userGroupIds.some((groupId) => {
+          return !permissions.some(
+            (p) =>
+              p.entityId.toString() === categoryId &&
+              p.allowed.toString() === groupId,
+          );
+        });
+        if (anyGroupBlocks) {
+          return false;
+        }
+        return true;
+      });
 
       return visibleCategories;
     }
@@ -104,31 +124,33 @@ export class CategoriesService {
     if (user.role === 'editor') {
       return directChildren;
     }
-
     if (user.role === 'viewer') {
+      const userGroups = await this.groupModel
+        .find({ members: user.userId })
+        .select('_id')
+        .lean();
+      const userGroupIds = userGroups.map((g) => g._id.toString());
       const permissions = await this.permissionsService.getPermissionsForUser(
         user.userId,
+        userGroupIds,
       );
-      const userPermissions = permissions.filter(
-        (p) =>
-          p.entityType === EntityType.CATEGORY &&
-          p.allowed?.toString() === user.userId,
-      );
-
-      const allowedCategoryIds = userPermissions.map((p) =>
-        p.entityId.toString(),
-      );
-
-      const visibleCategories = directChildren.filter((cat) =>
-        allowedCategoryIds.includes(cat._id.toString()),
-      );
-
+      const visibleCategories = directChildren.filter((cat) => {
+        const categoryId = cat._id.toString();
+        const anyGroupBlocks = userGroupIds.some((groupId) => {
+          return !permissions.some(
+            (p) =>
+              p.entityId.toString() === categoryId &&
+              p.entityType === EntityType.CATEGORY &&
+              p.allowed.toString() === groupId,
+          );
+        });
+        return !anyGroupBlocks;
+      });
       return visibleCategories;
     }
 
     return [];
   }
-
   async deleteCategory(id: string) {
     const category = await this.categoryModel.findById(id);
     if (!category) {
