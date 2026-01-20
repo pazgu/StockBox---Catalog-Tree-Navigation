@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { User,USER_ROLES  } from "../../../models/user.models";
 import { Group } from "../../../models/group.models";
 import { useNavigate } from "react-router-dom";
-import { X } from "lucide-react";
+import { X, UserRound } from "lucide-react";
 import axios from "axios";
 
 import { useUser } from "../../../../context/UserContext";
@@ -144,15 +144,14 @@ const NewUser: React.FC = () => {
       >
         <div className="flex items-center justify-center gap-2 mb-4 rtl">
           <div className="order-2">
-            <div className="w-10 h-10 rounded-full bg-gray-100 flex justify-center items-center border border-gray-200">
-              <svg width="20" height="20" viewBox="0 0 40 40" fill="none">
-                <circle cx="20" cy="16" r="6" fill="#6B7280" />
-                <path
-                  d="M8 32c0-6.627 5.373-12 12-12s12 5.373 12 12"
-                  fill="#6B7280"
-                />
-              </svg>
-            </div>
+            <div className="w-10 h-10 rounded-full flex items-center justify-center
+                bg-[#0D305B]/5
+                border border-[#0D305B]/15
+                shadow-sm ring-1 ring-black/5">
+  <UserRound className="w-5 h-5 text-[#0D305B]" />
+</div>
+
+
           </div>
           <h2 className="m-0 text-lg font-bold text-[#0a2340]">
             הוספת משתמש חדש
@@ -364,18 +363,24 @@ const NewUser: React.FC = () => {
           </div>
         </form>
 
-        <motion.button
-          type="submit"
-          className={`mt-6 bg-[#0D305B] text-white py-3 px-8 text-base font-semibold border-none rounded-lg cursor-pointer transition-all duration-200 self-center w-auto min-w-[140px] hover:bg-[#0a2340] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(13,48,91,0.3)] ${
-            isSubmitting ? "opacity-70 cursor-not-allowed transform-none" : ""
-          }`}
-          disabled={isSubmitting}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={handleSubmit(onSubmit)}
-        >
-          {isSubmitting ? "מוסיף..." : "הוסף משתמש"}
-        </motion.button>
+       <motion.button
+  type="submit"
+  className={`mt-6 bg-[#0D305B] text-white py-2.5 px-6 text-sm font-semibold
+  rounded-md cursor-pointer self-center min-w-[140px]
+  border border-[#0D305B]/20
+  shadow-sm
+  transition-colors duration-150
+  hover:bg-[#0a2340]
+  active:bg-[#081a31]
+  ${isSubmitting ? "opacity-60 cursor-not-allowed" : ""}`}
+  disabled={isSubmitting}
+  whileHover={{ scale: 1.0 }}
+  whileTap={{ scale: 0.99 }}
+  onClick={handleSubmit(onSubmit)}
+>
+  {isSubmitting ? "מוסיף..." : "הוסף משתמש"}
+</motion.button>
+
       </motion.div>
     </div>
   );
