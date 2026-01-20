@@ -19,12 +19,14 @@ import { PermissionsService } from 'src/permissions/permissions.service';
 import { EntityType } from 'src/schemas/Permissions.schema';
 import { UpdateProductDto } from './dtos/UpdateProduct.dto';
 import { Category } from 'src/schemas/Categories.schema';
+import { Group } from 'src/schemas/Groups.schema';
 
 @Injectable()
 export class ProductsService {
   constructor(
     @InjectModel(Product.name) private productModel: Model<Product>,
     @InjectModel(Category.name) private categoryModel: Model<Category>,
+    @InjectModel(Group.name) private groupModel: Model<Category>,
     private permissionsService: PermissionsService,
   ) {}
 
@@ -68,22 +70,28 @@ export class ProductsService {
     }
 
     if (user.role === 'viewer') {
+      const userGroups = await this.groupModel
+        .find({ members: user.userId })
+        .select('_id')
+        .lean();
+      const userGroupIds = userGroups.map((g) => g._id.toString());
       const permissions = await this.permissionsService.getPermissionsForUser(
         user.userId,
+        userGroupIds,
       );
 
-      const allowedProductIds = permissions
-        .filter(
-          (p) =>
-            p.entityType === EntityType.PRODUCT &&
-            p.allowed.toString() === user.userId,
-        )
-        .map((p) => p.entityId.toString());
-
-      const visibleProducts = directChildren.filter((p) =>
-        allowedProductIds.includes(p._id.toString()),
-      );
-
+      const visibleProducts = directChildren.filter((product) => {
+        const productId = product._id.toString();
+        const anyGroupBlocks = userGroupIds.some((groupId) => {
+          return !permissions.some(
+            (p) =>
+              p.entityId.toString() === productId &&
+              p.entityType === EntityType.PRODUCT &&
+              p.allowed.toString() === groupId,
+          );
+        });
+        return !anyGroupBlocks;
+      });
       return visibleProducts;
     }
 
