@@ -1,9 +1,8 @@
 import React, { FC, useState, useCallback, useMemo } from "react";
-import { Heart, PencilLine, MailQuestionIcon, Check, Upload, X } from "lucide-react";
+import { Heart, PencilLine, MailQuestionIcon, Check, Upload, X, File, Video, Music, FileText } from "lucide-react";
 import { useUser } from "../../../../context/UserContext";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { File, Video, Music, FileText } from "lucide-react";
 import { AccordionData } from "../../../models/accordion.models";
 import AccordionSection from "../AccordionSection/AccordionSection/AccordionSection";
 import ImageCarousel from "../ImageCarousel/ImageCarousel/ImageCarousel";
@@ -610,7 +609,7 @@ toast.error("לא הצלחנו לשמור את המוצר. נסה שוב בבק�
         type="button"
         onClick={() => {
           if (!isEditing) {
-            toast.info("כדי להעלות תמונות יש להיכנס למצב עריכה ✏️");
+            toast.info("כדי להעלות תמונות יש להיכנס למצב עריכה");
             return;
           }
           addImagesInputRef.current?.click();

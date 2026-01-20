@@ -111,10 +111,18 @@ const SingleCat: FC = () => {
           favorite: userFavorites.includes(cat._id),
         }),
       );
+
+      const getFirstValidImage = (images?: (string | null | undefined)[]) => {
+  const first = (images ?? []).find(
+    (u) => typeof u === "string" && u.trim().length > 0
+  );
+  return first || ""; 
+};
+
       const productItems: DisplayItem[] = products.map((prod: ProductDto) => ({
         id: prod._id!,
         name: prod.productName,
-        image: prod.productImages?.[0] ?? "/assets/images/placeholder.png",
+        image: getFirstValidImage(prod.productImages),
         type: "product",
         path: prod.productPath,
         description: prod.productDescription,
@@ -557,13 +565,28 @@ const SingleCat: FC = () => {
                 }
               }}
             >
-              <img
-                src={item.image}
-                alt={item.name}
-                className={`max-h-full max-w-full object-contain transition-transform duration-300 hover:scale-105 ${
-                  item.type === "category" ? "rounded-full" : ""
-                }`}
-              />
+              {item.image && item.image.trim().length > 0 ? (
+  <img
+    src={item.image}
+    alt={item.name}
+    className={`max-h-full max-w-full object-contain transition-transform duration-300 hover:scale-105 ${
+      item.type === "category" ? "rounded-full" : ""
+    }`}
+    onError={(e) => {
+      // if url breaks - hide it
+      (e.currentTarget as HTMLImageElement).style.display = "none";
+    }}
+  />
+) : (
+  <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-slate-500">
+    <div className="h-12 w-12 rounded-2xl bg-white shadow-sm grid place-items-center border border-slate-200">
+      <PackageCheck className="h-6 w-6 opacity-60" />
+    </div>
+    <div className="text-sm font-semibold">אין תמונה עדיין</div>
+    <div className="text-xs text-slate-400">ניתן להוסיף בעריכה</div>
+  </div>
+)}
+
             </div>
 
             <div className="w-full text-center pt-4 border-t border-gray-200">
