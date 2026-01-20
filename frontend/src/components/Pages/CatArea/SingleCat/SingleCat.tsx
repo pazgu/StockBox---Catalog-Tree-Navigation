@@ -23,6 +23,8 @@ import MoveProductModal from "../../ProductArea/MoveProductModal/MoveProductModa
 import MoveCategoryModal from "../../CatArea/Categories/MoveCategoryModal/MoveCategoryModal";
 import EditCategoryModal from "../../CatArea/Categories/EditCategoryModal/EditCategoryModal/EditCategoryModal";
 import { userService } from "../../../../services/UserService";
+import { Spinner } from "../../../../components/ui/spinner";
+
 import AddProductModal from "./AddProductModal/AddProductModal";
 import AddSubCategoryModal from "./AddSubCategoryModal/AddSubCategoryModal";
 
@@ -41,6 +43,9 @@ const SingleCat: FC = () => {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [itemToEdit, setItemToEdit] = useState<DisplayItem | null>(null);
+  const [isSavingProduct, setIsSavingProduct] = useState(false);
+  const [isDeletingItem, setIsDeletingItem] = useState(false);
+  const [showFabButtons, setShowFabButtons] = useState(false);
 
   const location = useLocation();
   const params = useParams();
@@ -246,17 +251,17 @@ const SingleCat: FC = () => {
         imageFile: data.imageFile,
       });
 
-      const newItem: DisplayItem = {
-        id: createdProduct._id!,
-        name: createdProduct.productName,
-        image:
-          createdProduct.productImages?.[0] ?? "/assets/images/placeholder.png",
-        type: "product",
-        path: createdProduct.productPath,
-        favorite: false,
-        customFields: createdProduct.customFields,
-        description: createdProduct.productDescription,
-      };
+    const newItem: DisplayItem = {
+      id: createdProduct._id!,
+      name: createdProduct.productName,
+      image:
+        createdProduct.productImages?.[0] ?? "/assets/images/placeholder.png",
+      type: "product",
+      path: createdProduct.productPath,
+      favorite: false,
+      customFields: createdProduct.customFields,
+      description: createdProduct.productDescription,
+    };
 
       setItems([...items, newItem]);
       toast.success(`המוצר "${data.name}" נוסף בהצלחה!`);
@@ -583,57 +588,69 @@ const SingleCat: FC = () => {
         ))}
       </main>
 
-      {role === "editor" && !isSelectionMode && (
-        <div className="fixed bottom-10 left-4 flex flex-col-reverse gap-3 group">
-          <button
-            className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 z-10"
-            title="הוסף"
-          >
-            <span className="text-3xl font-light transition-transform duration-300 group-hover:rotate-45">
-              +
-            </span>
-          </button>
+{role === "editor" && !isSelectionMode && (
+  <div 
+    className="fixed bottom-10 left-4 flex flex-col-reverse gap-3"
+    onMouseLeave={() => setShowFabButtons(false)}
+  >
+    <button
+      onMouseEnter={() => setShowFabButtons(true)}
+      className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 z-10"
+      title="הוסף"
+    >
+      <span className={`text-3xl font-light transition-transform duration-300 ${showFabButtons ? 'rotate-45' : ''}`}>
+        +
+      </span>
+    </button>
 
-          <button
-            onClick={() => {
-              setShowAddProductModal(true);
-            }}
-            className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 ease-in-out scale-0 group-hover:scale-100 -translate-y-14 group-hover:translate-y-0 pointer-events-none group-hover:pointer-events-auto relative"
-            title="הוסף מוצר"
-          >
-            <FilePlus2Icon size={24} />
-            <span className="absolute left-16 bg-gray-800 text-white text-xs px-3 py-1 rounded opacity-0 hover:opacity-100 transition-all duration-200 whitespace-nowrap">
-              הוסף מוצר
-            </span>
-          </button>
+    <button
+      onClick={() => {
+        setShowAddProductModal(true);
+      }}
+      className={`w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 ease-in-out relative ${
+        showFabButtons 
+          ? 'scale-100 translate-y-0 pointer-events-auto' 
+          : 'scale-0 -translate-y-14 pointer-events-none'
+      }`}
+      title="הוסף מוצר"
+    >
+      <FilePlus2Icon size={24} />
+      <span className="absolute left-16 bg-gray-800 text-white text-xs px-3 py-1 rounded opacity-0 hover:opacity-100 transition-all duration-200 whitespace-nowrap">
+        הוסף מוצר
+      </span>
+    </button>
 
-          <button
-            onClick={() => {
-              setShowAddSubCategoryModal(true);
-            }}
-            className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 ease-in-out scale-0 group-hover:scale-100 -translate-y-14 group-hover:translate-y-0 pointer-events-none group-hover:pointer-events-auto relative"
-            title="הוסף תת-קטגוריה"
-          >
-            <svg
-              color="white"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              width="24"
-              height="24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2zm-10-8v6m-3-3h6" />
-            </svg>
-            <span className="absolute left-16 bg-gray-800 text-white text-xs px-3 py-1 rounded opacity-0 hover:opacity-100 transition-all duration-200 whitespace-nowrap">
-              הוסף תת-קטגוריה
-            </span>
-          </button>
-        </div>
-      )}
+    <button
+      onClick={() => {
+        setShowAddSubCategoryModal(true);
+      }}
+      className={`w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 ease-in-out relative ${
+        showFabButtons 
+          ? 'scale-100 translate-y-0 pointer-events-auto' 
+          : 'scale-0 -translate-y-14 pointer-events-none'
+      }`}
+      title="הוסף תת-קטגוריה"
+    >
+      <svg
+        color="white"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        width="24"
+        height="24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2zm-10-8v6m-3-3h6" />
+      </svg>
+      <span className="absolute left-16 bg-gray-800 text-white text-xs px-3 py-1 rounded opacity-0 hover:opacity-100 transition-all duration-200 whitespace-nowrap">
+        הוסף תת-קטגוריה
+      </span>
+    </button>
+  </div>
+)}
       {role === "editor" && (
         <>
           <AddProductModal
@@ -668,18 +685,31 @@ const SingleCat: FC = () => {
             </p>
             <small className="text-gray-500">לא יהיה ניתן לבטל פעולה זו</small>
             <div className="flex justify-end gap-3 mt-4">
-              <button
-                onClick={confirmDelete}
-                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors"
-              >
-                מחק
-              </button>
-              <button
-                onClick={closeAllModals}
-                className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400 transition-colors"
-              >
-                ביטול
-              </button>
+             <button
+  onClick={confirmDelete}
+  disabled={isDeletingItem}
+  className={`bg-red-600 text-white px-4 py-2 rounded transition-colors
+    ${isDeletingItem ? "opacity-70 cursor-not-allowed" : "hover:bg-red-700"}`}
+>
+  {isDeletingItem ? (
+    <span className="flex items-center gap-2">
+      <Spinner className="size-4 text-white" />
+      מוחק...
+    </span>
+  ) : (
+    "מחק"
+  )}
+</button>
+
+             <button
+  onClick={closeAllModals}
+  disabled={isDeletingItem}
+  className={`bg-gray-300 px-4 py-2 rounded transition-colors
+    ${isDeletingItem ? "opacity-70 cursor-not-allowed" : "hover:bg-gray-400"}`}
+>
+  ביטול
+</button>
+
             </div>
           </div>
         </div>

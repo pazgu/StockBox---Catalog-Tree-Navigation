@@ -7,12 +7,14 @@ import {
   anchoredZoom,
 } from "../../cropMath/cropMath";
 import useBlockBrowserZoom from "../../useBlockBrowserZoom";
+import { Spinner } from "../../../../../ui/spinner";
+
 
 type Props = {
   isOpen: boolean;
   category: Category; 
   onClose: () => void;
-  onSave: (updated: Category) => void;
+  onSave: (updated: Category) => Promise<void>;
 };
 
 const CROP_BOX = 256;
@@ -39,6 +41,8 @@ const EditCategoryModal: React.FC<Props> = ({
   );
 
   const [imageFile, setImageFile] = React.useState<File | undefined>(undefined); 
+  const [isSaving, setIsSaving] = React.useState(false);
+
 
 
   const [isEditCropperOpen, setIsEditCropperOpen] = React.useState(false);
@@ -174,20 +178,30 @@ const EditCategoryModal: React.FC<Props> = ({
     reader.readAsDataURL(file);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
   const updated = {
     ...category,
     categoryName: name.trim(),
     imageFile,
   } as any;
-  onSave(updated);
+
+  try {
+    setIsSaving(true);
+    await onSave(updated);
+  } finally {
+    setIsSaving(false);
+  }
 };
+
 
 
   return (
     <div
       className="fixed inset-0 bg-slate-900 bg-opacity-85 backdrop-blur-xl flex items-center justify-center z-50 transition-all duration-300 p-4"
-      onClick={onClose}
+      onClick={() => {
+  if (!isSaving) onClose();
+}}
+
     >
       <div
         className="bg-white p-8 rounded-xl w-[800px] max-w-[95%] max-h-[90vh] overflow-y-auto shadow-2xl text-center transform translate-y-[-2px]"
@@ -418,23 +432,38 @@ const EditCategoryModal: React.FC<Props> = ({
 
         <div className="flex justify-between gap-3">
           <button
-            onClick={handleSave}
-            disabled={isEditCropperOpen}
-            className={`flex-1 p-3 rounded-lg text-base font-medium transition-all duration-200 text-white shadow-md ${
-              isEditCropperOpen
-                ? "bg-slate-400 cursor-not-allowed"
-                : "bg-slate-700 hover:bg-slate-600 hover:-translate-y-px hover:shadow-lg"
-            }`}
-          >
-            שמור
-          </button>
+  onClick={handleSave}
+  disabled={isSaving || isEditCropperOpen}
+  className={`flex-1 p-3 rounded-lg text-base font-medium transition-all duration-200 text-white shadow-md ${
+    isSaving || isEditCropperOpen
+      ? "bg-slate-400 cursor-not-allowed"
+      : "bg-slate-700 hover:bg-slate-600 hover:-translate-y-px hover:shadow-lg"
+  }`}
+>
+  {isSaving ? (
+    <span className="flex items-center justify-center gap-2">
+      <Spinner className="size-4 text-white" />
+      שומר...
+    </span>
+  ) : (
+    "שמור"
+  )}
+</button>
 
-          <button
-            onClick={onClose}
-            className="flex-1 p-3 border-none rounded-lg text-base font-medium cursor-pointer transition-all duration-200 bg-gray-100 text-gray-500 border border-gray-300 hover:bg-gray-300 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"
-          >
-            ביטול
-          </button>
+
+         <button
+  onClick={onClose}
+  disabled={isSaving}
+  className={`flex-1 p-3 border-none rounded-lg text-base font-medium transition-all duration-200 border
+    ${
+      isSaving
+        ? "bg-gray-100 text-gray-300 cursor-not-allowed border-gray-200"
+        : "bg-gray-100 text-gray-500 border border-gray-300 hover:bg-gray-300 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"
+    }`}
+>
+  ביטול
+</button>
+
         </div>
       </div>
     </div>

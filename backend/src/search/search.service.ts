@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Injectable } from '@nestjs/common';
 import { Model } from 'mongoose';
@@ -30,10 +30,32 @@ export class SearchService {
     private readonly permissionsService: PermissionsService,
   ) {}
 
-  private async getAllowedPaths(userId: string): Promise<{
+  private async getAllowedPaths(
+    userId: string,
+    userRole?: string,
+  ): Promise<{
     allowedCategoryPaths: string[];
     allowedProductPaths: string[];
   }> {
+    if (userRole === 'editor') {
+      const allCategories = await this.categoryModel
+        .find({})
+        .select({ categoryPath: 1 })
+        .lean()
+        .exec();
+
+      const allProducts = await this.productModel
+        .find({})
+        .select({ productPath: 1 })
+        .lean()
+        .exec();
+
+      return {
+        allowedCategoryPaths: allCategories.map((c) => c.categoryPath),
+        allowedProductPaths: allProducts.map((p) => p.productPath),
+      };
+    }
+
     const permissions =
       await this.permissionsService.getPermissionsForUser(userId);
 
@@ -89,9 +111,10 @@ export class SearchService {
     searchTerm: string,
     page = 1,
     limit = 20,
+    userRole?: string,
   ) {
     const { allowedCategoryPaths, allowedProductPaths } =
-      await this.getAllowedPaths(userId);
+      await this.getAllowedPaths(userId, userRole);
 
     if (!allowedCategoryPaths.length && !allowedProductPaths.length) {
       return { items: [], total: 0, page, limit, hasMore: false };
@@ -99,11 +122,7 @@ export class SearchService {
 
     const skip = (page - 1) * limit;
 
-    // -------------------------------
-    // 🔹 Build aggregation pipeline
-    // -------------------------------
     const pipeline: any[] = [
-      // CATEGORY SEARCH
       {
         $match: {
           categoryPath: { $in: allowedCategoryPaths },
@@ -122,9 +141,6 @@ export class SearchService {
         $project: { _id: 1, type: 1, label: 1, path: 1, score: 1 },
       },
 
-      // -------------------------------
-      // UNION PRODUCTS
-      // -------------------------------
       {
         $unionWith: {
           coll: 'products',
@@ -150,25 +166,18 @@ export class SearchService {
         },
       },
 
-      // -------------------------------
-      // SORT BY RELEVANCE AND TYPE
-      // -------------------------------
       {
         $sort: {
-          score: -1, // higher textScore first
-          type: 1, // products before categories if tie
-          label: 1, // alphabetical fallback
+          score: -1,
+          type: 1,
+          label: 1,
         },
       },
 
-      // -------------------------------
-      // PAGINATION
-      // -------------------------------
       { $skip: skip },
-      { $limit: limit + 1 }, // fetch one extra to check hasMore
+      { $limit: limit + 1 },
     ];
 
-    // Run aggregation on category collection (start point)
     const results = await this.categoryModel.aggregate(pipeline);
 
     const hasMore = results.length > limit;

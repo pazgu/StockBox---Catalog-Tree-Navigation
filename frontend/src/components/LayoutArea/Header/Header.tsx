@@ -28,7 +28,6 @@ const Header: React.FC<HeaderProps> = ({
     setIsMobileMenuOpen(false);
   }, [location]);
 
-
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
@@ -86,8 +85,8 @@ const Header: React.FC<HeaderProps> = ({
       <header
         className={`fixed top-0 w-full transition-all duration-300 z-50 flex items-center justify-between px-6 ${
           isScrolled
-            ? "bg-[#0D305B]/95 backdrop-blur-md shadow-xl h-32" 
-            : "bg-[#0D305B] shadow-lg h-40" 
+            ? "bg-[#0D305B]/95 backdrop-blur-md shadow-xl h-32"
+            : "bg-[#0D305B] shadow-lg h-40"
         }`}
       >
         <div className="container mx-auto px-4">
@@ -101,7 +100,6 @@ const Header: React.FC<HeaderProps> = ({
                 onClick={() => navigate("/")}
               />
             </div>
-
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center flex-1 justify-center max-w-3xl mx-8">
               <nav className="flex items-center gap-6" dir="rtl">
@@ -122,9 +120,15 @@ const Header: React.FC<HeaderProps> = ({
                 )}
               </nav>
             </div>
-
-            <SearchBar></SearchBar>
-
+            <SearchBar
+              onSelectResult={(item) => {
+                if (item.type === "product") {
+                  navigate(`/products/${item.id}`);
+                } else if (item.type === "category") {
+                  navigate(`/categories/${item.paths[0]}`);
+                }
+              }}
+            />
             {/* Action Icons */}
             <div
               className={`flex items-center gap-2 mr-4 ${

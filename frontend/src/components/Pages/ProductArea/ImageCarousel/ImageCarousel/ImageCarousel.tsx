@@ -73,7 +73,11 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
     if (delta < -threshold) nextImage();
   };
 
-  if (!productImages.length) return null;
+  const hasImages = productImages.length > 0;
+const placeholderSrc = "/assets/images/placeholder.png"; 
+
+const currentSrc = hasImages ? productImages[currentImageIndex] : placeholderSrc;
+
 
   return (
     <div
@@ -86,7 +90,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
     >
       <div className="relative w-full h-40 flex items-center justify-center">
         <img
-          src={productImages[currentImageIndex]}
+          src={currentSrc}
           alt={title}
           className="w-full h-40 object-contain relative z-10 transition-all duration-500 ease-in-out transform drop-shadow-md"
           draggable={false}
@@ -117,7 +121,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
         )}
       </div>
 
-      {productImages.length > 1 && (
+      {hasImages && productImages.length > 1 && (
         <div className="flex justify-center gap-2 mt-2">
           {productImages.map((_, index) => (
             <button
@@ -134,52 +138,73 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
       )}
 
       {isEditing && (
-        <div className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-t from-black/70 via-black/30 to-transparent flex items-end justify-center pb-3 z-20 transition-all duration-300">
-          <div className="pointer-events-auto flex gap-2 flex-wrap justify-center">
-            {/* Replace */}
-            <label
-              htmlFor={replaceId}
-              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-stockblue bg-white/95 backdrop-blur-sm rounded-lg shadow-md border border-white/30 cursor-pointer hover:shadow-lg hover:bg-white"
-            >
-              <Upload size={14} />
-              החלף
-            </label>
-            <input
-              type="file"
-              id={replaceId}
-              accept="image/*"
-              onChange={handleReplaceImage}
-              className="hidden"
-            />
+  <div className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-t from-black/70 via-black/30 to-transparent flex items-end justify-center pb-3 z-20 transition-all duration-300">
+    <div className="pointer-events-auto flex gap-2 flex-wrap justify-center">
 
-            {/* Add */}
-            <label
-              htmlFor={addId}
-              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-[#5A7863] bg-white/95 backdrop-blur-sm rounded-lg shadow-md border border-white/30 cursor-pointer hover:shadow-lg hover:bg-white"
-            >
-              <Upload size={14} />
-              הוסף
-            </label>
-            <input
-              type="file"
-              id={addId}
-              accept="image/*"
-              multiple
-              onChange={handleAddImages}
-              className="hidden"
-            />
+      {!hasImages ? (
+        <>
+          <label
+            htmlFor={addId}
+            className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-[#5A7863] bg-white/95 backdrop-blur-sm rounded-lg shadow-md border border-white/30 cursor-pointer hover:shadow-lg hover:bg-white"
+          >
+            <Upload size={14} />
+            העלה תמונה
+          </label>
+          <input
+            type="file"
+            id={addId}
+            accept="image/*"
+            multiple
+            onChange={handleAddImages}
+            className="hidden"
+          />
+        </>
+      ) : (
+        <>
+          <label
+            htmlFor={replaceId}
+            className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-stockblue bg-white/95 backdrop-blur-sm rounded-lg shadow-md border border-white/30 cursor-pointer hover:shadow-lg hover:bg-white"
+          >
+            <Upload size={14} />
+            החלף
+          </label>
+          <input
+            type="file"
+            id={replaceId}
+            accept="image/*"
+            onChange={handleReplaceImage}
+            className="hidden"
+          />
 
-            {/* Delete */}
-            <button
-              type="button"
-              onClick={handleDeleteImage}
-              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-[#A91D3A] backdrop-blur-sm rounded-lg shadow-md border border-[#A91D3A] hover:shadow-lg hover:bg-[#A91D3A]/80"
-            >
-              מחק
-            </button>
-          </div>
-        </div>
+          <label
+            htmlFor={addId}
+            className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-[#5A7863] bg-white/95 backdrop-blur-sm rounded-lg shadow-md border border-white/30 cursor-pointer hover:shadow-lg hover:bg-white"
+          >
+            <Upload size={14} />
+            הוסף
+          </label>
+          <input
+            type="file"
+            id={addId}
+            accept="image/*"
+            multiple
+            onChange={handleAddImages}
+            className="hidden"
+          />
+
+          <button
+            type="button"
+            onClick={handleDeleteImage}
+            className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-[#A91D3A] backdrop-blur-sm rounded-lg shadow-md border border-[#A91D3A] hover:shadow-lg hover:bg-[#A91D3A]/80"
+          >
+            מחק
+          </button>
+        </>
       )}
+    </div>
+  </div>
+)}
+
     </div>
   );
 };

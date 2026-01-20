@@ -15,8 +15,15 @@ export class SearchController {
   @UseGuards(AuthGuard('jwt'))
   async dropdown(@Query() query: SearchQueryDto, @Req() req) {
     const userId = req.user.userId;
+    const userRole = req.user.role;
     const limit = Math.min(query.limit ?? 10, 10);
-    return this.searchService.searchEntities(userId, query.q, 1, limit);
+    return this.searchService.searchEntities(
+      userId,
+      query.q,
+      1,
+      limit,
+      userRole,
+    );
   }
 
   @Get()
@@ -24,12 +31,13 @@ export class SearchController {
   async fullSearch(@Query() query: SearchQueryDto, @Req() req) {
     const page = query.page || 1;
     const limit = query.limit || 20;
-
+    const userRole = req.user.role;
     return this.searchService.searchEntities(
       req.user.userId,
       query.q,
       page,
       limit,
+      userRole,
     );
   }
 }
