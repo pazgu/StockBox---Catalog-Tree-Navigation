@@ -80,13 +80,19 @@ export class ProductsService {
         userGroupIds,
       );
 
-      const allowedProductIds = permissions
-        .filter((p) => p.entityType === EntityType.PRODUCT)
-        .map((p) => p.entityId.toString());
-
-      return directChildren.filter((p) =>
-        allowedProductIds.includes(p._id.toString()),
-      );
+      const visibleProducts = directChildren.filter((product) => {
+        const productId = product._id.toString();
+        const anyGroupBlocks = userGroupIds.some((groupId) => {
+          return !permissions.some(
+            (p) =>
+              p.entityId.toString() === productId &&
+              p.entityType === EntityType.PRODUCT &&
+              p.allowed.toString() === groupId,
+          );
+        });
+        return !anyGroupBlocks;
+      });
+      return visibleProducts;
     }
 
     return [];

@@ -73,13 +73,20 @@ export class CategoriesService {
         user.userId,
         userGroupIds,
       );
-      const allowedCategoryIds = permissions
-        .filter((p) => p.entityType === 'category')
-        .map((p) => p.entityId.toString());
-
-      const visibleCategories = categories.filter((cat) =>
-        allowedCategoryIds.includes(cat._id.toString()),
-      );
+      const visibleCategories = categories.filter((cat) => {
+        const categoryId = cat._id.toString();
+        const anyGroupBlocks = userGroupIds.some((groupId) => {
+          return !permissions.some(
+            (p) =>
+              p.entityId.toString() === categoryId &&
+              p.allowed.toString() === groupId,
+          );
+        });
+        if (anyGroupBlocks) {
+          return false;
+        }
+        return true;
+      });
 
       return visibleCategories;
     }
@@ -127,18 +134,23 @@ export class CategoriesService {
         user.userId,
         userGroupIds,
       );
-      const allowedCategoryIds = permissions
-        .filter((p) => p.entityType === EntityType.CATEGORY)
-        .map((p) => p.entityId.toString());
-
-      return directChildren.filter((cat) =>
-        allowedCategoryIds.includes(cat._id.toString()),
-      );
+      const visibleCategories = directChildren.filter((cat) => {
+        const categoryId = cat._id.toString();
+        const anyGroupBlocks = userGroupIds.some((groupId) => {
+          return !permissions.some(
+            (p) =>
+              p.entityId.toString() === categoryId &&
+              p.entityType === EntityType.CATEGORY &&
+              p.allowed.toString() === groupId,
+          );
+        });
+        return !anyGroupBlocks;
+      });
+      return visibleCategories;
     }
 
     return [];
   }
-
   async deleteCategory(id: string) {
     const category = await this.categoryModel.findById(id);
     if (!category) {
