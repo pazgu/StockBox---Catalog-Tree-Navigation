@@ -23,6 +23,12 @@ export class PermissionsService {
   ) {}
 
   async getPermissionsForUser(userId: string, userGroupIds?: string[]) {
+    console.log(
+      'Getting permissions for user:',
+      userId,
+      'with groups:',
+      userGroupIds,
+    );
     const allowedIds = [
       new Types.ObjectId(userId),
       ...(userGroupIds || []).map((id) => new Types.ObjectId(id)),

@@ -77,6 +77,7 @@ export class ProductsService {
         .select('_id')
         .lean();
       const userGroupIds = userGroups.map((g) => g._id.toString());
+
       const permissions = await this.permissionsService.getPermissionsForUser(
         user.userId,
         userGroupIds,
@@ -84,22 +85,36 @@ export class ProductsService {
 
       const visibleProducts = directChildren.filter((product) => {
         const productId = product._id.toString();
-        const anyGroupBlocks = userGroupIds.some((groupId) => {
-          return !permissions.some(
+
+        // Determine which permissions to use based on whether user has groups
+        let hasPermission: boolean;
+
+        if (userGroupIds.length > 0) {
+          // User has groups - use ONLY group permissions
+          hasPermission = permissions.some(
             (p) =>
               p.entityId.toString() === productId &&
               p.entityType === EntityType.PRODUCT &&
-              p.allowed.toString() === groupId,
+              userGroupIds.includes(p.allowed.toString()),
           );
-        });
-        return !anyGroupBlocks;
+        } else {
+          // User has no groups - use ONLY personal permissions
+          hasPermission = permissions.some(
+            (p) =>
+              p.entityId.toString() === productId &&
+              p.entityType === EntityType.PRODUCT &&
+              p.allowed.toString() === user.userId,
+          );
+        }
+
+        return hasPermission;
       });
+
       return visibleProducts;
     }
 
     return [];
   }
-
   async create(createProductDto: CreateProductDto, file?: Express.Multer.File) {
     let productImages: string[] = [];
     if (file?.buffer) {
