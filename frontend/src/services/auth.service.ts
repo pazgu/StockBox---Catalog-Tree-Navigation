@@ -1,21 +1,23 @@
 import { LoginPayload } from "../components/models/login.models";
-import axios from "./axios";
+import api from "./axios";
 
 
 
 class AuthService {
   async login(payload: LoginPayload) {
-    const res = await axios.post("/auth/login", payload);
+    const res = await api.post("/auth/login", payload);
 
     return res;
   }
   async markRequestSent(userId: string) {
-    const res = await axios.patch("/auth/request-sent", { userId });
+    const res = await api.patch("/auth/request-sent", { userId });
     return res.data; 
   }
 
    setSession(accessToken: string, user: any) {
     localStorage.setItem("token", accessToken);
+    console.log("token payload:", JSON.parse(atob(accessToken.split(".")[1])));
+
     localStorage.setItem("user", JSON.stringify(user));
   }
   

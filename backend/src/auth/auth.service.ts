@@ -65,14 +65,28 @@ export class AuthService {
       role: user.role,
     };
 
+    const accessToken = this.jwtService.sign(payload, {
+      expiresIn: '30d',
+    });
     return {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-      accessToken: this.jwtService.sign(payload),
+      accessToken,
       user: {
         id: user._id,
         role: user.role,
       },
     };
+  }
+
+  async renewToken(userId: string, role: string): Promise<string> {
+    const payload = {
+      sub: userId,
+      role,
+    };
+    const newToken = this.jwtService.sign(payload, {
+      expiresIn: '30d',
+    });
+
+    return newToken;
   }
 
   async markRequestSent(userId: string) {

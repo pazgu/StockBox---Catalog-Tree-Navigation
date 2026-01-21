@@ -1,13 +1,12 @@
+import { tokenRenewInterceptor } from "../interceptors/tokenRenewal.interceptor";
 import { environment } from "../environments/environment.development";
-import axios, {
-  AxiosError,
-  AxiosResponse,
-} from "axios";
+import axios, { AxiosError, AxiosResponse } from "axios";
 
 const api = axios.create({
   baseURL: environment.API_URL,
   withCredentials: true,
 });
+api.interceptors.request.use(tokenRenewInterceptor);
 
 api.interceptors.response.use(
   (response: AxiosResponse) => response,
@@ -25,9 +24,6 @@ api.interceptors.response.use(
 
         window.location.href = `mailto:${emailTo}?subject=${subject}&body=${body}`;
       }
-
- 
-
     }
 
     return Promise.reject(error);

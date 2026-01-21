@@ -6,11 +6,15 @@ import {
   Check,
   Upload,
   X,
+  File,
+  Video,
+  Music,
+  FileText,
 } from "lucide-react";
+
 import { useUser } from "../../../../context/UserContext";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { File, Video, Music, FileText } from "lucide-react";
 import { AccordionData } from "../../../models/accordion.models";
 import AccordionSection from "../AccordionSection/AccordionSection/AccordionSection";
 import ImageCarousel from "../ImageCarousel/ImageCarousel/ImageCarousel";

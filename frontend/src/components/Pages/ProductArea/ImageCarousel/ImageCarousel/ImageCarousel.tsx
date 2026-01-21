@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useCallback, useId } from "react";
-import { Upload } from "lucide-react";
+import { Upload, ImageOff } from "lucide-react";
+
 
 interface ImageCarouselProps {
   productImages: string[];
@@ -31,11 +32,23 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
   const replaceId = useId();
   const addId = useId();
 
+    const validImages = (productImages || []).filter(
+    (u) => typeof u === "string" && u.trim().length > 0
+  );
+
+    const hasImages = validImages.length > 0;
+  const shownIndex = Math.min(
+    currentImageIndex,
+    Math.max(0, validImages.length - 1)
+  );
+  const shownSrc = hasImages ? validImages[shownIndex] : "";
+
   useEffect(() => {
-    if (currentImageIndex > productImages.length - 1) {
-      setCurrentImageIndex(Math.max(0, productImages.length - 1));
-    }
-  }, [productImages.length, currentImageIndex, setCurrentImageIndex]);
+  if (currentImageIndex > validImages.length - 1) {
+    setCurrentImageIndex(Math.max(0, validImages.length - 1));
+  }
+}, [validImages.length, currentImageIndex, setCurrentImageIndex]);
+
 
   const onKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -73,12 +86,6 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
     if (delta < -threshold) nextImage();
   };
 
-  const hasImages = productImages.length > 0;
-const placeholderSrc = "/assets/images/placeholder.png"; 
-
-const currentSrc = hasImages ? productImages[currentImageIndex] : placeholderSrc;
-
-
   return (
     <div
       ref={containerRef}
@@ -89,14 +96,29 @@ const currentSrc = hasImages ? productImages[currentImageIndex] : placeholderSrc
       aria-label={`${title || "גלריה"} - גלריית תמונות`}
     >
       <div className="relative w-full h-40 flex items-center justify-center">
-        <img
-          src={currentSrc}
-          alt={title}
-          className="w-full h-40 object-contain relative z-10 transition-all duration-500 ease-in-out transform drop-shadow-md"
-          draggable={false}
-        />
+        {hasImages ? (
+  <img
+    src={shownSrc}
+    alt={title || "תמונה"}
+    className="w-full h-40 object-contain relative z-10 transition-all duration-500 ease-in-out transform drop-shadow-md"
+    draggable={false}
+    onError={(e) => {
+      // if image breaks, hide it and show placeholder instead
+      (e.currentTarget as HTMLImageElement).style.display = "none";
+    }}
+  />
+) : (
+  <div className="w-full h-40 relative z-10 flex flex-col items-center justify-center gap-2 text-slate-500">
+    <div className="h-14 w-14 rounded-2xl bg-white shadow-sm grid place-items-center border border-slate-200">
+      <ImageOff className="h-7 w-7" />
+    </div>
+    <div className="text-sm font-semibold">אין תמונות עדיין</div>
+    <div className="text-xs text-slate-400">PNG · JPG · JPEG</div>
+  </div>
+)}
 
-        {productImages.length > 1 && (
+
+        {validImages.length > 1 && (
           <>
             {/* Prev on the LEFT */}
             <button
@@ -121,21 +143,22 @@ const currentSrc = hasImages ? productImages[currentImageIndex] : placeholderSrc
         )}
       </div>
 
-      {hasImages && productImages.length > 1 && (
-        <div className="flex justify-center gap-2 mt-2">
-          {productImages.map((_, index) => (
-            <button
-              type="button"
-              key={index}
-              onClick={() => setCurrentImageIndex(index)}
-              className={`w-2.5 h-2.5 rounded-full cursor-pointer transition-all duration-300 ${
-                index === currentImageIndex ? "bg-stockblue" : "bg-gray-300"
-              }`}
-              aria-label={`בחר תמונה ${index + 1}`}
-            />
-          ))}
-        </div>
-      )}
+      {hasImages && validImages.length > 1 && (
+  <div className="flex justify-center gap-2 mt-2">
+    {validImages.map((_, index) => (
+      <button
+        type="button"
+        key={index}
+        onClick={() => setCurrentImageIndex(index)}
+        className={`w-2.5 h-2.5 rounded-full cursor-pointer transition-all duration-300 ${
+          index === shownIndex ? "bg-stockblue" : "bg-gray-300"
+        }`}
+        aria-label={`בחר תמונה ${index + 1}`}
+      />
+    ))}
+  </div>
+)}
+
 
       {isEditing && (
   <div className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-t from-black/70 via-black/30 to-transparent flex items-end justify-center pb-3 z-20 transition-all duration-300">
