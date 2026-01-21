@@ -45,7 +45,6 @@ const SingleCat: FC = () => {
   const [itemToEdit, setItemToEdit] = useState<DisplayItem | null>(null);
   const [isSavingProduct, setIsSavingProduct] = useState(false);
   const [isDeletingItem, setIsDeletingItem] = useState(false);
-  const [showFabButtons, setShowFabButtons] = useState(false);
 
   const location = useLocation();
   const params = useParams();
@@ -111,20 +110,15 @@ const SingleCat: FC = () => {
           favorite: userFavorites.includes(cat._id),
         }),
       );
-
-      const getFirstValidImage = (images?: (string | null | undefined)[]) => {
-  const first = (images ?? []).find(
-    (u) => typeof u === "string" && u.trim().length > 0
-  );
-  return first || ""; 
-};
-
       const productItems: DisplayItem[] = products.map((prod: ProductDto) => ({
         id: prod._id!,
         name: prod.productName,
-        image: getFirstValidImage(prod.productImages),
+        image: prod.productImages?.[0] ?? "/assets/images/placeholder.png",
         type: "product",
-        path: prod.productPath,
+        path: Array.isArray(prod.productPath)
+          ? (prod.productPath.find((p) => p.startsWith(categoryPath)) ??
+            prod.productPath[0])
+          : prod.productPath,
         description: prod.productDescription,
         customFields: prod.customFields,
         favorite: userFavorites.includes(prod._id!),
@@ -248,34 +242,34 @@ const SingleCat: FC = () => {
     imageFile: File;
   }) => {
     try {
-      const safe =
+      const safeName =
         data.name.trim().toLowerCase().replace(/\s+/g, "-") || "product";
-      const newpath = `${categoryPath}/${safe}`;
+      const productPathString = `${categoryPath}/${safeName}`;
       const createdProduct = await ProductsService.createProduct({
         productName: data.name,
-        productPath: newpath,
+        productPath: productPathString, 
         productDescription: data.description,
-        customFields: [],
+        customFields: {}, 
         imageFile: data.imageFile,
       });
 
-    const newItem: DisplayItem = {
-      id: createdProduct._id!,
-      name: createdProduct.productName,
-      image:
-        createdProduct.productImages?.[0] ?? "/assets/images/placeholder.png",
-      type: "product",
-      path: createdProduct.productPath,
-      favorite: false,
-      customFields: createdProduct.customFields,
-      description: createdProduct.productDescription,
-    };
+      const newItem: DisplayItem = {
+        id: createdProduct._id!,
+        name: createdProduct.productName,
+        image:
+          createdProduct.productImages?.[0] ?? "/assets/images/placeholder.png",
+        type: "product",
+        path: createdProduct.productPath[0], // Access the first element of the array returned by BE
+        favorite: false,
+        description: createdProduct.productDescription,
+      };
 
-      setItems([...items, newItem]);
+      setItems((prev) => [...prev, newItem]);
       toast.success(`המוצר "${data.name}" נוסף בהצלחה!`);
       setShowAddProductModal(false);
-    } catch (error) {
-      toast.error("שגיאה בהוספת המוצר");
+    } catch (error: any) {
+      console.error("Save Error:", error);
+      toast.error(error.message || "שגיאה בהוספת המוצר");
     }
   };
 
@@ -565,28 +559,13 @@ const SingleCat: FC = () => {
                 }
               }}
             >
-              {item.image && item.image.trim().length > 0 ? (
-  <img
-    src={item.image}
-    alt={item.name}
-    className={`max-h-full max-w-full object-contain transition-transform duration-300 hover:scale-105 ${
-      item.type === "category" ? "rounded-full" : ""
-    }`}
-    onError={(e) => {
-      // if url breaks - hide it
-      (e.currentTarget as HTMLImageElement).style.display = "none";
-    }}
-  />
-) : (
-  <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-slate-500">
-    <div className="h-12 w-12 rounded-2xl bg-white shadow-sm grid place-items-center border border-slate-200">
-      <PackageCheck className="h-6 w-6 opacity-60" />
-    </div>
-    <div className="text-sm font-semibold">אין תמונה עדיין</div>
-    <div className="text-xs text-slate-400">ניתן להוסיף בעריכה</div>
-  </div>
-)}
-
+              <img
+                src={item.image}
+                alt={item.name}
+                className={`max-h-full max-w-full object-contain transition-transform duration-300 hover:scale-105 ${
+                  item.type === "category" ? "rounded-full" : ""
+                }`}
+              />
             </div>
 
             <div className="w-full text-center pt-4 border-t border-gray-200">
@@ -611,69 +590,57 @@ const SingleCat: FC = () => {
         ))}
       </main>
 
-{role === "editor" && !isSelectionMode && (
-  <div 
-    className="fixed bottom-10 left-4 flex flex-col-reverse gap-3"
-    onMouseLeave={() => setShowFabButtons(false)}
-  >
-    <button
-      onMouseEnter={() => setShowFabButtons(true)}
-      className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 z-10"
-      title="הוסף"
-    >
-      <span className={`text-3xl font-light transition-transform duration-300 ${showFabButtons ? 'rotate-45' : ''}`}>
-        +
-      </span>
-    </button>
+      {role === "editor" && !isSelectionMode && (
+        <div className="fixed bottom-10 left-4 flex flex-col-reverse gap-3 group">
+          <button
+            className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 z-10"
+            title="הוסף"
+          >
+            <span className="text-3xl font-light transition-transform duration-300 group-hover:rotate-45">
+              +
+            </span>
+          </button>
 
-    <button
-      onClick={() => {
-        setShowAddProductModal(true);
-      }}
-      className={`w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 ease-in-out relative ${
-        showFabButtons 
-          ? 'scale-100 translate-y-0 pointer-events-auto' 
-          : 'scale-0 -translate-y-14 pointer-events-none'
-      }`}
-      title="הוסף מוצר"
-    >
-      <FilePlus2Icon size={24} />
-      <span className="absolute left-16 bg-gray-800 text-white text-xs px-3 py-1 rounded opacity-0 hover:opacity-100 transition-all duration-200 whitespace-nowrap">
-        הוסף מוצר
-      </span>
-    </button>
+          <button
+            onClick={() => {
+              setShowAddProductModal(true);
+            }}
+            className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 ease-in-out scale-0 group-hover:scale-100 -translate-y-14 group-hover:translate-y-0 pointer-events-none group-hover:pointer-events-auto relative"
+            title="הוסף מוצר"
+          >
+            <FilePlus2Icon size={24} />
+            <span className="absolute left-16 bg-gray-800 text-white text-xs px-3 py-1 rounded opacity-0 hover:opacity-100 transition-all duration-200 whitespace-nowrap">
+              הוסף מוצר
+            </span>
+          </button>
 
-    <button
-      onClick={() => {
-        setShowAddSubCategoryModal(true);
-      }}
-      className={`w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 ease-in-out relative ${
-        showFabButtons 
-          ? 'scale-100 translate-y-0 pointer-events-auto' 
-          : 'scale-0 -translate-y-14 pointer-events-none'
-      }`}
-      title="הוסף תת-קטגוריה"
-    >
-      <svg
-        color="white"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        width="24"
-        height="24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2zm-10-8v6m-3-3h6" />
-      </svg>
-      <span className="absolute left-16 bg-gray-800 text-white text-xs px-3 py-1 rounded opacity-0 hover:opacity-100 transition-all duration-200 whitespace-nowrap">
-        הוסף תת-קטגוריה
-      </span>
-    </button>
-  </div>
-)}
+          <button
+            onClick={() => {
+              setShowAddSubCategoryModal(true);
+            }}
+            className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 ease-in-out scale-0 group-hover:scale-100 -translate-y-14 group-hover:translate-y-0 pointer-events-none group-hover:pointer-events-auto relative"
+            title="הוסף תת-קטגוריה"
+          >
+            <svg
+              color="white"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              width="24"
+              height="24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2zm-10-8v6m-3-3h6" />
+            </svg>
+            <span className="absolute left-16 bg-gray-800 text-white text-xs px-3 py-1 rounded opacity-0 hover:opacity-100 transition-all duration-200 whitespace-nowrap">
+              הוסף תת-קטגוריה
+            </span>
+          </button>
+        </div>
+      )}
       {role === "editor" && (
         <>
           <AddProductModal
@@ -708,31 +675,30 @@ const SingleCat: FC = () => {
             </p>
             <small className="text-gray-500">לא יהיה ניתן לבטל פעולה זו</small>
             <div className="flex justify-end gap-3 mt-4">
-             <button
-  onClick={confirmDelete}
-  disabled={isDeletingItem}
-  className={`bg-red-600 text-white px-4 py-2 rounded transition-colors
+              <button
+                onClick={confirmDelete}
+                disabled={isDeletingItem}
+                className={`bg-red-600 text-white px-4 py-2 rounded transition-colors
     ${isDeletingItem ? "opacity-70 cursor-not-allowed" : "hover:bg-red-700"}`}
->
-  {isDeletingItem ? (
-    <span className="flex items-center gap-2">
-      <Spinner className="size-4 text-white" />
-      מוחק...
-    </span>
-  ) : (
-    "מחק"
-  )}
-</button>
+              >
+                {isDeletingItem ? (
+                  <span className="flex items-center gap-2">
+                    <Spinner className="size-4 text-white" />
+                    מוחק...
+                  </span>
+                ) : (
+                  "מחק"
+                )}
+              </button>
 
-             <button
-  onClick={closeAllModals}
-  disabled={isDeletingItem}
-  className={`bg-gray-300 px-4 py-2 rounded transition-colors
+              <button
+                onClick={closeAllModals}
+                disabled={isDeletingItem}
+                className={`bg-gray-300 px-4 py-2 rounded transition-colors
     ${isDeletingItem ? "opacity-70 cursor-not-allowed" : "hover:bg-gray-400"}`}
->
-  ביטול
-</button>
-
+              >
+                ביטול
+              </button>
             </div>
           </div>
         </div>

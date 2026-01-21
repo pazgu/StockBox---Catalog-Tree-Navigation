@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
-import { IsOptional, IsString } from 'class-validator';
+import { IsArray, IsOptional, IsString } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class UpdateProductDto {
@@ -12,8 +12,9 @@ export class UpdateProductDto {
   productDescription?: string;
 
   @IsOptional()
-  @IsString()
-  productPath?: string;
+  @IsArray()
+  @IsString({ each: true })
+  productPath?: Array<string>;
 
   @IsOptional()
   @Transform(({ value }) => {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
@@ -58,9 +59,10 @@ export class ProductsService {
       .exec();
 
     const directChildren = matchingProducts.filter((product) => {
-      if (!product.productPath || !product.productPath.startsWith(path))
-        return false;
-      const remainingPath = product.productPath.substring(path.length);
+      const currentPath = product.productPath.find((p) => p.startsWith(path));
+      if (!currentPath) return false;
+
+      const remainingPath = currentPath.substring(path.length);
       const slashCount = (remainingPath.match(/\//g) || []).length;
       return slashCount <= 1;
     });
@@ -99,26 +101,61 @@ export class ProductsService {
   }
 
   async create(createProductDto: CreateProductDto, file?: Express.Multer.File) {
+    let productImages: string[] = [];
     if (file?.buffer) {
-      const uploaded = await uploadBufferToCloudinary(
-        file.buffer,
-        'stockbox/products',
+      try {
+        const uploaded = await uploadBufferToCloudinary(
+          file.buffer,
+          'stockbox/products',
+        );
+        productImages = [uploaded.secure_url];
+      } catch (error) {
+        console.error('Cloudinary Upload Error:', error);
+      }
+    }
+
+    let cleanCustomFields: any[] = [];
+
+    if (createProductDto.customFields) {
+      try {
+        const parsed =
+          typeof createProductDto.customFields === 'string'
+            ? JSON.parse(createProductDto.customFields)
+            : createProductDto.customFields;
+        if (Array.isArray(parsed)) {
+          cleanCustomFields = parsed.filter((f) => f && f.title && f.type);
+        }
+      } catch (error) {
+        console.warn('Failed to parse customFields, defaulting to empty array');
+        cleanCustomFields = [];
+      }
+    }
+
+    const newProductData = {
+      productName: createProductDto.productName,
+      productDescription: createProductDto.productDescription || '',
+      productPath: [createProductDto.productPath],
+      productImages: productImages,
+      customFields: cleanCustomFields,
+    };
+
+    try {
+      const newProduct = new this.productModel(newProductData);
+      const savedProduct = await newProduct.save();
+
+      await this.permissionsService.assignPermissionsForNewEntity(savedProduct);
+
+      return savedProduct;
+    } catch (error) {
+      console.error('Mongoose Save Error:', error);
+      if (error.name === 'ValidationError') {
+        throw new BadRequestException(`Validation Failed: ${error.message}`);
+      }
+      throw new InternalServerErrorException(
+        'Failed to create product in database',
       );
-      createProductDto.productImages = [uploaded.secure_url];
     }
-
-    if (!createProductDto.productImages) {
-      createProductDto.productImages = [];
-    }
-
-    const newProduct = new this.productModel(createProductDto);
-    const savedProduct = await newProduct.save();
-
-    await this.permissionsService.assignPermissionsForNewEntity(savedProduct);
-
-    return savedProduct;
   }
-
   async delete(id: string): Promise<{ success: boolean; message: string }> {
     const product = await this.productModel.findById(id);
 
@@ -163,7 +200,7 @@ export class ProductsService {
     }
 
     if (dto.productName && dto.productName !== existing.productName) {
-      const parentPath = this.getParentPath(existing.productPath);
+      const parentPath = this.getParentPath(existing.productPath[0]);
       const newSlug = this.slugify(dto.productName);
       const newPath = `${parentPath}/${newSlug}`;
 
@@ -178,7 +215,7 @@ export class ProductsService {
         );
       }
 
-      dto.productPath = newPath;
+      dto.productPath = [newPath];
     }
 
     const updatedProduct = await this.productModel.findByIdAndUpdate(
@@ -210,7 +247,8 @@ export class ProductsService {
       throw new BadRequestException('Target category does not exist');
     }
 
-    const oldPath = product.productPath;
+    const oldPath = product.productPath[0] || 'unknown';
+
     const productName = product.productName.toLowerCase().replace(/\s+/g, '-');
     const newPath = `${newCategoryPath}/${productName}`;
 
@@ -225,7 +263,7 @@ export class ProductsService {
       );
     }
 
-    product.productPath = newPath;
+    product.productPath = [newPath];
     await product.save();
 
     return {
@@ -234,7 +272,6 @@ export class ProductsService {
       product: await this.productModel.findById(id),
     };
   }
-
   private async deleteProductImage(imageUrl: string): Promise<void> {
     try {
       const publicId = this.extractCloudinaryPublicId(imageUrl);

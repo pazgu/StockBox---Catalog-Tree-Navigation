@@ -28,7 +28,7 @@ export interface ProductDataDto {
   productName: string;
   productImages: string[];
   productDescription?: string;
-  productPath: string;
+  productPath: Array<string>;
   customFields: CustomFieldDto[];
   uploadFolders: UploadGroupDto[];
   createdAt: string;
@@ -42,7 +42,7 @@ export interface ProductDto {
   productName: string;
   productImages?: string[];
   productDescription?: string;
-  productPath: string;
+  productPath: Array<string>;
   customFields?: CustomFieldDto[];
   uploadFolders?: UploadGroupDto[]; 
   createdAt?: string;

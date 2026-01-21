@@ -52,7 +52,7 @@ export class SearchService {
 
       return {
         allowedCategoryPaths: allCategories.map((c) => c.categoryPath),
-        allowedProductPaths: allProducts.map((p) => p.productPath),
+        allowedProductPaths: allProducts.flatMap((p) => p.productPath),
       };
     }
 
@@ -98,7 +98,7 @@ export class SearchService {
       .lean()
       .exec();
 
-    const allowedProductPaths = allowedProducts.map((p) => p.productPath);
+    const allowedProductPaths = allowedProducts.flatMap((p) => p.productPath);
 
     return {
       allowedCategoryPaths: Array.from(allowedCategoryPaths),
