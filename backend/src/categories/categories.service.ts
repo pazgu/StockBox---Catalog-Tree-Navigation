@@ -55,49 +55,6 @@ export class CategoriesService {
     return savedCategory;
   }
 
-  // async getCategories(user: { userId: string; role: string }) {
-  //   console.log('Fetching categories for user:', user);
-  //   const categories = await this.categoryModel.find({
-  //     categoryPath: /^\/categories\/[^\/]+$/,
-  //   });
-
-  //   if (user.role === 'editor') {
-  //     console.log('User is editor, returning all categories');
-  //     return categories;
-  //   }
-
-  //   if (user.role === 'viewer') {
-  //     console.log('User is viewer, filtering categories based on permissions');
-  //     const userGroups = await this.groupModel
-  //       .find({ members: user.userId })
-  //       .select('_id')
-  //       .lean();
-  //     const userGroupIds = userGroups.map((g) => g._id.toString());
-  //     const permissions = await this.permissionsService.getPermissionsForUser(
-  //       user.userId,
-  //       userGroupIds,
-  //     );
-  //     console.log('Fetched permissions:', permissions);
-  //     const visibleCategories = categories.filter((cat) => {
-  //       const categoryId = cat._id.toString();
-  //       const anyGroupBlocks = userGroupIds.some((groupId) => {
-  //         return !permissions.some(
-  //           (p) =>
-  //             p.entityId.toString() === categoryId &&
-  //             p.allowed.toString() === groupId,
-  //         );
-  //       });
-  //       if (anyGroupBlocks) {
-  //         console.log("anyGroupBlocks is true for category:");
-  //         return false;
-  //       }
-  //       return true;
-  //     });
-  //     return visibleCategories;
-  //   }
-
-  //   return [];
-  // }
   async getCategories(user: { userId: string; role: string }) {
     console.log('Fetching categories for user:', user);
     const categories = await this.categoryModel.find({
@@ -126,46 +83,36 @@ export class CategoriesService {
       const visibleCategories = categories.filter((cat) => {
         const categoryId = cat._id.toString();
 
-        // Check if user has direct permission
-        const hasUserPermission = permissions.some(
-          (p) =>
-            p.entityId.toString() === categoryId &&
-            p.allowed.toString() === user.userId,
-        );
-
-        // Check if any of user's groups has permission
-        const hasGroupPermission =
-          userGroupIds.length > 0 &&
-          permissions.some(
-            (p) =>
-              p.entityId.toString() === categoryId &&
-              userGroupIds.includes(p.allowed.toString()),
-          );
-
-        // Determine which permissions to use based on whether user has groups
-        let hasPermission: boolean;
-
         if (userGroupIds.length > 0) {
-          // User has groups - use ONLY group permissions
-          hasPermission = permissions.some(
-            (p) =>
-              p.entityId.toString() === categoryId &&
-              p.entityType === EntityType.CATEGORY &&
-              userGroupIds.includes(p.allowed.toString()),
+          const allGroupsHavePermission = userGroupIds.every((groupId) =>
+            permissions.some(
+              (p) =>
+                p.entityId.toString() === categoryId &&
+                p.entityType === EntityType.CATEGORY &&
+                p.allowed.toString() === groupId,
+            ),
           );
+
+          if (!allGroupsHavePermission) {
+            console.log(
+              `Not all groups have permission for category: ${cat.categoryName}`,
+            );
+            return false;
+          }
         } else {
-          // User has no groups - use ONLY personal permissions
-          hasPermission = permissions.some(
+          const hasUserPermission = permissions.some(
             (p) =>
               p.entityId.toString() === categoryId &&
               p.entityType === EntityType.CATEGORY &&
               p.allowed.toString() === user.userId,
           );
-        }
 
-        if (!hasPermission) {
-          console.log(`No permission for category: ${cat.categoryName}`);
-          return false;
+          if (!hasUserPermission) {
+            console.log(
+              `No personal permission for category: ${cat.categoryName}`,
+            );
+            return false;
+          }
         }
 
         return true;
@@ -191,20 +138,20 @@ export class CategoriesService {
 
     const fullPath = `/categories/${cleanPath}`;
 
-    const allChildren = await this.categoryModel.find({
+    const allCategoryChildren = await this.categoryModel.find({
       categoryPath: new RegExp(
         `^${fullPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/`,
       ),
     });
 
-    const directChildren = allChildren.filter((cat) => {
+    const directCategoryChildren = allCategoryChildren.filter((cat) => {
       const remainingPath = cat.categoryPath.substring(fullPath.length + 1);
       const slashCount = (remainingPath.match(/\//g) || []).length;
       return slashCount === 0;
     });
 
     if (user.role === 'editor') {
-      return directChildren;
+      return directCategoryChildren;
     }
 
     if (user.role === 'viewer') {
@@ -219,34 +166,44 @@ export class CategoriesService {
         userGroupIds,
       );
 
-      const visibleCategories = directChildren.filter((cat) => {
-        const categoryId = cat._id.toString();
-
-        // Determine which permissions to use based on whether user has groups
-        let hasPermission: boolean;
+      const visibleChildren = directCategoryChildren.filter((child) => {
+        const childId = child._id.toString();
 
         if (userGroupIds.length > 0) {
-          // User has groups - use ONLY group permissions
-          hasPermission = permissions.some(
-            (p) =>
-              p.entityId.toString() === categoryId &&
-              p.entityType === EntityType.CATEGORY &&
-              userGroupIds.includes(p.allowed.toString()),
+          console.log('user groups ids length', userGroupIds.length);
+          const allGroupsHavePermission = userGroupIds.every((groupId) =>
+            permissions.some(
+              (p) =>
+                p.entityId.toString() === childId &&
+                p.allowed.toString() === groupId,
+            ),
           );
+
+          if (!allGroupsHavePermission) {
+            console.log(
+              'not all groups have permissions for category:',
+              child.categoryName,
+            );
+            return false;
+          }
         } else {
-          // User has no groups - use ONLY personal permissions
-          hasPermission = permissions.some(
+          console.log('user has no groups');
+          const hasUserPermission = permissions.some(
             (p) =>
-              p.entityId.toString() === categoryId &&
-              p.entityType === EntityType.CATEGORY &&
+              p.entityId.toString() === childId &&
               p.allowed.toString() === user.userId,
           );
+
+          if (!hasUserPermission) {
+            console.log('no user permission for category:', child.categoryName);
+            return false;
+          }
         }
 
-        return hasPermission;
+        return true;
       });
-
-      return visibleCategories;
+      console.log('visible children', visibleChildren);
+      return visibleChildren;
     }
 
     return [];
