@@ -9,7 +9,6 @@ import api from "./axios";
 
 class CategoriesService {
   private baseUrl = `${environment.API_URL}/categories`;
-
   async getCategories(): Promise<CategoryDTO[]> {
     try {
       const response = await api.get<CategoryDTO[]>(this.baseUrl);
