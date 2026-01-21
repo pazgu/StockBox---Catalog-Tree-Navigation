@@ -99,7 +99,6 @@ export class PermissionsService {
       { $group: { _id: '$allowed' } },
       { $project: { _id: 1 } },
     ]);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return allowedUsers.map((u) => u._id.toString());
   }
 
@@ -109,7 +108,8 @@ export class PermissionsService {
     const isProduct = 'productPath' in entity;
     const path = isProduct ? entity.productPath : entity.categoryPath;
 
-    const rawParts = path.split('/').filter(Boolean);
+    const pathAsString = Array.isArray(path) ? path[0] : path;
+    const rawParts = pathAsString.split('/').filter(Boolean);
     const normalizedParts =
       rawParts[0] === 'categories' ? rawParts.slice(1) : rawParts;
 

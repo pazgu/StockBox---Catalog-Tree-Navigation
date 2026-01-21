@@ -46,7 +46,6 @@ const SingleCat: FC = () => {
   const [isSavingProduct, setIsSavingProduct] = useState(false);
   const [isDeletingItem, setIsDeletingItem] = useState(false);
 
-
   const location = useLocation();
   const params = useParams();
   const { role, user, id } = useUser();
@@ -116,7 +115,10 @@ const SingleCat: FC = () => {
         name: prod.productName,
         image: prod.productImages?.[0] ?? "/assets/images/placeholder.png",
         type: "product",
-        path: prod.productPath,
+        path: Array.isArray(prod.productPath)
+          ? (prod.productPath.find((p) => p.startsWith(categoryPath)) ??
+            prod.productPath[0])
+          : prod.productPath,
         description: prod.productDescription,
         customFields: prod.customFields,
         favorite: userFavorites.includes(prod._id!),
@@ -240,34 +242,34 @@ const SingleCat: FC = () => {
     imageFile: File;
   }) => {
     try {
-      const safe =
+      const safeName =
         data.name.trim().toLowerCase().replace(/\s+/g, "-") || "product";
-      const newpath = `${categoryPath}/${safe}`;
+      const productPathString = `${categoryPath}/${safeName}`;
       const createdProduct = await ProductsService.createProduct({
         productName: data.name,
-        productPath: newpath,
+        productPath: productPathString, 
         productDescription: data.description,
-        customFields: [],
+        customFields: {}, 
         imageFile: data.imageFile,
       });
 
-    const newItem: DisplayItem = {
-      id: createdProduct._id!,
-      name: createdProduct.productName,
-      image:
-        createdProduct.productImages?.[0] ?? "/assets/images/placeholder.png",
-      type: "product",
-      path: createdProduct.productPath,
-      favorite: false,
-      customFields: createdProduct.customFields,
-      description: createdProduct.productDescription,
-    };
+      const newItem: DisplayItem = {
+        id: createdProduct._id!,
+        name: createdProduct.productName,
+        image:
+          createdProduct.productImages?.[0] ?? "/assets/images/placeholder.png",
+        type: "product",
+        path: createdProduct.productPath[0], // Access the first element of the array returned by BE
+        favorite: false,
+        description: createdProduct.productDescription,
+      };
 
-      setItems([...items, newItem]);
+      setItems((prev) => [...prev, newItem]);
       toast.success(`המוצר "${data.name}" נוסף בהצלחה!`);
       setShowAddProductModal(false);
-    } catch (error) {
-      toast.error("שגיאה בהוספת המוצר");
+    } catch (error: any) {
+      console.error("Save Error:", error);
+      toast.error(error.message || "שגיאה בהוספת המוצר");
     }
   };
 
@@ -673,31 +675,30 @@ const SingleCat: FC = () => {
             </p>
             <small className="text-gray-500">לא יהיה ניתן לבטל פעולה זו</small>
             <div className="flex justify-end gap-3 mt-4">
-             <button
-  onClick={confirmDelete}
-  disabled={isDeletingItem}
-  className={`bg-red-600 text-white px-4 py-2 rounded transition-colors
+              <button
+                onClick={confirmDelete}
+                disabled={isDeletingItem}
+                className={`bg-red-600 text-white px-4 py-2 rounded transition-colors
     ${isDeletingItem ? "opacity-70 cursor-not-allowed" : "hover:bg-red-700"}`}
->
-  {isDeletingItem ? (
-    <span className="flex items-center gap-2">
-      <Spinner className="size-4 text-white" />
-      מוחק...
-    </span>
-  ) : (
-    "מחק"
-  )}
-</button>
+              >
+                {isDeletingItem ? (
+                  <span className="flex items-center gap-2">
+                    <Spinner className="size-4 text-white" />
+                    מוחק...
+                  </span>
+                ) : (
+                  "מחק"
+                )}
+              </button>
 
-             <button
-  onClick={closeAllModals}
-  disabled={isDeletingItem}
-  className={`bg-gray-300 px-4 py-2 rounded transition-colors
+              <button
+                onClick={closeAllModals}
+                disabled={isDeletingItem}
+                className={`bg-gray-300 px-4 py-2 rounded transition-colors
     ${isDeletingItem ? "opacity-70 cursor-not-allowed" : "hover:bg-gray-400"}`}
->
-  ביטול
-</button>
-
+              >
+                ביטול
+              </button>
             </div>
           </div>
         </div>
