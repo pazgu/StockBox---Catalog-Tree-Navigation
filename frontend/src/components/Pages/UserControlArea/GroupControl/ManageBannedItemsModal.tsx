@@ -13,6 +13,7 @@ import { categoriesService } from "../../../../services/CategoryService";
 import { groupService } from "../../../../services/GroupService";
 import { BannedItem, BannedEntityType } from "../../../../types/types";
 import { permissionsService } from "../../../../services/permissions.service";
+import { toast } from "sonner";
 
 interface ManageBannedItemsModalProps {
   groupId: string;
@@ -137,8 +138,13 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
       await permissionsService.createPermission(item.type, String(item.id), groupId);
 
       await load(true);
-    } catch (e) {
-      console.error("Failed to unblock:", e);
+      toast.success(`הפריט "${item.name}" שוחרר בהצלחה`);
+    } catch (e: any) {
+      if (e.response?.status === 400) {
+        toast.error(e.response?.data?.message || "לא ניתן לשחרר פריט זה");
+      } else {
+        toast.error("שגיאה בשחרור הפריט");
+      }
     } finally {
       setIsLoading(false);
     }
