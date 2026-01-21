@@ -34,6 +34,7 @@ export class CategoriesController {
 
   @Get()
   async findAll(@Req() req) {
+    console.log('Received request to fetch all categories', req.user);
     return await this.categoriesService.getCategories(req.user);
   }
 
