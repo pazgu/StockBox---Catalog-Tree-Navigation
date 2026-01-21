@@ -146,14 +146,21 @@ const Permissions: React.FC = () => {
       const toCreate = finalAllowedIds.filter((id) => !currentDbIds.includes(id));
       const toDelete = existingPermissions.filter((p) => !finalAllowedIds.includes(p.allowed));
 
-      await Promise.all([
-        ...toCreate.map((allowedId) =>
+      const createResults = await Promise.allSettled(
+        toCreate.map((allowedId) =>
           permissionsService.createPermission(type, cleanId, allowedId)
-        ),
-        ...toDelete.map((p) => permissionsService.deletePermission(p._id)),
-      ]);
-
-      toast.success("השינויים נשמרו בהצלחה");
+        )
+      );
+      const failures = createResults.filter((r) => r.status === "rejected");
+      if (failures.length > 0) {
+        const firstError = (failures[0] as any).reason?.response?.data?.message;
+        toast.error(firstError || "חלק מההרשאות לא נוצרו בשל קטגוריות אב חסומות");
+      }
+      await Promise.all(toDelete.map((p) => permissionsService.deletePermission(p._id)));
+      const successCount = createResults.filter((r) => r.status === "fulfilled").length;
+      if (successCount > 0 || toDelete.length > 0) {
+        toast.success("השינויים נשמרו בהצלחה");
+      }
       navigate(-1);
     } catch (err) {
       toast.error("שגיאה בשמירה");

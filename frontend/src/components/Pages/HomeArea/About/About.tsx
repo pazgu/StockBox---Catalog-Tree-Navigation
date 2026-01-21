@@ -440,6 +440,7 @@ const About: FC<AboutProps> = () => {
 
   const handleNavigateToCategories = () => {
     navigate("/categories");
+    window.scrollTo(0, 0);
   };
 
   useEffect(() => {

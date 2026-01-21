@@ -86,28 +86,39 @@ export class ProductsService {
       const visibleProducts = directChildren.filter((product) => {
         const productId = product._id.toString();
 
-        // Determine which permissions to use based on whether user has groups
-        let hasPermission: boolean;
-
         if (userGroupIds.length > 0) {
-          // User has groups - use ONLY group permissions
-          hasPermission = permissions.some(
-            (p) =>
-              p.entityId.toString() === productId &&
-              p.entityType === EntityType.PRODUCT &&
-              userGroupIds.includes(p.allowed.toString()),
+          const allGroupsHavePermission = userGroupIds.every((groupId) =>
+            permissions.some(
+              (p) =>
+                p.entityId.toString() === productId &&
+                p.entityType === EntityType.PRODUCT &&
+                p.allowed.toString() === groupId,
+            ),
           );
+
+          if (!allGroupsHavePermission) {
+            console.log(
+              `Not all groups have permission for product: ${product.productName}`,
+            );
+            return false;
+          }
         } else {
-          // User has no groups - use ONLY personal permissions
-          hasPermission = permissions.some(
+          const hasUserPermission = permissions.some(
             (p) =>
               p.entityId.toString() === productId &&
               p.entityType === EntityType.PRODUCT &&
               p.allowed.toString() === user.userId,
           );
+
+          if (!hasUserPermission) {
+            console.log(
+              `No personal permission for product: ${product.productName}`,
+            );
+            return false;
+          }
         }
 
-        return hasPermission;
+        return true;
       });
 
       return visibleProducts;
