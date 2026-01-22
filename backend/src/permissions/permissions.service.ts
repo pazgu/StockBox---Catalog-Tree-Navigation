@@ -43,8 +43,6 @@ export class PermissionsService {
 
   async createPermission(dto: CreatePermissionDto) {
     const { entityType, entityId, allowed, inheritToChildren } = dto;
-
-    // 1️⃣ Validate ONLY the entity being edited
     const validation = await this.canCreatePermission(
       entityType,
       entityId.toString(),
@@ -58,21 +56,16 @@ export class PermissionsService {
       );
     }
 
-    // 2️⃣ Create permission for the current entity
     const created = await this.permissionModel.create({
       entityType,
       entityId,
       allowed,
     });
 
-    // 3️⃣ Stop here if:
-    // - not a category
-    // - admin did not choose inheritance
     if (entityType !== EntityType.CATEGORY || !inheritToChildren) {
       return created;
     }
 
-    // 4️⃣ Inheritance: apply permission to all descendants
     const descendants = await this.getAllCategoryDescendants(entityId);
 
     await Promise.all(
@@ -458,10 +451,8 @@ export class PermissionsService {
       return [];
     }
 
-    // normalize: remove trailing slash if exists
     const basePath = category.categoryPath.replace(/\/$/, '');
 
-    // 1️⃣ Find all sub-categories
     const categories = await this.categoryModel
       .find({
         categoryPath: { $regex: `^${basePath}/` },
@@ -469,7 +460,6 @@ export class PermissionsService {
       .select('_id')
       .lean();
 
-    // 2️⃣ Find all products that have AT LEAST ONE path under this category
     const products = await this.productModel
       .find({
         productPath: {

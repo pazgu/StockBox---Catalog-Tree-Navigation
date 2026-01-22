@@ -46,7 +46,6 @@ const Permissions: React.FC = () => {
     image: string;
   } | null>(null);
 
-  // 1. Load Initial Data
   useEffect(() => {
     if (role !== "editor") {
       navigate("/");
@@ -182,17 +181,15 @@ const Permissions: React.FC = () => {
   const toCreate = finalAllowedIds.filter((id) => !currentDbIds.includes(id));
   const toDelete = existingPermissions.filter((p) => !finalAllowedIds.includes(p.allowed));
 
-  // Case 1: Only deletions → save immediately without asking
   if (toCreate.length === 0 && toDelete.length > 0) {
-    await savePermissions(false); // inheritToChildren false (delete is automatic anyway)
+    await savePermissions(false); 
     return;
   }
 
-  // Case 2: Additions (with or without deletions) → show modal for inheritance
   if (type === "category") {
     setShowInheritanceModal(true);
   } else {
-    savePermissions(false); // product → no inheritance
+    savePermissions(false); 
   }
 };
 
