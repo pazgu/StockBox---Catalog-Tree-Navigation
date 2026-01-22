@@ -14,46 +14,121 @@ import { CreatePermissionDto } from './dto/createPermission.dto';
 import { Product, ProductDocument } from 'src/schemas/Products.schema';
 import { Category, CategoryDocument } from 'src/schemas/Categories.schema';
 import { UsersService } from 'src/users/users.service';
+import { Group } from 'src/schemas/Groups.schema';
+
 @Injectable()
 export class PermissionsService {
   constructor(
     @InjectModel(Permission.name) private permissionModel: Model<Permission>,
     @InjectModel(Category.name) private categoryModel: Model<Category>,
     @InjectModel(Product.name) private productModel: Model<Product>,
+    @InjectModel(Group.name) private groupModel: Model<Group>,
     private usersService: UsersService,
   ) {}
 
-  async getPermissionsForUser(userId: string, userGroupIds?: string[]) {
-    console.log(
-      'Getting permissions for user:',
-      userId,
-      'with groups:',
-      userGroupIds,
-    );
-    const allowedIds = [
-      new Types.ObjectId(userId),
-      ...(userGroupIds || []).map((id) => new Types.ObjectId(id)),
-    ];
-    return await this.permissionModel
-      .find({
-        allowed: { $in: allowedIds },
-      })
+  async getPermissionsForUser(userId: string) {
+    const userObjId = new Types.ObjectId(userId);
+
+    const groups = await this.groupModel
+      .find({ members: userId })
+      .select({ _id: 1 })
+      .lean()
       .exec();
+
+    const groupIds = groups.map((g) => new Types.ObjectId(String(g._id)));
+
+    const directPerms = await this.permissionModel
+      .find({ allowed: userObjId })
+      .lean()
+      .exec();
+
+    if (groupIds.length === 0) {
+      return directPerms;
+    }
+
+    const permsByGroup = await Promise.all(
+      groupIds.map((gid) =>
+        this.permissionModel
+          .find({ allowed: gid })
+          .select({ entityType: 1, entityId: 1 })
+          .lean()
+          .exec(),
+      ),
+    );
+
+    const makeKey = (p: { entityType: EntityType; entityId: any }) =>
+      `${p.entityType}:${String(p.entityId)}`;
+
+    let intersection = new Set(permsByGroup[0].map(makeKey));
+
+    for (let i = 1; i < permsByGroup.length; i++) {
+      const currentSet = new Set(permsByGroup[i].map(makeKey));
+      intersection = new Set(
+        [...intersection].filter((k) => currentSet.has(k)),
+      );
+    }
+
+    const intersectionPerms = [...intersection].map((k) => {
+      const [entityType, entityId] = k.split(':');
+      return {
+        entityType: entityType as EntityType,
+        entityId: new Types.ObjectId(entityId),
+      };
+    });
+
+    const directKeys = new Set(directPerms.map(makeKey));
+    return [
+      ...directPerms,
+      ...intersectionPerms.filter((p) => !directKeys.has(makeKey(p))),
+    ];
   }
 
   async createPermission(dto: CreatePermissionDto) {
+    const { entityType, entityId, allowed, inheritToChildren } = dto;
     const validation = await this.canCreatePermission(
-      dto.entityType,
-      dto.entityId.toString(),
-      dto.allowed.toString(),
+      entityType,
+      entityId.toString(),
+      allowed.toString(),
     );
+
     if (!validation.canCreate) {
       throw new HttpException(
         validation.reason || 'לא ניתן ליצור הרשאה זו',
         400,
       );
     }
-    return await this.permissionModel.create(dto);
+
+    const created = await this.permissionModel.create({
+      entityType,
+      entityId,
+      allowed,
+    });
+
+    if (entityType !== EntityType.CATEGORY || !inheritToChildren) {
+      return created;
+    }
+
+    const descendants = await this.getAllCategoryDescendants(entityId);
+
+    await Promise.all(
+      descendants.map(async (child) => {
+        const exists = await this.permissionModel.exists({
+          entityType: child.entityType,
+          entityId: child.entityId,
+          allowed,
+        });
+
+        if (!exists) {
+          await this.permissionModel.create({
+            entityType: child.entityType,
+            entityId: child.entityId,
+            allowed,
+          });
+        }
+      }),
+    );
+
+    return created;
   }
 
   async deletePermission(id: string) {
@@ -405,5 +480,48 @@ export class PermissionsService {
       }
     }
     return { canCreate: true };
+  }
+  async getAllCategoryDescendants(
+    categoryId: string,
+  ): Promise<{ entityType: EntityType; entityId: string }[]> {
+    const category = await this.categoryModel
+      .findById(categoryId)
+      .select('categoryPath')
+      .lean();
+
+    if (!category || !category.categoryPath) {
+      return [];
+    }
+
+    const basePath = category.categoryPath.replace(/\/$/, '');
+
+    const categories = await this.categoryModel
+      .find({
+        categoryPath: { $regex: `^${basePath}/` },
+      })
+      .select('_id')
+      .lean();
+
+    const products = await this.productModel
+      .find({
+        productPath: {
+          $elemMatch: {
+            $regex: `^${basePath}/`,
+          },
+        },
+      })
+      .select('_id')
+      .lean();
+
+    return [
+      ...categories.map((c) => ({
+        entityType: EntityType.CATEGORY,
+        entityId: c._id.toString(),
+      })),
+      ...products.map((p) => ({
+        entityType: EntityType.PRODUCT,
+        entityId: p._id.toString(),
+      })),
+    ];
   }
 }

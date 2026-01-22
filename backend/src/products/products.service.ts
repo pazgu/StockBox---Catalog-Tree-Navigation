@@ -27,7 +27,7 @@ export class ProductsService {
   constructor(
     @InjectModel(Product.name) private productModel: Model<Product>,
     @InjectModel(Category.name) private categoryModel: Model<Category>,
-    @InjectModel(Group.name) private groupModel: Model<Category>,
+    @InjectModel(Group.name) private groupModel: Model<Group>,
     private permissionsService: PermissionsService,
   ) {}
 
@@ -80,46 +80,17 @@ export class ProductsService {
 
       const permissions = await this.permissionsService.getPermissionsForUser(
         user.userId,
-        userGroupIds,
       );
 
-      const visibleProducts = directChildren.filter((product) => {
-        const productId = product._id.toString();
+      const allowedProductIds = new Set(
+        permissions
+          .filter((p) => p.entityType === EntityType.PRODUCT)
+          .map((p) => p.entityId.toString()),
+      );
 
-        if (userGroupIds.length > 0) {
-          const allGroupsHavePermission = userGroupIds.every((groupId) =>
-            permissions.some(
-              (p) =>
-                p.entityId.toString() === productId &&
-                p.entityType === EntityType.PRODUCT &&
-                p.allowed.toString() === groupId,
-            ),
-          );
-
-          if (!allGroupsHavePermission) {
-            console.log(
-              `Not all groups have permission for product: ${product.productName}`,
-            );
-            return false;
-          }
-        } else {
-          const hasUserPermission = permissions.some(
-            (p) =>
-              p.entityId.toString() === productId &&
-              p.entityType === EntityType.PRODUCT &&
-              p.allowed.toString() === user.userId,
-          );
-
-          if (!hasUserPermission) {
-            console.log(
-              `No personal permission for product: ${product.productName}`,
-            );
-            return false;
-          }
-        }
-
-        return true;
-      });
+      const visibleProducts = directChildren.filter((product) =>
+        allowedProductIds.has(product._id.toString()),
+      );
 
       return visibleProducts;
     }
@@ -265,36 +236,40 @@ export class ProductsService {
 
     const { newCategoryPath } = moveProductDto;
 
-    const categoryExists = await this.categoryModel.findOne({
-      categoryPath: newCategoryPath,
-    });
+    for (const path of newCategoryPath) {
+      const categoryExists = await this.categoryModel.findOne({
+        categoryPath: path,
+      });
 
-    if (!categoryExists) {
-      throw new BadRequestException('Target category does not exist');
+      if (!categoryExists) {
+        throw new BadRequestException(`Category path does not exist: ${path}`);
+      }
     }
-
-    const oldPath = product.productPath[0] || 'unknown';
 
     const productName = product.productName.toLowerCase().replace(/\s+/g, '-');
-    const newPath = `${newCategoryPath}/${productName}`;
+    const newPaths = newCategoryPath.map(
+      (catPath) => `${catPath}/${productName}`,
+    );
 
-    const existingProduct = await this.productModel.findOne({
-      productPath: newPath,
-      _id: { $ne: id },
-    });
+    for (const newPath of newPaths) {
+      const existingProduct = await this.productModel.findOne({
+        productPath: newPath,
+        _id: { $ne: id },
+      });
 
-    if (existingProduct) {
-      throw new BadRequestException(
-        'A product with this name already exists at the destination',
-      );
+      if (existingProduct) {
+        throw new BadRequestException(
+          `A product with this name already exists at: ${newPath}`,
+        );
+      }
     }
 
-    product.productPath = [newPath];
+    product.productPath = newPaths;
     await product.save();
 
     return {
       success: true,
-      message: `Product moved successfully from ${oldPath} to ${newPath}`,
+      message: `Product moved successfully to ${newPaths.length} ${newPaths.length === 1 ? 'category' : 'categories'}`,
       product: await this.productModel.findById(id),
     };
   }

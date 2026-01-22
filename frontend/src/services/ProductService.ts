@@ -31,7 +31,6 @@ export class ProductsService {
     const cleanPath = path.startsWith("/") ? path.substring(1) : path;
     const url = `${this.baseUrl}/by-path/${cleanPath}`;
 
-    // Use the auth headers
     const headers = this.getAuthHeaders();
 
     const response = await fetch(url, headers);
@@ -88,7 +87,7 @@ export class ProductsService {
 
   static async moveProduct(
     productId: string,
-    newCategoryPath: string,
+    newCategoryPath: string[],
   ): Promise<{ success: boolean; message: string; product: ProductDto }> {
     try {
       const response = await api.post(
