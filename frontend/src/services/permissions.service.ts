@@ -13,21 +13,24 @@ export const permissionsService = {
     return response.data;
   },
 
-  createPermission: async (
-    entityType: string,
-    entityId: string,
-    allowedId: string
-  ) => {
-    return api.post(
-      API_URL,
-      {
-        entityType: entityType,
-        entityId: entityId,
-        allowed: allowedId,
-      },
-      getAuthHeader()
-    );
-  },
+  createPermission(
+  entityType: string,
+  entityId: string,
+  allowedId: string,
+  inheritToChildren?: boolean
+) {
+  return api.post(
+    API_URL,
+    {
+      entityType,
+      entityId,
+      allowed: allowedId,
+      inheritToChildren,
+    },
+    getAuthHeader()
+  );
+},
+
 
   deletePermission: async (permissionId: string) => {
     return api.delete(`${API_URL}/${permissionId}`, getAuthHeader());

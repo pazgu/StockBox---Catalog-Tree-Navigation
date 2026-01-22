@@ -25,8 +25,8 @@ interface AccordionSectionProps {
   draggedItem: any;
   showNewFolderInput: boolean;
   newFolderName: string;
-  contentIconUrl: string; // Add this prop for content type icon
-  bulletsIconUrl: string; // Add this prop for bullets type icon
+  contentIconUrl: string; 
+  bulletsIconUrl: string; 
   handleDragStart: (item: any) => void;
   handleDragOver: (e: React.DragEvent) => void;
   handleDrop: (item: any) => void;
