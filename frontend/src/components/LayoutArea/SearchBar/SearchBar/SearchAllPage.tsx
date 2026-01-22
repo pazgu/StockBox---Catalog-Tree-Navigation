@@ -10,11 +10,16 @@ import { useState, useEffect } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { environment } from "../../../../environments/environment.development";
 import { searchService } from "../../../../services/search.service";
+import { useUser } from "../../../../context/UserContext";
+
 const SearchResultsPage = () => {
   const [results, setResults] = useState<any[]>([]);
   const resultsNumber = results.length;
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>("");
+  const { role } = useUser();
+  const isEditor = role === "editor";
+
 
   const { search } = useLocation();
   const navigate = useNavigate();
@@ -70,9 +75,8 @@ const SearchResultsPage = () => {
                 {/* 1. Header: Icon and Breadcrumb (The Google Look) */}
                 <div className="flex items-center gap-3 mb-1">
                   <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center border border-gray-100 shadow-sm ${
-                      item.type === "product" ? "bg-blue-50" : "bg-gray-50"
-                    }`}
+                    className={`w-7 h-7 rounded-full flex items-center justify-center border border-gray-100 shadow-sm ${item.type === "product" ? "bg-blue-50" : "bg-gray-50"
+                      }`}
                   >
                     {item.type === "product" ? (
                       <Package size={14} className="text-blue-600" />
@@ -84,28 +88,58 @@ const SearchResultsPage = () => {
                     <span className="text-[13px] text-gray-900 font-normal">
                       StockBox
                     </span>
-                    <span
-                      className="text-[12px] text-gray-500 flex items-center gap-1"
-                      dir="ltr"
-                    >
-                      {item.type === "product"
-                        ? "products"
-                        : item.paths[0]
-                            .replace(/^\//, "")
-                            .replace(/\//g, " › ")}
-                    </span>
+                    <div className="flex flex-col">
+  <span className="text-[12px] text-gray-500 flex items-center gap-1" dir="ltr">
+  {item.type === "product"
+    ? "products"
+    : (item.paths?.[0] ?? "")
+        .replace(/^\//, "")
+        .replace(/\//g, " › ")}
+</span>
+
+
+
+  {isEditor && item.paths && item.paths.length > 1 && (
+  <div className="relative inline-block group">
+    <span className="text-[12px] text-blue-600 w-fit cursor-pointer select-none">
+      + עוד {item.paths.length - 1} נתיבים
+    </span>
+
+    <div className="absolute right-0 top-full mt-2 hidden group-hover:block bg-white border border-gray-200 shadow-xl rounded-lg p-2 z-50 w-96 max-h-48 overflow-auto text-gray-700">
+      {item.paths.slice(1).map((p: string) => (
+        <button
+          key={p}
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            navigate(p);
+          }}
+          className="w-full text-left text-[12px] break-all py-1 px-2 rounded-md hover:bg-gray-50 hover:text-blue-700 transition-colors cursor-pointer"
+          dir="ltr"
+          title={p}
+        >
+          {p}
+        </button>
+      ))}
+    </div>
+  </div>
+  )}
+</div>
+
                   </div>
                 </div>
 
                 {/* 2. The Title (Blue Link) */}
                 <Link
-                  to={
-                    item.type === "product"
-                      ? `/products/${item.id}`
-                      : item.paths[0]
-                  }
-                  className="text-[20px] text-[#1a0dab] hover:underline block leading-tight mb-1"
-                >
+  to={
+    item.type === "product"
+      ? `/products/${item.id}`
+      : item.paths?.[0] ?? "/"
+  }
+  className="text-[20px] text-[#1a0dab] hover:underline block leading-tight mb-1"
+>
+
                   {item.label}
                 </Link>
 

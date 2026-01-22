@@ -14,31 +14,73 @@ import { CreatePermissionDto } from './dto/createPermission.dto';
 import { Product, ProductDocument } from 'src/schemas/Products.schema';
 import { Category, CategoryDocument } from 'src/schemas/Categories.schema';
 import { UsersService } from 'src/users/users.service';
+import { Group } from 'src/schemas/Groups.schema';
+
 @Injectable()
 export class PermissionsService {
   constructor(
     @InjectModel(Permission.name) private permissionModel: Model<Permission>,
     @InjectModel(Category.name) private categoryModel: Model<Category>,
     @InjectModel(Product.name) private productModel: Model<Product>,
+    @InjectModel(Group.name) private groupModel: Model<Group>,
     private usersService: UsersService,
   ) {}
 
-  async getPermissionsForUser(userId: string, userGroupIds?: string[]) {
-    console.log(
-      'Getting permissions for user:',
-      userId,
-      'with groups:',
-      userGroupIds,
-    );
-    const allowedIds = [
-      new Types.ObjectId(userId),
-      ...(userGroupIds || []).map((id) => new Types.ObjectId(id)),
-    ];
-    return await this.permissionModel
-      .find({
-        allowed: { $in: allowedIds },
-      })
+  async getPermissionsForUser(userId: string) {
+    const userObjId = new Types.ObjectId(userId);
+
+    const groups = await this.groupModel
+      .find({ members: userId })
+      .select({ _id: 1 })
+      .lean()
       .exec();
+
+    const groupIds = groups.map((g) => new Types.ObjectId(String(g._id)));
+
+    const directPerms = await this.permissionModel
+      .find({ allowed: userObjId })
+      .lean()
+      .exec();
+
+    if (groupIds.length === 0) {
+      return directPerms;
+    }
+
+    const permsByGroup = await Promise.all(
+      groupIds.map((gid) =>
+        this.permissionModel
+          .find({ allowed: gid })
+          .select({ entityType: 1, entityId: 1 })
+          .lean()
+          .exec(),
+      ),
+    );
+
+    const makeKey = (p: { entityType: EntityType; entityId: any }) =>
+      `${p.entityType}:${String(p.entityId)}`;
+
+    let intersection = new Set(permsByGroup[0].map(makeKey));
+
+    for (let i = 1; i < permsByGroup.length; i++) {
+      const currentSet = new Set(permsByGroup[i].map(makeKey));
+      intersection = new Set(
+        [...intersection].filter((k) => currentSet.has(k)),
+      );
+    }
+
+    const intersectionPerms = [...intersection].map((k) => {
+      const [entityType, entityId] = k.split(':');
+      return {
+        entityType: entityType as EntityType,
+        entityId: new Types.ObjectId(entityId),
+      };
+    });
+
+    const directKeys = new Set(directPerms.map(makeKey));
+    return [
+      ...directPerms,
+      ...intersectionPerms.filter((p) => !directKeys.has(makeKey(p))),
+    ];
   }
 
   async createPermission(dto: CreatePermissionDto) {

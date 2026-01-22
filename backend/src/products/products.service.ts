@@ -27,7 +27,7 @@ export class ProductsService {
   constructor(
     @InjectModel(Product.name) private productModel: Model<Product>,
     @InjectModel(Category.name) private categoryModel: Model<Category>,
-    @InjectModel(Group.name) private groupModel: Model<Category>,
+    @InjectModel(Group.name) private groupModel: Model<Group>,
     private permissionsService: PermissionsService,
   ) {}
 
@@ -80,46 +80,17 @@ export class ProductsService {
 
       const permissions = await this.permissionsService.getPermissionsForUser(
         user.userId,
-        userGroupIds,
       );
 
-      const visibleProducts = directChildren.filter((product) => {
-        const productId = product._id.toString();
+      const allowedProductIds = new Set(
+        permissions
+          .filter((p) => p.entityType === EntityType.PRODUCT)
+          .map((p) => p.entityId.toString()),
+      );
 
-        if (userGroupIds.length > 0) {
-          const allGroupsHavePermission = userGroupIds.every((groupId) =>
-            permissions.some(
-              (p) =>
-                p.entityId.toString() === productId &&
-                p.entityType === EntityType.PRODUCT &&
-                p.allowed.toString() === groupId,
-            ),
-          );
-
-          if (!allGroupsHavePermission) {
-            console.log(
-              `Not all groups have permission for product: ${product.productName}`,
-            );
-            return false;
-          }
-        } else {
-          const hasUserPermission = permissions.some(
-            (p) =>
-              p.entityId.toString() === productId &&
-              p.entityType === EntityType.PRODUCT &&
-              p.allowed.toString() === user.userId,
-          );
-
-          if (!hasUserPermission) {
-            console.log(
-              `No personal permission for product: ${product.productName}`,
-            );
-            return false;
-          }
-        }
-
-        return true;
-      });
+      const visibleProducts = directChildren.filter((product) =>
+        allowedProductIds.has(product._id.toString()),
+      );
 
       return visibleProducts;
     }
