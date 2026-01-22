@@ -1,4 +1,4 @@
-import { IsEnum, IsNotEmpty, IsMongoId } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsMongoId, IsOptional } from 'class-validator';
 import { EntityType } from 'src/schemas/Permissions.schema';
 
 export class CreatePermissionDto {
@@ -15,4 +15,7 @@ export class CreatePermissionDto {
   @IsNotEmpty()
   @IsMongoId({ message: 'allowed must be a valid MongoDB ObjectId' })
   allowed: string;
+  
+  @IsOptional()
+  inheritToChildren?: boolean;
 }
