@@ -9,6 +9,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
 import { permissionsService } from "../../../../services/permissions.service";
+import InheritanceModal from "../../SharedComponents/DialogModal/DialogModal";
 
 interface Group {
   _id: string;
@@ -33,7 +34,7 @@ const Permissions: React.FC = () => {
   const { role } = useUser();
   const { type, id } = useParams<{ type: string; id: string }>();
   const cleanId = useMemo(() => id?.replace(/^:/, ""), [id]);
-
+  const [showInheritanceModal, setShowInheritanceModal] = useState(false);
   const [isExpandedUsers, setIsExpandedUsers] = useState(false);
   const [isExpandedGroups, setIsExpandedGroups] = useState(false);
   const [users, setUsers] = useState<ViewerUser[]>([]);
@@ -134,7 +135,7 @@ const Permissions: React.FC = () => {
     }
   };
 
-  const handleSave = async () => {
+  const savePermissions = async (inheritToChildren: boolean) => {
     try {
       if (!cleanId || !type) return;
 
@@ -148,24 +149,53 @@ const Permissions: React.FC = () => {
 
       const createResults = await Promise.allSettled(
         toCreate.map((allowedId) =>
-          permissionsService.createPermission(type, cleanId, allowedId)
+          permissionsService.createPermission(type, cleanId, allowedId, inheritToChildren)
         )
       );
+
       const failures = createResults.filter((r) => r.status === "rejected");
       if (failures.length > 0) {
         const firstError = (failures[0] as any).reason?.response?.data?.message;
         toast.error(firstError || "חלק מההרשאות לא נוצרו בשל קטגוריות אב חסומות");
       }
+
       await Promise.all(toDelete.map((p) => permissionsService.deletePermission(p._id)));
+
       const successCount = createResults.filter((r) => r.status === "fulfilled").length;
       if (successCount > 0 || toDelete.length > 0) {
         toast.success("השינויים נשמרו בהצלחה");
       }
+
       navigate(-1);
     } catch (err) {
       toast.error("שגיאה בשמירה");
     }
   };
+  const handleSave = async () => {
+  if (!cleanId || !type) return;
+
+  const usersToAllow = users.filter((u) => u.enabled).map((u) => u._id);
+  const groupsToAllow = groups.filter((g) => g.memebers).map((g) => g._id);
+  const finalAllowedIds = [...usersToAllow, ...groupsToAllow];
+
+  const currentDbIds = existingPermissions.map((p) => p.allowed);
+  const toCreate = finalAllowedIds.filter((id) => !currentDbIds.includes(id));
+  const toDelete = existingPermissions.filter((p) => !finalAllowedIds.includes(p.allowed));
+
+  // Case 1: Only deletions → save immediately without asking
+  if (toCreate.length === 0 && toDelete.length > 0) {
+    await savePermissions(false); // inheritToChildren false (delete is automatic anyway)
+    return;
+  }
+
+  // Case 2: Additions (with or without deletions) → show modal for inheritance
+  if (type === "category") {
+    setShowInheritanceModal(true);
+  } else {
+    savePermissions(false); // product → no inheritance
+  }
+};
+
 
   return (
     <div className="rtl px-5 md:px-16 py-20 flex justify-center font-sans mt-8" dir="rtl">
@@ -273,7 +303,16 @@ const Permissions: React.FC = () => {
               )}
             </AnimatePresence>
           </div>
-
+          <InheritanceModal
+            open={showInheritanceModal}
+            onClose={() => {setShowInheritanceModal(false);
+                  savePermissions(false);
+            }} 
+            onConfirm={() => {
+              setShowInheritanceModal(false);
+              savePermissions(true); 
+            }}
+          />
           <div className="flex justify-end gap-3 mt-6">
             <Button variant="outline" className="px-6" onClick={() => navigate(-1)}>ביטול</Button>
             <Button className="bg-green-600 text-white hover:bg-green-700 px-10 shadow-lg" onClick={handleSave}>שמירה</Button>

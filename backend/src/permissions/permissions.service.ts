@@ -42,18 +42,58 @@ export class PermissionsService {
   }
 
   async createPermission(dto: CreatePermissionDto) {
+    const { entityType, entityId, allowed, inheritToChildren } = dto;
+
+    // 1️⃣ Validate ONLY the entity being edited
     const validation = await this.canCreatePermission(
-      dto.entityType,
-      dto.entityId.toString(),
-      dto.allowed.toString(),
+      entityType,
+      entityId.toString(),
+      allowed.toString(),
     );
+
     if (!validation.canCreate) {
       throw new HttpException(
         validation.reason || 'לא ניתן ליצור הרשאה זו',
         400,
       );
     }
-    return await this.permissionModel.create(dto);
+
+    // 2️⃣ Create permission for the current entity
+    const created = await this.permissionModel.create({
+      entityType,
+      entityId,
+      allowed,
+    });
+
+    // 3️⃣ Stop here if:
+    // - not a category
+    // - admin did not choose inheritance
+    if (entityType !== EntityType.CATEGORY || !inheritToChildren) {
+      return created;
+    }
+
+    // 4️⃣ Inheritance: apply permission to all descendants
+    const descendants = await this.getAllCategoryDescendants(entityId);
+
+    await Promise.all(
+      descendants.map(async (child) => {
+        const exists = await this.permissionModel.exists({
+          entityType: child.entityType,
+          entityId: child.entityId,
+          allowed,
+        });
+
+        if (!exists) {
+          await this.permissionModel.create({
+            entityType: child.entityType,
+            entityId: child.entityId,
+            allowed,
+          });
+        }
+      }),
+    );
+
+    return created;
   }
 
   async deletePermission(id: string) {
@@ -405,5 +445,51 @@ export class PermissionsService {
       }
     }
     return { canCreate: true };
+  }
+  async getAllCategoryDescendants(
+    categoryId: string,
+  ): Promise<{ entityType: EntityType; entityId: string }[]> {
+    const category = await this.categoryModel
+      .findById(categoryId)
+      .select('categoryPath')
+      .lean();
+
+    if (!category || !category.categoryPath) {
+      return [];
+    }
+
+    // normalize: remove trailing slash if exists
+    const basePath = category.categoryPath.replace(/\/$/, '');
+
+    // 1️⃣ Find all sub-categories
+    const categories = await this.categoryModel
+      .find({
+        categoryPath: { $regex: `^${basePath}/` },
+      })
+      .select('_id')
+      .lean();
+
+    // 2️⃣ Find all products that have AT LEAST ONE path under this category
+    const products = await this.productModel
+      .find({
+        productPath: {
+          $elemMatch: {
+            $regex: `^${basePath}/`,
+          },
+        },
+      })
+      .select('_id')
+      .lean();
+
+    return [
+      ...categories.map((c) => ({
+        entityType: EntityType.CATEGORY,
+        entityId: c._id.toString(),
+      })),
+      ...products.map((p) => ({
+        entityType: EntityType.PRODUCT,
+        entityId: p._id.toString(),
+      })),
+    ];
   }
 }
