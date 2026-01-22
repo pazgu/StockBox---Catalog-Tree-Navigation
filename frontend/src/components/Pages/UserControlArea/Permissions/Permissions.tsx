@@ -156,6 +156,7 @@ const Permissions: React.FC = () => {
       if (failures.length > 0) {
         const firstError = (failures[0] as any).reason?.response?.data?.message;
         toast.error(firstError || "חלק מההרשאות לא נוצרו בשל קטגוריות אב חסומות");
+        return;
       }
 
       await Promise.all(toDelete.map((p) => permissionsService.deletePermission(p._id)));
@@ -163,9 +164,10 @@ const Permissions: React.FC = () => {
       const successCount = createResults.filter((r) => r.status === "fulfilled").length;
       if (successCount > 0 || toDelete.length > 0) {
         toast.success("השינויים נשמרו בהצלחה");
+        setTimeout(() => navigate(-1), 500);
+      } else {
+        navigate(-1);
       }
-
-      navigate(-1);
     } catch (err) {
       toast.error("שגיאה בשמירה");
     }
