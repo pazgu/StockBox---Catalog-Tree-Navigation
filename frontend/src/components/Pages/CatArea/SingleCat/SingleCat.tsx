@@ -106,7 +106,7 @@ const SingleCat: FC = () => {
           name: cat.categoryName,
           image: cat.categoryImage,
           type: "category",
-          path: cat.categoryPath,
+          path: [cat.categoryPath],
           favorite: userFavorites.includes(cat._id),
         }),
       );
@@ -115,10 +115,8 @@ const SingleCat: FC = () => {
         name: prod.productName,
         image: prod.productImages?.[0] ?? "/assets/images/placeholder.png",
         type: "product",
-        path: Array.isArray(prod.productPath)
-          ? (prod.productPath.find((p) => p.startsWith(categoryPath)) ??
-            prod.productPath[0])
-          : prod.productPath,
+        path: prod.productPath,
+
         description: prod.productDescription,
         customFields: prod.customFields,
         favorite: userFavorites.includes(prod._id!),
@@ -155,7 +153,9 @@ const SingleCat: FC = () => {
 
   const handleItemClick = (item: DisplayItem) => {
     if (isSelectionMode) return;
-    const cleanPath = item.path.startsWith("/") ? item.path : `/${item.path}`;
+
+    const path = item.path[0];
+    const cleanPath = path.startsWith("/") ? path : `/${path}`;
 
     if (item.type === "category") {
       navigate(cleanPath);
@@ -247,9 +247,9 @@ const SingleCat: FC = () => {
       const productPathString = `${categoryPath}/${safeName}`;
       const createdProduct = await ProductsService.createProduct({
         productName: data.name,
-        productPath: productPathString, 
+        productPath: productPathString,
         productDescription: data.description,
-        customFields: {}, 
+        customFields: {},
         imageFile: data.imageFile,
       });
 
@@ -259,7 +259,7 @@ const SingleCat: FC = () => {
         image:
           createdProduct.productImages?.[0] ?? "/assets/images/placeholder.png",
         type: "product",
-        path: createdProduct.productPath[0], // Access the first element of the array returned by BE
+        path: createdProduct.productPath,
         favorite: false,
         description: createdProduct.productDescription,
       };
@@ -291,7 +291,7 @@ const SingleCat: FC = () => {
         name: newCategory.categoryName,
         image: newCategory.categoryImage,
         type: "category",
-        path: newCategory.categoryPath,
+        path: [newCategory.categoryPath],
         favorite: false,
       };
       setItems([...items, newItem]);
@@ -746,7 +746,11 @@ const SingleCat: FC = () => {
               isOpen={showMoveModal}
               productId={itemToMove.id}
               productName={itemToMove.name}
-              currentPath={itemToMove.path || categoryPath}
+              currentPaths={
+                Array.isArray(itemToMove.path)
+                  ? itemToMove.path
+                  : [itemToMove.path || categoryPath]
+              }
               onClose={() => {
                 setShowMoveModal(false);
                 setItemToMove(null);
@@ -759,7 +763,7 @@ const SingleCat: FC = () => {
               category={{
                 _id: itemToMove.id,
                 categoryName: itemToMove.name,
-                categoryPath: itemToMove.path,
+                categoryPath: itemToMove.path[0],
                 categoryImage: itemToMove.image,
               }}
               onClose={() => {
@@ -777,7 +781,7 @@ const SingleCat: FC = () => {
           category={{
             _id: itemToEdit.id,
             categoryName: itemToEdit.name,
-            categoryPath: itemToEdit.path,
+            categoryPath: itemToEdit.path[0],
             categoryImage: itemToEdit.image,
           }}
           onClose={() => {

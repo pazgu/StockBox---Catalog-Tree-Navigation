@@ -265,36 +265,40 @@ export class ProductsService {
 
     const { newCategoryPath } = moveProductDto;
 
-    const categoryExists = await this.categoryModel.findOne({
-      categoryPath: newCategoryPath,
-    });
+    for (const path of newCategoryPath) {
+      const categoryExists = await this.categoryModel.findOne({
+        categoryPath: path,
+      });
 
-    if (!categoryExists) {
-      throw new BadRequestException('Target category does not exist');
+      if (!categoryExists) {
+        throw new BadRequestException(`Category path does not exist: ${path}`);
+      }
     }
-
-    const oldPath = product.productPath[0] || 'unknown';
 
     const productName = product.productName.toLowerCase().replace(/\s+/g, '-');
-    const newPath = `${newCategoryPath}/${productName}`;
+    const newPaths = newCategoryPath.map(
+      (catPath) => `${catPath}/${productName}`,
+    );
 
-    const existingProduct = await this.productModel.findOne({
-      productPath: newPath,
-      _id: { $ne: id },
-    });
+    for (const newPath of newPaths) {
+      const existingProduct = await this.productModel.findOne({
+        productPath: newPath,
+        _id: { $ne: id },
+      });
 
-    if (existingProduct) {
-      throw new BadRequestException(
-        'A product with this name already exists at the destination',
-      );
+      if (existingProduct) {
+        throw new BadRequestException(
+          `A product with this name already exists at: ${newPath}`,
+        );
+      }
     }
 
-    product.productPath = [newPath];
+    product.productPath = newPaths;
     await product.save();
 
     return {
       success: true,
-      message: `Product moved successfully from ${oldPath} to ${newPath}`,
+      message: `Product moved successfully to ${newPaths.length} ${newPaths.length === 1 ? 'category' : 'categories'}`,
       product: await this.productModel.findById(id),
     };
   }
