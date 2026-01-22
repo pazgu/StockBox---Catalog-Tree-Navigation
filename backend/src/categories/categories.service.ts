@@ -56,18 +56,15 @@ export class CategoriesService {
   }
 
   async getCategories(user: { userId: string; role: string }) {
-    console.log('Fetching categories for user:', user);
     const categories = await this.categoryModel.find({
       categoryPath: /^\/categories\/[^\/]+$/,
     });
 
     if (user.role === 'editor') {
-      console.log('User is editor, returning all categories');
       return categories;
     }
 
     if (user.role === 'viewer') {
-      console.log('User is viewer, filtering categories based on permissions');
       const userGroups = await this.groupModel
         .find({ members: user.userId })
         .select('_id')
@@ -78,7 +75,6 @@ export class CategoriesService {
         user.userId,
         userGroupIds,
       );
-      console.log('Fetched permissions:', permissions);
 
       const visibleCategories = categories.filter((cat) => {
         const categoryId = cat._id.toString();
@@ -94,9 +90,6 @@ export class CategoriesService {
           );
 
           if (!allGroupsHavePermission) {
-            console.log(
-              `Not all groups have permission for category: ${cat.categoryName}`,
-            );
             return false;
           }
         } else {
@@ -202,7 +195,6 @@ export class CategoriesService {
 
         return true;
       });
-      console.log('visible children', visibleChildren);
       return visibleChildren;
     }
 

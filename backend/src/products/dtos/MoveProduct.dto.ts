@@ -1,7 +1,8 @@
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsArray, IsString, ArrayMinSize } from 'class-validator';
 
 export class MoveProductDto {
-  @IsString()
-  @IsNotEmpty()
-  newCategoryPath: string;
+  @IsArray()
+  @IsString({ each: true })
+  @ArrayMinSize(1)
+  newCategoryPath: string[];
 }
