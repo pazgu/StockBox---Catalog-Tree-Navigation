@@ -1,19 +1,8 @@
 import axios from "axios";
 import { environment } from "../environments/environment.development";
 import { Group } from "../components/models/group.models";
+import api from "./axios";
 
-const api = axios.create({
-  baseURL: environment.API_URL,
-});
-
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers = config.headers ?? {};
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
 
 export const groupService = {
 

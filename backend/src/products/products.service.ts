@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
@@ -19,12 +20,14 @@ import { PermissionsService } from 'src/permissions/permissions.service';
 import { EntityType } from 'src/schemas/Permissions.schema';
 import { UpdateProductDto } from './dtos/UpdateProduct.dto';
 import { Category } from 'src/schemas/Categories.schema';
+import { Group } from 'src/schemas/Groups.schema';
 
 @Injectable()
 export class ProductsService {
   constructor(
     @InjectModel(Product.name) private productModel: Model<Product>,
     @InjectModel(Category.name) private categoryModel: Model<Category>,
+    @InjectModel(Group.name) private groupModel: Model<Group>,
     private permissionsService: PermissionsService,
   ) {}
 
@@ -56,9 +59,10 @@ export class ProductsService {
       .exec();
 
     const directChildren = matchingProducts.filter((product) => {
-      if (!product.productPath || !product.productPath.startsWith(path))
-        return false;
-      const remainingPath = product.productPath.substring(path.length);
+      const currentPath = product.productPath.find((p) => p.startsWith(path));
+      if (!currentPath) return false;
+
+      const remainingPath = currentPath.substring(path.length);
       const slashCount = (remainingPath.match(/\//g) || []).length;
       return slashCount <= 1;
     });
@@ -68,20 +72,24 @@ export class ProductsService {
     }
 
     if (user.role === 'viewer') {
+      const userGroups = await this.groupModel
+        .find({ members: user.userId })
+        .select('_id')
+        .lean();
+      const userGroupIds = userGroups.map((g) => g._id.toString());
+
       const permissions = await this.permissionsService.getPermissionsForUser(
         user.userId,
       );
 
-      const allowedProductIds = permissions
-        .filter(
-          (p) =>
-            p.entityType === EntityType.PRODUCT &&
-            p.allowed.toString() === user.userId,
-        )
-        .map((p) => p.entityId.toString());
+      const allowedProductIds = new Set(
+        permissions
+          .filter((p) => p.entityType === EntityType.PRODUCT)
+          .map((p) => p.entityId.toString()),
+      );
 
-      const visibleProducts = directChildren.filter((p) =>
-        allowedProductIds.includes(p._id.toString()),
+      const visibleProducts = directChildren.filter((product) =>
+        allowedProductIds.has(product._id.toString()),
       );
 
       return visibleProducts;
@@ -89,28 +97,62 @@ export class ProductsService {
 
     return [];
   }
-
   async create(createProductDto: CreateProductDto, file?: Express.Multer.File) {
+    let productImages: string[] = [];
     if (file?.buffer) {
-      const uploaded = await uploadBufferToCloudinary(
-        file.buffer,
-        'stockbox/products',
+      try {
+        const uploaded = await uploadBufferToCloudinary(
+          file.buffer,
+          'stockbox/products',
+        );
+        productImages = [uploaded.secure_url];
+      } catch (error) {
+        console.error('Cloudinary Upload Error:', error);
+      }
+    }
+
+    let cleanCustomFields: any[] = [];
+
+    if (createProductDto.customFields) {
+      try {
+        const parsed =
+          typeof createProductDto.customFields === 'string'
+            ? JSON.parse(createProductDto.customFields)
+            : createProductDto.customFields;
+        if (Array.isArray(parsed)) {
+          cleanCustomFields = parsed.filter((f) => f && f.title && f.type);
+        }
+      } catch (error) {
+        console.warn('Failed to parse customFields, defaulting to empty array');
+        cleanCustomFields = [];
+      }
+    }
+
+    const newProductData = {
+      productName: createProductDto.productName,
+      productDescription: createProductDto.productDescription || '',
+      productPath: [createProductDto.productPath],
+      productImages: productImages,
+      customFields: cleanCustomFields,
+    };
+
+    try {
+      const newProduct = new this.productModel(newProductData);
+      const savedProduct = await newProduct.save();
+
+      await this.permissionsService.assignPermissionsForNewEntity(savedProduct);
+
+      return savedProduct;
+    } catch (error) {
+      console.error('Mongoose Save Error:', error);
+      if (error.name === 'ValidationError') {
+        throw new BadRequestException(`Validation Failed: ${error.message}`);
+      }
+      throw new InternalServerErrorException(
+        'Failed to create product in database',
       );
-      createProductDto.productImages = [uploaded.secure_url];
     }
-
-    if (!createProductDto.productImages) {
-      createProductDto.productImages = [];
-    }
-
-    const newProduct = new this.productModel(createProductDto);
-    const savedProduct = await newProduct.save();
-
-    await this.permissionsService.assignPermissionsForNewEntity(savedProduct);
-
-    return savedProduct;
   }
-
   async delete(id: string): Promise<{ success: boolean; message: string }> {
     const product = await this.productModel.findById(id);
 
@@ -155,7 +197,7 @@ export class ProductsService {
     }
 
     if (dto.productName && dto.productName !== existing.productName) {
-      const parentPath = this.getParentPath(existing.productPath);
+      const parentPath = this.getParentPath(existing.productPath[0]);
       const newSlug = this.slugify(dto.productName);
       const newPath = `${parentPath}/${newSlug}`;
 
@@ -170,7 +212,7 @@ export class ProductsService {
         );
       }
 
-      dto.productPath = newPath;
+      dto.productPath = [newPath];
     }
 
     const updatedProduct = await this.productModel.findByIdAndUpdate(
@@ -194,39 +236,43 @@ export class ProductsService {
 
     const { newCategoryPath } = moveProductDto;
 
-    const categoryExists = await this.categoryModel.findOne({
-      categoryPath: newCategoryPath,
-    });
+    for (const path of newCategoryPath) {
+      const categoryExists = await this.categoryModel.findOne({
+        categoryPath: path,
+      });
 
-    if (!categoryExists) {
-      throw new BadRequestException('Target category does not exist');
+      if (!categoryExists) {
+        throw new BadRequestException(`Category path does not exist: ${path}`);
+      }
     }
 
-    const oldPath = product.productPath;
     const productName = product.productName.toLowerCase().replace(/\s+/g, '-');
-    const newPath = `${newCategoryPath}/${productName}`;
+    const newPaths = newCategoryPath.map(
+      (catPath) => `${catPath}/${productName}`,
+    );
 
-    const existingProduct = await this.productModel.findOne({
-      productPath: newPath,
-      _id: { $ne: id },
-    });
+    for (const newPath of newPaths) {
+      const existingProduct = await this.productModel.findOne({
+        productPath: newPath,
+        _id: { $ne: id },
+      });
 
-    if (existingProduct) {
-      throw new BadRequestException(
-        'A product with this name already exists at the destination',
-      );
+      if (existingProduct) {
+        throw new BadRequestException(
+          `A product with this name already exists at: ${newPath}`,
+        );
+      }
     }
 
-    product.productPath = newPath;
+    product.productPath = newPaths;
     await product.save();
 
     return {
       success: true,
-      message: `Product moved successfully from ${oldPath} to ${newPath}`,
+      message: `Product moved successfully to ${newPaths.length} ${newPaths.length === 1 ? 'category' : 'categories'}`,
       product: await this.productModel.findById(id),
     };
   }
-
   private async deleteProductImage(imageUrl: string): Promise<void> {
     try {
       const publicId = this.extractCloudinaryPublicId(imageUrl);

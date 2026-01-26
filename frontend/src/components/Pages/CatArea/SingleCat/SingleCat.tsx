@@ -46,7 +46,6 @@ const SingleCat: FC = () => {
   const [isSavingProduct, setIsSavingProduct] = useState(false);
   const [isDeletingItem, setIsDeletingItem] = useState(false);
 
-
   const location = useLocation();
   const params = useParams();
   const { role, user, id } = useUser();
@@ -107,20 +106,24 @@ const SingleCat: FC = () => {
           name: cat.categoryName,
           image: cat.categoryImage,
           type: "category",
-          path: cat.categoryPath,
+          path: [cat.categoryPath],
           favorite: userFavorites.includes(cat._id),
         }),
       );
-      const productItems: DisplayItem[] = products.map((prod: ProductDto) => ({
+    const productItems: DisplayItem[] = products.flatMap((prod: ProductDto) => {
+      const paths = prod.productPath.filter(p => p.startsWith(categoryPath));
+      if (paths.length === 0) return [];
+      return paths.map(path => ({
         id: prod._id!,
         name: prod.productName,
         image: prod.productImages?.[0] ?? "/assets/images/placeholder.png",
-        type: "product",
-        path: prod.productPath,
+        type: "product" as const,
+        path: [path],
         description: prod.productDescription,
         customFields: prod.customFields,
         favorite: userFavorites.includes(prod._id!),
       }));
+    });
       setItems([...categoryItems, ...productItems]);
     } catch (error) {
       toast.error("שגיאה בטעינת התוכן");
@@ -153,7 +156,9 @@ const SingleCat: FC = () => {
 
   const handleItemClick = (item: DisplayItem) => {
     if (isSelectionMode) return;
-    const cleanPath = item.path.startsWith("/") ? item.path : `/${item.path}`;
+
+    const path = item.path[0];
+    const cleanPath = path.startsWith("/") ? path : `/${path}`;
 
     if (item.type === "category") {
       navigate(cleanPath);
@@ -240,34 +245,34 @@ const SingleCat: FC = () => {
     imageFile: File;
   }) => {
     try {
-      const safe =
+      const safeName =
         data.name.trim().toLowerCase().replace(/\s+/g, "-") || "product";
-      const newpath = `${categoryPath}/${safe}`;
+      const productPathString = `${categoryPath}/${safeName}`;
       const createdProduct = await ProductsService.createProduct({
         productName: data.name,
-        productPath: newpath,
+        productPath: productPathString,
         productDescription: data.description,
-        customFields: [],
+        customFields: {},
         imageFile: data.imageFile,
       });
 
-    const newItem: DisplayItem = {
-      id: createdProduct._id!,
-      name: createdProduct.productName,
-      image:
-        createdProduct.productImages?.[0] ?? "/assets/images/placeholder.png",
-      type: "product",
-      path: createdProduct.productPath,
-      favorite: false,
-      customFields: createdProduct.customFields,
-      description: createdProduct.productDescription,
-    };
+      const newItem: DisplayItem = {
+        id: createdProduct._id!,
+        name: createdProduct.productName,
+        image:
+          createdProduct.productImages?.[0] ?? "/assets/images/placeholder.png",
+        type: "product",
+        path: createdProduct.productPath,
+        favorite: false,
+        description: createdProduct.productDescription,
+      };
 
-      setItems([...items, newItem]);
+      setItems((prev) => [...prev, newItem]);
       toast.success(`המוצר "${data.name}" נוסף בהצלחה!`);
       setShowAddProductModal(false);
-    } catch (error) {
-      toast.error("שגיאה בהוספת המוצר");
+    } catch (error: any) {
+      console.error("Save Error:", error);
+      toast.error(error.message || "שגיאה בהוספת המוצר");
     }
   };
 
@@ -289,7 +294,7 @@ const SingleCat: FC = () => {
         name: newCategory.categoryName,
         image: newCategory.categoryImage,
         type: "category",
-        path: newCategory.categoryPath,
+        path: [newCategory.categoryPath],
         favorite: false,
       };
       setItems([...items, newItem]);
@@ -673,31 +678,30 @@ const SingleCat: FC = () => {
             </p>
             <small className="text-gray-500">לא יהיה ניתן לבטל פעולה זו</small>
             <div className="flex justify-end gap-3 mt-4">
-             <button
-  onClick={confirmDelete}
-  disabled={isDeletingItem}
-  className={`bg-red-600 text-white px-4 py-2 rounded transition-colors
+              <button
+                onClick={confirmDelete}
+                disabled={isDeletingItem}
+                className={`bg-red-600 text-white px-4 py-2 rounded transition-colors
     ${isDeletingItem ? "opacity-70 cursor-not-allowed" : "hover:bg-red-700"}`}
->
-  {isDeletingItem ? (
-    <span className="flex items-center gap-2">
-      <Spinner className="size-4 text-white" />
-      מוחק...
-    </span>
-  ) : (
-    "מחק"
-  )}
-</button>
+              >
+                {isDeletingItem ? (
+                  <span className="flex items-center gap-2">
+                    <Spinner className="size-4 text-white" />
+                    מוחק...
+                  </span>
+                ) : (
+                  "מחק"
+                )}
+              </button>
 
-             <button
-  onClick={closeAllModals}
-  disabled={isDeletingItem}
-  className={`bg-gray-300 px-4 py-2 rounded transition-colors
+              <button
+                onClick={closeAllModals}
+                disabled={isDeletingItem}
+                className={`bg-gray-300 px-4 py-2 rounded transition-colors
     ${isDeletingItem ? "opacity-70 cursor-not-allowed" : "hover:bg-gray-400"}`}
->
-  ביטול
-</button>
-
+              >
+                ביטול
+              </button>
             </div>
           </div>
         </div>
@@ -745,7 +749,11 @@ const SingleCat: FC = () => {
               isOpen={showMoveModal}
               productId={itemToMove.id}
               productName={itemToMove.name}
-              currentPath={itemToMove.path || categoryPath}
+              currentPaths={
+                Array.isArray(itemToMove.path)
+                  ? itemToMove.path
+                  : [itemToMove.path || categoryPath]
+              }
               onClose={() => {
                 setShowMoveModal(false);
                 setItemToMove(null);
@@ -758,7 +766,7 @@ const SingleCat: FC = () => {
               category={{
                 _id: itemToMove.id,
                 categoryName: itemToMove.name,
-                categoryPath: itemToMove.path,
+                categoryPath: itemToMove.path[0],
                 categoryImage: itemToMove.image,
               }}
               onClose={() => {
@@ -776,7 +784,7 @@ const SingleCat: FC = () => {
           category={{
             _id: itemToEdit.id,
             categoryName: itemToEdit.name,
-            categoryPath: itemToEdit.path,
+            categoryPath: itemToEdit.path[0],
             categoryImage: itemToEdit.image,
           }}
           onClose={() => {

@@ -41,8 +41,8 @@ export class AboutService {
   async replaceAbout(dto: UpdateAboutDto) {
     const doc = await this.getOrCreateSingleton();
 
-    const old = doc.images ?? []; // [{url, public_id}]
-    const newUrls = dto.images ?? []; // string[]
+    const old = doc.images ?? [];
+    const newUrls = dto.images ?? [];
 
     const keep = old.filter((img) => newUrls.includes(img.url));
     const removed = old.filter((img) => !newUrls.includes(img.url));

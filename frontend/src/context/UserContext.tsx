@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import axios from "axios";
 import { UserRole, User } from "../../src/components/models/user.models";
 import { environment } from "../environments/environment.development";
+import api from "../services/axios";
 
 interface UserContextType {
   user: User | null;
@@ -53,7 +53,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const refreshUsers = async () => {
     try {
-      const response = await axios.get<User[]>(`${API_URL}/users`);
+      const response = await api.get<User[]>(`${API_URL}/users`);
       setUsers(response.data);
     } catch (err) {
       console.error("Error fetching users:", err);
@@ -74,7 +74,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const blockUser = async (id: string, isBlocked: boolean) => {
   try {
-    const response = await axios.patch<User>(`${API_URL}/${id}/block`, { 
+    const response = await api.patch<User>(`${API_URL}/${id}/block`, { 
       isBlocked 
     });
     setUsers((prev) => prev.map((u) => (u._id === id ? response.data : u)));

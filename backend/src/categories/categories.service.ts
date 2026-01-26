@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unused-expressions */
+/* eslint-disable @typescript-eslint/no-unsafe-enum-comparison */
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
@@ -18,13 +22,17 @@ import { MoveCategoryDto } from './dtos/MoveCategory.dto';
 import { uploadBufferToCloudinary } from 'src/utils/cloudinary/upload.util';
 import { EntityType } from 'src/schemas/Permissions.schema';
 import { PermissionsService } from 'src/permissions/permissions.service';
+import { UsersService } from 'src/users/users.service';
+import { Group } from 'src/schemas/Groups.schema';
 
 @Injectable()
 export class CategoriesService {
   constructor(
     @InjectModel(Category.name) private categoryModel: Model<Category>,
     @InjectModel(Product.name) private productModel: Model<Product>,
+    @InjectModel(Group.name) private groupModel: Model<Group>,
     private readonly permissionsService: PermissionsService,
+    private readonly usersService: UsersService,
   ) {}
 
   async createCategory(
@@ -57,23 +65,24 @@ export class CategoriesService {
     }
 
     if (user.role === 'viewer') {
+      console.log('User is viewer, filtering categories based on permissions');
       const permissions = await this.permissionsService.getPermissionsForUser(
         user.userId,
       );
-      const allowedCategoryIds = permissions
-        .filter((p) => p.allowed.toString() === user.userId)
-        .map((p) => p.entityId.toString());
 
-      const visibleCategories = categories.filter((cat) =>
-        allowedCategoryIds.includes(cat._id.toString()),
+      const allowedCategoryIds = new Set(
+        permissions
+          .filter((p) => p.entityType === EntityType.CATEGORY)
+          .map((p) => p.entityId.toString()),
       );
 
-      return visibleCategories;
+      return categories.filter((cat) =>
+        allowedCategoryIds.has(cat._id.toString()),
+      );
     }
 
     return [];
   }
-
   async getDirectChildren(
     categoryPath: string,
     user: { userId: string; role: string },
@@ -89,46 +98,48 @@ export class CategoriesService {
 
     const fullPath = `/categories/${cleanPath}`;
 
-    const allChildren = await this.categoryModel.find({
+    const allCategoryChildren = await this.categoryModel.find({
       categoryPath: new RegExp(
         `^${fullPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/`,
       ),
     });
 
-    const directChildren = allChildren.filter((cat) => {
+    const directCategoryChildren = allCategoryChildren.filter((cat) => {
       const remainingPath = cat.categoryPath.substring(fullPath.length + 1);
       const slashCount = (remainingPath.match(/\//g) || []).length;
       return slashCount === 0;
     });
 
     if (user.role === 'editor') {
-      return directChildren;
+      return directCategoryChildren;
     }
 
     if (user.role === 'viewer') {
+      const userGroups = await this.groupModel
+        .find({ members: user.userId })
+        .select('_id')
+        .lean();
+      const userGroupIds = userGroups.map((g) => g._id.toString());
+
       const permissions = await this.permissionsService.getPermissionsForUser(
         user.userId,
       );
-      const userPermissions = permissions.filter(
-        (p) =>
-          p.entityType === EntityType.CATEGORY &&
-          p.allowed?.toString() === user.userId,
+
+      const allowedCategoryIds = new Set(
+        permissions
+          .filter((p) => p.entityType === EntityType.CATEGORY)
+          .map((p) => p.entityId.toString()),
       );
 
-      const allowedCategoryIds = userPermissions.map((p) =>
-        p.entityId.toString(),
+      const visibleChildren = directCategoryChildren.filter((child) =>
+        allowedCategoryIds.has(child._id.toString()),
       );
 
-      const visibleCategories = directChildren.filter((cat) =>
-        allowedCategoryIds.includes(cat._id.toString()),
-      );
-
-      return visibleCategories;
+      return visibleChildren;
     }
 
     return [];
   }
-
   async deleteCategory(id: string) {
     const category = await this.categoryModel.findById(id);
     if (!category) {

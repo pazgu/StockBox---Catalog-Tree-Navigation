@@ -13,6 +13,7 @@ import { categoriesService } from "../../../../services/CategoryService";
 import { groupService } from "../../../../services/GroupService";
 import { BannedItem, BannedEntityType } from "../../../../types/types";
 import { permissionsService } from "../../../../services/permissions.service";
+import { toast } from "sonner";
 
 interface ManageBannedItemsModalProps {
   groupId: string;
@@ -21,6 +22,8 @@ interface ManageBannedItemsModalProps {
   onClose: () => void;
   onUpdateBannedItems: (items: BannedItem[]) => void;
 }
+
+
 
 const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
   groupId,
@@ -84,61 +87,22 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
   };
 
   const load = useCallback(async (shouldNotify = false) => {
-    try {
-      setIsLoading(true);
+  try {
+    setIsLoading(true);
 
-      const [products, categories, permissions] = await Promise.all([
-        groupService.getProducts(),
-        categoriesService.getCategories(),
-        groupService.getGroupPermissions(groupId),
-      ]);
-
-      const permIdMap: Record<string, string> = {};
-      const allowedKeySet = new Set<string>();
-
-      permissions.forEach((p) => {
-        const type = String(p.entityType) as "product" | "category";
-        const entityId = String(p.entityId);
-        const key = keyOf(type, entityId);
-        allowedKeySet.add(key);
-        permIdMap[key] = String(p._id);
-      });
-
-      setPermissionIdByKey(permIdMap);
-
-      const items = [
-        ...products.map((p): BannedItem => ({
-          id: p._id,
-          name: p.productName,
-          type: "product" as BannedEntityType,
-          image: p.productImages?.[0],
-          groupId,
-        })),
-        ...categories.map((c): BannedItem => ({
-          id: c._id,
-          name: c.categoryName,
-          type: "category" as BannedEntityType,
-          image: c.categoryImage,
-          groupId,
-        })),
-      ];
-
-      setAllItems(items);
-
-      const blocked = items.filter(
-        (it) => !allowedKeySet.has(keyOf(it.type, it.id))
-      );
-
-      setLocalBannedItems(blocked);
-      if (shouldNotify) {
-        onUpdateBannedItems(blocked);
-      }
-    } catch (e) {
-      console.error("Failed loading modal data:", e);
-    } finally {
-      setIsLoading(false);
+    const data = await permissionsService.getBlockedItemsForGroup(groupId);
+    setPermissionIdByKey(data.permissionIdByKey);
+    setAllItems([...data.blocked, ...data.available]);
+    setLocalBannedItems(data.blocked);
+    if (shouldNotify) {
+      onUpdateBannedItems(data.blocked);
     }
-  }, [groupId, onUpdateBannedItems]);
+  } catch (e) {
+    console.error("Failed loading modal data:", e);
+  } finally {
+    setIsLoading(false);
+  }
+}, [groupId, onUpdateBannedItems]);
 
   useEffect(() => {
     load();
@@ -170,12 +134,14 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
   const handleRemoveItem = async (item: BannedItem) => {
     try {
       setIsLoading(true);
-
       await permissionsService.createPermission(item.type, String(item.id), groupId);
-
       await load(true);
-    } catch (e) {
-      console.error("Failed to unblock:", e);
+    } catch (e: any) {
+      if (e.response?.status === 400) {
+        toast.error(e.response?.data?.message || "לא ניתן לשחרר פריט זה");
+      } else {
+        toast.error("שגיאה בשחרור הפריט");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -195,6 +161,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
       setSearchQuery("");
     } catch (e) {
       console.error("Failed to block:", e);
+      toast.error("שגיאה בחסימת הפריט");
     } finally {
       setIsLoading(false);
     }

@@ -1,6 +1,6 @@
-import axios from "axios";
 import { environment } from "../environments/environment.development";
 import { User } from "../components/models/user.models";
+import api from "./axios";
 
 const API_URL = environment.API_URL + "/users";
 const getAuthHeaders = () => {
@@ -10,13 +10,13 @@ const getAuthHeaders = () => {
 
 export const userService = {
   getAll: async (): Promise<User[]> => {
-    const { data } = await axios.get<User[]>(API_URL);
+    const { data } = await api.get<User[]>(API_URL);
     return data;
   },
 
   create: async (user: User): Promise<User> => {
   try {
-    const { data } = await axios.post<User>(API_URL, user);
+    const { data } = await api.post<User>(API_URL, user);
     return data;
   } catch (err) {
     console.error("Error creating user:", err);
@@ -25,16 +25,16 @@ export const userService = {
 },
 
   update: async (id: string, updates: Partial<User>): Promise<User> => {
-    const { data } = await axios.patch<User>(`${API_URL}/${id}`, updates);
+    const { data } = await api.patch<User>(`${API_URL}/${id}`, updates);
     return data;
   },
 
   remove: async (id: string): Promise<void> => {
-    await axios.delete(`${API_URL}/${id}`);
+    await api.delete(`${API_URL}/${id}`);
   },
 
   block: async (id: string, isBlocked: boolean): Promise<User> => {
-    const { data } = await axios.patch<User>(`${API_URL}/${id}/block`, { isBlocked });
+    const { data } = await api.patch<User>(`${API_URL}/${id}/block`, { isBlocked });
     return data;
   },
   toggleFavorite: async (
@@ -42,7 +42,7 @@ export const userService = {
     type: 'product' | 'category'
   ): Promise<User> => {
     try {
-      const { data } = await axios.patch<User>(
+      const { data } = await api.patch<User>(
         `${API_URL}/me/favorites/toggle`,
         { itemId, type },
         { headers: getAuthHeaders() }
@@ -55,7 +55,7 @@ export const userService = {
   },
   getFavorites: async () => {
     try {
-      const { data } = await axios.get(
+      const { data } = await api.get(
         `${API_URL}/me/favorites`,
         { headers: getAuthHeaders() }
       );
@@ -67,7 +67,7 @@ export const userService = {
   },
   isFavorite: async (itemId: string): Promise<boolean> => {
     try {
-      const { data } = await axios.get(
+      const { data } = await api.get(
         `${API_URL}/me/favorites/${itemId}/check`,
         { headers: getAuthHeaders() }
       );

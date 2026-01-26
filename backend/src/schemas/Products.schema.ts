@@ -15,7 +15,7 @@ export class Product {
   productDescription: string;
 
   @Prop({ required: true })
-  productPath: string;
+  productPath: Array<string>;
 
   @Prop({ type: [CustomField], default: [] })
   customFields: CustomField[];

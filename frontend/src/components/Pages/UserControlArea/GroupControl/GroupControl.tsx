@@ -10,7 +10,9 @@ import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
 import { Group } from "../../../models/group.models";
 import { categoriesService } from "../../../../services/CategoryService";
+
 import { groupService } from "../../../../services/GroupService";
+import { permissionsService } from "../../../../services/permissions.service";
 
 const GroupControl: React.FC = () => {
   const [selectedGroup, setSelectedGroup] = useState("");
@@ -74,51 +76,10 @@ useEffect(() => {
   try {
     setIsBannedLoading(true);
 
-    const [products, categories, permissions] = await Promise.all([
-      groupService.getProducts(),
-      categoriesService.getCategories(),
-      groupService.getGroupPermissions(groupId),
-    ]);
-
-    const allowedProductIds = new Set(
-      permissions
-        .filter((p) => p.entityType === "product")
-        .map((p) => String(p.entityId))
-    );
-
-    const allowedCategoryIds = new Set(
-      permissions
-        .filter((p) => p.entityType === "category")
-        .map((p) => String(p.entityId))
-    );
-
-    const blockedProducts = products.filter(
-      (p: any) => !allowedProductIds.has(String(p._id ?? p.id))
-    );
-
-    const blockedCategories = categories.filter(
-      (c: any) => !allowedCategoryIds.has(String(c._id ?? c.id))
-    );
-
-    const bannedItems = [
-      ...blockedProducts.map((p: any): BannedItem => ({
-        id: p._id ?? p.id,
-        name: p.productName,
-        type: "product" as BannedEntityType,
-        image: p.productImages?.[0],
-        groupId,
-      })),
-      ...blockedCategories.map((c: any): BannedItem => ({
-        id: c._id ?? c.id,
-        name: c.categoryName,
-        type: "category" as BannedEntityType,
-        image: c.categoryImage,
-        groupId,
-      })),
-    ];
+    const data = await permissionsService.getBlockedItemsForGroup(groupId);
 
     setGroups((prev) =>
-      prev.map((g) => (g.id === groupId ? { ...g, bannedItems } : g))
+      prev.map((g) => (g.id === groupId ? { ...g, bannedItems: data.blocked } : g))
     );
   } catch (err) {
     console.error("Failed loading blocked items:", err);
@@ -337,13 +298,8 @@ useEffect(() => {
   return (
     <div
       dir="rtl"
-      className="min-h-screen bg-[#fffaf1] p-4 sm:p-8 md:p-12 lg:p-16 pt-28 font-sans"
+      className="min-h-screen bg-[#fffaf1] p-4 sm:p-8 md:p-12 lg:p-16 pt-28 font-sans mt-12"
     >
-      <div className="mb-8 text-right mt-10">
-        <h2 className="text-4xl sm:text-5xl font-light text-slate-700 mb-2 tracking-tight">
-          ניהול קבוצות והרשאות
-        </h2>
-      </div>
 
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden max-w-[5000px] mx-auto">
         {/* Header */}

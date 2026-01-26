@@ -1,13 +1,14 @@
 import axios from "./axios"; 
 import type { SearchResponse } from "../types/types";
 import { environment } from "../environments/environment.development";
+import api from "./axios";
 class SearchService {
   private apiBaseUrl = environment.API_URL;
 
   async getDropdownResults(query: string) {
     const token = localStorage.getItem("token");
     
-    const res = await axios.get<SearchResponse>(`${this.apiBaseUrl}/search/dropdown`, {
+    const res = await api.get<SearchResponse>(`${this.apiBaseUrl}/search/dropdown`, {
       params: { q: query },
       headers: {
         Authorization: `Bearer ${token}`,
@@ -21,7 +22,7 @@ class SearchService {
   async getFullSearch(query: string) {
     const token = localStorage.getItem("token");
 
-    const res = await axios.get<SearchResponse>(`${this.apiBaseUrl}/search`, {
+    const res = await api.get<SearchResponse>(`${this.apiBaseUrl}/search`, {
       params: { 
         q: query
       },

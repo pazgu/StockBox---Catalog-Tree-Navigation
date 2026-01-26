@@ -25,14 +25,10 @@ export class PermissionsController {
       await this.permissionsService.getPermissionsForUser(userId);
     return permissions;
   }
-  @Delete(':id')
+  @Get('blocked-items/:groupId')
   @UseGuards(AuthGuard('jwt'))
-  async deletePermission(@Param('id') id: string) {
-    const deleted = await this.permissionsService.deletePermission(id);
-    if (!deleted) {
-      return { status: 'fail', message: 'Permission not found' };
-    }
-    return { status: 'ok', deleted };
+  async getBlockedItemsForGroup(@Param('groupId') groupId: string) {
+    return this.permissionsService.getBlockedItemsForGroup(groupId);
   }
 
   @Get('by-group/:groupId')
@@ -45,5 +41,14 @@ export class PermissionsController {
   @UseGuards(AuthGuard('jwt'))
   async getPermissionsByEntityType(@Param('entityId') entityId: string) {
     return this.permissionsService.getPermissionsByEntityType(entityId);
+  }
+  @Delete(':id')
+  @UseGuards(AuthGuard('jwt'))
+  async deletePermission(@Param('id') id: string) {
+    const deleted = await this.permissionsService.deletePermission(id);
+    if (!deleted) {
+      return { status: 'fail', message: 'Permission not found' };
+    }
+    return { status: 'ok', deleted };
   }
 }

@@ -1,4 +1,3 @@
-import axios from "axios";
 import { environment } from "./../environments/environment.development";
 import {
   CreateProductPayload,
@@ -6,6 +5,7 @@ import {
   ProductDto,
   UpdateProductPayload,
 } from "../components/models/product.models";
+import api from "./axios";
 
 export class ProductsService {
   private static readonly baseUrl = `${environment.API_URL}/products`;
@@ -31,7 +31,6 @@ export class ProductsService {
     const cleanPath = path.startsWith("/") ? path.substring(1) : path;
     const url = `${this.baseUrl}/by-path/${cleanPath}`;
 
-    // Use the auth headers
     const headers = this.getAuthHeaders();
 
     const response = await fetch(url, headers);
@@ -41,7 +40,7 @@ export class ProductsService {
   }
 
   static async createProduct(
-    payload: CreateProductPayload
+    payload: CreateProductPayload,
   ): Promise<ProductDto> {
     const fd = new FormData();
     fd.append("productName", payload.productName);
@@ -66,31 +65,35 @@ export class ProductsService {
     });
 
     if (!response.ok) {
-      if (response.status === 401) {
+      const errorDetail = await response
+        .json()
+        .catch(() => ({ message: "Unknown error" }));
+      console.error("Backend Error:", errorDetail);
+      if (response.status === 401)
         throw new Error("Unauthorized - please login");
-      }
-      if (response.status === 403) {
+      if (response.status === 403)
         throw new Error("Only editors can create products");
-      }
-      throw new Error("Failed to create product");
+
+      throw new Error(errorDetail.message || "Failed to create product");
     }
+
     return response.json();
   }
 
   static async getById(id: string): Promise<ProductDataDto> {
-    const { data } = await axios.get(`${environment.API_URL}/products/${id}`);
+    const { data } = await api.get(`${environment.API_URL}/products/${id}`);
     return data;
   }
 
   static async moveProduct(
     productId: string,
-    newCategoryPath: string
+    newCategoryPath: string[],
   ): Promise<{ success: boolean; message: string; product: ProductDto }> {
     try {
-      const response = await axios.post(
+      const response = await api.post(
         `${this.baseUrl}/${productId}/move`,
         { newCategoryPath },
-        this.getAuthHeaders()
+        this.getAuthHeaders(),
       );
       return response.data;
     } catch (error) {
@@ -100,7 +103,7 @@ export class ProductsService {
   }
   static async updateProduct(
     productId: string,
-    payload: UpdateProductPayload
+    payload: UpdateProductPayload,
   ): Promise<ProductDataDto> {
     const fd = new FormData();
     if (payload.productName) fd.append("productName", payload.productName);
@@ -108,18 +111,16 @@ export class ProductsService {
       fd.append("productDescription", payload.productDescription);
     if (payload.productPath) fd.append("productPath", payload.productPath);
 
-const imgs = payload.productImages ?? [];
+    const imgs = payload.productImages ?? [];
 
-const existing = imgs.filter((x): x is string => typeof x === "string");
-fd.append("existingProductImages", JSON.stringify(existing));
+    const existing = imgs.filter((x): x is string => typeof x === "string");
+    fd.append("existingProductImages", JSON.stringify(existing));
 
-imgs.forEach((img) => {
-  if (img instanceof File) {
-    fd.append("newProductImages", img);
-  }
-});
-
-
+    imgs.forEach((img) => {
+      if (img instanceof File) {
+        fd.append("newProductImages", img);
+      }
+    });
 
     if (payload.customFields) {
       fd.append("customFields", JSON.stringify(payload.customFields));
@@ -133,7 +134,7 @@ imgs.forEach((img) => {
         group.folders.forEach((folder, fi) => {
           fd.append(
             `uploadFolders[${gi}][folders][${fi}][folderName]`,
-            folder.folderName
+            folder.folderName,
           );
           if (folder._id)
             fd.append(`uploadFolders[${gi}][folders][${fi}][_id]`, folder._id);
@@ -142,25 +143,24 @@ imgs.forEach((img) => {
             if (file.file instanceof File) {
               fd.append(
                 `uploadFolders[${gi}][folders][${fi}][files][${fli}][file]`,
-                file.file
+                file.file,
               );
             } else if (file.link) {
               fd.append(
                 `uploadFolders[${gi}][folders][${fi}][files][${fli}][link]`,
-                file.link
+                file.link,
               );
             }
             if (file._id)
               fd.append(
                 `uploadFolders[${gi}][folders][${fi}][files][${fli}][_id]`,
-                file._id
+                file._id,
               );
           });
         });
       });
     }
 
-  
     const response = await fetch(`${this.baseUrl}/${productId}`, {
       method: "PATCH",
       headers: this.getAuthHeader(),
@@ -200,9 +200,8 @@ imgs.forEach((img) => {
   }
 
   static async getAllProducts(): Promise<ProductDto[]> {
-  const response = await fetch(this.baseUrl, this.getAuthHeaders());
-  if (!response.ok) throw new Error("Failed to fetch products");
-  return response.json();
-}
-
+    const response = await fetch(this.baseUrl, this.getAuthHeaders());
+    if (!response.ok) throw new Error("Failed to fetch products");
+    return response.json();
+  }
 }

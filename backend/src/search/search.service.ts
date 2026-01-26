@@ -52,7 +52,7 @@ export class SearchService {
 
       return {
         allowedCategoryPaths: allCategories.map((c) => c.categoryPath),
-        allowedProductPaths: allProducts.map((p) => p.productPath),
+        allowedProductPaths: allProducts.flatMap((p) => p.productPath),
       };
     }
 
@@ -98,7 +98,7 @@ export class SearchService {
       .lean()
       .exec();
 
-    const allowedProductPaths = allowedProducts.map((p) => p.productPath);
+    const allowedProductPaths = allowedProducts.flatMap((p) => p.productPath);
 
     return {
       allowedCategoryPaths: Array.from(allowedCategoryPaths),
@@ -147,21 +147,43 @@ export class SearchService {
           pipeline: [
             {
               $match: {
-                productPath: { $in: allowedProductPaths },
                 ...(searchTerm ? { $text: { $search: searchTerm } } : {}),
               },
             },
+
             {
-              $addFields: {
-                type: 'product',
-                label: '$productName',
-                path: '$productPath',
+              $project: {
+                _id: 1,
+                productName: 1,
+                productPath: 1,
                 score: searchTerm ? { $meta: 'textScore' } : 0,
               },
             },
+
+            { $unwind: '$productPath' },
+
             {
-              $project: { _id: 1, type: 1, label: 1, path: 1, score: 1 },
+              $match: {
+                productPath: { $in: allowedProductPaths },
+              },
             },
+
+            {
+              $group: {
+                _id: '$_id',
+                label: { $first: '$productName' },
+                score: { $max: '$score' },
+                paths: { $addToSet: '$productPath' },
+              },
+            },
+
+            {
+              $addFields: {
+                type: 'product',
+                path: '$paths',
+              },
+            },
+            { $project: { _id: 1, type: 1, label: 1, path: 1, score: 1 } },
           ],
         },
       },
@@ -184,12 +206,35 @@ export class SearchService {
     if (hasMore) results.pop();
 
     return {
-      items: results.map((r) => ({
-        type: r.type,
-        id: r._id.toString(),
-        label: r.label,
-        paths: [r.path],
-      })),
+      items: results.map((r) => {
+        const rawPaths: string[] = Array.isArray(r.path) ? r.path : [r.path];
+
+        const uniquePaths: string[] = Array.from(
+          new Set(
+            rawPaths.filter(
+              (p) => typeof p === 'string' && p.trim().length > 0,
+            ),
+          ),
+        );
+
+        let finalPaths = uniquePaths;
+
+        if (r.type === 'product' && userRole !== 'editor') {
+          const allowedSet = new Set(allowedProductPaths);
+          finalPaths = uniquePaths.filter((p) => allowedSet.has(p));
+        }
+
+        if (!finalPaths.length) {
+          finalPaths = uniquePaths.slice(0, 1);
+        }
+
+        return {
+          type: r.type,
+          id: r._id.toString(),
+          label: r.label,
+          paths: finalPaths,
+        };
+      }),
       total: results.length,
       page,
       limit,
