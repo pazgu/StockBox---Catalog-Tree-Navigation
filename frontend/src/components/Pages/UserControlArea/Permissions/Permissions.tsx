@@ -136,7 +136,7 @@ const handleToggle = (targetId: string, toggleType: "user" | "group") => {
   if (toggleType === "user") {
     const user = usersWithGroupInfo.find(u => String(u._id) === String(targetId));
     if (user?.hasBlockedGroups) {
-      toast.error("לאניתן להעניק הרשאה כאשר למשתמש יש קבוצות חסומות");
+      toast.error("לא ניתן להעניק הרשאה כשמשתמש משויך לקבוצות חסומות");
       return;
     }
     
