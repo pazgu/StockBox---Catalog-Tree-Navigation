@@ -136,7 +136,9 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
     const isExpanded = expandedCategories.has(cat.categoryPath);
     const isLoading = loadingSubcats.has(cat.categoryPath);
     const isSelected = selectedCategoryPaths.has(cat.categoryPath);
-    const isCurrentPath = currentPaths.includes(cat.categoryPath);
+    const isCurrentPath = currentPaths.some((path) =>
+      path.startsWith(cat.categoryPath + "/"),
+    );
 
     return (
       <div key={cat._id} style={{ marginRight: `${level * 20}px` }}>
