@@ -27,6 +27,8 @@ import { Spinner } from "../../../../components/ui/spinner";
 
 import AddProductModal from "./AddProductModal/AddProductModal";
 import AddSubCategoryModal from "./AddSubCategoryModal/AddSubCategoryModal";
+import { handleEntityRouteError } from "../../../../lib/routing/handleEntityRouteError";
+
 
 const SingleCat: FC = () => {
   const [items, setItems] = useState<DisplayItem[]>([]);
@@ -78,58 +80,73 @@ const SingleCat: FC = () => {
     loadAllContent();
   }, [categoryPath, id]);
   const loadAllContent = async () => {
-    try {
-      setLoading(true);
+  try {
+    setLoading(true);
 
-      let subCategories: CategoryDTO[] = [];
-      try {
-        subCategories = await categoriesService.getDirectChildren(categoryPath);
-      } catch (error) {
-        subCategories = [];
-      }
-      let products: ProductDto[] = [];
-      try {
-        products = await ProductsService.getProductsByPath(categoryPath);
-      } catch (error) {
-        products = [];
-      }
-      let userFavorites: string[] = [];
-      if (id) {
-        try {
-          const favorites = await userService.getFavorites();
-          userFavorites = favorites.map((fav: any) => fav.id.toString());
-        } catch (error) {}
-      }
-      const categoryItems: DisplayItem[] = subCategories.map(
-        (cat: CategoryDTO) => ({
-          id: cat._id,
-          name: cat.categoryName,
-          image: cat.categoryImage,
-          type: "category",
-          path: cat.categoryPath,
-          favorite: userFavorites.includes(cat._id),
-        }),
-      );
-      const productItems: DisplayItem[] = products.map((prod: ProductDto) => ({
-        id: prod._id!,
-        name: prod.productName,
-        image: prod.productImages?.[0] ?? "/assets/images/placeholder.png",
-        type: "product",
-        path: Array.isArray(prod.productPath)
-          ? (prod.productPath.find((p) => p.startsWith(categoryPath)) ??
-            prod.productPath[0])
-          : prod.productPath,
-        description: prod.productDescription,
-        customFields: prod.customFields,
-        favorite: userFavorites.includes(prod._id!),
-      }));
-      setItems([...categoryItems, ...productItems]);
-    } catch (error) {
-      toast.error("שגיאה בטעינת התוכן");
-    } finally {
-      setLoading(false);
+    let subCategories: CategoryDTO[] = [];
+    try {
+      subCategories = await categoriesService.getDirectChildren(categoryPath);
+    } catch (err) {
+      if (handleEntityRouteError(err, navigate)) return;
+      console.error(err);
+      toast.error("שגיאה בטעינת תתי-קטגוריות");
+      subCategories = [];
     }
-  };
+
+    let products: ProductDto[] = [];
+    try {
+      products = await ProductsService.getProductsByPath(categoryPath);
+    } catch (err) {
+      if (handleEntityRouteError(err, navigate)) {
+  setLoading(false);
+  return;
+}
+
+      console.error(err);
+      toast.error("שגיאה בטעינת מוצרים");
+      products = [];
+    }
+
+    let userFavorites: string[] = [];
+    if (id) {
+      try {
+        const favorites = await userService.getFavorites();
+        userFavorites = favorites.map((fav: any) => fav.id.toString());
+      } catch (err) {
+      }
+    }
+
+    const categoryItems: DisplayItem[] = subCategories.map((cat: CategoryDTO) => ({
+      id: cat._id,
+      name: cat.categoryName,
+      image: cat.categoryImage,
+      type: "category",
+      path: cat.categoryPath,
+      favorite: userFavorites.includes(cat._id),
+    }));
+
+    const productItems: DisplayItem[] = products.map((prod: ProductDto) => ({
+      id: prod._id!,
+      name: prod.productName,
+      image: prod.productImages?.[0] ?? "/assets/images/placeholder.png",
+      type: "product",
+      path: Array.isArray(prod.productPath)
+        ? (prod.productPath.find((p) => p.startsWith(categoryPath)) ?? prod.productPath[0])
+        : prod.productPath,
+      description: prod.productDescription,
+      customFields: prod.customFields,
+      favorite: userFavorites.includes(prod._id!),
+    }));
+
+    setItems([...categoryItems, ...productItems]);
+  } catch (err) {
+    console.error(err);
+    toast.error("שגיאה בטעינת התוכן");
+  } finally {
+    setLoading(false);
+  }
+};
+
   const handleEdit = (item: DisplayItem) => {
     setItemToEdit(item);
     setShowEditModal(true);

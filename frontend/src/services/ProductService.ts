@@ -28,17 +28,21 @@ export class ProductsService {
   }
 
   static async getProductsByPath(path: string): Promise<ProductDto[]> {
-    const cleanPath = path.startsWith("/") ? path.substring(1) : path;
-    const url = `${this.baseUrl}/by-path/${cleanPath}`;
+  const cleanPath = path.startsWith("/") ? path.substring(1) : path;
+  const url = `${this.baseUrl}/by-path/${cleanPath}`;
 
-    // Use the auth headers
-    const headers = this.getAuthHeaders();
+  const headers = this.getAuthHeaders();
 
-    const response = await fetch(url, headers);
-    if (!response.ok) throw new Error("Failed to fetch products");
+  const response = await fetch(url, headers);
 
-    return response.json();
+  if (!response.ok) {
+    const err: any = new Error("Failed to fetch products");
+    err.status = response.status; 
+    throw err;
   }
+
+  return response.json();
+}
 
   static async createProduct(
     payload: CreateProductPayload,
