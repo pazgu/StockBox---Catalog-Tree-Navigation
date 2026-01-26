@@ -126,17 +126,21 @@ const SingleCat: FC = () => {
       }));
 
       const productItems: DisplayItem[] = products.map((prod: ProductDto) => ({
-        id: prod._id!,
-        name: prod.productName,
-        image: prod.productImages?.[0] ?? "/assets/images/placeholder.png",
-        type: "product",
-        path: Array.isArray(prod.productPath)
-          ? (prod.productPath.find((p) => p.startsWith(categoryPath)) ?? prod.productPath[0])
-          : prod.productPath,
-        description: prod.productDescription,
-        customFields: prod.customFields,
-        favorite: userFavorites.includes(prod._id!),
-      }));
+  id: prod._id!,
+  name: prod.productName,
+  image: prod.productImages?.[0] ?? "/assets/images/placeholder.png",
+  type: "product",
+  path: Array.isArray(prod.productPath)
+    ? [
+        prod.productPath.find((p) => p.startsWith(categoryPath)) ??
+          prod.productPath[0],
+      ]
+    : [prod.productPath],
+  description: prod.productDescription,
+  customFields: prod.customFields,
+  favorite: userFavorites.includes(prod._id!),
+}));
+
 
       setItems([...categoryItems, ...productItems]);
     } catch (err) {
