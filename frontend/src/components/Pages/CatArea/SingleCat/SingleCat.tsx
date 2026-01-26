@@ -80,72 +80,72 @@ const SingleCat: FC = () => {
     loadAllContent();
   }, [categoryPath, id]);
   const loadAllContent = async () => {
-  try {
-    setLoading(true);
-
-    let subCategories: CategoryDTO[] = [];
     try {
-      subCategories = await categoriesService.getDirectChildren(categoryPath);
-    } catch (err) {
-      if (handleEntityRouteError(err, navigate)) return;
-      console.error(err);
-      toast.error("שגיאה בטעינת תתי-קטגוריות");
-      subCategories = [];
-    }
+      setLoading(true);
 
-    let products: ProductDto[] = [];
-    try {
-      products = await ProductsService.getProductsByPath(categoryPath);
-    } catch (err) {
-      if (handleEntityRouteError(err, navigate)) {
-  setLoading(false);
-  return;
-}
-
-      console.error(err);
-      toast.error("שגיאה בטעינת מוצרים");
-      products = [];
-    }
-
-    let userFavorites: string[] = [];
-    if (id) {
+      let subCategories: CategoryDTO[] = [];
       try {
-        const favorites = await userService.getFavorites();
-        userFavorites = favorites.map((fav: any) => fav.id.toString());
+        subCategories = await categoriesService.getDirectChildren(categoryPath);
       } catch (err) {
+        if (handleEntityRouteError(err, navigate)) return;
+        console.error(err);
+        toast.error("שגיאה בטעינת תתי-קטגוריות");
+        subCategories = [];
       }
+
+      let products: ProductDto[] = [];
+      try {
+        products = await ProductsService.getProductsByPath(categoryPath);
+      } catch (err) {
+        if (handleEntityRouteError(err, navigate)) {
+          setLoading(false);
+          return;
+        }
+
+        console.error(err);
+        toast.error("שגיאה בטעינת מוצרים");
+        products = [];
+      }
+
+      let userFavorites: string[] = [];
+      if (id) {
+        try {
+          const favorites = await userService.getFavorites();
+          userFavorites = favorites.map((fav: any) => fav.id.toString());
+        } catch (err) {
+        }
+      }
+
+      const categoryItems: DisplayItem[] = subCategories.map((cat: CategoryDTO) => ({
+        id: cat._id,
+        name: cat.categoryName,
+        image: cat.categoryImage,
+        type: "category",
+        path: [cat.categoryPath],
+        favorite: userFavorites.includes(cat._id),
+      }));
+
+      const productItems: DisplayItem[] = products.map((prod: ProductDto) => ({
+        id: prod._id!,
+        name: prod.productName,
+        image: prod.productImages?.[0] ?? "/assets/images/placeholder.png",
+        type: "product",
+        path: Array.isArray(prod.productPath)
+          ? (prod.productPath.find((p) => p.startsWith(categoryPath)) ?? prod.productPath[0])
+          : prod.productPath,
+        description: prod.productDescription,
+        customFields: prod.customFields,
+        favorite: userFavorites.includes(prod._id!),
+      }));
+
+      setItems([...categoryItems, ...productItems]);
+    } catch (err) {
+      console.error(err);
+      toast.error("שגיאה בטעינת התוכן");
+    } finally {
+      setLoading(false);
     }
-
-    const categoryItems: DisplayItem[] = subCategories.map((cat: CategoryDTO) => ({
-      id: cat._id,
-      name: cat.categoryName,
-      image: cat.categoryImage,
-      type: "category",
-      path: cat.categoryPath,
-      favorite: userFavorites.includes(cat._id),
-    }));
-
-    const productItems: DisplayItem[] = products.map((prod: ProductDto) => ({
-      id: prod._id!,
-      name: prod.productName,
-      image: prod.productImages?.[0] ?? "/assets/images/placeholder.png",
-      type: "product",
-      path: Array.isArray(prod.productPath)
-        ? (prod.productPath.find((p) => p.startsWith(categoryPath)) ?? prod.productPath[0])
-        : prod.productPath,
-      description: prod.productDescription,
-      customFields: prod.customFields,
-      favorite: userFavorites.includes(prod._id!),
-    }));
-
-    setItems([...categoryItems, ...productItems]);
-  } catch (err) {
-    console.error(err);
-    toast.error("שגיאה בטעינת התוכן");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const handleEdit = (item: DisplayItem) => {
     setItemToEdit(item);
@@ -172,7 +172,9 @@ const SingleCat: FC = () => {
 
   const handleItemClick = (item: DisplayItem) => {
     if (isSelectionMode) return;
-    const cleanPath = item.path.startsWith("/") ? item.path : `/${item.path}`;
+
+    const path = item.path[0];
+    const cleanPath = path.startsWith("/") ? path : `/${path}`;
 
     if (item.type === "category") {
       navigate(cleanPath);
@@ -230,8 +232,7 @@ const SingleCat: FC = () => {
       }
       setItems(items.filter((item) => item.id !== itemToDelete.id));
       toast.success(
-        `${itemToDelete.type === "category" ? "הקטגוריה" : "המוצר"} "${
-          itemToDelete.name
+        `${itemToDelete.type === "category" ? "הקטגוריה" : "המוצר"} "${itemToDelete.name
         }" נמחק בהצלחה!`,
       );
     } catch (error) {
@@ -264,9 +265,9 @@ const SingleCat: FC = () => {
       const productPathString = `${categoryPath}/${safeName}`;
       const createdProduct = await ProductsService.createProduct({
         productName: data.name,
-        productPath: productPathString, 
+        productPath: productPathString,
         productDescription: data.description,
-        customFields: {}, 
+        customFields: {},
         imageFile: data.imageFile,
       });
 
@@ -276,7 +277,7 @@ const SingleCat: FC = () => {
         image:
           createdProduct.productImages?.[0] ?? "/assets/images/placeholder.png",
         type: "product",
-        path: createdProduct.productPath[0], // Access the first element of the array returned by BE
+        path: createdProduct.productPath,
         favorite: false,
         description: createdProduct.productDescription,
       };
@@ -308,7 +309,7 @@ const SingleCat: FC = () => {
         name: newCategory.categoryName,
         image: newCategory.categoryImage,
         type: "category",
-        path: newCategory.categoryPath,
+        path: [newCategory.categoryPath],
         favorite: false,
       };
       setItems([...items, newItem]);
@@ -473,16 +474,14 @@ const SingleCat: FC = () => {
         {items.map((item) => (
           <div
             key={item.id}
-            className={`flex flex-col items-center p-5 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 ${
-              selectedItems.includes(item.id)
+            className={`flex flex-col items-center p-5 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 ${selectedItems.includes(item.id)
                 ? "bg-[#0D305B]/10 rounded-sm"
                 : "border-gray-200"
-            } ${!isSelectionMode ? "cursor-pointer" : ""}`}
+              } ${!isSelectionMode ? "cursor-pointer" : ""}`}
           >
             <div
-              className={`absolute top-2 left-2 px-3 py-1 text-xs font-medium rounded-full ${
-                item.type === "category" ? " text-blue-700" : " text-green-700"
-              }`}
+              className={`absolute top-2 left-2 px-3 py-1 text-xs font-medium rounded-full ${item.type === "category" ? " text-blue-700" : " text-green-700"
+                }`}
             >
               {item.type === "category" ? (
                 <>
@@ -579,9 +578,8 @@ const SingleCat: FC = () => {
               <img
                 src={item.image}
                 alt={item.name}
-                className={`max-h-full max-w-full object-contain transition-transform duration-300 hover:scale-105 ${
-                  item.type === "category" ? "rounded-full" : ""
-                }`}
+                className={`max-h-full max-w-full object-contain transition-transform duration-300 hover:scale-105 ${item.type === "category" ? "rounded-full" : ""
+                  }`}
               />
             </div>
 
@@ -763,7 +761,11 @@ const SingleCat: FC = () => {
               isOpen={showMoveModal}
               productId={itemToMove.id}
               productName={itemToMove.name}
-              currentPath={itemToMove.path || categoryPath}
+              currentPaths={
+                Array.isArray(itemToMove.path)
+                  ? itemToMove.path
+                  : [itemToMove.path || categoryPath]
+              }
               onClose={() => {
                 setShowMoveModal(false);
                 setItemToMove(null);
@@ -776,7 +778,7 @@ const SingleCat: FC = () => {
               category={{
                 _id: itemToMove.id,
                 categoryName: itemToMove.name,
-                categoryPath: itemToMove.path,
+                categoryPath: itemToMove.path[0],
                 categoryImage: itemToMove.image,
               }}
               onClose={() => {
@@ -794,7 +796,7 @@ const SingleCat: FC = () => {
           category={{
             _id: itemToEdit.id,
             categoryName: itemToEdit.name,
-            categoryPath: itemToEdit.path,
+            categoryPath: itemToEdit.path[0],
             categoryImage: itemToEdit.image,
           }}
           onClose={() => {

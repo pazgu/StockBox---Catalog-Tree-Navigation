@@ -32,10 +32,8 @@ const AddUsersModal: React.FC<AddUsersModalProps> = ({ group, allUsers, onClose,
 
   const handleSelectAll = () => {
     if (selectedUserIds.length === usersNotInGroup.length) {
-    // אם כולם נבחרו, בטל את הבחירה
       setSelectedUserIds([]);
     } else {
-    // בחר את כולם
       setSelectedUserIds(usersNotInGroup.map((user) => user._id!));
     }
   };

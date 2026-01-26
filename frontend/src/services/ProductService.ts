@@ -92,7 +92,7 @@ export class ProductsService {
 
   static async moveProduct(
     productId: string,
-    newCategoryPath: string,
+    newCategoryPath: string[],
   ): Promise<{ success: boolean; message: string; product: ProductDto }> {
     try {
       const response = await api.post(

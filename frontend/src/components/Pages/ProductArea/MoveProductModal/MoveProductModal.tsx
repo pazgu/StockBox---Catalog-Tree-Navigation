@@ -9,7 +9,7 @@ interface MoveProductModalProps {
   isOpen: boolean;
   productId: string;
   productName: string;
-  currentPath: string;
+  currentPaths: Array<string>;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -18,24 +18,39 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
   isOpen,
   productId,
   productName,
-  currentPath,
+  currentPaths,
   onClose,
   onSuccess,
 }) => {
   const [allCategories, setAllCategories] = useState<Category[]>([]);
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
-  const [selectedCategoryPath, setSelectedCategoryPath] = useState<string>("");
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
+    new Set(),
+  );
+  const [selectedCategoryPaths, setSelectedCategoryPaths] = useState<
+    Set<string>
+  >(new Set());
   const [loading, setLoading] = useState(false);
-  const [subcategoriesCache, setSubcategoriesCache] = useState<Record<string, Category[]>>({});
+  const [showPaths, setShowPaths] = React.useState(false);
+  const [subcategoriesCache, setSubcategoriesCache] = useState<
+    Record<string, Category[]>
+  >({});
   const [loadingSubcats, setLoadingSubcats] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (isOpen) {
       loadAllCategoriesRecursively();
-      setSelectedCategoryPath("");
+      setSelectedCategoryPaths(
+        new Set(
+          currentPaths.map((p) => {
+            const parts = p.split("/");
+            parts.pop();
+            return parts.join("/");
+          }),
+        ),
+      );
       setExpandedCategories(new Set());
     }
-  }, [isOpen]);
+  }, [isOpen, currentPaths]);
 
   const loadAllCategoriesRecursively = async () => {
     try {
@@ -44,7 +59,9 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
       setAllCategories(mainCategories);
 
       await Promise.all(
-        mainCategories.map(cat => loadAllSubcategoriesRecursively(cat.categoryPath))
+        mainCategories.map((cat) =>
+          loadAllSubcategoriesRecursively(cat.categoryPath),
+        ),
       );
     } catch (error) {
       toast.error("שגיאה בטעינת קטגוריות");
@@ -54,21 +71,25 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
     }
   };
 
-  const loadAllSubcategoriesRecursively = async (categoryPath: string): Promise<void> => {
+  const loadAllSubcategoriesRecursively = async (
+    categoryPath: string,
+  ): Promise<void> => {
     if (subcategoriesCache[categoryPath]) {
       return;
     }
 
     try {
       const subcats = await categoriesService.getDirectChildren(categoryPath);
-      
+
       setSubcategoriesCache((prev) => ({
         ...prev,
         [categoryPath]: subcats,
       }));
 
       await Promise.all(
-        subcats.map(subcat => loadAllSubcategoriesRecursively(subcat.categoryPath))
+        subcats.map((subcat) =>
+          loadAllSubcategoriesRecursively(subcat.categoryPath),
+        ),
       );
     } catch (error) {
       console.error("Error loading subcategories:", error);
@@ -77,24 +98,36 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
 
   const toggleCategory = async (categoryPath: string) => {
     const newExpanded = new Set(expandedCategories);
-    
+
     if (newExpanded.has(categoryPath)) {
       newExpanded.delete(categoryPath);
     } else {
       newExpanded.add(categoryPath);
-      
+
       if (!subcategoriesCache[categoryPath]) {
-        setLoadingSubcats(prev => new Set(prev).add(categoryPath));
+        setLoadingSubcats((prev) => new Set(prev).add(categoryPath));
         await loadAllSubcategoriesRecursively(categoryPath);
-        setLoadingSubcats(prev => {
+        setLoadingSubcats((prev) => {
           const newSet = new Set(prev);
           newSet.delete(categoryPath);
           return newSet;
         });
       }
     }
-    
+
     setExpandedCategories(newExpanded);
+  };
+
+  const handleCheckboxChange = (categoryPath: string, checked: boolean) => {
+    const newSelected = new Set(selectedCategoryPaths);
+
+    if (checked) {
+      newSelected.add(categoryPath);
+    } else {
+      newSelected.delete(categoryPath);
+    }
+
+    setSelectedCategoryPaths(newSelected);
   };
 
   const renderCategory = (cat: Category, level: number = 0) => {
@@ -102,12 +135,20 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
     const hasSubcats = subcats.length > 0;
     const isExpanded = expandedCategories.has(cat.categoryPath);
     const isLoading = loadingSubcats.has(cat.categoryPath);
+    const isSelected = selectedCategoryPaths.has(cat.categoryPath);
+    const isCurrentPath = currentPaths.some((path) =>
+      path.startsWith(cat.categoryPath + "/"),
+    );
 
     return (
       <div key={cat._id} style={{ marginRight: `${level * 20}px` }}>
         <label
           className={`flex items-center gap-2 p-3 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-all mb-2 ${
-            selectedCategoryPath === cat.categoryPath ? "border-blue-600 bg-blue-50" : "border-gray-200"
+            isSelected
+              ? "border-blue-600 bg-blue-50"
+              : isCurrentPath
+                ? "border-green-600 bg-green-50"
+                : "border-gray-200"
           }`}
         >
           {hasSubcats && (
@@ -130,17 +171,17 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
               )}
             </button>
           )}
-          
+
           <input
-            type="radio"
-            name="destination"
-            value={cat.categoryPath}
-            checked={selectedCategoryPath === cat.categoryPath}
-            onChange={(e) => setSelectedCategoryPath(e.target.value)}
+            type="checkbox"
+            checked={isSelected}
+            onChange={(e) =>
+              handleCheckboxChange(cat.categoryPath, e.target.checked)
+            }
             className="w-4 h-4"
             disabled={loading}
           />
-          
+
           <div className="flex items-center gap-2 flex-1 text-right">
             {cat.categoryImage && (
               <img
@@ -150,7 +191,14 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
               />
             )}
             <div className="flex-1">
-              <p className="font-medium text-sm">{cat.categoryName}</p>
+              <p className="font-medium text-sm">
+                {cat.categoryName}
+                {isCurrentPath && (
+                  <span className="mr-2 text-xs text-green-600 font-normal">
+                    (נוכחי)
+                  </span>
+                )}
+              </p>
               <p className="text-xs text-gray-400">{cat.categoryPath}</p>
             </div>
           </div>
@@ -166,20 +214,19 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
   };
 
   const handleMove = async () => {
-    if (!selectedCategoryPath) {
-      toast.error("אנא בחר קטגוריית יעד");
+    if (selectedCategoryPaths.size === 0) {
+      toast.error("אנא בחר לפחות קטגוריית יעד אחת");
       return;
     }
 
-    if (currentPath === selectedCategoryPath) {
-      toast.error("הפריט כבר נמצא בקטגוריה זו");
-      return;
-    }
+    const pathsArray = Array.from(selectedCategoryPaths);
 
     try {
       setLoading(true);
-      await ProductsService.moveProduct(productId, selectedCategoryPath);
-      toast.success(`${productName} הועבר בהצלחה!`);
+      await ProductsService.moveProduct(productId, pathsArray);
+      toast.success(
+        `${productName} הועבר בהצלחה ל-${pathsArray.length} ${pathsArray.length === 1 ? "קטגוריה" : "קטגוריות"}!`,
+      );
       onSuccess();
       onClose();
     } catch (error: any) {
@@ -211,14 +258,31 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
           <p className="text-gray-700 mb-2">
             מעביר: <strong>{productName}</strong>
           </p>
-          <p className="text-sm text-gray-500">נתיב נוכחי: {currentPath}</p>
         </div>
 
         <div className="text-right mb-6">
-          <label className="block text-gray-700 font-medium mb-3">
-            בחר יעד (קטגוריה או תת-קטגוריה):
-          </label>
+          <div className="relative inline-block text-right">
+            <div
+              onClick={() => setShowPaths(!showPaths)}
+              className="text-xs text-slate-500 cursor-pointer hover:underline"
+            >
+              נתיבים ({currentPaths.length}) ▼
+            </div>
 
+            {showPaths && (
+              <ul className="absolute right-0 mt-1 bg-white border border-gray-200 rounded shadow-lg p-2 min-w-[200px] z-50">
+                {currentPaths.map((path, i) => (
+                  <li
+                    key={i}
+                    className="text-[11px] text-gray-600 py-1 border-b last:border-0 truncate"
+                    dir="ltr"
+                  >
+                    {path}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
           {loading && allCategories.length === 0 ? (
             <div className="flex items-center justify-center p-8">
               <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
@@ -239,9 +303,9 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
         <div className="flex justify-between gap-3 mt-6">
           <button
             onClick={handleMove}
-            disabled={loading || !selectedCategoryPath}
+            disabled={loading || selectedCategoryPaths.size === 0}
             className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg text-base font-medium transition-all duration-200 text-white shadow-md ${
-              loading || !selectedCategoryPath
+              loading || selectedCategoryPaths.size === 0
                 ? "bg-slate-400 cursor-not-allowed"
                 : "bg-slate-700 hover:bg-slate-600 hover:-translate-y-px hover:shadow-lg"
             }`}

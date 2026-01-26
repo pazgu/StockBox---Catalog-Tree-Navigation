@@ -58,13 +58,11 @@ export class CategoriesService {
   }
 
   async getCategories(user: { userId: string; role: string }) {
-    console.log('Fetching categories for user:', user);
     const categories = await this.categoryModel.find({
       categoryPath: /^\/categories\/[^\/]+$/,
     });
 
     if (user.role === 'editor') {
-      console.log('User is editor, returning all categories');
       return categories;
     }
 

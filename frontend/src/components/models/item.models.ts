@@ -3,7 +3,7 @@ export interface DisplayItem {
   name: string;
   image: string;
   type: "product" | "category";
-  path: string;
+  path: Array<string>;
   favorite?: boolean;
   description?: string;
   customFields?: any;

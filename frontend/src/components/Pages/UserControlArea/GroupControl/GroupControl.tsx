@@ -298,13 +298,8 @@ useEffect(() => {
   return (
     <div
       dir="rtl"
-      className="min-h-screen bg-[#fffaf1] p-4 sm:p-8 md:p-12 lg:p-16 pt-28 font-sans"
+      className="min-h-screen bg-[#fffaf1] p-4 sm:p-8 md:p-12 lg:p-16 pt-28 font-sans mt-12"
     >
-      <div className="mb-8 text-right mt-10">
-        <h2 className="text-4xl sm:text-5xl font-light text-slate-700 mb-2 tracking-tight">
-          ניהול קבוצות והרשאות
-        </h2>
-      </div>
 
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden max-w-[5000px] mx-auto">
         {/* Header */}

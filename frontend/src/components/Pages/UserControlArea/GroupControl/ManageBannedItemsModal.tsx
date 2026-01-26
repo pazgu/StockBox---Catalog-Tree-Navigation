@@ -134,11 +134,8 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
   const handleRemoveItem = async (item: BannedItem) => {
     try {
       setIsLoading(true);
-
       await permissionsService.createPermission(item.type, String(item.id), groupId);
-
       await load(true);
-      toast.success(`הפריט "${item.name}" שוחרר בהצלחה`);
     } catch (e: any) {
       if (e.response?.status === 400) {
         toast.error(e.response?.data?.message || "לא ניתן לשחרר פריט זה");
@@ -164,6 +161,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
       setSearchQuery("");
     } catch (e) {
       console.error("Failed to block:", e);
+      toast.error("שגיאה בחסימת הפריט");
     } finally {
       setIsLoading(false);
     }
