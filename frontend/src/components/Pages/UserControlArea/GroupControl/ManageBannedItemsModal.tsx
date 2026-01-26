@@ -1,17 +1,21 @@
-import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useMemo,
+  useEffect,
+  useRef,
+  useCallback,
+} from "react";
 import {
   Search,
   X,
-  Plus,
-  Trash2,
   Package,
   FolderTree,
   Settings,
+  Lock,
+  LockOpen,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { categoriesService } from "../../../../services/CategoryService";
-import { groupService } from "../../../../services/GroupService";
-import { BannedItem, BannedEntityType } from "../../../../types/types";
+import { BannedItem } from "../../../../types/types";
 import { permissionsService } from "../../../../services/permissions.service";
 import { toast } from "sonner";
 
@@ -22,8 +26,6 @@ interface ManageBannedItemsModalProps {
   onClose: () => void;
   onUpdateBannedItems: (items: BannedItem[]) => void;
 }
-
-
 
 const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
   groupId,
@@ -38,10 +40,10 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"banned" | "available">("banned");
   const [filterType, setFilterType] = useState<"all" | "product" | "category">(
-    "all"
+    "all",
   );
   const [selectedItems, setSelectedItems] = useState<Set<string | number>>(
-    new Set()
+    new Set(),
   );
   const [isLoading, setIsLoading] = useState(false);
   const [permissionIdByKey, setPermissionIdByKey] = useState<
@@ -86,23 +88,26 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
     }
   };
 
-  const load = useCallback(async (shouldNotify = false) => {
-  try {
-    setIsLoading(true);
+  const load = useCallback(
+    async (shouldNotify = false) => {
+      try {
+        setIsLoading(true);
 
-    const data = await permissionsService.getBlockedItemsForGroup(groupId);
-    setPermissionIdByKey(data.permissionIdByKey);
-    setAllItems([...data.blocked, ...data.available]);
-    setLocalBannedItems(data.blocked);
-    if (shouldNotify) {
-      onUpdateBannedItems(data.blocked);
-    }
-  } catch (e) {
-    console.error("Failed loading modal data:", e);
-  } finally {
-    setIsLoading(false);
-  }
-}, [groupId, onUpdateBannedItems]);
+        const data = await permissionsService.getBlockedItemsForGroup(groupId);
+        setPermissionIdByKey(data.permissionIdByKey);
+        setAllItems([...data.blocked, ...data.available]);
+        setLocalBannedItems(data.blocked);
+        if (shouldNotify) {
+          onUpdateBannedItems(data.blocked);
+        }
+      } catch (e) {
+        console.error("Failed loading modal data:", e);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [groupId, onUpdateBannedItems],
+  );
 
   useEffect(() => {
     load();
@@ -112,13 +117,13 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
     return localBannedItems.filter(
       (item) =>
         item.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        (filterType === "all" || item.type === filterType)
+        (filterType === "all" || item.type === filterType),
     );
   }, [localBannedItems, searchQuery, filterType]);
 
   const availableItems = useMemo(() => {
     const bannedKeys = new Set(
-      localBannedItems.map((i) => `${i.type}:${String(i.id)}`)
+      localBannedItems.map((i) => `${i.type}:${String(i.id)}`),
     );
 
     return allItems.filter((item) => {
@@ -134,7 +139,11 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
   const handleRemoveItem = async (item: BannedItem) => {
     try {
       setIsLoading(true);
-      await permissionsService.createPermission(item.type, String(item.id), groupId);
+      await permissionsService.createPermission(
+        item.type,
+        String(item.id),
+        groupId,
+      );
       await load(true);
     } catch (e: any) {
       if (e.response?.status === 400) {
@@ -189,14 +198,19 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
     setIsLoading(true);
     try {
       const promises = Array.from(selectedItems).map(async (itemId) => {
-        const item = activeTab === "banned" 
-          ? localBannedItems.find(i => i.id === itemId)
-          : availableItems.find(i => i.id === itemId);
-        
+        const item =
+          activeTab === "banned"
+            ? localBannedItems.find((i) => i.id === itemId)
+            : availableItems.find((i) => i.id === itemId);
+
         if (!item) return;
-        
+
         if (activeTab === "banned") {
-          await permissionsService.createPermission(item.type, String(item.id), groupId);
+          await permissionsService.createPermission(
+            item.type,
+            String(item.id),
+            groupId,
+          );
         } else {
           const key = keyOf(item.type, item.id);
           const permId = permissionIdByKey[key];
@@ -225,7 +239,6 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
         style={{ height: "570px" }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="bg-slate-700 text-white p-5 flex justify-between items-center flex-shrink-0">
           <div>
             <h3 className="text-lg font-bold flex items-center gap-2 mb-1">
@@ -256,7 +269,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
             }`}
           >
             <div className="flex items-center justify-center gap-1">
-              <Trash2 className="w-3 h-3" />
+              <Lock className="w-3 h-3" />
               פריטים חסומים ({filteredBannedItems.length})
             </div>
           </button>
@@ -274,15 +287,13 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
             }`}
           >
             <div className="flex items-center justify-center gap-1">
-              <Plus className="w-3 h-3" />
-              הוסף חסימה ({availableItems.length})
+              <LockOpen className="w-3 h-3" />
+              פריטים זמינים ({availableItems.length})
             </div>
           </button>
         </div>
 
-        {/* Content */}
         <div className="p-3 flex-1 flex flex-col overflow-hidden min-h-0">
-          {/* Search */}
           <div className="relative mb-3">
             <Search className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3" />
             <input
@@ -336,7 +347,6 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
             </button>
           </div>
 
-          {/* Bulk */}
           {((activeTab === "banned" && filteredBannedItems.length > 0) ||
             (activeTab === "available" && availableItems.length > 0)) && (
             <div className="flex gap-1 mb-2 items-center bg-gray-50 p-1 rounded-md flex-shrink-0">
@@ -362,11 +372,20 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
                     disabled={isLoading}
                     className={`py-1 px-3 rounded-md text-[11px] font-medium transition-all shadow-sm hover:shadow-md ${
                       activeTab === "banned"
-                        ? "bg-red-500 text-white hover:bg-red-600 disabled:bg-red-300"
-                        : "bg-green-500 text-white hover:bg-green-600 disabled:bg-green-300"
+                        ? "bg-green-500 text-white hover:bg-green-600 disabled:bg-green-300"
+                        : "bg-red-500 text-white hover:bg-red-600 disabled:bg-red-300"
                     }`}
+                    title={
+                      activeTab === "banned"
+                        ? "שחרר פריטים נבחרים"
+                        : "חסום פריטים נבחרים"
+                    }
                   >
-                    {activeTab === "banned" ? "הסר" : "הוסף"}
+                    {activeTab === "banned" ? (
+                      <LockOpen className="w-3.5 h-3.5" />
+                    ) : (
+                      <Lock className="w-3.5 h-3.5" />
+                    )}
                   </button>
                   <button
                     onClick={() => setSelectedItems(new Set())}
@@ -380,7 +399,6 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
             </div>
           )}
 
-          {/* Loading */}
           {isLoading ? (
             <div className="text-center py-12 text-gray-500">
               טוען נתונים...
@@ -401,7 +419,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
                     </p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-1.5">
+                  <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-3.5 p-3">
                     {filteredBannedItems.map((item) => (
                       <div
                         key={`${item.type}:${item.id}`}
@@ -413,43 +431,42 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
                         onClick={() => handleToggleSelection(item.id)}
                       >
                         <div className="relative w-full h-24 bg-gray-100 overflow-hidden">
-                          <div className={`absolute top-1 right-1 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all z-10 ${
-                            selectedItems.has(item.id)
-                              ? "bg-blue-500 border-blue-500"
-                              : "bg-white/90 border-gray-300 group-hover:border-blue-400"
-                          }`}>
+                          <div
+                            className={`absolute top-1 right-1 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all z-10 ${
+                              selectedItems.has(item.id)
+                                ? "bg-blue-500 border-blue-500"
+                                : "bg-white/90 border-gray-300 group-hover:border-blue-400"
+                            }`}
+                          >
                             {selectedItems.has(item.id) && (
-                              <svg className="w-3 h-3 text-white" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" viewBox="0 0 24 24" stroke="currentColor">
+                              <svg
+                                className="w-3 h-3 text-white"
+                                fill="none"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="3"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
                                 <path d="M5 13l4 4L19 7"></path>
                               </svg>
                             )}
-                          </div>                
+                          </div>
                           <img
                             src={
                               item.image || "/assets/images/default-product.jpg"
                             }
                             alt={item.name}
-                            className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105"
+                            className="absolute inset-0 w-full h-full object-cover transition-transform"
                             onError={(e) => {
                               e.currentTarget.src =
                                 "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400";
                             }}
                           />
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRemoveItem(item);
-                            }}
-                            className="absolute top-1 left-1 p-1 bg-white/90 text-gray-700 hover:text-white hover:bg-red-500 rounded transition-all opacity-0 group-hover:opacity-100"
-                            title="הסר חסימה"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-
                           <Link
-                            to={`/permissions?item=${item.id}&type=${item.type}`}
+                            to={`/permissions/${item.type}/${item.id}`}
                             onClick={(e) => e.stopPropagation()}
-                            className="absolute bottom-1 left-1 px-1 py-1 bg-orange-600 hover:bg-orange-700 text-white text-[8px] font-bold rounded transition-all opacity-0 group-hover:opacity-100 flex items-center gap-0.5"
+                            className="absolute bottom-1 left-1 px-1 py-1 bg-green-600 hover:bg-green-700 text-white text-[8px] font-bold rounded transition-all opacity-0 group-hover:opacity-100 flex items-center gap-0.5"
                             title="נהל הרשאות"
                           >
                             <Settings className="w-2 h-2" />
@@ -458,7 +475,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
 
                           <div
                             className={`absolute bottom-0.5 right-0.5 px-1 py-0.5 ${getTypeColor(
-                              item.type
+                              item.type,
                             )} text-white text-[7px] font-bold rounded-full flex items-center gap-0.5`}
                           >
                             {getItemIcon(item.type)}
@@ -496,13 +513,23 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
                       onClick={() => handleToggleSelection(item.id)}
                     >
                       <div className="relative w-full h-24 bg-gray-100 overflow-hidden">
-                        <div className={`absolute top-1 right-1 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all z-10 ${
-                          selectedItems.has(item.id)
-                            ? "bg-blue-500 border-blue-500"
-                            : "bg-white/90 border-gray-300 group-hover:border-blue-400"
-                        }`}>
+                        <div
+                          className={`absolute top-1 right-1 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all z-10 ${
+                            selectedItems.has(item.id)
+                              ? "bg-blue-500 border-blue-500"
+                              : "bg-white/90 border-gray-300 group-hover:border-blue-400"
+                          }`}
+                        >
                           {selectedItems.has(item.id) && (
-                            <svg className="w-3 h-3 text-white" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg
+                              className="w-3 h-3 text-white"
+                              fill="none"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="3"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
                               <path d="M5 13l4 4L19 7"></path>
                             </svg>
                           )}
@@ -512,27 +539,16 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
                             item.image || "/assets/images/default-product.jpg"
                           }
                           alt={item.name}
-                          className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105"
+                          className="absolute inset-0 w-full h-full object-cover transition-transform"
                           onError={(e) => {
                             e.currentTarget.src =
                               "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400";
                           }}
                         />
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAddItem(item);
-                          }}
-                          className="absolute top-1 left-1 p-1 bg-white/90 text-gray-700 hover:text-white hover:bg-green-500 rounded transition-all opacity-0 group-hover:opacity-100"
-                          title="הוסף לחסימה"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                        </button>
-
                         <Link
-                          to={`/permissions?item=${item.id}&type=${item.type}`}
+                          to={`/permissions/${item.type}/${item.id}`}
                           onClick={(e) => e.stopPropagation()}
-                          className="absolute bottom-1 left-1 px-1 py-1 bg-orange-600 hover:bg-orange-700 text-white text-[8px] font-bold rounded transition-all opacity-0 group-hover:opacity-100 flex items-center gap-0.5"
+                          className="absolute bottom-1 left-1 px-1 py-1 bg-green-600 hover:bg-green-700 text-white text-[8px] font-bold rounded transition-all opacity-0 group-hover:opacity-100 flex items-center gap-0.5"
                           title="נהל הרשאות"
                         >
                           <Settings className="w-2 h-2" />
@@ -541,7 +557,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
 
                         <div
                           className={`absolute bottom-0.5 right-0.5 px-1 py-0.5 ${getTypeColor(
-                            item.type
+                            item.type,
                           )} text-white text-[7px] font-bold rounded-full flex items-center gap-0.5`}
                         >
                           {getItemIcon(item.type)}
@@ -560,7 +576,6 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
             </div>
           )}
         </div>
-
       </div>
     </div>
   );
