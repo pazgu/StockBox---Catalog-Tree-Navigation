@@ -322,7 +322,7 @@ const handleToggle = (targetId: string, toggleType: "user" | "group") => {
     
     {user.allGroupsEnabled && user.userGroups.length > 0 && (
       <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full whitespace-nowrap">
-        מורשה מקבוצה/קבוצות: {user.enabledGroups.map(g => g.groupName).join(', ')}
+        מורשה משייוך לקבוצה/קבוצות: {user.enabledGroups.map(g => g.groupName).join(', ')}
       </span>
     )}
     
