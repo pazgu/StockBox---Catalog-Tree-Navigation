@@ -111,33 +111,48 @@ const Permissions: React.FC = () => {
     return new Set(groups.filter((g) => g.memebers).map((g) => g._id));
   }, [groups]);
 
-  const usersWithEffectiveState = useMemo(() => {
-    return users.map((user) => ({
+const usersWithGroupInfo = useMemo(() => {
+  return users.map((user) => {
+    const userGroups = groups.filter(g => user.groupIds?.includes(g._id));
+    const enabledGroups = userGroups.filter(g => g.memebers);
+    const blockedGroups = userGroups.filter(g => !g.memebers);
+    
+    const allGroupsEnabled = userGroups.length > 0 && blockedGroups.length === 0;
+    const hasBlockedGroups = blockedGroups.length > 0;
+    
+    return {
       ...user,
-      effectiveEnabled:
-        user.enabled || user.groupIds?.some((gid) => enabledGroupIds.has(gid)),
-    }));
-  }, [users, enabledGroupIds]);
+      userGroups,
+      enabledGroups,
+      blockedGroups,
+      allGroupsEnabled,
+      hasBlockedGroups,
+      effectiveEnabled: user.enabled || allGroupsEnabled,
+    };
+  });
+}, [users, groups, enabledGroupIds]);
 
-  const handleToggle = (targetId: string, toggleType: "user" | "group") => {
-    if (toggleType === "user") {
-      setUsers((prev) =>
-        prev.map((u) =>
-          String(u._id) === String(targetId)
-            ? { ...u, enabled: !u.enabled }
-            : u,
-        ),
-      );
-    } else {
-      setGroups((prev) =>
-        prev.map((g) =>
-          String(g._id) === String(targetId)
-            ? { ...g, memebers: !g.memebers }
-            : g,
-        ),
-      );
+const handleToggle = (targetId: string, toggleType: "user" | "group") => {
+  if (toggleType === "user") {
+    const user = usersWithGroupInfo.find(u => String(u._id) === String(targetId));
+    if (user?.hasBlockedGroups) {
+      toast.error("לאניתן להעניק הרשאה כאשר למשתמש יש קבוצות חסומות");
+      return;
     }
-  };
+    
+    setUsers((prev) =>
+      prev.map((u) =>
+        String(u._id) === String(targetId) ? { ...u, enabled: !u.enabled } : u
+      )
+    );
+  } else {
+    setGroups((prev) =>
+      prev.map((g) =>
+        String(g._id) === String(targetId) ? { ...g, memebers: !g.memebers } : g
+      )
+    );
+  }
+};
 
   const savePermissions = async (inheritToChildren: boolean) => {
     try {
@@ -298,34 +313,31 @@ const Permissions: React.FC = () => {
                     onChange={(e) => setSearch(e.target.value)}
                   />
                   <div className="bg-white border rounded-lg max-h-48 overflow-y-auto">
-                    {usersWithEffectiveState
-                      .filter((u) =>
-                        u.userName.toLowerCase().includes(search.toLowerCase()),
-                      )
-                      .map((user) => (
-                        <div
-                          key={user._id}
-                          className="flex justify-between p-3 border-b hover:bg-slate-50 transition-colors"
-                        >
-                          <div className="flex items-center">
-                            <Label className="font-medium ml-2">
-                              {user.userName}
-                            </Label>
-                            {user.groupIds?.some((id) =>
-                              enabledGroupIds.has(id),
-                            ) && (
-                              <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-                                מורשה מקבוצה
-                              </span>
-                            )}
-                          </div>
-                          <Switch
-                            checked={user.effectiveEnabled}
-                            onCheckedChange={() =>
-                              handleToggle(user._id, "user")
-                            }
-                          />
-                        </div>
+{usersWithGroupInfo
+  .filter((u) => u.userName.toLowerCase().includes(search.toLowerCase()))
+  .map((user) => (
+<div key={user._id} className="flex justify-between p-3 border-b hover:bg-slate-50 transition-colors">
+  <div className="flex items-center flex-wrap gap-1">
+    <Label className="font-medium ml-2">{user.userName}</Label>
+    
+    {user.allGroupsEnabled && user.userGroups.length > 0 && (
+      <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full whitespace-nowrap">
+        מורשה מקבוצה/קבוצות: {user.enabledGroups.map(g => g.groupName).join(', ')}
+      </span>
+    )}
+    
+    {user.hasBlockedGroups && (
+      <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full whitespace-nowrap">
+        חסום בגלל הקבוצה/קבוצות: {user.blockedGroups.map(g => g.groupName).join(', ')}
+      </span>
+    )}
+  </div>
+  <Switch
+    checked={user.effectiveEnabled}
+    disabled={user.hasBlockedGroups}
+    onCheckedChange={() => handleToggle(user._id, "user")}
+  />
+</div>
                       ))}
                   </div>
                 </motion.div>
