@@ -237,25 +237,29 @@ export const Categories: FC<CategoriesProps> = () => {
             >
               <div className="flex items-center justify-center relative">
                 <div onClick={() => handleCategoryClick(category)}>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      toggleFavorite(category._id);
-                    }}
-                    className="absolute top-3 right-3 p-2 rounded-full bg-black/40 hover:bg-black/60 transition-colors z-10"
-                  >
-                    <Heart
-                      size={22}
-                      strokeWidth={2}
-                      className={
-                        favorites[category._id]
-                          ? "fill-red-500 text-red-500"
-                          : "text-white"
-                      }
-                    />
-                  </button>
-
+                  <div className="absolute top-3 right-3 z-10">
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleFavorite(category._id);
+                      }}
+                      className="peer p-2 rounded-full bg-black/40 hover:bg-black/60 transition-colors relative"
+                    >
+                      <Heart
+                        size={22}
+                        strokeWidth={2}
+                        className={
+                          favorites[category._id]
+                            ? "fill-red-500 text-red-500"
+                            : "text-white"
+                        }
+                      />
+                    </button>
+                    <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                      {favorites[category._id] ? "הסר ממועדפים" : "הוסף למועדפים"}
+                    </span>
+                  </div>
                   <img
                     src={category.categoryImage}
                     alt={category.categoryName}

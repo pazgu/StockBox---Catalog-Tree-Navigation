@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useCallback, useId } from "react";
 import { Upload, ImageOff } from "lucide-react";
+import { Spinner } from "../../../../../components/ui/spinner";
 
 
 interface ImageCarouselProps {
@@ -13,6 +14,8 @@ interface ImageCarouselProps {
   handleAddImages?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleDeleteImage?: () => void;
   title?: string;
+  isUploading?: boolean;
+
 }
 
 const ImageCarousel: React.FC<ImageCarouselProps> = ({
@@ -26,6 +29,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
   handleAddImages,
   handleDeleteImage,
   title,
+  isUploading = false,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const touchStartX = useRef<number | null>(null);
@@ -95,6 +99,15 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
       onTouchEnd={onTouchEnd}
       aria-label={`${title || "גלריה"} - גלריית תמונות`}
     >
+
+       {isUploading && (
+      <div className="absolute inset-0 z-50 grid place-items-center bg-white/60 backdrop-blur-sm">
+        <div className="flex items-center gap-2 rounded-2xl bg-white/80 px-4 py-2 shadow">
+          <Spinner className="size-6 text-stockblue" />
+          <span className="text-sm font-semibold text-stockblue">מעלה תמונות…</span>
+        </div>
+      </div>
+    )}
       <div className="relative w-full h-40 flex items-center justify-center">
         {hasImages ? (
   <img
@@ -162,7 +175,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
 
       {isEditing && (
   <div className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-t from-black/70 via-black/30 to-transparent flex items-end justify-center pb-3 z-20 transition-all duration-300">
-    <div className="pointer-events-auto flex gap-2 flex-wrap justify-center">
+    <div className={`pointer-events-auto flex gap-2 flex-wrap justify-center ${isUploading ? "opacity-60 pointer-events-none" : ""}`}>
 
       {!hasImages ? (
         <>

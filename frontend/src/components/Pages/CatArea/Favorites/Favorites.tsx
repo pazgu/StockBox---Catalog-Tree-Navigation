@@ -186,16 +186,21 @@ export const Favorites: React.FC = () => {
                 key={cat._id}
                 className="relative bg-white rounded-xl p-6 text-center shadow-md transition-transform hover:-translate-y-1 hover:shadow-lg"
               >
-                <button
-                  onClick={() => toggleCategoryFavorite(cat._id, cat.categoryName)}
-                  className="absolute top-3 right-3 p-2 rounded-full bg-black/40 hover:bg-black/60 transition-colors"
-                >
-                  <Heart
-                    size={22}
-                    strokeWidth={2}
-                    className="fill-red-500 text-red-500"
-                  />
-                </button>
+                <div className="absolute top-3 right-3">
+                  <button
+                    onClick={() => toggleCategoryFavorite(cat._id, cat.categoryName)}
+                    className="peer p-2 rounded-full bg-black/40 hover:bg-black/60 transition-colors"
+                  >
+                    <Heart
+                      size={22}
+                      strokeWidth={2}
+                      className="fill-red-500 text-red-500"
+                    />
+                  </button>
+                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                    הסר ממועדפים
+                  </span>
+                </div>
                 <Link to={`${cat.categoryPath}`}>
                   <img
                     src={cat.categoryImage}
@@ -221,16 +226,21 @@ export const Favorites: React.FC = () => {
                 key={product._id}
                 className="relative bg-white rounded-xl p-8 text-center shadow-lg transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-xl"
               >
-                <button
-                  onClick={() => toggleProductFavorite(product._id!, product.productName)}
-                  className="absolute top-3 right-3 p-2 rounded-full bg-black/40 hover:bg-black/60 transition-colors"
-                >
-                  <Heart
-                    size={22}
-                    strokeWidth={2}
-                    className="fill-red-500 text-red-500"
-                  />
-                </button>
+                <div className="absolute top-3 right-3">
+                  <button
+                    onClick={() => toggleProductFavorite(product._id!, product.productName)}
+                    className="peer p-2 rounded-full bg-black/40 hover:bg-black/60 transition-colors"
+                  >
+                    <Heart
+                      size={22}
+                      strokeWidth={2}
+                      className="fill-red-500 text-red-500"
+                    />
+                  </button>
+                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                    הסר ממועדפים
+                  </span>
+                </div>
                 <Link to={`${product.productPath}`}>
                   <img
                     src={product.productImages?.[0] || "/placeholder.png"}
