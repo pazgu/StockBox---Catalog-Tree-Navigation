@@ -336,7 +336,9 @@ export class ProductsService {
   }
 
   async getById(id: string, user?: { userId: string; role: string }) {
+    console.log('Getting product by ID:', id, 'for user:', user);
     const product = await this.productModel.findById(id).lean();
+    console.log('Fetched Product:', product);
     if (!product) throw new NotFoundException('Product not found');
 
     if (!user) throw new ForbiddenException('Unauthorized');
