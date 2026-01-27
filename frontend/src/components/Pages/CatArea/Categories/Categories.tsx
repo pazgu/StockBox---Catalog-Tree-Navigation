@@ -276,8 +276,7 @@ export const Categories: FC<CategoriesProps> = () => {
                           <Trash size={18} />
                         </button>
                         <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap">
-                          מחק קטגוריה
-                        </span>
+מחיקת קטגוריה                        </span>
                       </div>
 
                       <div className="relative pointer-events-auto">
@@ -292,8 +291,7 @@ export const Categories: FC<CategoriesProps> = () => {
                           <Pen size={18} />
                         </button>
                         <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap">
-                          ערוך קטגוריה
-                        </span>
+עריכת קטגוריה                        </span>
                       </div>
 
                       <div className="relative pointer-events-auto">
@@ -396,7 +394,7 @@ export const Categories: FC<CategoriesProps> = () => {
       מוחק...
     </span>
   ) : (
-    "מחק"
+    "מחיקה"
   )}
 </button>
 

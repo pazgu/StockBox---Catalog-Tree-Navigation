@@ -170,7 +170,7 @@ const AccordionSection: FC<AccordionSectionProps> = ({
                               );
                             }}
                             className="text-red-500 hover:text-red-700 px-2 py-1 rounded transition-all"
-                            title="מחק פריט"
+                            title="מחיקת פריט"
                           >
                             ✕
                           </button>
@@ -350,7 +350,7 @@ const AccordionSection: FC<AccordionSectionProps> = ({
                         handleDeleteFolder(folder.uiId);
                       }}
                       className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                      title="מחק תיקייה"
+                      title="מחיקת תיקייה"
                     >
                       <Trash2 size={18} />
                     </button>
@@ -411,7 +411,7 @@ const AccordionSection: FC<AccordionSectionProps> = ({
                                 handleDeleteFile(folder.uiId, file.uiId)
                               }
                               className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                              title="מחק קובץ"
+                              title="מחיקת קובץ"
                             >
                               <X size={18} />
                             </button>
