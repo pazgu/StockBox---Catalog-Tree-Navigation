@@ -182,7 +182,7 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
     ${isLoading ? "opacity-50 pointer-events-none" : ""}
   `}
 >
-  מחק תמונה
+  מחיקת תמונה
 </button>
 
 
@@ -195,7 +195,7 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
   `}
   title="מחק את כל התמונות"
 >
-  מחק הכל
+  מחיקת הכל
 </button>
 
                   )}
@@ -220,7 +220,7 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
                               setShowClearDialog(false);
                             }}
                           >
-                            כן, מחק
+                            כן, למחוק
                           </button>
                         </div>
                       </div>
