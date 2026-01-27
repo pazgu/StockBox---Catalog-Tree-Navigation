@@ -7,6 +7,7 @@ import {
   Upload,
   X,
   File,
+  Save,
   Video,
   Music,
   FileText,
@@ -556,7 +557,7 @@ const SingleProd: FC<SingleProdProps> = () => {
                 {isSaving ? (
                   <Spinner className="size-6 text-white" />
                 ) : isEditing ? (
-                  <Check size={22} />
+                  <Save size={22} />
                 ) : (
                   <PencilLine size={22} />
                 )}
