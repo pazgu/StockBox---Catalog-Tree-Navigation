@@ -37,6 +37,7 @@ export class PermissionsService {
       new Types.ObjectId(userId),
       ...(userGroupIds || []).map((id) => new Types.ObjectId(id)),
     ];
+    console.log('Allowed IDs:', allowedIds);
     return await this.permissionModel
       .find({
         allowed: { $in: allowedIds },
