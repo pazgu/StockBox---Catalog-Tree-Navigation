@@ -706,29 +706,35 @@ const SingleProd: FC<SingleProdProps> = () => {
               )}
 
               {role === "viewer" ? (
-                <div className="space-y-2 relative z-10 flex flex-row justify-center gap-12">
+              <div className="space-y-2 relative z-10 flex flex-row justify-center gap-12">
+                <div className="relative">
                   <button
-                    title="צור קשר"
-                    className="w-14 h-12 py-3 px-4 rounded-lg font-semibold text-stockblue transition-all duration-300 transform hover:scale-105  active:scale-95"
                     onClick={() => {
                       const email = process.env.REACT_APP_CONTACT_EMAIL;
                       const subject = encodeURIComponent(`${title}`);
                       const body = process.env.REACT_APP_EMAIL_BODY || "";
                       window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
                     }}
+                    className="peer w-14 h-12 py-3 px-4 rounded-lg font-semibold text-stockblue transition-all duration-300 transform hover:scale-105 active:scale-95"
                     dir="rtl"
                     style={{
                       fontFamily: "system-ui, -apple-system, sans-serif",
                     }}
                   >
                     <MailQuestionIcon size={24} />
-                  </button>{" "}
-                  <h3 className="pt-1">|</h3>
+                  </button>
+                  <span className="absolute top-12 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                    צור קשר
+                  </span>
+                </div>
+
+                <h3 className="pt-1">|</h3>
+
+                <div className="relative">
                   <button
-                    title="הוסף למועדפים"
                     onClick={toggleFavorite}
-                    className={` w-14 h-12 flex items-center justify-center rounded-lg hover:scale-105 transition-all duration-300 transform
-        ${isFavorite ? " text-red-600" : " text-gray-700"}`}
+                    className={`peer w-14 h-12 flex items-center justify-center rounded-lg hover:scale-105 transition-all duration-300 transform
+                      ${isFavorite ? "text-red-600" : "text-gray-700"}`}
                   >
                     <Heart
                       size={24}
@@ -736,17 +742,21 @@ const SingleProd: FC<SingleProdProps> = () => {
                       className="transition-all duration-300 mb-3.5 text-red-700 size-6"
                     />
                   </button>
+                  <span className="absolute top-12 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                    {isFavorite ? "הסר ממועדפים" : "הוסף למועדפים"}
+                  </span>
                 </div>
-              ) : role === "editor" ? (
-                <div className="relative z-10">
-                  <Link
-                    to={`/permissions/product/${product?._id}`}
-                    className="block w-full text-center py-3 px-4 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-800 shadow-md transition-all duration-300"
-                  >
-                    נהל הרשאות
-                  </Link>
-                </div>
-              ) : null}
+              </div>
+            ) : role === "editor" ? (
+              <div className="relative z-10">
+                <Link
+                  to={`/permissions/product/${product?._id}`}
+                  className="block w-full text-center py-3 px-4 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-800 shadow-md transition-all duration-300"
+                >
+                  נהל הרשאות
+                </Link>
+              </div>
+            ) : null}
             </div>
           </div>
 
