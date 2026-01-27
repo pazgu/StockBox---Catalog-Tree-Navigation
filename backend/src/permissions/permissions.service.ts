@@ -110,7 +110,7 @@ export class PermissionsService {
             $or: descendants.map((child) => ({
               entityType: child.entityType,
               entityId: new mongoose.Types.ObjectId(child.entityId),
-              allowed: permission.allowed, 
+              allowed: permission.allowed,
             })),
           })
           .exec();
