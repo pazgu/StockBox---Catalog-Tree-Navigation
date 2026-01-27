@@ -132,7 +132,7 @@ const handleToggle = (targetId: string, toggleType: "user" | "group") => {
   if (toggleType === "user") {
     const user = usersWithGroupInfo.find(u => String(u._id) === String(targetId));
     if (user?.hasBlockedGroups) {
-      toast.error("לאניתן להעניק הרשאה כאשר למשתמש יש קבוצות חסומות");
+      toast.error("לא ניתן להעניק הרשאה כשמשתמש משויך לקבוצות חסומות");
       return;
     }
     
@@ -319,7 +319,7 @@ const handleToggle = (targetId: string, toggleType: "user" | "group") => {
                         {user.allGroupsEnabled && user.userGroups.length > 0 && (
                           <>
                             <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full whitespace-nowrap">
-                              הרשאה מקבוצה/קבוצות:
+                               חסום בגלל הקבוצה/קבוצות: {user.blockedGroups.map(g => g.groupName).join(', ')}
                             </span>
                             {user.enabledGroups.map(g => (
                               <span key={g._id} className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full whitespace-nowrap">
