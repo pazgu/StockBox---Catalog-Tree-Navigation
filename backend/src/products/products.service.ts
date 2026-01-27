@@ -7,6 +7,7 @@ import {
   NotFoundException,
   InternalServerErrorException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { InjectModel } from '@nestjs/mongoose';
@@ -35,23 +36,12 @@ export class ProductsService {
     return this.productModel.find().exec();
   }
 
-  async getById(id: string) {
-    const product = await this.productModel.findById(id).lean();
-
-    if (!product) {
-      throw new NotFoundException('Product not found');
-    }
-
-    return product;
-  }
-
   async findByPath(
     path: string,
     user?: { userId: string; role: string },
   ): Promise<Product[]> {
-    if (!user) {
-      return [];
-    }
+    if (!user) return [];
+
     const escapedPath = path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
     const matchingProducts = await this.productModel
@@ -71,32 +61,57 @@ export class ProductsService {
       return directChildren;
     }
 
-    if (user.role === 'viewer') {
-      const userGroups = await this.groupModel
-        .find({ members: user.userId })
-        .select('_id')
-        .lean();
-      const userGroupIds = userGroups.map((g) => g._id.toString());
-
-      const permissions = await this.permissionsService.getPermissionsForUser(
-        user.userId,
-      );
-
-      const allowedProductIds = new Set(
-        permissions
-          .filter((p) => p.entityType === EntityType.PRODUCT)
-          .map((p) => p.entityId.toString()),
-      );
-
-      const visibleProducts = directChildren.filter((product) =>
-        allowedProductIds.has(product._id.toString()),
-      );
-
-      return visibleProducts;
+    if (user.role !== 'viewer') {
+      return [];
     }
 
-    return [];
+    const userGroups = await this.groupModel
+      .find({ members: user.userId })
+      .select('_id')
+      .lean();
+
+    const userGroupIds = userGroups.map((g) => g._id.toString());
+
+    const permissions = await this.permissionsService.getPermissionsForUser(
+      user.userId,
+      userGroupIds,
+    );
+
+    const productGroupPermissions = new Map<string, Set<string>>();
+    const productUserPermissions = new Set<string>();
+
+    for (const p of permissions) {
+      if (p.entityType !== EntityType.PRODUCT) continue;
+
+      const productId = p.entityId.toString();
+      const allowedId = p.allowed.toString();
+
+      if (userGroupIds.includes(allowedId)) {
+        if (!productGroupPermissions.has(productId)) {
+          productGroupPermissions.set(productId, new Set());
+        }
+        productGroupPermissions.get(productId)!.add(allowedId);
+      } else if (allowedId === user.userId) {
+        productUserPermissions.add(productId);
+      }
+    }
+
+    const visibleProducts = directChildren.filter((product) => {
+      const productId = product._id.toString();
+
+      if (userGroupIds.length > 0) {
+        const groupSet = productGroupPermissions.get(productId);
+        return (
+          !!groupSet && userGroupIds.every((groupId) => groupSet.has(groupId))
+        );
+      }
+
+      return productUserPermissions.has(productId);
+    });
+
+    return visibleProducts;
   }
+
   async create(createProductDto: CreateProductDto, file?: Express.Multer.File) {
     let productImages: string[] = [];
     if (file?.buffer) {
@@ -307,5 +322,61 @@ export class ProductsService {
   private getParentPath(fullProductPath: string): string {
     const idx = fullProductPath.lastIndexOf('/');
     return idx === -1 ? '' : fullProductPath.substring(0, idx);
+  }
+
+  async getById(id: string, user?: { userId: string; role: string }) {
+    const product = await this.productModel.findById(id).lean();
+    if (!product) throw new NotFoundException('Product not found');
+
+    if (!user) throw new ForbiddenException('Unauthorized');
+    if (user.role === 'editor') return product;
+
+    if (user.role !== 'viewer') {
+      throw new ForbiddenException('Unauthorized');
+    }
+
+    const userGroups = await this.groupModel
+      .find({ members: user.userId })
+      .select('_id')
+      .lean();
+
+    const userGroupIds = userGroups.map((g) => g._id.toString());
+
+    const permissions = await this.permissionsService.getPermissionsForUser(
+      user.userId,
+      userGroupIds,
+    );
+
+    const productGroupPermissions = new Set<string>();
+    let hasUserPermission = false;
+
+    for (const p of permissions) {
+      if (p.entityType !== EntityType.PRODUCT) continue;
+      if (p.entityId.toString() !== product._id.toString()) continue;
+
+      const allowedId = p.allowed.toString();
+
+      if (userGroupIds.includes(allowedId)) {
+        productGroupPermissions.add(allowedId);
+      } else if (allowedId === user.userId) {
+        hasUserPermission = true;
+      }
+    }
+
+    if (userGroupIds.length > 0) {
+      const allGroupsHavePermission = userGroupIds.every((groupId) =>
+        productGroupPermissions.has(groupId),
+      );
+
+      if (!allGroupsHavePermission) {
+        throw new ForbiddenException('No permission to view this product');
+      }
+    } else {
+      if (!hasUserPermission) {
+        throw new ForbiddenException('No permission to view this product');
+      }
+    }
+
+    return product;
   }
 }

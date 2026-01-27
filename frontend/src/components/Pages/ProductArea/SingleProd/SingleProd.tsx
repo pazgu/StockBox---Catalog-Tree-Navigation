@@ -7,6 +7,7 @@ import {
   Upload,
   X,
   File,
+  Save,
   Video,
   Music,
   FileText,
@@ -28,7 +29,11 @@ import { FileFolder, UploadedFile } from "../../../models/files.models";
 import bulletIcon from "../../../../assets/bullets.png";
 import contentIcon from "../../../../assets/font.png";
 import { Spinner } from "../../../../components/ui/spinner";
+import { useNavigate } from "react-router-dom";
+import { handleEntityRouteError } from "../../../../lib/routing/handleEntityRouteError";
 
+
+import { useLocation } from "react-router-dom";
 interface SingleProdProps {}
 
 const SingleProd: FC<SingleProdProps> = () => {
@@ -57,13 +62,23 @@ const SingleProd: FC<SingleProdProps> = () => {
   const bulletsIconUrl = bulletIcon;
   const [isSaving, setIsSaving] = useState(false);
   const addImagesInputRef = React.useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
+
+  
 
   const { productId } = useParams<{ productId: string }>();
 
-  useEffect(() => {
-    if (!productId) return;
+useEffect(() => {
+  if (!productId) return;
 
-    const loadProduct = async () => {
+  const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(productId);
+  if (!isValidObjectId) {
+    navigate("/404", { replace: true });
+    return;
+  }
+
+  const loadProduct = async () => {
+    try {
       const product = await ProductsService.getById(productId);
 
       setTitle(product.productName);
@@ -86,6 +101,7 @@ const SingleProd: FC<SingleProdProps> = () => {
         }));
         setAccordionData(accordion);
       }
+
       const folders =
         product.uploadFolders?.[0]?.folders.map((folder: any) => ({
           uiId: folder._id,
@@ -98,24 +114,45 @@ const SingleProd: FC<SingleProdProps> = () => {
             size: 0,
           })),
         })) || [];
+
       setFolders(folders);
-    };
+    } catch (err) {
+      if (handleEntityRouteError(err, navigate)) return;
 
-    loadProduct();
-  }, [productId]);
+      console.error(err);
+      toast.error("שגיאה בטעינת המוצר");
+    }
+  };
 
-  const breadcrumbPath = useMemo(() => {
-    if (!product) return ["categories"];
-    const rawPath = Array.isArray(product.productPath)
-      ? product.productPath[0]
-      : (product.productPath as unknown as string);
-    if (!rawPath) return ["categories"];
-    const cleanPath = rawPath
-      .replace(/^\/categories\//, "")
-      .replace(/^categories\//, "");
+  loadProduct();
+}, [productId, navigate]);
 
-    return ["categories", ...cleanPath.split("/").filter(Boolean)];
-  }, [product]);
+
+
+  const location = useLocation();
+
+const breadcrumbPath = useMemo(() => {
+  const hasPassedBreadcrumbs = Boolean(location.state?.searchBreadcrumbs);
+  const searchVar = location.state?.searchBreadcrumbs;
+
+  if (hasPassedBreadcrumbs && typeof searchVar === 'string') {
+    return ["categories", ...searchVar.split("/").filter(Boolean)];
+  }
+
+  if (!product) return ["categories"];
+
+  const rawPath = Array.isArray(product.productPath)
+    ? product.productPath[0]
+    : (product.productPath as unknown as string);
+
+  if (!rawPath) return ["categories"];
+
+  const cleanPath = rawPath
+    .replace(/^\/categories\//, "")
+    .replace(/^categories\//, "");
+
+  return ["categories", ...cleanPath.split("/").filter(Boolean)];
+}, [product, location.state]);
 
   type EditSnapshot = {
     title: string;
@@ -556,7 +593,7 @@ const SingleProd: FC<SingleProdProps> = () => {
                 {isSaving ? (
                   <Spinner className="size-6 text-white" />
                 ) : isEditing ? (
-                  <Check size={22} />
+                  <Save size={22} />
                 ) : (
                   <PencilLine size={22} />
                 )}

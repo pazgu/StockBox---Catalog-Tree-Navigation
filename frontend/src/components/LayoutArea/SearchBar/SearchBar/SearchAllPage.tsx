@@ -1,25 +1,15 @@
-import {
-  Package,
-  FolderTree,
-  ExternalLink,
-  Loader2,
-  AlertCircle,
-  ArrowRight,
-} from "lucide-react";
+import { Package, FolderTree, Loader2, ArrowRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
-import { environment } from "../../../../environments/environment.development";
 import { searchService } from "../../../../services/search.service";
 import { useUser } from "../../../../context/UserContext";
 
 const SearchResultsPage = () => {
   const [results, setResults] = useState<any[]>([]);
-  const resultsNumber = results.length;
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>("");
   const { role } = useUser();
   const isEditor = role === "editor";
-
 
   const { search } = useLocation();
   const navigate = useNavigate();
@@ -33,8 +23,7 @@ const SearchResultsPage = () => {
         setResults(response.items);
       } catch (err) {
         setError("שגיאה בטעינת תוצאות החיפוש.");
-      }
-      finally {
+      } finally {
         setIsLoading(false);
       }
     };
@@ -45,8 +34,6 @@ const SearchResultsPage = () => {
     <div className="min-h-screen py-10 px-4 md:px-20 font-sans mt-20" dir="rtl">
       <div className="max-w-3xl">
         {" "}
-        {/* Narrower width like Google Search */}
-        {/* Header Section */}
         <div className="mb-8 border-b border-gray-100 pb-6">
           <button
             onClick={() => navigate(-1)}
@@ -69,14 +56,13 @@ const SearchResultsPage = () => {
         ) : (
           <div className="flex flex-col gap-10">
             {" "}
-            {/* Large vertical gap between results */}
             {results.map((item) => (
               <div key={item.id} className="group max-w-2xl">
-                {/* 1. Header: Icon and Breadcrumb (The Google Look) */}
                 <div className="flex items-center gap-3 mb-1">
                   <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center border border-gray-100 shadow-sm ${item.type === "product" ? "bg-blue-50" : "bg-gray-50"
-                      }`}
+                    className={`w-7 h-7 rounded-full flex items-center justify-center border border-gray-100 shadow-sm ${
+                      item.type === "product" ? "bg-blue-50" : "bg-gray-50"
+                    }`}
                   >
                     {item.type === "product" ? (
                       <Package size={14} className="text-blue-600" />
@@ -89,61 +75,72 @@ const SearchResultsPage = () => {
                       StockBox
                     </span>
                     <div className="flex flex-col">
-  <span className="text-[12px] text-gray-500 flex items-center gap-1" dir="ltr">
-  {item.type === "product"
-    ? "products"
-    : (item.paths?.[0] ?? "")
-        .replace(/^\//, "")
-        .replace(/\//g, " › ")}
-</span>
-
-
-
-  {isEditor && item.paths && item.paths.length > 1 && (
-  <div className="relative inline-block group">
-    <span className="text-[12px] text-blue-600 w-fit cursor-pointer select-none">
-      + עוד {item.paths.length - 1} נתיבים
-    </span>
-
-    <div className="absolute right-0 top-full mt-2 hidden group-hover:block bg-white border border-gray-200 shadow-xl rounded-lg p-2 z-50 w-96 max-h-48 overflow-auto text-gray-700">
-      {item.paths.slice(1).map((p: string) => (
-        <button
-          key={p}
-          type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            navigate(p);
-          }}
-          className="w-full text-left text-[12px] break-all py-1 px-2 rounded-md hover:bg-gray-50 hover:text-blue-700 transition-colors cursor-pointer"
-          dir="ltr"
-          title={p}
-        >
-          {p}
-        </button>
-      ))}
-    </div>
-  </div>
-  )}
-</div>
-
+                      <span
+                        className="text-[12px] text-gray-500 flex items-center gap-1"
+                        dir="ltr"
+                      >
+                        {item.type === "product"
+                          ? ""
+                          : (item.paths?.[0] ?? "")
+                              .replace(/^\//, "")
+                              .replace(/\//g, " › ")}
+                      </span>
+                      <small
+                        className="text-gray-500 hover:text-blue-600 hover:underline cursor-pointer"
+                        onClick={(e) => {
+                          navigate(
+                            item.type === "product"
+                              ? `/products/${item.id}`
+                              : (item.paths?.[0] ?? "/"),
+                          );
+                        }}
+                        dir="ltr"
+                      >
+                        {item.paths[0]}
+                      </small>
+                      {isEditor && item.paths && item.paths.length > 1 && (
+                        <div className="relative inline-block group">
+                          <span className="text-[12px] text-blue-600 w-fit cursor-pointer select-none">
+                            + עוד {item.paths.length - 1} נתיבים
+                          </span>
+                          <div className="absolute right-0 top-full mt-2 hidden group-hover:block bg-white border border-gray-200 shadow-xl rounded-lg p-2 z-50 w-96 max-h-48 overflow-auto text-gray-700">
+                            {item.paths.slice(1).map((p: string) => (
+                              <button
+                                key={p}
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  navigate(`/products/${item.id}`, {
+                                    state: {
+                                      searchBreadcrumbs: p,
+                                    },
+                                  });
+                                }}
+                                className="w-full text-left text-[12px] break-all py-1 px-2 rounded-md hover:bg-gray-50 hover:text-blue-700 transition-colors cursor-pointer"
+                                dir="ltr"
+                              >
+                                {p}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                {/* 2. The Title (Blue Link) */}
                 <Link
-  to={
-    item.type === "product"
-      ? `/products/${item.id}`
-      : item.paths?.[0] ?? "/"
-  }
-  className="text-[20px] text-[#1a0dab] hover:underline block leading-tight mb-1"
->
-
+                  to={
+                    item.type === "product"
+                      ? `/products/${item.id}`
+                      : (item.paths?.[0] ?? "/")
+                  }
+                  className="text-[20px] text-[#1a0dab] hover:underline block leading-tight mb-1"
+                >
                   {item.label}
                 </Link>
 
-                {/* 3. The "Snippet" / Description */}
                 <p className="text-[14px] text-[#4d5156] leading-relaxed line-clamp-2">
                   {item.type === "product"
                     ? `צפה בפרטי המוצר המלאים במערכת. מזהה פריט: ${item.id}.`
