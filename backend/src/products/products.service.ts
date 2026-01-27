@@ -17,6 +17,7 @@ import { Model, Types } from 'mongoose';
 import { Product } from '../schemas/Products.schema';
 import { CreateProductDto } from './dtos/CreateProduct.dto';
 import { MoveProductDto } from './dtos/MoveProduct.dto';
+import { DuplicateProductDto } from './dtos/DuplicateProduct.dto';
 import { uploadBufferToCloudinary } from 'src/utils/cloudinary/upload.util';
 import { deleteFromCloudinary } from 'src/utils/cloudinary/delete.util';
 import { PermissionsService } from 'src/permissions/permissions.service';
@@ -179,7 +180,11 @@ export class ProductsService {
       );
     }
   }
-  async delete(id: string): Promise<{ success: boolean; message: string }> {
+
+  async delete(
+    id: string,
+    categoryPath?: string,
+  ): Promise<{ success: boolean; message: string }> {
     const product = await this.productModel.findById(id);
 
     if (!product) {
@@ -187,6 +192,28 @@ export class ProductsService {
     }
 
     try {
+      // If categoryPath is provided, remove only from that category
+      if (categoryPath && product.productPath.length > 1) {
+        const updatedPaths = product.productPath.filter(
+          (path) => !path.startsWith(categoryPath),
+        );
+
+        if (updatedPaths.length === product.productPath.length) {
+          throw new BadRequestException(
+            `Product does not exist in category: ${categoryPath}`,
+          );
+        }
+
+        product.productPath = updatedPaths;
+        await product.save();
+
+        return {
+          success: true,
+          message: `Product "${product.productName}" removed from this category`,
+        };
+      }
+
+      // Delete from all categories (full delete)
       if (product.productImages && product.productImages.length > 0) {
         await Promise.all(
           product.productImages.map((url) => this.deleteProductImage(url)),
@@ -197,10 +224,13 @@ export class ProductsService {
 
       return {
         success: true,
-        message: `Product "${product.productName}" deleted successfully`,
+        message: `Product "${product.productName}" deleted from all categories`,
       };
     } catch (error) {
-      if (error instanceof NotFoundException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       throw new InternalServerErrorException(
@@ -299,6 +329,62 @@ export class ProductsService {
       product: await this.productModel.findById(id),
     };
   }
+
+  async duplicateProduct(id: string, duplicateProductDto: DuplicateProductDto) {
+    const product = await this.productModel.findById(id);
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    const { additionalCategoryPaths } = duplicateProductDto;
+
+    // Validate all category paths exist
+    for (const path of additionalCategoryPaths) {
+      const categoryExists = await this.categoryModel.findOne({
+        categoryPath: path,
+      });
+
+      if (!categoryExists) {
+        throw new BadRequestException(`Category path does not exist: ${path}`);
+      }
+    }
+
+    const productName = product.productName.toLowerCase().replace(/\s+/g, '-');
+    const newPaths = additionalCategoryPaths.map(
+      (catPath) => `${catPath}/${productName}`,
+    );
+
+    // Check for conflicts
+    for (const newPath of newPaths) {
+      if (product.productPath.includes(newPath)) {
+        throw new BadRequestException(
+          `Product already exists at: ${newPath}`,
+        );
+      }
+
+      const existingProduct = await this.productModel.findOne({
+        productPath: newPath,
+        _id: { $ne: id },
+      });
+
+      if (existingProduct) {
+        throw new BadRequestException(
+          `A product with this name already exists at: ${newPath}`,
+        );
+      }
+    }
+
+    // Add new paths to existing paths
+    product.productPath = [...product.productPath, ...newPaths];
+    await product.save();
+
+    return {
+      success: true,
+      message: `Product duplicated successfully to ${newPaths.length} additional ${newPaths.length === 1 ? 'category' : 'categories'}`,
+      product: await this.productModel.findById(id),
+    };
+  }
+
   private async deleteProductImage(imageUrl: string): Promise<void> {
     try {
       const publicId = this.extractCloudinaryPublicId(imageUrl);

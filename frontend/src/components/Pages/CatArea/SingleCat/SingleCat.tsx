@@ -8,6 +8,7 @@ import {
   PackageCheck,
   Boxes,
   FolderInput,
+  Copy,
 } from "lucide-react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
@@ -28,7 +29,8 @@ import { Spinner } from "../../../../components/ui/spinner";
 import AddProductModal from "./AddProductModal/AddProductModal";
 import AddSubCategoryModal from "./AddSubCategoryModal/AddSubCategoryModal";
 import { handleEntityRouteError } from "../../../../lib/routing/handleEntityRouteError";
-
+import SmartDeleteModal from "../../ProductArea/SmartDeleteModal/SmartDeleteModal";
+import DuplicateProductModal from "../../ProductArea/DuplicateProductModal/DuplicateProductModal";
 
 const SingleCat: FC = () => {
   const [items, setItems] = useState<DisplayItem[]>([]);
@@ -37,10 +39,15 @@ const SingleCat: FC = () => {
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [showAddSubCategoryModal, setShowAddSubCategoryModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showSmartDeleteModal, setShowSmartDeleteModal] = useState(false);
   const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
   const [showMoveModal, setShowMoveModal] = useState(false);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<DisplayItem | null>(null);
   const [itemToMove, setItemToMove] = useState<DisplayItem | null>(null);
+  const [itemToDuplicate, setItemToDuplicate] = useState<DisplayItem | null>(
+    null,
+  );
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -79,6 +86,7 @@ const SingleCat: FC = () => {
   useEffect(() => {
     loadAllContent();
   }, [categoryPath, id]);
+
   const loadAllContent = async () => {
     try {
       setLoading(true);
@@ -112,35 +120,32 @@ const SingleCat: FC = () => {
         try {
           const favorites = await userService.getFavorites();
           userFavorites = favorites.map((fav: any) => fav.id.toString());
-        } catch (err) {
-        }
+        } catch (err) {}
       }
 
-      const categoryItems: DisplayItem[] = subCategories.map((cat: CategoryDTO) => ({
-        id: cat._id,
-        name: cat.categoryName,
-        image: cat.categoryImage,
-        type: "category",
-        path: [cat.categoryPath],
-        favorite: userFavorites.includes(cat._id),
-      }));
+      const categoryItems: DisplayItem[] = subCategories.map(
+        (cat: CategoryDTO) => ({
+          id: cat._id,
+          name: cat.categoryName,
+          image: cat.categoryImage,
+          type: "category",
+          path: [cat.categoryPath],
+          favorite: userFavorites.includes(cat._id),
+        }),
+      );
 
       const productItems: DisplayItem[] = products.map((prod: ProductDto) => ({
-  id: prod._id!,
-  name: prod.productName,
-  image: prod.productImages?.[0] ?? "/assets/images/placeholder.png",
-  type: "product",
-  path: Array.isArray(prod.productPath)
-    ? [
-        prod.productPath.find((p) => p.startsWith(categoryPath)) ??
-          prod.productPath[0],
-      ]
-    : [prod.productPath],
-  description: prod.productDescription,
-  customFields: prod.customFields,
-  favorite: userFavorites.includes(prod._id!),
-}));
-
+        id: prod._id!,
+        name: prod.productName,
+        image: prod.productImages?.[0] ?? "/assets/images/placeholder.png",
+        type: "product",
+        path: Array.isArray(prod.productPath)
+          ? prod.productPath
+          : [prod.productPath],
+        description: prod.productDescription,
+        customFields: prod.customFields,
+        favorite: userFavorites.includes(prod._id!),
+      }));
 
       setItems([...categoryItems, ...productItems]);
     } catch (err) {
@@ -155,6 +160,7 @@ const SingleCat: FC = () => {
     setItemToEdit(item);
     setShowEditModal(true);
   };
+
   const handleEditSuccess = async (updatedCategory: any) => {
     try {
       const result = await categoriesService.updateCategory(
@@ -223,16 +229,26 @@ const SingleCat: FC = () => {
 
   const handleDelete = (item: DisplayItem) => {
     setItemToDelete(item);
-    setShowDeleteModal(true);
+
+    // If it's a product with multiple locations, show smart delete modal
+    if (item.type === "product" && item.path.length > 1) {
+      setShowSmartDeleteModal(true);
+    } else {
+      setShowDeleteModal(true);
+    }
   };
 
   const confirmDelete = async () => {
     if (!itemToDelete) return;
     try {
+      setIsDeletingItem(true);
       if (itemToDelete.type === "category") {
         await categoriesService.deleteCategory(itemToDelete.id);
+        toast.success(`הקטגוריה "${itemToDelete.name}" נמחקה בהצלחה!`);
       } else {
+        // Delete from all categories (full delete)
         await ProductsService.deleteProduct(itemToDelete.id);
+        toast.success(`המוצר "${itemToDelete.name}" נמחק מכל המיקומים!`);
       }
       setItems(items.filter((item) => item.id !== itemToDelete.id));
       toast.success(
@@ -242,7 +258,40 @@ const SingleCat: FC = () => {
     } catch (error) {
       toast.error("שגיאה במחיקה");
     } finally {
+      setIsDeletingItem(false);
       setShowDeleteModal(false);
+      setItemToDelete(null);
+    }
+  };
+
+  const handleDeleteFromCurrent = async () => {
+    if (!itemToDelete) return;
+    try {
+      setIsDeletingItem(true);
+      await ProductsService.deleteProduct(itemToDelete.id, categoryPath);
+      toast.success(`המוצר "${itemToDelete.name}" הוסר מקטגוריה זו!`);
+      setItems(items.filter((item) => item.id !== itemToDelete.id));
+    } catch (error) {
+      toast.error("שגיאה במחיקה מקטגוריה זו");
+    } finally {
+      setIsDeletingItem(false);
+      setShowSmartDeleteModal(false);
+      setItemToDelete(null);
+    }
+  };
+
+  const handleDeleteFromAll = async () => {
+    if (!itemToDelete) return;
+    try {
+      setIsDeletingItem(true);
+      await ProductsService.deleteProduct(itemToDelete.id);
+      toast.success(`המוצר "${itemToDelete.name}" נמחק מכל המיקומים!`);
+      setItems(items.filter((item) => item.id !== itemToDelete.id));
+    } catch (error) {
+      toast.error("שגיאה במחיקה מכל המיקומים");
+    } finally {
+      setIsDeletingItem(false);
+      setShowSmartDeleteModal(false);
       setItemToDelete(null);
     }
   };
@@ -256,6 +305,17 @@ const SingleCat: FC = () => {
     await loadAllContent();
     setShowMoveModal(false);
     setItemToMove(null);
+  };
+
+  const handleDuplicate = (item: DisplayItem) => {
+    setItemToDuplicate(item);
+    setShowDuplicateModal(true);
+  };
+
+  const handleDuplicateSuccess = async () => {
+    await loadAllContent();
+    setShowDuplicateModal(false);
+    setItemToDuplicate(null);
   };
 
   const handleSaveProduct = async (data: {
@@ -326,12 +386,15 @@ const SingleCat: FC = () => {
 
   const closeAllModals = () => {
     setShowDeleteModal(false);
+    setShowSmartDeleteModal(false);
     setItemToDelete(null);
     setShowAddProductModal(false);
     setShowAddSubCategoryModal(false);
     setShowDeleteAllModal(false);
     setShowMoveModal(false);
     setItemToMove(null);
+    setShowDuplicateModal(false);
+    setItemToDuplicate(null);
     setShowEditModal(false);
     setItemToEdit(null);
   };
@@ -478,14 +541,16 @@ const SingleCat: FC = () => {
         {items.map((item) => (
           <div
             key={item.id}
-            className={`flex flex-col items-center p-5 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 ${selectedItems.includes(item.id)
+            className={`flex flex-col items-center p-5 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 ${
+              selectedItems.includes(item.id)
                 ? "bg-[#0D305B]/10 rounded-sm"
                 : "border-gray-200"
-              } ${!isSelectionMode ? "cursor-pointer" : ""}`}
+            } ${!isSelectionMode ? "cursor-pointer" : ""}`}
           >
             <div
-              className={`absolute top-2 left-2 px-3 py-1 text-xs font-medium rounded-full ${item.type === "category" ? " text-blue-700" : " text-green-700"
-                }`}
+              className={`absolute top-2 left-2 px-3 py-1 text-xs font-medium rounded-full ${
+                item.type === "category" ? " text-blue-700" : " text-green-700"
+              }`}
             >
               {item.type === "category" ? (
                 <>
@@ -515,6 +580,18 @@ const SingleCat: FC = () => {
 
             {role === "editor" && !isSelectionMode && (
               <>
+                {item.type === "product" && (
+                  <button
+                    title="שכפול לקטגוריות נוספות"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDuplicate(item);
+                    }}
+                    className="absolute bottom-3 right-12 group-hover:opacity-100 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-purple-500 hover:scale-110"
+                  >
+                    <Copy size={18} />
+                  </button>
+                )}
                 <button
                   title="העברה לקטגוריה אחרת"
                   onClick={(e) => {
@@ -587,13 +664,16 @@ const SingleCat: FC = () => {
               <img
                 src={item.image}
                 alt={item.name}
-                className={`max-h-full max-w-full object-contain transition-transform duration-300 hover:scale-105 ${item.type === "category" ? "rounded-full" : ""
-                  }`}
+                className={`max-h-full max-w-full object-contain transition-transform duration-300 hover:scale-105 ${
+                  item.type === "category" ? "rounded-full" : ""
+                }`}
               />
             </div>
 
             <div className="w-full text-center pt-4 border-t border-gray-200">
-              <h2 className="text-[1.1rem] text-[#0D305B] mb-2">{item.name}</h2>
+              <h2 className="text-[1.1rem] text-[#0D305B] mb-2">
+                {item.name}
+              </h2>
 
               {role === "editor" && !isSelectionMode && (
                 <div className="mt-2 flex justify-center">
@@ -728,6 +808,19 @@ const SingleCat: FC = () => {
         </div>
       )}
 
+      {role === "editor" && showSmartDeleteModal && itemToDelete && (
+        <SmartDeleteModal
+          isOpen={showSmartDeleteModal}
+          itemName={itemToDelete.name}
+          currentPaths={itemToDelete.path}
+          currentCategoryPath={categoryPath}
+          onClose={closeAllModals}
+          onDeleteFromCurrent={handleDeleteFromCurrent}
+          onDeleteFromAll={handleDeleteFromAll}
+          isDeleting={isDeletingItem}
+        />
+      )}
+
       {role === "editor" && showDeleteAllModal && isSelectionMode && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
@@ -798,6 +891,25 @@ const SingleCat: FC = () => {
           )}
         </>
       )}
+
+      {showDuplicateModal && itemToDuplicate && (
+        <DuplicateProductModal
+          isOpen={showDuplicateModal}
+          productId={itemToDuplicate.id}
+          productName={itemToDuplicate.name}
+          currentPaths={
+            Array.isArray(itemToDuplicate.path)
+              ? itemToDuplicate.path
+              : [itemToDuplicate.path || categoryPath]
+          }
+          onClose={() => {
+            setShowDuplicateModal(false);
+            setItemToDuplicate(null);
+          }}
+          onSuccess={handleDuplicateSuccess}
+        />
+      )}
+
       {showEditModal && itemToEdit && itemToEdit.type === "category" && (
         <EditCategoryModal
           isOpen={showEditModal}
