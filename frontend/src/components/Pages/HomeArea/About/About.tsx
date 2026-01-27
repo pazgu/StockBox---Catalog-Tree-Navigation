@@ -788,8 +788,8 @@ const handleAddImages = async (event: React.ChangeEvent<HTMLInputElement>) => {
         setIsEditing(true);
       }}
       className="inline-flex items-center justify-center w-12 h-12 rounded-full border border-stockblue/30 bg-white text-xl font-semibold text-stockblue shadow-md hover:bg-stockblue hover:text-white transition-all duration-300"
-      aria-label={isEditing ? "שמור שינויים" : "ערוך"}
-      title={isEditing ? "שמור שינויים" : "ערוך"}
+      aria-label={isEditing ? "שמירת שינויים" : "עריכה"}
+      title={isEditing ? "שמירת שינויים" : "עריכה"}
     >
       {isEditing ? <Check size={18} /> : <Edit2 size={18} />}
     </button>
@@ -837,7 +837,7 @@ const handleAddImages = async (event: React.ChangeEvent<HTMLInputElement>) => {
                         removeSection(sectionIndex);
                       }}
                       className="p-2 bg-red-500 text-white rounded-lg transition shadow-md"
-                      title="מחק מקטע"
+                      title="מחיקת מקטע"
                     >
                       <Trash2 size={18} />
                     </button>

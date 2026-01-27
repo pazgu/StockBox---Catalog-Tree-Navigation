@@ -98,7 +98,7 @@ const GroupList: React.FC<GroupListProps> = ({
                       onDeleteGroup(group);
                     }}
                     className="p-1.5 rounded-full bg-white hover:bg-red-600 hover:text-white transition-colors"
-                    title="מחק קבוצה"
+                    title="מחיקת קבוצה"
                   >
                     <Trash2 size={14} />
                   </button>

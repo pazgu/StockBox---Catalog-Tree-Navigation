@@ -220,7 +220,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
             onClick={handleDeleteImage}
             className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-[#A91D3A] backdrop-blur-sm rounded-lg shadow-md border border-[#A91D3A] hover:shadow-lg hover:bg-[#A91D3A]/80"
           >
-            מחק
+            מחיקה
           </button>
         </>
       )}

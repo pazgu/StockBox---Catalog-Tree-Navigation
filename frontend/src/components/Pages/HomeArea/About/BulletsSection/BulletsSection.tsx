@@ -223,7 +223,7 @@ const BulletsSection: React.FC<BulletsSectionProps> = ({
                     <button
                       onClick={() => onRemove(b.id)}
                       className="text-red-500 hover:text-red-700 flex-shrink-0"
-                      title="מחק נקודה"
+                      title="מחיקת נקודה"
                     >
                       <X size={18} />
                     </button>

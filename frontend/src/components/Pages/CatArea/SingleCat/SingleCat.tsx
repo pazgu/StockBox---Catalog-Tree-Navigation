@@ -451,7 +451,7 @@ const SingleCat: FC = () => {
                     onClick={handleDeleteSelected}
                     className="text-base hover:underline text-red-600 hover:text-red-700 transition-colors"
                   >
-                    מחק ({selectedItems.length})
+                    מחיקת ({selectedItems.length})
                   </button>
                   <span className="text-gray-400">|</span>
                   <button
@@ -711,7 +711,7 @@ const SingleCat: FC = () => {
                     מוחק...
                   </span>
                 ) : (
-                  "מחק"
+                  "מחיקה"
                 )}
               </button>
 
@@ -750,8 +750,7 @@ const SingleCat: FC = () => {
                 onClick={confirmDeleteSelected}
                 className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors"
               >
-                מחק הכל
-              </button>
+מחיקת הכל              </button>
               <button
                 onClick={closeAllModals}
                 className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400 transition-colors"
