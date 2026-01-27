@@ -23,6 +23,12 @@ type FeatureItem = {
 };
 type BulletItem = { id: string; text: string };
 
+type ImageItem = {
+  url: string;
+  isPreview?: boolean;
+};
+
+
 type SectionType = {
   id: string;
   type: "features" | "bullets" | "intro" | "paragraph";
@@ -32,6 +38,8 @@ type SectionType = {
   features?: FeatureItem[];
   bullets?: BulletItem[];
 };
+
+
 
 const blocksToSections = (blocks: AboutBlock[]): SectionType[] => {
   return blocks.map((b) => {
@@ -119,6 +127,9 @@ const IconMap: { [key: string]: FC<any> } = Object.fromEntries(
 
 const iconOptions = ICONS_HE.map((i) => ({ value: i.value, label: i.label }));
 
+
+
+
 type FieldKind =
   | "sectionTitle"
   | "introContent"
@@ -134,13 +145,40 @@ type FieldKind =
 const mkKey = (kind: FieldKind, sectionId: string, itemId?: string) =>
   [kind, sectionId, itemId].filter(Boolean).join("::");
 
+const isBlank = (v?: string | null) => !v || v.trim().length === 0;
+
+const isSectionFilledEnough = (s: SectionType) => {
+  if (isBlank(s.title)) return false;
+
+  if (s.type === "intro" || s.type === "paragraph") {
+    return !isBlank(s.content);
+  }
+
+  if (s.type === "features") {
+    const features = s.features ?? [];
+    if (features.length === 0) return false;
+    return features.every((f) => !isBlank(f.title) && !isBlank(f.description));
+  }
+
+  if (s.type === "bullets") {
+    const bullets = s.bullets ?? [];
+    if (bullets.length === 0) return false;
+    return bullets.every((b) => !isBlank(b.text));
+  }
+
+  return true;
+};
+
 interface AboutProps {}
 
 const About: FC<AboutProps> = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
-  const [editableImages, setEditableImages] = useState<string[]>([]);
-  const images = editableImages;
+
+
+const [editableImages, setEditableImages] = useState<ImageItem[]>([]);
+
+  const images = editableImages.map((i) => i.url);
   const navigate = useNavigate();
   const { role } = useUser();
 
@@ -150,6 +188,8 @@ const About: FC<AboutProps> = () => {
   const [sections, setSections] = useState<SectionType[]>([]);
 
   const [dirtyKeys, setDirtyKeys] = useState<Set<string>>(new Set());
+  const [isImagesLoading, setIsImagesLoading] = useState(false);
+
 
   const [confirmedSnapshot, setConfirmedSnapshot] = useState<
     Record<string, string>
@@ -208,25 +248,32 @@ const About: FC<AboutProps> = () => {
     null
   );
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-  const [originalData, setOriginalData] = useState({
-    sections,
-    images: editableImages,
-  });
+  const [originalData, setOriginalData] = useState<{
+  sections: SectionType[];
+  images: ImageItem[];
+}>({
+  sections: [],
+  images: [],
+});
+
   const sectionRefs = React.useRef<(HTMLDivElement | null)[]>([]);
   const dragCounterRef = React.useRef(0);
 
   const imageWrapRef = React.useRef<HTMLDivElement | null>(null);
-  const goPrev = () =>
-    setCurrentImageIndex((i) => {
-      if (images.length === 0) return 0;
-      return (i - 1 + images.length) % images.length;
-    });
+  const goPrev = React.useCallback(() => {
+  setCurrentImageIndex((i) => {
+    if (images.length === 0) return 0;
+    return (i - 1 + images.length) % images.length;
+  });
+}, [images.length]);
 
-  const goNext = () =>
-    setCurrentImageIndex((i) => {
-      if (images.length === 0) return 0;
-      return (i + 1) % images.length;
-    });
+const goNext = React.useCallback(() => {
+  setCurrentImageIndex((i) => {
+    if (images.length === 0) return 0;
+    return (i + 1) % images.length;
+  });
+}, [images.length]);
+
 
   const touchStartXRef = React.useRef<number | null>(null);
 
@@ -260,12 +307,16 @@ const About: FC<AboutProps> = () => {
         const loadedSections = blocksToSections(res.blocks ?? []);
         setSections(loadedSections);
 
-        setEditableImages(res.images ?? []);
 
-        setOriginalData({
-          sections: loadedSections,
-          images: res.images ?? [],
-        });
+        const loadedImages: ImageItem[] = (res.images ?? []).map((url) => ({ url }));
+
+setEditableImages(loadedImages);
+
+setOriginalData({
+  sections: loadedSections,
+  images: loadedImages,
+});
+
 
         const snap: Record<string, string> = {};
 
@@ -305,6 +356,7 @@ const About: FC<AboutProps> = () => {
   }, []);
 
   const handleAddSection = (
+    
     afterIndex: number,
     type: "features" | "bullets" | "paragraph"
   ) => {
@@ -314,33 +366,34 @@ const About: FC<AboutProps> = () => {
     }
 
     const newSection: SectionType =
-      type === "features"
-        ? {
-            id: `features-${Date.now()}`,
-            type: "features",
-            title: "פיצ׳רים חדשים",
-            features: [
-              {
-                id: uid(),
-                icon: "star",
-                title: "כותרת חדשה",
-                description: "תיאור חדש",
-              },
-            ],
-          }
-        : type === "bullets"
-          ? {
-              id: `bullets-${Date.now()}`,
-              type: "bullets",
-              title: "מקטע חדש",
-              bullets: [{ id: uid(), text: "נקודה חדשה" }],
-            }
-          : {
-              id: `paragraph-${Date.now()}`,
-              type: "paragraph",
-              title: "מקטע טקסט חדש",
-              content: "טקסט חדש...",
-            };
+  type === "features"
+    ? {
+        id: `features-${Date.now()}`,
+        type: "features",
+        title: "",
+        features: [
+          {
+            id: uid(),
+            icon: "star",
+            title: "",
+            description: "",
+          },
+        ],
+      }
+    : type === "bullets"
+      ? {
+          id: `bullets-${Date.now()}`,
+          type: "bullets",
+          title: "",
+          bullets: [{ id: uid(), text: "" }],
+        }
+      : {
+          id: `paragraph-${Date.now()}`,
+          type: "paragraph",
+          title: "",
+          content: "",
+        };
+
 
     setSections((prev) => [
       ...prev.slice(0, afterIndex + 1),
@@ -469,11 +522,23 @@ const About: FC<AboutProps> = () => {
   }, [images.length, currentImageIndex]);
 
   const handleSaveChanges = async () => {
+    const invalidIndex = sections.findIndex((s) => !isSectionFilledEnough(s));
+
+if (invalidIndex !== -1) {
+  toast.error("אי אפשר לשמור כשיש מקטע ריק. מלא כותרת ותוכן ואז שמור.");
+  sectionRefs.current[invalidIndex]?.scrollIntoView({
+    behavior: "smooth",
+    block: "center",
+  });
+  return;
+}
+
     try {
       const payload = {
-        blocks: sectionsToBlocks(sections),
-        images: editableImages,
-      };
+  blocks: sectionsToBlocks(sections),
+  images: editableImages.map((i) => i.url),
+};
+
 
       await aboutApi.replace(payload);
 
@@ -509,7 +574,11 @@ const About: FC<AboutProps> = () => {
       setConfirmedSnapshot(snap);
       setDirtyKeys(new Set());
 
-      setOriginalData({ sections, images: editableImages });
+      setOriginalData({
+  sections,
+  images: editableImages.filter((i) => !i.isPreview).map((i) => ({ url: i.url })),
+});
+
       setIsEditing(false);
       toast.success(TOAST.saveSuccess);
     } catch (e) {
@@ -520,9 +589,10 @@ const About: FC<AboutProps> = () => {
  const cancelEdit = async () => {
   try {
     await aboutApi.replace({
-      blocks: sectionsToBlocks(originalData.sections),
-      images: originalData.images,
-    });
+  blocks: sectionsToBlocks(originalData.sections),
+  images: originalData.images.map((i) => i.url),
+});
+
 
     setSections(originalData.sections);
     setEditableImages(originalData.images);
@@ -578,85 +648,118 @@ const About: FC<AboutProps> = () => {
     sectionRefs.current = sectionRefs.current.slice(0, sections.length);
   }, [sections.length]);
 
- const handleReplaceImage = async (
+const handleReplaceImage = async (
   index: number,
   event: React.ChangeEvent<HTMLInputElement>
 ) => {
   if (!isEditing) {
-  event.target.value = "";
-  return;
-}
-
+    event.target.value = "";
+    return;
+  }
 
   const file = event.target.files?.[0];
   if (!file) return;
 
+  setIsImagesLoading(true);
   try {
     const res = await aboutApi.replaceImageAt(index, file);
-    setEditableImages(res.images ?? []);
-    setCurrentImageIndex(Math.min(index, (res.images?.length ?? 1) - 1));
+    const nextImgs = (res.images ?? []).map((url) => ({ url }));
+
+    setEditableImages(nextImgs);
+    setCurrentImageIndex((cur) => {
+      const len = nextImgs.length;
+      if (len === 0) return 0;
+      return Math.min(index, len - 1);
+    });
   } catch (e) {
     toast.error("Failed to replace image");
   } finally {
+    setIsImagesLoading(false);
     event.target.value = "";
   }
 };
 
 
-  const handleAddImages = async (event: React.ChangeEvent<HTMLInputElement>) => {
- if (!isEditing) {
-  event.target.value = "";
-  return;
-}
 
-
-  const files = Array.from(event.target.files || []);
-  if (!files.length) return;
-
-  try {
-    const res = await aboutApi.uploadImages(files);
-    setEditableImages(res.images ?? []);
-    setCurrentImageIndex((res.images?.length ?? 1) - 1);
-  } catch (e) {
-    toast.error("Failed to upload images");
-  } finally {
-    event.target.value = "";
-  }
-};
-
-
-  const removeImage = async (index: number) => {
+const handleAddImages = async (event: React.ChangeEvent<HTMLInputElement>) => {
   if (!isEditing) {
+    event.target.value = "";
     return;
   }
 
+  const input = event.target;
+  const files = Array.from(input.files ?? []) as File[];
+  if (!files.length) return;
+
+  const previews: ImageItem[] = files.map((file) => ({
+    url: URL.createObjectURL(file),
+    isPreview: true,
+  }));
+
+  setEditableImages((prev) => {
+    const next = [...prev, ...previews];
+    setCurrentImageIndex(next.length - 1);
+    return next;
+  });
+
+  setIsImagesLoading(true);
+  try {
+    const res = await aboutApi.uploadImages(files);
+
+    previews.forEach((p) => URL.revokeObjectURL(p.url));
+
+    const nextImgs = (res.images ?? []).map((url) => ({ url }));
+    setEditableImages(nextImgs);
+    setCurrentImageIndex((nextImgs.length ?? 1) - 1);
+  } catch (e) {
+    toast.error("Failed to upload images");
+    setEditableImages((prev) => prev.filter((i) => !i.isPreview));
+  } finally {
+    setIsImagesLoading(false);
+    input.value = "";
+  }
+};
+
+
+
+  const removeImage = async (index: number) => {
+  if (!isEditing) return;
+
+  setIsImagesLoading(true);
   try {
     const res = await aboutApi.deleteImageAt(index);
-    setEditableImages(res.images ?? []);
+    const nextImgs = (res.images ?? []).map((url) => ({ url }));
+    setEditableImages(nextImgs);
+
     setCurrentImageIndex((cur) => {
-      const len = res.images?.length ?? 0;
+      const len = nextImgs.length;
       if (len === 0) return 0;
       return Math.min(cur, len - 1);
     });
   } catch (e) {
     toast.error("Failed to delete image");
+  } finally {
+    setIsImagesLoading(false);
   }
 };
+
 
 
   const clearAllImages = async () => {
-  if (!isEditing) {
-    return;
-  }
+  if (!isEditing) return;
 
+  setIsImagesLoading(true);
   try {
     const res = await aboutApi.clearImages();
-    setEditableImages(res.images ?? []);
+    setEditableImages((res.images ?? []).map((url) => ({ url })));
     setCurrentImageIndex(0);
   } catch (e) {
     toast.error("Failed to clear images");
+  } finally {
+    setIsImagesLoading(false);
   }
 };
+
 
 
   return (
@@ -1078,12 +1181,18 @@ const About: FC<AboutProps> = () => {
 
               {isEditing && (
                 <div className="mt-6 flex justify-center">
-                  <AddSectionButton
-                    index={sectionIndex}
-                    handleAddSection={handleAddSection}
-                    disabled={hasUnconfirmedChanges}
-                    disabledReason={TOAST.unconfirmedChangesBlocked}
-                  />
+                 <AddSectionButton
+  index={sectionIndex}
+  handleAddSection={handleAddSection}
+  disabled={hasUnconfirmedChanges}
+  disabledReason={TOAST.unconfirmedChangesBlocked}
+  canAdd={isSectionFilledEnough(section)}
+  blockedReason="לפני שמוסיפים מקטע חדש — צריך למלא כותרת + תוכן במקטע הנוכחי."
+  onBlockedAdd={() =>
+    toast.error("אי אפשר להוסיף מקטע חדש לפני שממלאים את המקטע הנוכחי.")
+  }
+/>
+
                 </div>
               )}
             </div>
@@ -1129,6 +1238,8 @@ const About: FC<AboutProps> = () => {
           onAddImages={handleAddImages}
           replaceInputRef={replaceInputRef}
           addInputRef={addInputRef}
+          isLoading={isImagesLoading}
+
         />
       </div>
     </div>
