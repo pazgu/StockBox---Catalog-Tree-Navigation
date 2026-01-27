@@ -34,124 +34,130 @@ export class SearchService {
   ) {}
 
   private async getAllowedPaths(
-  userId: string,
-  userRole?: string,
-): Promise<{
-  allowedCategoryPaths: string[];
-  allowedProductPaths: string[];
-}> {
-  if (userRole === 'editor') {
-    const allCategories = await this.categoryModel
-      .find({})
+    userId: string,
+    userRole?: string,
+  ): Promise<{
+    allowedCategoryPaths: string[];
+    allowedProductPaths: string[];
+  }> {
+    if (userRole === 'editor') {
+      const allCategories = await this.categoryModel
+        .find({})
+        .select({ categoryPath: 1 })
+        .lean();
+
+      const allProducts = await this.productModel
+        .find({})
+        .select({ productPath: 1 })
+        .lean();
+
+      return {
+        allowedCategoryPaths: allCategories.map((c) => c.categoryPath),
+        allowedProductPaths: allProducts.flatMap((p) => p.productPath),
+      };
+    }
+
+    const userGroups = await this.groupModel
+      .find({ members: userId })
+      .select('_id')
+      .lean();
+
+    const userGroupIds = userGroups.map((g) => g._id.toString());
+    const permissions = await this.permissionsService.getPermissionsForUser(
+      userId,
+      userGroupIds,
+    );
+  
+    const categoryGroupPermissions = new Map<string, Set<string>>();
+    const categoryUserPermissions = new Set<string>();
+    const productGroupPermissions = new Map<string, Set<string>>();
+    const productUserPermissions = new Set<string>();
+
+    for (const p of permissions) {
+      const entityId = p.entityId.toString();
+      const allowedId = p.allowed.toString();
+
+      if (p.entityType === EntityType.CATEGORY) {
+        if (userGroupIds.includes(allowedId)) {
+          if (!categoryGroupPermissions.has(entityId))
+            categoryGroupPermissions.set(entityId, new Set());
+          categoryGroupPermissions.get(entityId)!.add(allowedId);
+        } else if (allowedId === userId) categoryUserPermissions.add(entityId);
+      }
+
+      if (p.entityType === EntityType.PRODUCT) {
+        if (userGroupIds.includes(allowedId)) {
+          if (!productGroupPermissions.has(entityId))
+            productGroupPermissions.set(entityId, new Set());
+          productGroupPermissions.get(entityId)!.add(allowedId);
+        } else if (allowedId === userId) productUserPermissions.add(entityId);
+      }
+    }
+  
+    const allowedCategoryIds =
+      userGroupIds.length > 0
+        ? Array.from(categoryGroupPermissions.entries())
+            .filter(([_, groupSet]) =>
+              userGroupIds.every((gid) => groupSet.has(gid)),
+            )
+            .map(([categoryId]) => categoryId)
+        : Array.from(categoryUserPermissions);
+
+    const categories = await this.categoryModel
+      .find({ _id: { $in: allowedCategoryIds } })
       .select({ categoryPath: 1 })
       .lean();
 
-    const allProducts = await this.productModel
-      .find({})
+    const sortedPaths = categories
+      .map((c) => c.categoryPath)
+      .sort((a, b) => a.split('/').length - b.split('/').length);
+
+    const allowedCategoryPaths = new Set<string>();
+    for (const path of sortedPaths) {
+      const parts = path.split('/').filter(Boolean);
+      let valid = true;
+      let current = `/${parts[0]}`;
+      for (let i = 1; i < parts.length - 1; i++) {
+        current += '/' + parts[i];
+        if (!allowedCategoryPaths.has(current)) {
+          valid = false;
+          break;
+        }
+      }
+      if (valid) allowedCategoryPaths.add(path);
+    }
+
+    const allowedProductIds =
+      userGroupIds.length > 0
+        ? Array.from(productGroupPermissions.entries())
+            .filter(([_, groupSet]) =>
+              userGroupIds.every((gid) => groupSet.has(gid)),
+            )
+            .map(([productId]) => productId)
+        : Array.from(productUserPermissions);
+
+
+    const products = await this.productModel
+      .find({ _id: { $in: allowedProductIds } })
       .select({ productPath: 1 })
       .lean();
 
+    const allowedProductPaths = products.flatMap((p) =>
+      p.productPath.filter((pp) => {
+        const parts = pp.split('/').filter(Boolean);
+        let current = `/${parts[0]}`;
+        for (let i = 1; i < parts.length - 1; i++) {
+          current += '/' + parts[i];
+          if (!allowedCategoryPaths.has(current)) return false;
+        }
+        return true;
+      }),
+    );
     return {
-      allowedCategoryPaths: allCategories.map((c) => c.categoryPath),
-      allowedProductPaths: allProducts.flatMap((p) => p.productPath),
+      allowedCategoryPaths: Array.from(allowedCategoryPaths),
+      allowedProductPaths,
     };
   }
-
-  const userGroups = await this.groupModel
-    .find({ members: userId })
-    .select('_id')
-    .lean();
-
-  const userGroupIds = userGroups.map((g) => g._id.toString());
-
-  const permissions = await this.permissionsService.getPermissionsForUser(
-    userId,
-    userGroupIds,
-  );
-
-  const categoryGroupPermissions = new Map<string, Set<string>>();
-  const categoryUserPermissions = new Set<string>();
-  const productGroupPermissions = new Map<string, Set<string>>();
-  const productUserPermissions = new Set<string>();
-
-  for (const p of permissions) {
-    const entityId = p.entityId.toString();
-    const allowedId = p.allowed.toString();
-
-    if (p.entityType === EntityType.CATEGORY) {
-      if (userGroupIds.includes(allowedId)) {
-        if (!categoryGroupPermissions.has(entityId)) categoryGroupPermissions.set(entityId, new Set());
-        categoryGroupPermissions.get(entityId)!.add(allowedId);
-      } else if (allowedId === userId) categoryUserPermissions.add(entityId);
-    }
-
-    if (p.entityType === EntityType.PRODUCT) {
-      if (userGroupIds.includes(allowedId)) {
-        if (!productGroupPermissions.has(entityId)) productGroupPermissions.set(entityId, new Set());
-        productGroupPermissions.get(entityId)!.add(allowedId);
-      } else if (allowedId === userId) productUserPermissions.add(entityId);
-    }
-  }
-
-  const allowedCategoryIds = userGroupIds.length > 0
-    ? Array.from(categoryGroupPermissions.entries())
-        .filter(([_, groupSet]) => userGroupIds.every((gid) => groupSet.has(gid)))
-        .map(([categoryId]) => categoryId)
-    : Array.from(categoryUserPermissions);
-
-  const categories = await this.categoryModel
-    .find({ _id: { $in: allowedCategoryIds } })
-    .select({ categoryPath: 1 })
-    .lean();
-
-  const sortedPaths = categories
-    .map((c) => c.categoryPath)
-    .sort((a, b) => a.split('/').length - b.split('/').length);
-
-  const allowedCategoryPaths = new Set<string>();
-  for (const path of sortedPaths) {
-    const parts = path.split('/').filter(Boolean);
-    let valid = true;
-    let current = `/${parts[0]}`;
-    for (let i = 1; i < parts.length - 1; i++) {
-      current += '/' + parts[i];
-      if (!allowedCategoryPaths.has(current)) {
-        valid = false;
-        break;
-      }
-    }
-    if (valid) allowedCategoryPaths.add(path);
-  }
-
-  const allowedProductIds = userGroupIds.length > 0
-    ? Array.from(productGroupPermissions.entries())
-        .filter(([_, groupSet]) => userGroupIds.every((gid) => groupSet.has(gid)))
-        .map(([productId]) => productId)
-    : Array.from(productUserPermissions);
-
-  const products = await this.productModel
-    .find({ _id: { $in: allowedProductIds } })
-    .select({ productPath: 1 })
-    .lean();
-
-  const allowedProductPaths = products.flatMap((p) =>
-    p.productPath.filter((pp) => {
-      const parts = pp.split('/').filter(Boolean);
-      let current = `/${parts[0]}`;
-      for (let i = 1; i < parts.length; i++) {
-        current += '/' + parts[i];
-        if (!allowedCategoryPaths.has(current)) return false;
-      }
-      return true;
-    }),
-  );
-
-  return {
-    allowedCategoryPaths: Array.from(allowedCategoryPaths),
-    allowedProductPaths,
-  };
-}
-
 
   async searchEntities(
     userId: string,
@@ -200,7 +206,7 @@ export class SearchService {
             { $unwind: '$productPath' },
             {
               $match: {
-                productPath: { $in: allowedProductPaths }, 
+                productPath: { $in: allowedProductPaths },
               },
             },
             {
