@@ -81,11 +81,6 @@ export class ProductsController {
     return this.productsService.create(createProductDto, file);
   }
 
-  @ProductGet(':id')
-  getProductById(@ProductParam('id') id: string) {
-    return this.productsService.getById(id);
-  }
-
   @ProductDelete(':id')
   @ProductUseGuards(JwtAuthGuard, EditorGuard)
   @HttpCode(HttpStatus.OK)
@@ -140,5 +135,15 @@ export class ProductsController {
         : undefined,
     };
     return this.productsService.update(id, dto);
+  }
+
+  @ProductUseGuards(ProductAuthGuard('jwt'), ProductPermissionGuard)
+  @ProductGet(':id')
+  getProductById(
+    @Req()
+    request: express.Request & { user?: { userId: string; role: string } },
+    @ProductParam('id', ParseObjectIdPipe) id: string,
+  ) {
+    return this.productsService.getById(id, request.user);
   }
 }
