@@ -212,25 +212,6 @@ const SearchBar: React.FC<SearchHeaderProps> = ({
   {isEditor && item.paths && item.paths.length > 1 && (
     <span className="relative group/path text-xs text-blue-600 whitespace-nowrap shrink-0">
       + עוד {item.paths.length - 1} נתיבים
-<span className="absolute right-0 top-full mt-2 hidden group-hover/path:block bg-white border border-gray-200 shadow-xl rounded-lg p-2 z-50 w-80 max-h-44 overflow-auto text-gray-700">
-       {item.paths.slice(1).map((p: string) => (
-  <button
-    key={p}
-    type="button"
-    onClick={(e) => {
-      e.stopPropagation(); 
-      setShowResults(false);
-      setSearchQuery("");
-      navigate(p); 
-    }}
-    className="w-full text-left text-xs break-all py-1 px-2 rounded-md hover:bg-gray-50 hover:text-blue-700 transition-colors cursor-pointer"
-    dir="ltr"
-    title={p}
-  >
-    {p}
-  </button>
-))}
-      </span>
     </span>
   )}
 </div>
