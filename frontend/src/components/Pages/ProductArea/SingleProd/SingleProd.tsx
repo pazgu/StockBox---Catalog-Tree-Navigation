@@ -33,6 +33,7 @@ import { useNavigate } from "react-router-dom";
 import { handleEntityRouteError } from "../../../../lib/routing/handleEntityRouteError";
 
 
+import { useLocation } from "react-router-dom";
 interface SingleProdProps {}
 
 const SingleProd: FC<SingleProdProps> = () => {
@@ -128,18 +129,30 @@ useEffect(() => {
 
 
 
-  const breadcrumbPath = useMemo(() => {
-    if (!product) return ["categories"];
-    const rawPath = Array.isArray(product.productPath)
-      ? product.productPath[0]
-      : (product.productPath as unknown as string);
-    if (!rawPath) return ["categories"];
-    const cleanPath = rawPath
-      .replace(/^\/categories\//, "")
-      .replace(/^categories\//, "");
+  const location = useLocation();
 
-    return ["categories", ...cleanPath.split("/").filter(Boolean)];
-  }, [product]);
+const breadcrumbPath = useMemo(() => {
+  const hasPassedBreadcrumbs = Boolean(location.state?.searchBreadcrumbs);
+  const searchVar = location.state?.searchBreadcrumbs;
+
+  if (hasPassedBreadcrumbs && typeof searchVar === 'string') {
+    return ["categories", ...searchVar.split("/").filter(Boolean)];
+  }
+
+  if (!product) return ["categories"];
+
+  const rawPath = Array.isArray(product.productPath)
+    ? product.productPath[0]
+    : (product.productPath as unknown as string);
+
+  if (!rawPath) return ["categories"];
+
+  const cleanPath = rawPath
+    .replace(/^\/categories\//, "")
+    .replace(/^categories\//, "");
+
+  return ["categories", ...cleanPath.split("/").filter(Boolean)];
+}, [product, location.state]);
 
   type EditSnapshot = {
     title: string;
