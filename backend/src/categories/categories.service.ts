@@ -10,6 +10,7 @@
 import {
   Injectable,
   NotFoundException,
+  ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
@@ -24,6 +25,7 @@ import { EntityType } from 'src/schemas/Permissions.schema';
 import { PermissionsService } from 'src/permissions/permissions.service';
 import { UsersService } from 'src/users/users.service';
 import { Group } from 'src/schemas/Groups.schema';
+import mongoose from 'mongoose';
 
 @Injectable()
 export class CategoriesService {
@@ -120,15 +122,40 @@ export class CategoriesService {
     categoryPath: string,
     user: { userId: string; role: string },
   ) {
+
     if (!categoryPath) {
       return [];
     }
     let cleanPath = categoryPath;
-    if (cleanPath.startsWith('/')) {
-      cleanPath = cleanPath.substring(1);
-    }
+    if (cleanPath.startsWith('/')) cleanPath = cleanPath.substring(1);
 
     const fullPath = `/categories/${cleanPath}`;
+
+    const currentCategory = await this.categoryModel
+      .findOne({ categoryPath: fullPath })
+      .select('_id categoryPath')
+      .lean();
+
+    if (!currentCategory) {
+      throw new NotFoundException('Category not found');
+    }
+
+    if (user.role === 'viewer') {
+      const permissions = await this.permissionsService.getPermissionsForUser(
+        user.userId,
+      );
+
+      const allowedCategoryIds = new Set(
+        permissions
+          .filter((p) => p.entityType === EntityType.CATEGORY)
+          .map((p) => p.entityId.toString()),
+      );
+
+      if (!allowedCategoryIds.has(String(currentCategory._id))) {
+        throw new ForbiddenException('No permission to view this category');
+      }
+    }
+
     const allCategoryChildren = await this.categoryModel.find({
       categoryPath: new RegExp(
         `^${fullPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/`,
@@ -140,9 +167,7 @@ export class CategoriesService {
       return slashCount === 0;
     });
 
-    if (user.role === 'editor') {
-      return directCategoryChildren;
-    }
+    if (user.role === 'editor') return directCategoryChildren;
 
     if (user.role === 'viewer') {
       const userGroups = await this.groupModel
@@ -153,6 +178,16 @@ export class CategoriesService {
       const permissions = await this.permissionsService.getPermissionsForUser(
         user.userId,
         userGroupIds,
+      );
+
+      const allowedCategoryIds = new Set(
+        permissions
+          .filter((p) => p.entityType === EntityType.CATEGORY)
+          .map((p) => p.entityId.toString()),
+      );
+
+      return directCategoryChildren.filter((child) =>
+        allowedCategoryIds.has(child._id.toString()),
       );
       const visibleChildren = directCategoryChildren.filter((child) => {
         const childId = child._id.toString();
@@ -195,6 +230,7 @@ export class CategoriesService {
 
     return [];
   }
+
   async deleteCategory(id: string) {
     const category = await this.categoryModel.findById(id);
     if (!category) {
