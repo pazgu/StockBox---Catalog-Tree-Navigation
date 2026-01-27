@@ -7,6 +7,7 @@ import {
   Upload,
   X,
   File,
+  Save,
   Video,
   Music,
   FileText,
@@ -579,7 +580,7 @@ useEffect(() => {
                 {isSaving ? (
                   <Spinner className="size-6 text-white" />
                 ) : isEditing ? (
-                  <Check size={22} />
+                  <Save size={22} />
                 ) : (
                   <PencilLine size={22} />
                 )}
