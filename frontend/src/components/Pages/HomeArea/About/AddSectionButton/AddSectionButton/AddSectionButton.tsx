@@ -7,6 +7,9 @@ interface AddSectionButtonProps {
 
   disabled?: boolean;
   disabledReason?: string;
+  canAdd?: boolean;
+  blockedReason?: string;
+  onBlockedAdd?: () => void;
 }
 
 const AddSectionButton: FC<AddSectionButtonProps> = ({
@@ -14,17 +17,29 @@ const AddSectionButton: FC<AddSectionButtonProps> = ({
   handleAddSection,
   disabled = false,
   disabledReason = "יש לאשר שינויים (✓) לפני הוספת מקטע חדש.",
+
+  canAdd = true,
+  blockedReason = "אי אפשר להוסיף מקטע חדש לפני שממלאים את המקטע הקודם.",
+  onBlockedAdd,
 }) => {
+
   const [showMenu, setShowMenu] = useState(false);
 
   useEffect(() => {
     if (disabled && showMenu) setShowMenu(false);
   }, [disabled, showMenu]);
 
-  const toggleMenu = () => {
-    if (disabled) return;
-    setShowMenu((prev) => !prev);
-  };
+ const toggleMenu = () => {
+  if (disabled) return;
+
+  if (!canAdd) {
+    onBlockedAdd?.();
+    return;
+  }
+
+  setShowMenu((prev) => !prev);
+};
+
 
   const handlePick = (type: "features" | "bullets" | "paragraph") => {
     if (disabled) return;
@@ -38,7 +53,14 @@ const AddSectionButton: FC<AddSectionButtonProps> = ({
         type="button"
         onClick={toggleMenu}
         disabled={disabled}
-        title={disabled ? disabledReason : "הוסף מקטע"}
+title={
+  disabled
+    ? disabledReason
+    : !canAdd
+      ? blockedReason
+      : "הוסף מקטע"
+}
+
         className={`flex items-center gap-2 rounded-full border border-stockblue/30 bg-white px-4 py-2 text-sm font-semibold shadow-md transition-all duration-300
           ${
             disabled

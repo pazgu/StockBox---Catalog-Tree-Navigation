@@ -1,10 +1,14 @@
 import React, { useState } from "react";
 import { Plus, Upload } from "lucide-react";
 import { UserRole } from "../../../../models/user.models";
+import { Spinner } from "../../../../ui/spinner";
+
 
 type AboutImagesPanelProps = {
   isEditing: boolean;
   role?: UserRole | null;
+  isLoading?: boolean;
+
 
   images: string[];
   currentIndex: number;
@@ -41,6 +45,7 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
   onAddImages,
   replaceInputRef,
   addInputRef,
+  isLoading = false,
 }) => {
 
   const wrapRef = React.useRef<HTMLDivElement | null>(null);
@@ -137,24 +142,30 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
               {isEditing && images.length > 1 && (
                 <>
                   <button
-                    type="button"
-                    onClick={onPrev}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 z-60 h-9 w-9 rounded-full grid place-items-center bg-white/90 text-gray-800 shadow hover:bg-white focus:outline-none"
-                    aria-label="תמונה קודמת"
-                    title="קודם"
-                  >
-                    ‹
-                  </button>
+  type="button"
+  disabled={isLoading}
+  onClick={onPrev}
+  className={`absolute right-3 top-1/2 -translate-y-1/2 z-60 h-9 w-9 rounded-full grid place-items-center bg-white/90 text-gray-800 shadow hover:bg-white focus:outline-none
+    ${isLoading ? "opacity-50 pointer-events-none" : ""}
+  `}
+>
+  ‹
+</button>
+
 
                   <button
-                    type="button"
-                    onClick={onNext}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 z-60 h-9 w-9 rounded-full grid place-items-center bg-white/90 text-gray-800 shadow hover:bg-white focus:outline-none"
-                    aria-label="תמונה הבאה"
-                    title="הבא"
-                  >
-                    ›
-                  </button>
+  type="button"
+  disabled={isLoading}
+  onClick={onNext}
+  className={`absolute left-3 top-1/2 -translate-y-1/2 z-60 h-9 w-9 rounded-full grid place-items-center bg-white/90 text-gray-800 shadow hover:bg-white focus:outline-none
+    ${isLoading ? "opacity-50 pointer-events-none" : ""}
+  `}
+  aria-label="תמונה הבאה"
+  title="הבא"
+>
+  ›
+</button>
+
                 </>
               )}
 
@@ -165,22 +176,28 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
               {isEditing && role === "editor" && (
                 <>
                   <button
-                    onClick={() => onRemoveImage(currentIndex)}
-                    className="absolute top-4 right-4 z-[60] pointer-events-auto inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold text-white bg-red-600/90 hover:bg-red-700 shadow-xl transition-all"
-                    title="מחק את התמונה הנוכחית"
-                    aria-label="מחק תמונה"
-                  >
-                    מחק תמונה
-                  </button>
+  disabled={isLoading}
+  onClick={() => onRemoveImage(currentIndex)}
+  className={`absolute top-4 right-4 z-[60] pointer-events-auto inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold text-white bg-red-600/90 hover:bg-red-700 shadow-xl transition-all
+    ${isLoading ? "opacity-50 pointer-events-none" : ""}
+  `}
+>
+  מחק תמונה
+</button>
+
 
                   {images.length > 0 && (
                     <button
-                      onClick={() => setShowClearDialog(true)}
-                      className="absolute top-4 left-4 z-[60] pointer-events-auto inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold text-red-700 bg-white/90 border border-red-200 hover:bg-red-50 shadow transition-all"
-                      title="מחק את כל התמונות"
-                    >
-                      מחק הכל
-                    </button>
+  disabled={isLoading}
+  onClick={() => setShowClearDialog(true)}
+  className={`absolute top-4 left-4 z-[60] pointer-events-auto inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold text-red-700 bg-white/90 border border-red-200 hover:bg-red-50 shadow transition-all
+    ${isLoading ? "opacity-50 pointer-events-none" : ""}
+  `}
+  title="מחק את כל התמונות"
+>
+  מחק הכל
+</button>
+
                   )}
 
                   {showClearDialog && (
@@ -216,13 +233,28 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
               {isEditing && role === "editor" && (
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[60] pointer-events-auto flex items-center gap-3 rounded-2xl bg-white/80 backdrop-blur shadow-lg px-3 py-2">
                   {/* replace current */}
-                  <button
-                    onClick={() => replaceRef.current?.click()}
-                    className="h-8 rounded-full px-3 text-xs font-semibold bg-white text-stockblue border border-stockblue/20 hover:bg-blue-50"
-                    title="החלף תמונה נוכחית"
-                  >
-                    החלף
-                  </button>
+                 <button
+  disabled={isLoading}
+  onClick={() => replaceRef.current?.click()}
+  className={`h-8 rounded-full px-3 text-xs font-semibold bg-white text-stockblue border border-stockblue/20 hover:bg-blue-50
+    ${isLoading ? "opacity-50 pointer-events-none" : ""}
+  `}
+>
+  החלף
+</button>
+
+<button
+  disabled={isLoading}
+  onClick={() => addRef.current?.click()}
+  className={`h-8 rounded-full px-3 text-xs font-semibold bg-stockblue text-white hover:bg-blue-700
+    ${isLoading ? "opacity-50 pointer-events-none" : ""}
+  `}
+>
+  <span className="inline-flex items-center gap-1">
+    <Plus size={14} /> הוסף
+  </span>
+</button>
+
                   <input
                     ref={replaceRef}
                     type="file"
@@ -230,63 +262,57 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
                     className="hidden"
                     onChange={(e) => onReplaceImage(currentIndex, e)}
                   />
-
-                  {/* add new */}
-                  <button
-                    onClick={() => addRef.current?.click()}
-                    className="h-8 rounded-full px-3 text-xs font-semibold bg-stockblue text-white hover:bg-blue-700"
-                    title="הוסף תמונה חדשה"
-                  >
-                    <span className="inline-flex items-center gap-1">
-                      <Plus size={14} /> הוסף
-                    </span>
-                  </button>
-                  <input
-                    ref={addRef}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="hidden"
-                    onChange={onAddImages}
-                  />
                 </div>
               )}
             </>
-          ) : (
-            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-6">
-            <button
-              onClick={() => {
-                if (!isEditing) return;
-                addRef.current?.click();
-              }}
-              className={`group w-full h-full rounded-[3rem] border-2 border-dashed border-stockblue/30 bg-white/70 backdrop-blur-sm flex flex-col items-center justify-center gap-3 transition
-                ${isEditing ? "hover:border-stockblue/50 hover:bg-white" : "opacity-70 cursor-not-allowed"}
-              `}
-              title={isEditing ? "העלה תמונה" : "היכנסו לעריכה כדי להעלות"}
-              aria-label="העלאת תמונה"
-            >
-              <Upload size={32} className="opacity-70 group-hover:opacity-100" />
-              <span className="text-stockblue/80 font-semibold">
-                {role === "editor" 
-                  ? "אין תמונות כרגע - לחצו כדי להעלות"
-                  : "אין תמונות כרגע"
-                }
-              </span>
-              {role === "editor" && (
-                <span className="text-xs text-slate-500">PNG · JPG · JPEG</span>
-              )}
-            </button>
+ ) : (
+  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-6">
+    {role === "editor" ? (
+      // EDITOR EMPTY STATE (clickable upload)
+      <button
+        onClick={() => {
+          if (!isEditing) return;
+          addRef.current?.click();
+        }}
+        className={`group w-full h-full rounded-[3rem] border-2 border-dashed border-stockblue/30 bg-white/70 backdrop-blur-sm flex flex-col items-center justify-center gap-3 transition
+          ${isEditing ? "hover:border-stockblue/50 hover:bg-white" : "opacity-70 cursor-not-allowed"}
+        `}
+        title={isEditing ? "העלה תמונה" : "היכנסו לעריכה כדי להעלות"}
+        aria-label="העלאת תמונה"
+      >
+        <Upload size={32} className="opacity-70 group-hover:opacity-100" />
+        <span className="text-stockblue/80 font-semibold">
+          אין תמונות כרגע - לחצו כדי להעלות
+        </span>
+        <span className="text-xs text-slate-500">PNG · JPG · JPEG</span>
+      </button>
+    ) : (
+      // VIEWER EMPTY STATE (no upload icon, not clickable)
+      <div className="w-full h-full rounded-[3rem] border-2 border-dashed border-stockblue/20 bg-white/60 backdrop-blur-sm flex flex-col items-center justify-center gap-2">
+        <span className="text-stockblue/80 font-semibold">אין תמונות כרגע</span>
+      </div>
+    )}
+  </div>
+)}
 
-              <input
-                ref={addRef}
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={onAddImages}
-              />
-            </div>
-          )}
+<input
+  ref={addRef}
+  type="file"
+  accept="image/*"
+  multiple
+  className="hidden"
+  onChange={onAddImages}
+/>
+
+{isLoading && (
+  <div className="absolute inset-0 z-[80] grid place-items-center bg-white/55 backdrop-blur-sm">
+    <div className="flex items-center gap-2 rounded-2xl bg-white/80 px-4 py-2 shadow">
+      <Spinner className="size-5" />
+      <span className="text-sm font-semibold text-[#103e76]">טוען…</span>
+    </div>
+  </div>
+)}
+
         </div>
 
         {/* floating glows */}
