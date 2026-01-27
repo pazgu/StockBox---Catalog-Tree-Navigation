@@ -110,20 +110,24 @@ const SingleCat: FC = () => {
           favorite: userFavorites.includes(cat._id),
         }),
       );
-    const productItems: DisplayItem[] = products.flatMap((prod: ProductDto) => {
-      const paths = prod.productPath.filter(p => p.startsWith(categoryPath));
-      if (paths.length === 0) return [];
-      return paths.map(path => ({
-        id: prod._id!,
-        name: prod.productName,
-        image: prod.productImages?.[0] ?? "/assets/images/placeholder.png",
-        type: "product" as const,
-        path: [path],
-        description: prod.productDescription,
-        customFields: prod.customFields,
-        favorite: userFavorites.includes(prod._id!),
-      }));
-    });
+      const productItems: DisplayItem[] = products.flatMap(
+        (prod: ProductDto) => {
+          const paths = prod.productPath.filter((p) =>
+            p.startsWith(categoryPath),
+          );
+          if (paths.length === 0) return [];
+          return paths.map((path) => ({
+            id: prod._id!,
+            name: prod.productName,
+            image: prod.productImages?.[0] ?? "/assets/images/placeholder.png",
+            type: "product" as const,
+            path: prod.productPath,
+            description: prod.productDescription,
+            customFields: prod.customFields,
+            favorite: userFavorites.includes(prod._id!),
+          }));
+        },
+      );
       setItems([...categoryItems, ...productItems]);
     } catch (error) {
       toast.error("שגיאה בטעינת התוכן");
