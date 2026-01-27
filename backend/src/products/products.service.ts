@@ -7,6 +7,7 @@ import {
   NotFoundException,
   InternalServerErrorException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { InjectModel } from '@nestjs/mongoose';
@@ -33,16 +34,6 @@ export class ProductsService {
 
   async findAll(): Promise<Product[]> {
     return this.productModel.find().exec();
-  }
-
-  async getById(id: string) {
-    const product = await this.productModel.findById(id).lean();
-
-    if (!product) {
-      throw new NotFoundException('Product not found');
-    }
-
-    return product;
   }
 
   async findByPath(
@@ -307,5 +298,28 @@ export class ProductsService {
   private getParentPath(fullProductPath: string): string {
     const idx = fullProductPath.lastIndexOf('/');
     return idx === -1 ? '' : fullProductPath.substring(0, idx);
+  }
+
+  async getById(id: string, user?: { userId: string; role: string }) {
+    const product = await this.productModel.findById(id).lean();
+    if (!product) throw new NotFoundException('Product not found');
+
+    if (!user) throw new ForbiddenException('Unauthorized');
+    if (user.role === 'editor') return product;
+
+    const permissions = await this.permissionsService.getPermissionsForUser(
+      user.userId,
+    );
+    const allowedProductIds = new Set(
+      permissions
+        .filter((p) => p.entityType === EntityType.PRODUCT)
+        .map((p) => p.entityId.toString()),
+    );
+
+    if (!allowedProductIds.has(String(product._id))) {
+      throw new ForbiddenException('No permission to view this product');
+    }
+
+    return product;
   }
 }

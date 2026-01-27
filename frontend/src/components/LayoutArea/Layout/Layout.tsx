@@ -16,6 +16,8 @@ import { Toaster } from "sonner";
 import Footer from "../Footer/Footer";
 import SearchResultsPage from "../SearchBar/SearchBar/SearchAllPage";
 import { useNavigate } from "react-router-dom";
+import Page403 from "../../Pages/Page403/Page403";
+
 interface LayoutProps {}
 
 const Layout: FC<LayoutProps> = () => {
@@ -42,7 +44,10 @@ const Layout: FC<LayoutProps> = () => {
             element={<Permissions></Permissions>}
           />{" "}
           <Route path="/GroupControl" element={<GroupControl></GroupControl>} />
+          <Route path="/403" element={<Page403 />} />
+          <Route path="/404" element={<Page404 />} />
           <Route path="*" element={<Page404 />} />
+
           <Route path="/search-all" element={<SearchResultsPage></SearchResultsPage>} />
         </Routes>
       </main>
