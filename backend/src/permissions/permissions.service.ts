@@ -98,18 +98,25 @@ export class PermissionsService {
     if (!permission) {
       return null;
     }
-    const directChildren = await this.getDirectChildrenToDelete(
-      permission.entityId.toString(),
-    );
-    if (directChildren.length > 0) {
-      const childIds = directChildren.map((child) => child._id.toString());
-      await this.permissionModel
-        .deleteMany({
-          entityId: { $in: childIds },
-          entityType: EntityType.CATEGORY,
-        })
-        .exec();
+
+    if (permission.entityType === EntityType.CATEGORY) {
+      const descendants = await this.getAllCategoryDescendants(
+        permission.entityId.toString(),
+      );
+
+      if (descendants.length > 0) {
+        await this.permissionModel
+          .deleteMany({
+            $or: descendants.map((child) => ({
+              entityType: child.entityType,
+              entityId: new mongoose.Types.ObjectId(child.entityId),
+              allowed: permission.allowed, 
+            })),
+          })
+          .exec();
+      }
     }
+
     return this.permissionModel.findByIdAndDelete(id).exec();
   }
 
