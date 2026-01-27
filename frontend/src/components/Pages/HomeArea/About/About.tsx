@@ -743,8 +743,26 @@ const About: FC<AboutProps> = () => {
     }
   };
 
+  const handleDragOverContainer = (e: React.DragEvent) => {
+  if (!isEditing) return;
+
+  const threshold = 120; 
+  const speed = 25; 
+  const viewportHeight = window.innerHeight;
+  const cursorY = e.clientY;
+
+  if (cursorY < threshold) {
+    const scrollAmount = -speed * ((threshold - cursorY) / threshold);
+    window.scrollBy({ top: scrollAmount, behavior: 'auto' });
+  } 
+  else if (viewportHeight - cursorY < threshold) {
+    const scrollAmount = speed * ((threshold - (viewportHeight - cursorY)) / threshold);
+    window.scrollBy({ top: scrollAmount, behavior: 'auto' });
+  }
+};
+
   return (
-    <div className="pt-8 min-h-screen font-['Arial'] direction-rtl" dir="rtl">
+    <div onDragOver={handleDragOverContainer} className="pt-8 min-h-screen font-['Arial'] direction-rtl" dir="rtl">
       <div className="max-w-6xl mx-auto flex items-start gap-15 py-10 flex-wrap lg:flex-nowrap">
         <div className="flex-1 p-5 lg:ml-[400px] order-2 lg:order-1">
           {role === "editor" && (
