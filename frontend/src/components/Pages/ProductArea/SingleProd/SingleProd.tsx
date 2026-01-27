@@ -32,7 +32,7 @@ import { Spinner } from "../../../../components/ui/spinner";
 import { useNavigate } from "react-router-dom";
 import { handleEntityRouteError } from "../../../../lib/routing/handleEntityRouteError";
 
-
+import { useLocation } from "react-router-dom";
 interface SingleProdProps {}
 
 const SingleProd: FC<SingleProdProps> = () => {
@@ -63,83 +63,91 @@ const SingleProd: FC<SingleProdProps> = () => {
   const addImagesInputRef = React.useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
-  
-
   const { productId } = useParams<{ productId: string }>();
 
-useEffect(() => {
-  if (!productId) return;
+  useEffect(() => {
+    if (!productId) return;
 
-  const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(productId);
-  if (!isValidObjectId) {
-    navigate("/404", { replace: true });
-    return;
-  }
-
-  const loadProduct = async () => {
-    try {
-      const product = await ProductsService.getById(productId);
-
-      setTitle(product.productName);
-      setDescription(product.productDescription || "");
-      setProductImages(product.productImages || []);
-      setCurrentImageIndex(0);
-      setProduct(product);
-      setOriginalProduct(product);
-
-      if (Array.isArray(product.customFields)) {
-        const accordion = product.customFields.map((field: any) => ({
-          id: field._id,
-          uiId: field._id,
-          title: field.title,
-          type: field.type,
-          content:
-            field.type === "bullets"
-              ? JSON.stringify(field.bullets)
-              : field.content,
-        }));
-        setAccordionData(accordion);
-      }
-
-      const folders =
-        product.uploadFolders?.[0]?.folders.map((folder: any) => ({
-          uiId: folder._id,
-          name: folder.folderName,
-          files: folder.files.map((file: any) => ({
-            uiId: file._id,
-            name: file.link.split("/").pop(),
-            type: "",
-            url: file.link,
-            size: 0,
-          })),
-        })) || [];
-
-      setFolders(folders);
-    } catch (err) {
-      if (handleEntityRouteError(err, navigate)) return;
-
-      console.error(err);
-      toast.error("שגיאה בטעינת המוצר");
+    const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(productId);
+    if (!isValidObjectId) {
+      navigate("/404", { replace: true });
+      return;
     }
-  };
 
-  loadProduct();
-}, [productId, navigate]);
+    const loadProduct = async () => {
+      try {
+        const product = await ProductsService.getById(productId);
 
+        setTitle(product.productName);
+        setDescription(product.productDescription || "");
+        setProductImages(product.productImages || []);
+        setCurrentImageIndex(0);
+        setProduct(product);
+        setOriginalProduct(product);
 
+        if (Array.isArray(product.customFields)) {
+          const accordion = product.customFields.map((field: any) => ({
+            id: field._id,
+            uiId: field._id,
+            title: field.title,
+            type: field.type,
+            content:
+              field.type === "bullets"
+                ? JSON.stringify(field.bullets)
+                : field.content,
+          }));
+          setAccordionData(accordion);
+        }
+
+        const folders =
+          product.uploadFolders?.[0]?.folders.map((folder: any) => ({
+            uiId: folder._id,
+            name: folder.folderName,
+            files: folder.files.map((file: any) => ({
+              uiId: file._id,
+              name: file.link.split("/").pop(),
+              type: "",
+              url: file.link,
+              size: 0,
+            })),
+          })) || [];
+
+        setFolders(folders);
+      } catch (err) {
+        if (handleEntityRouteError(err, navigate)) return;
+
+        console.error(err);
+        toast.error("שגיאה בטעינת המוצר");
+      }
+    };
+
+    loadProduct();
+  }, [productId, navigate]);
+
+  const location = useLocation();
 
   const breadcrumbPath = useMemo(() => {
+    const hasPassedBreadcrumbs = Boolean(location.state?.searchBreadcrumbs);
+    const searchVar = location.state?.searchBreadcrumbs;
+
+    if (hasPassedBreadcrumbs && typeof searchVar === "string") {
+      return ["categories", ...searchVar.split("/").filter(Boolean)];
+    }
+
     if (!product) return ["categories"];
+
     const rawPath = Array.isArray(product.productPath)
       ? product.productPath[0]
       : (product.productPath as unknown as string);
+
     if (!rawPath) return ["categories"];
+
     const cleanPath = rawPath
       .replace(/^\/categories\//, "")
       .replace(/^categories\//, "");
 
     return ["categories", ...cleanPath.split("/").filter(Boolean)];
-  }, [product]);
+  }, [product, location.state]);
 
   type EditSnapshot = {
     title: string;
@@ -362,6 +370,19 @@ useEffect(() => {
       setIsEditing(true);
       return;
     }
+    const hasEmptyFields = accordionData.some((item) =>
+      item.type === "content"
+        ? !item.content?.trim()
+        : item.type === "bullets"
+          ? !(item.content && JSON.parse(item.content).length > 0)
+          : false,
+    );
+
+    if (hasEmptyFields) {
+      toast.error("לא ניתן לשמור שדות ריקים");
+      return;
+    }
+
     const customFields = accordionData.map((item) => ({
       _id: item.id,
       title: item.title,

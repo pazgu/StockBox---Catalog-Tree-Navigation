@@ -425,7 +425,7 @@ useEffect(() => {
                 onClick={confirmDeleteGroup}
                 className="flex-1 p-3 border-none rounded-lg text-base font-medium cursor-pointer transition-all duration-200 bg-red-600 text-white shadow-md hover:bg-red-700 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"
               >
-                מחק
+               מחיקה
               </button>
             </div>
           </div>

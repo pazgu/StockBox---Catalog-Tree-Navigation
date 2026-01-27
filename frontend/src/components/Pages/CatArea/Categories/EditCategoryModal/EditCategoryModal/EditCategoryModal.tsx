@@ -208,8 +208,7 @@ const EditCategoryModal: React.FC<Props> = ({
         onClick={(e) => e.stopPropagation()}
       >
         <h4 className="m-0 mb-5 text-xl text-slate-700 font-semibold tracking-tight">
-          ערוך קטגוריה
-        </h4>
+עריכת קטגוריה        </h4>
 
         <input
           type="text"
@@ -234,7 +233,7 @@ const EditCategoryModal: React.FC<Props> = ({
             onClick={openCropperFromCurrent}
             className="w-full mb-4 px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-slate-700 font-medium transition-all"
           >
-            ערוך מיקום/זום של התמונה הנוכחית
+            עריכת מיקום/זום של התמונה הנוכחית
           </button>
         )}
 
