@@ -9,6 +9,7 @@ import { Document } from 'mongoose';
 import { Product } from 'src/schemas/Products.schema';
 import { Category } from 'src/schemas/Categories.schema';
 import { EntityType } from 'src/schemas/Permissions.schema';
+import { Group } from 'src/schemas/Groups.schema';
 
 export type ProductDocument = Product & Document;
 export type CategoryDocument = Category & Document;
@@ -27,84 +28,130 @@ export class SearchService {
     private readonly productModel: Model<ProductDocument>,
     @InjectModel(Category.name)
     private readonly categoryModel: Model<CategoryDocument>,
+    @InjectModel(Group.name)
+    private readonly groupModel: Model<Group>,
     private readonly permissionsService: PermissionsService,
   ) {}
 
   private async getAllowedPaths(
-    userId: string,
-    userRole?: string,
-  ): Promise<{
-    allowedCategoryPaths: string[];
-    allowedProductPaths: string[];
-  }> {
-    if (userRole === 'editor') {
-      const allCategories = await this.categoryModel
-        .find({})
-        .select({ categoryPath: 1 })
-        .lean()
-        .exec();
-
-      const allProducts = await this.productModel
-        .find({})
-        .select({ productPath: 1 })
-        .lean()
-        .exec();
-
-      return {
-        allowedCategoryPaths: allCategories.map((c) => c.categoryPath),
-        allowedProductPaths: allProducts.flatMap((p) => p.productPath),
-      };
-    }
-
-    const permissions =
-      await this.permissionsService.getPermissionsForUser(userId);
-
-    const categoryPermissionIds = permissions
-      .filter((p) => p.entityType === EntityType.CATEGORY)
-      .map((p) => p.entityId);
-
-    const productPermissionIds = permissions
-      .filter((p) => p.entityType === EntityType.PRODUCT)
-      .map((p) => p.entityId);
-
-    const categories = await this.categoryModel
-      .find({ _id: { $in: categoryPermissionIds } })
+  userId: string,
+  userRole?: string,
+): Promise<{
+  allowedCategoryPaths: string[];
+  allowedProductPaths: string[];
+}> {
+  if (userRole === 'editor') {
+    const allCategories = await this.categoryModel
+      .find({})
       .select({ categoryPath: 1 })
-      .lean()
-      .exec();
+      .lean();
 
-    const sortedPaths = categories
-      .map((c) => c.categoryPath)
-      .sort((a, b) => a.split('/').length - b.split('/').length);
-
-    const allowedCategoryPaths = new Set<string>();
-    for (const path of sortedPaths) {
-      const parts = path.split('/').filter(Boolean);
-      let valid = true;
-      let current = `/${parts[0]}`;
-      for (let i = 1; i < parts.length - 1; i++) {
-        current += '/' + parts[i];
-        if (!allowedCategoryPaths.has(current)) {
-          valid = false;
-          break;
-        }
-      }
-      if (valid) allowedCategoryPaths.add(path);
-    }
-
-    const allowedProducts = await this.productModel
-      .find({ _id: { $in: productPermissionIds } })
+    const allProducts = await this.productModel
+      .find({})
       .select({ productPath: 1 })
-      .lean()
-      .exec();
-
-    const allowedProductPaths = allowedProducts.flatMap((p) => p.productPath);
+      .lean();
 
     return {
-      allowedCategoryPaths: Array.from(allowedCategoryPaths),
-      allowedProductPaths,
+      allowedCategoryPaths: allCategories.map((c) => c.categoryPath),
+      allowedProductPaths: allProducts.flatMap((p) => p.productPath),
     };
   }
+
+  const userGroups = await this.groupModel
+    .find({ members: userId })
+    .select('_id')
+    .lean();
+
+  const userGroupIds = userGroups.map((g) => g._id.toString());
+
+  const permissions = await this.permissionsService.getPermissionsForUser(
+    userId,
+    userGroupIds,
+  );
+
+  const categoryGroupPermissions = new Map<string, Set<string>>();
+  const categoryUserPermissions = new Set<string>();
+  const productGroupPermissions = new Map<string, Set<string>>();
+  const productUserPermissions = new Set<string>();
+
+  for (const p of permissions) {
+    const entityId = p.entityId.toString();
+    const allowedId = p.allowed.toString();
+
+    if (p.entityType === EntityType.CATEGORY) {
+      if (userGroupIds.includes(allowedId)) {
+        if (!categoryGroupPermissions.has(entityId)) categoryGroupPermissions.set(entityId, new Set());
+        categoryGroupPermissions.get(entityId)!.add(allowedId);
+      } else if (allowedId === userId) categoryUserPermissions.add(entityId);
+    }
+
+    if (p.entityType === EntityType.PRODUCT) {
+      if (userGroupIds.includes(allowedId)) {
+        if (!productGroupPermissions.has(entityId)) productGroupPermissions.set(entityId, new Set());
+        productGroupPermissions.get(entityId)!.add(allowedId);
+      } else if (allowedId === userId) productUserPermissions.add(entityId);
+    }
+  }
+
+  const allowedCategoryIds = userGroupIds.length > 0
+    ? Array.from(categoryGroupPermissions.entries())
+        .filter(([_, groupSet]) => userGroupIds.every((gid) => groupSet.has(gid)))
+        .map(([categoryId]) => categoryId)
+    : Array.from(categoryUserPermissions);
+
+  const categories = await this.categoryModel
+    .find({ _id: { $in: allowedCategoryIds } })
+    .select({ categoryPath: 1 })
+    .lean();
+
+  const sortedPaths = categories
+    .map((c) => c.categoryPath)
+    .sort((a, b) => a.split('/').length - b.split('/').length);
+
+  const allowedCategoryPaths = new Set<string>();
+  for (const path of sortedPaths) {
+    const parts = path.split('/').filter(Boolean);
+    let valid = true;
+    let current = `/${parts[0]}`;
+    for (let i = 1; i < parts.length - 1; i++) {
+      current += '/' + parts[i];
+      if (!allowedCategoryPaths.has(current)) {
+        valid = false;
+        break;
+      }
+    }
+    if (valid) allowedCategoryPaths.add(path);
+  }
+
+  const allowedProductIds = userGroupIds.length > 0
+    ? Array.from(productGroupPermissions.entries())
+        .filter(([_, groupSet]) => userGroupIds.every((gid) => groupSet.has(gid)))
+        .map(([productId]) => productId)
+    : Array.from(productUserPermissions);
+
+  const products = await this.productModel
+    .find({ _id: { $in: allowedProductIds } })
+    .select({ productPath: 1 })
+    .lean();
+
+  const allowedProductPaths = products.flatMap((p) =>
+    p.productPath.filter((pp) => {
+      const parts = pp.split('/').filter(Boolean);
+      let current = `/${parts[0]}`;
+      for (let i = 1; i < parts.length; i++) {
+        current += '/' + parts[i];
+        if (!allowedCategoryPaths.has(current)) return false;
+      }
+      return true;
+    }),
+  );
+
+  return {
+    allowedCategoryPaths: Array.from(allowedCategoryPaths),
+    allowedProductPaths,
+  };
+}
+
 
   async searchEntities(
     userId: string,
@@ -150,33 +197,20 @@ export class SearchService {
                 ...(searchTerm ? { $text: { $search: searchTerm } } : {}),
               },
             },
-
-            {
-              $project: {
-                _id: 1,
-                productName: 1,
-                productPath: 1,
-                score: searchTerm ? { $meta: 'textScore' } : 0,
-              },
-            },
-
             { $unwind: '$productPath' },
-
             {
               $match: {
-                productPath: { $in: allowedProductPaths },
+                productPath: { $in: allowedProductPaths }, 
               },
             },
-
             {
               $group: {
                 _id: '$_id',
                 label: { $first: '$productName' },
-                score: { $max: '$score' },
+                score: { $max: searchTerm ? { $meta: 'textScore' } : 0 },
                 paths: { $addToSet: '$productPath' },
               },
             },
-
             {
               $addFields: {
                 type: 'product',
@@ -195,7 +229,6 @@ export class SearchService {
           label: 1,
         },
       },
-
       { $skip: skip },
       { $limit: limit + 1 },
     ];
@@ -209,24 +242,12 @@ export class SearchService {
       items: results.map((r) => {
         const rawPaths: string[] = Array.isArray(r.path) ? r.path : [r.path];
 
-        const uniquePaths: string[] = Array.from(
-          new Set(
-            rawPaths.filter(
-              (p) => typeof p === 'string' && p.trim().length > 0,
-            ),
-          ),
-        );
-
-        let finalPaths = uniquePaths;
-
-        if (r.type === 'product' && userRole !== 'editor') {
-          const allowedSet = new Set(allowedProductPaths);
-          finalPaths = uniquePaths.filter((p) => allowedSet.has(p));
-        }
-
-        if (!finalPaths.length) {
-          finalPaths = uniquePaths.slice(0, 1);
-        }
+        const finalPaths =
+          r.type === 'product' && userRole !== 'editor'
+            ? rawPaths.filter((p) => allowedProductPaths.includes(p))
+            : rawPaths.filter(
+                (p) => allowedCategoryPaths.includes(p) || r.type === 'product',
+              );
 
         return {
           type: r.type,
