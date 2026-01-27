@@ -5,7 +5,6 @@ import { searchService } from "../../../../services/search.service";
 import type { SearchResult } from "../../../../types/types";
 import { useUser } from "../../../../context/UserContext";
 
-
 export interface SearchHeaderProps {
   placeholder?: string;
   maxVisibleResults?: number;
@@ -30,7 +29,6 @@ const SearchBar: React.FC<SearchHeaderProps> = ({
   const navigate = useNavigate();
   const { role } = useUser();
   const isEditor = role === "editor";
-
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -205,17 +203,17 @@ const SearchBar: React.FC<SearchHeaderProps> = ({
                         {item.label}
                       </div>
                       <div className="text-sm text-gray-500 flex items-center gap-2 min-w-0">
-  <span className="truncate">
-    {item.type === "product" ? "מוצר" : "קטגוריה"} • {item.paths?.[0] ?? ""}
-  </span>
+                        <span className="truncate">
+                          {item.type === "product" ? "מוצר" : "קטגוריה"} •{" "}
+                          {item.paths?.[0] ?? ""}
+                        </span>
 
-  {isEditor && item.paths && item.paths.length > 1 && (
-    <span className="relative group/path text-xs text-blue-600 whitespace-nowrap shrink-0">
-      + עוד {item.paths.length - 1} נתיבים
-    </span>
-  )}
-</div>
-
+                        {isEditor && item.paths && item.paths.length > 1 && (
+                          <span className="relative group/path text-xs text-blue-600 whitespace-nowrap shrink-0">
+                            + עוד {item.paths.length - 1} נתיבים
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </button>
                 ))}
