@@ -8,6 +8,8 @@ import {
   InternalServerErrorException,
   BadRequestException,
   ForbiddenException,
+  ConflictException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { InjectModel } from '@nestjs/mongoose';
@@ -123,6 +125,9 @@ export class ProductsService {
         productImages = [uploaded.secure_url];
       } catch (error) {
         console.error('Cloudinary Upload Error:', error);
+        throw new ServiceUnavailableException(
+          'Image upload service is temporarily unavailable. Please try again.',
+        );
       }
     }
 
@@ -158,13 +163,19 @@ export class ProductsService {
       await this.permissionsService.assignPermissionsForNewEntity(savedProduct);
 
       return savedProduct;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Mongoose Save Error:', error);
-      if (error.name === 'ValidationError') {
-        throw new BadRequestException(`Validation Failed: ${error.message}`);
+
+      if (error?.code === 11000) {
+        throw new ConflictException('כבר קיים מוצר עם שם זה');
       }
+
+      if (error?.name === 'ValidationError') {
+        throw new BadRequestException('יש שדות חסרים או לא תקינים בטופס');
+      }
+
       throw new InternalServerErrorException(
-        'Failed to create product in database',
+        'אירעה שגיאה ביצירת המוצר, אנא נסו שוב מאוחר יותר',
       );
     }
   }
