@@ -28,21 +28,21 @@ export class ProductsService {
   }
 
   static async getProductsByPath(path: string): Promise<ProductDto[]> {
-  const cleanPath = path.startsWith("/") ? path.substring(1) : path;
-  const url = `${this.baseUrl}/by-path/${cleanPath}`;
+    const cleanPath = path.startsWith("/") ? path.substring(1) : path;
+    const url = `${this.baseUrl}/by-path/${cleanPath}`;
 
-  const headers = this.getAuthHeaders();
+    const headers = this.getAuthHeaders();
 
-  const response = await fetch(url, headers);
+    const response = await fetch(url, headers);
 
-  if (!response.ok) {
-    const err: any = new Error("Failed to fetch products");
-    err.status = response.status; 
-    throw err;
+    if (!response.ok) {
+      const err: any = new Error("Failed to fetch products");
+      err.status = response.status;
+      throw err;
+    }
+
+    return response.json();
   }
-
-  return response.json();
-}
 
   static async createProduct(
     payload: CreateProductPayload,
@@ -106,6 +106,24 @@ export class ProductsService {
       throw error;
     }
   }
+
+  static async duplicateProduct(
+    productId: string,
+    additionalCategoryPaths: string[],
+  ): Promise<{ success: boolean; message: string; product: ProductDto }> {
+    try {
+      const response = await api.post(
+        `${this.baseUrl}/${productId}/duplicate`,
+        { additionalCategoryPaths },
+        this.getAuthHeaders(),
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error duplicating product:", error);
+      throw error;
+    }
+  }
+
   static async updateProduct(
     productId: string,
     payload: UpdateProductPayload,
@@ -184,8 +202,15 @@ export class ProductsService {
     return response.json();
   }
 
-  static async deleteProduct(id: string): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/${id}`, {
+  static async deleteProduct(
+    id: string,
+    categoryPath?: string,
+  ): Promise<void> {
+    const url = categoryPath
+      ? `${this.baseUrl}/${id}?categoryPath=${encodeURIComponent(categoryPath)}`
+      : `${this.baseUrl}/${id}`;
+
+    const response = await fetch(url, {
       method: "DELETE",
       headers: this.getAuthHeader(),
     });
