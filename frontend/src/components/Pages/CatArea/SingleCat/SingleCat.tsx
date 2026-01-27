@@ -551,12 +551,13 @@ const SingleCat: FC = () => {
             )}
 
             {!isSelectionMode && (
+            <div className="absolute right-3 top-3">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   toggleFavorite(item.id, item.name, item.type);
                 }}
-                className="absolute right-3 group-hover:opacity-100 transition-all duration-200 h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110"
+                className="peer group-hover:opacity-100 transition-all duration-200 h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110"
               >
                 <Heart
                   size={22}
@@ -568,7 +569,11 @@ const SingleCat: FC = () => {
                   }
                 />
               </button>
-            )}
+              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                {item.favorite ? "הסר ממועדפים" : "הוסף למועדפים"}
+              </span>
+            </div>
+          )}
             <div
               className="h-[140px] w-full flex justify-center items-center p-5 cursor-pointer"
               onClick={() => {
