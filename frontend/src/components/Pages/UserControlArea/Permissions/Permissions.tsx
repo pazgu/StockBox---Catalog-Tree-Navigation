@@ -107,10 +107,6 @@ const Permissions: React.FC = () => {
     loadData();
   }, [cleanId, type, role, navigate]);
 
-  const enabledGroupIds = useMemo(() => {
-    return new Set(groups.filter((g) => g.memebers).map((g) => g._id));
-  }, [groups]);
-
 const usersWithGroupInfo = useMemo(() => {
   return users.map((user) => {
     const userGroups = groups.filter(g => user.groupIds?.includes(g._id));
@@ -130,7 +126,7 @@ const usersWithGroupInfo = useMemo(() => {
       effectiveEnabled: user.enabled || allGroupsEnabled,
     };
   });
-}, [users, groups, enabledGroupIds]);
+}, [users, groups]);
 
 const handleToggle = (targetId: string, toggleType: "user" | "group") => {
   if (toggleType === "user") {
@@ -313,31 +309,45 @@ const handleToggle = (targetId: string, toggleType: "user" | "group") => {
                     onChange={(e) => setSearch(e.target.value)}
                   />
                   <div className="bg-white border rounded-lg max-h-48 overflow-y-auto">
-{usersWithGroupInfo
-  .filter((u) => u.userName.toLowerCase().includes(search.toLowerCase()))
-  .map((user) => (
-<div key={user._id} className="flex justify-between p-3 border-b hover:bg-slate-50 transition-colors">
-  <div className="flex items-center flex-wrap gap-1">
-    <Label className="font-medium ml-2">{user.userName}</Label>
-    
-    {user.allGroupsEnabled && user.userGroups.length > 0 && (
-      <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full whitespace-nowrap">
-        מורשה משייוך לקבוצה/קבוצות: {user.enabledGroups.map(g => g.groupName).join(', ')}
-      </span>
-    )}
-    
-    {user.hasBlockedGroups && (
-      <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full whitespace-nowrap">
-        חסום בגלל הקבוצה/קבוצות: {user.blockedGroups.map(g => g.groupName).join(', ')}
-      </span>
-    )}
-  </div>
-  <Switch
-    checked={user.effectiveEnabled}
-    disabled={user.hasBlockedGroups}
-    onCheckedChange={() => handleToggle(user._id, "user")}
-  />
-</div>
+                    {usersWithGroupInfo
+                      .filter((u) => u.userName.toLowerCase().includes(search.toLowerCase()))
+                      .map((user) => (
+                    <div key={user._id} className="flex justify-between p-3 border-b hover:bg-slate-50 transition-colors">
+                      <div className="flex items-center flex-wrap gap-1">
+                        <Label className="font-medium ml-2">{user.userName}</Label>
+                        
+                        {user.allGroupsEnabled && user.userGroups.length > 0 && (
+                          <>
+                            <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full whitespace-nowrap">
+                               חסום בגלל הקבוצה/קבוצות: {user.blockedGroups.map(g => g.groupName).join(', ')}
+                            </span>
+                            {user.enabledGroups.map(g => (
+                              <span key={g._id} className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full whitespace-nowrap">
+                                {g.groupName}
+                              </span>
+                            ))}
+                          </>
+                        )}
+                        
+                        {user.hasBlockedGroups && (
+                          <>
+                            <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full whitespace-nowrap">
+                              חסום בגלל הקבוצה/קבוצות:
+                            </span>
+                            {user.blockedGroups.map(g => (
+                              <span key={g._id} className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full whitespace-nowrap">
+                                {g.groupName}
+                              </span>
+                            ))}
+                          </>
+                        )}
+                      </div>
+                      <Switch
+                        checked={user.effectiveEnabled}
+                        disabled={user.hasBlockedGroups}
+                        onCheckedChange={() => handleToggle(user._id, "user")}
+                      />
+                    </div>
                       ))}
                   </div>
                 </motion.div>
