@@ -22,6 +22,7 @@ import {
   UseGuards as ProductUseGuards,
   Patch as ProductPatch,
   UploadedFiles,
+  Query as ProductQuery,
 } from '@nestjs/common';
 import {
   FilesInterceptor,
@@ -30,6 +31,7 @@ import {
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dtos/CreateProduct.dto';
 import { MoveProductDto } from './dtos/MoveProduct.dto';
+import { DuplicateProductDto } from './dtos/DuplicateProduct.dto';
 import express from 'express';
 import { productUploadsOptions } from './productUploads';
 import { JwtAuthGuard } from 'src/gaurds/jwt-auth.guard';
@@ -84,8 +86,11 @@ export class ProductsController {
   @ProductDelete(':id')
   @ProductUseGuards(JwtAuthGuard, EditorGuard)
   @HttpCode(HttpStatus.OK)
-  delete(@ProductParam('id', ParseObjectIdPipe) id: string) {
-    return this.productsService.delete(id);
+  delete(
+    @ProductParam('id', ParseObjectIdPipe) id: string,
+    @ProductQuery('categoryPath') categoryPath?: string,
+  ) {
+    return this.productsService.delete(id, categoryPath);
   }
 
   @ProductPost(':id/move')
@@ -97,6 +102,17 @@ export class ProductsController {
     @ProductBody() moveProductDto: MoveProductDto,
   ) {
     return this.productsService.moveProduct(id, moveProductDto);
+  }
+
+  @ProductPost(':id/duplicate')
+  @ProductUseGuards(JwtAuthGuard, EditorGuard)
+  @HttpCode(HttpStatus.OK)
+  @ProductUsePipes(new ProductValidationPipe({ transform: true }))
+  async duplicateProduct(
+    @ProductParam('id') id: string,
+    @ProductBody() duplicateProductDto: DuplicateProductDto,
+  ) {
+    return this.productsService.duplicateProduct(id, duplicateProductDto);
   }
 
   @ProductPatch(':id')
