@@ -25,8 +25,8 @@ interface AccordionSectionProps {
   draggedItem: any;
   showNewFolderInput: boolean;
   newFolderName: string;
-  contentIconUrl: string; 
-  bulletsIconUrl: string; 
+  contentIconUrl: string;
+  bulletsIconUrl: string;
   handleDragStart: (item: any) => void;
   handleDragOver: (e: React.DragEvent) => void;
   handleDrop: (item: any) => void;
@@ -41,7 +41,7 @@ interface AccordionSectionProps {
   getFileIcon: (type: string) => React.ReactNode;
   handleFileUpload: (
     folderId: string,
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => void;
   handleDeleteFolder: (folderId: string) => void;
   handleDeleteFile: (folderId: string, fileId: string) => void;
@@ -166,11 +166,11 @@ const AccordionSection: FC<AccordionSectionProps> = ({
                               bullets.splice(idx, 1);
                               handleAccordionContentChange(
                                 item.uiId,
-                                JSON.stringify(bullets)
+                                JSON.stringify(bullets),
                               );
                             }}
                             className="text-red-500 hover:text-red-700 px-2 py-1 rounded transition-all"
-                            title="מחק פריט"
+                            title="מחיקת פריט"
                           >
                             ✕
                           </button>
@@ -182,14 +182,14 @@ const AccordionSection: FC<AccordionSectionProps> = ({
                               bullets[idx] = e.target.value;
                               handleAccordionContentChange(
                                 item.uiId,
-                                JSON.stringify(bullets)
+                                JSON.stringify(bullets),
                               );
                             }}
                             className="flex-1 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-stockblue/50 focus:border-stockblue"
                             placeholder="פריט..."
                           />
                         </div>
-                      )
+                      ),
                     )}
                     <button
                       onClick={() => {
@@ -197,7 +197,7 @@ const AccordionSection: FC<AccordionSectionProps> = ({
                         bullets.push("");
                         handleAccordionContentChange(
                           item.uiId,
-                          JSON.stringify(bullets)
+                          JSON.stringify(bullets),
                         );
                       }}
                       className="mt-2 px-3 py-1 bg-cyan-800 text-white rounded hover:bg-cyan-700 transition-all"
@@ -210,13 +210,14 @@ const AccordionSection: FC<AccordionSectionProps> = ({
                     {JSON.parse(item.content || "[]").map(
                       (b: string, i: number) => (
                         <li key={i}>{b}</li>
-                      )
+                      ),
                     )}
                   </ul>
                 )
               ) : (
                 <textarea
                   value={item.content}
+                  disabled={!isEditing}
                   onChange={(e) =>
                     handleAccordionContentChange(item.uiId, e.target.value)
                   }
@@ -349,7 +350,7 @@ const AccordionSection: FC<AccordionSectionProps> = ({
                         handleDeleteFolder(folder.uiId);
                       }}
                       className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                      title="מחק תיקייה"
+                      title="מחיקת תיקייה"
                     >
                       <Trash2 size={18} />
                     </button>
@@ -410,7 +411,7 @@ const AccordionSection: FC<AccordionSectionProps> = ({
                                 handleDeleteFile(folder.uiId, file.uiId)
                               }
                               className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                              title="מחק קובץ"
+                              title="מחיקת קובץ"
                             >
                               <X size={18} />
                             </button>
