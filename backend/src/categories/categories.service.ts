@@ -58,32 +58,68 @@ export class CategoriesService {
   }
 
   async getCategories(user: { userId: string; role: string }) {
+    console.log('Fetching categories for user:', user);
+
     const categories = await this.categoryModel.find({
       categoryPath: /^\/categories\/[^\/]+$/,
     });
 
     if (user.role === 'editor') {
+      console.log('User is editor, returning all categories');
       return categories;
     }
 
-    if (user.role === 'viewer') {
-      console.log('User is viewer, filtering categories based on permissions');
-      const permissions = await this.permissionsService.getPermissionsForUser(
-        user.userId,
-      );
-
-      const allowedCategoryIds = new Set(
-        permissions
-          .filter((p) => p.entityType === EntityType.CATEGORY)
-          .map((p) => p.entityId.toString()),
-      );
-
-      return categories.filter((cat) =>
-        allowedCategoryIds.has(cat._id.toString()),
-      );
+    if (user.role !== 'viewer') {
+      return [];
     }
 
-    return [];
+    console.log('User is viewer, filtering categories based on permissions');
+
+    const userGroups = await this.groupModel
+      .find({ members: user.userId })
+      .select('_id')
+      .lean();
+
+    const userGroupIds = userGroups.map((g) => g._id.toString());
+
+    const permissions = await this.permissionsService.getPermissionsForUser(
+      user.userId,
+      userGroupIds,
+    );
+
+    const categoryGroupPermissions = new Map<string, Set<string>>();
+    const categoryUserPermissions = new Set<string>();
+
+    for (const p of permissions) {
+      if (p.entityType !== EntityType.CATEGORY) continue;
+
+      const categoryId = p.entityId.toString();
+      const allowedId = p.allowed.toString();
+
+      if (userGroupIds.includes(allowedId)) {
+        if (!categoryGroupPermissions.has(categoryId)) {
+          categoryGroupPermissions.set(categoryId, new Set());
+        }
+        categoryGroupPermissions.get(categoryId)!.add(allowedId);
+      } else if (allowedId === user.userId) {
+        categoryUserPermissions.add(categoryId);
+      }
+    }
+
+    const visibleCategories = categories.filter((cat) => {
+      const categoryId = cat._id.toString();
+
+      if (userGroupIds.length > 0) {
+        const groupSet = categoryGroupPermissions.get(categoryId);
+        if (!groupSet) return false;
+
+        return userGroupIds.every((groupId) => groupSet.has(groupId));
+      }
+
+      return categoryUserPermissions.has(categoryId);
+    });
+
+    return visibleCategories;
   }
 
   async getDirectChildren(
@@ -99,25 +135,68 @@ export class CategoriesService {
 
     const currentCategory = await this.categoryModel
       .findOne({ categoryPath: fullPath })
-      .select('_id categoryPath')
+      .select('_id categoryPath categoryName')
       .lean();
 
     if (!currentCategory) {
       throw new NotFoundException('Category not found');
     }
 
-    if (user.role === 'viewer') {
-      const permissions = await this.permissionsService.getPermissionsForUser(
-        user.userId,
-      );
+    if (user.role === 'editor') {
+      const allCategoryChildren = await this.categoryModel.find({
+        categoryPath: new RegExp(
+          `^${fullPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/`,
+        ),
+      });
 
-      const allowedCategoryIds = new Set(
-        permissions
-          .filter((p) => p.entityType === EntityType.CATEGORY)
-          .map((p) => p.entityId.toString()),
-      );
+      return allCategoryChildren.filter((cat) => {
+        const remainingPath = cat.categoryPath.substring(fullPath.length + 1);
+        return !remainingPath.includes('/');
+      });
+    }
 
-      if (!allowedCategoryIds.has(String(currentCategory._id))) {
+    if (user.role !== 'viewer') return [];
+
+    const userGroups = await this.groupModel
+      .find({ members: user.userId })
+      .select('_id')
+      .lean();
+
+    const userGroupIds = userGroups.map((g) => g._id.toString());
+
+    const permissions = await this.permissionsService.getPermissionsForUser(
+      user.userId,
+      userGroupIds,
+    );
+
+    const categoryGroupPermissions = new Map<string, Set<string>>();
+    const categoryUserPermissions = new Set<string>();
+
+    for (const p of permissions) {
+      if (p.entityType !== EntityType.CATEGORY) continue;
+
+      const categoryId = p.entityId.toString();
+      const allowedId = p.allowed.toString();
+
+      if (userGroupIds.includes(allowedId)) {
+        if (!categoryGroupPermissions.has(categoryId)) {
+          categoryGroupPermissions.set(categoryId, new Set());
+        }
+        categoryGroupPermissions.get(categoryId)!.add(allowedId);
+      } else if (allowedId === user.userId) {
+        categoryUserPermissions.add(categoryId);
+      }
+    }
+
+    const currentCategoryId = currentCategory._id.toString();
+
+    if (userGroupIds.length > 0) {
+      const groupSet = categoryGroupPermissions.get(currentCategoryId);
+      if (!groupSet || !userGroupIds.every((id) => groupSet.has(id))) {
+        throw new ForbiddenException('No permission to view this category');
+      }
+    } else {
+      if (!categoryUserPermissions.has(currentCategoryId)) {
         throw new ForbiddenException('No permission to view this category');
       }
     }
@@ -130,29 +209,23 @@ export class CategoriesService {
 
     const directCategoryChildren = allCategoryChildren.filter((cat) => {
       const remainingPath = cat.categoryPath.substring(fullPath.length + 1);
-      const slashCount = (remainingPath.match(/\//g) || []).length;
-      return slashCount === 0;
+      return !remainingPath.includes('/');
     });
 
-    if (user.role === 'editor') return directCategoryChildren;
+    const visibleChildren = directCategoryChildren.filter((child) => {
+      const childId = child._id.toString();
 
-    if (user.role === 'viewer') {
-      const permissions = await this.permissionsService.getPermissionsForUser(
-        user.userId,
-      );
+      if (userGroupIds.length > 0) {
+        const groupSet = categoryGroupPermissions.get(childId);
+        return (
+          !!groupSet && userGroupIds.every((groupId) => groupSet.has(groupId))
+        );
+      }
 
-      const allowedCategoryIds = new Set(
-        permissions
-          .filter((p) => p.entityType === EntityType.CATEGORY)
-          .map((p) => p.entityId.toString()),
-      );
+      return categoryUserPermissions.has(childId);
+    });
 
-      return directCategoryChildren.filter((child) =>
-        allowedCategoryIds.has(child._id.toString()),
-      );
-    }
-
-    return [];
+    return visibleChildren;
   }
 
   async deleteCategory(id: string) {

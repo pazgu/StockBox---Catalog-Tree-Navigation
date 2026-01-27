@@ -26,61 +26,22 @@ export class PermissionsService {
     private usersService: UsersService,
   ) {}
 
-  async getPermissionsForUser(userId: string) {
-    const userObjId = new Types.ObjectId(userId);
-
-    const groups = await this.groupModel
-      .find({ members: userId })
-      .select({ _id: 1 })
-      .lean()
-      .exec();
-
-    const groupIds = groups.map((g) => new Types.ObjectId(String(g._id)));
-
-    const directPerms = await this.permissionModel
-      .find({ allowed: userObjId })
-      .lean()
-      .exec();
-
-    if (groupIds.length === 0) {
-      return directPerms;
-    }
-
-    const permsByGroup = await Promise.all(
-      groupIds.map((gid) =>
-        this.permissionModel
-          .find({ allowed: gid })
-          .select({ entityType: 1, entityId: 1 })
-          .lean()
-          .exec(),
-      ),
+  async getPermissionsForUser(userId: string, userGroupIds?: string[]) {
+    console.log(
+      'Getting permissions for user:',
+      userId,
+      'with groups:',
+      userGroupIds,
     );
-
-    const makeKey = (p: { entityType: EntityType; entityId: any }) =>
-      `${p.entityType}:${String(p.entityId)}`;
-
-    let intersection = new Set(permsByGroup[0].map(makeKey));
-
-    for (let i = 1; i < permsByGroup.length; i++) {
-      const currentSet = new Set(permsByGroup[i].map(makeKey));
-      intersection = new Set(
-        [...intersection].filter((k) => currentSet.has(k)),
-      );
-    }
-
-    const intersectionPerms = [...intersection].map((k) => {
-      const [entityType, entityId] = k.split(':');
-      return {
-        entityType: entityType as EntityType,
-        entityId: new Types.ObjectId(entityId),
-      };
-    });
-
-    const directKeys = new Set(directPerms.map(makeKey));
-    return [
-      ...directPerms,
-      ...intersectionPerms.filter((p) => !directKeys.has(makeKey(p))),
+    const allowedIds = [
+      new Types.ObjectId(userId),
+      ...(userGroupIds || []).map((id) => new Types.ObjectId(id)),
     ];
+    return await this.permissionModel
+      .find({
+        allowed: { $in: allowedIds },
+      })
+      .exec();
   }
 
   async createPermission(dto: CreatePermissionDto) {
@@ -137,18 +98,25 @@ export class PermissionsService {
     if (!permission) {
       return null;
     }
-    const directChildren = await this.getDirectChildrenToDelete(
-      permission.entityId.toString(),
-    );
-    if (directChildren.length > 0) {
-      const childIds = directChildren.map((child) => child._id.toString());
-      await this.permissionModel
-        .deleteMany({
-          entityId: { $in: childIds },
-          entityType: EntityType.CATEGORY,
-        })
-        .exec();
+
+    if (permission.entityType === EntityType.CATEGORY) {
+      const descendants = await this.getAllCategoryDescendants(
+        permission.entityId.toString(),
+      );
+
+      if (descendants.length > 0) {
+        await this.permissionModel
+          .deleteMany({
+            $or: descendants.map((child) => ({
+              entityType: child.entityType,
+              entityId: new mongoose.Types.ObjectId(child.entityId),
+              allowed: permission.allowed, 
+            })),
+          })
+          .exec();
+      }
     }
+
     return this.permissionModel.findByIdAndDelete(id).exec();
   }
 
