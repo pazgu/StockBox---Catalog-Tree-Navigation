@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Injectable } from '@nestjs/common';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { PermissionsService } from '../permissions/permissions.service';
 import { Document } from 'mongoose';
@@ -39,6 +39,7 @@ export class SearchService {
   ): Promise<{
     allowedCategoryPaths: string[];
     allowedProductPaths: string[];
+    allowedProductIds: string[];
   }> {
     if (userRole === 'editor') {
       const allCategories = await this.categoryModel
@@ -54,6 +55,7 @@ export class SearchService {
       return {
         allowedCategoryPaths: allCategories.map((c) => c.categoryPath),
         allowedProductPaths: allProducts.flatMap((p) => p.productPath),
+        allowedProductIds: allProducts.map((p) => p._id.toString()),
       };
     }
 
@@ -67,7 +69,7 @@ export class SearchService {
       userId,
       userGroupIds,
     );
-  
+
     const categoryGroupPermissions = new Map<string, Set<string>>();
     const categoryUserPermissions = new Set<string>();
     const productGroupPermissions = new Map<string, Set<string>>();
@@ -93,7 +95,7 @@ export class SearchService {
         } else if (allowedId === userId) productUserPermissions.add(entityId);
       }
     }
-  
+
     const allowedCategoryIds =
       userGroupIds.length > 0
         ? Array.from(categoryGroupPermissions.entries())
@@ -136,7 +138,6 @@ export class SearchService {
             .map(([productId]) => productId)
         : Array.from(productUserPermissions);
 
-
     const products = await this.productModel
       .find({ _id: { $in: allowedProductIds } })
       .select({ productPath: 1 })
@@ -156,6 +157,7 @@ export class SearchService {
     return {
       allowedCategoryPaths: Array.from(allowedCategoryPaths),
       allowedProductPaths,
+      allowedProductIds,
     };
   }
 
@@ -166,20 +168,26 @@ export class SearchService {
     limit = 20,
     userRole?: string,
   ) {
-    const { allowedCategoryPaths, allowedProductPaths } =
+    const { allowedCategoryPaths, allowedProductPaths, allowedProductIds } =
       await this.getAllowedPaths(userId, userRole);
 
-    if (!allowedCategoryPaths.length && !allowedProductPaths.length) {
+    if (!allowedCategoryPaths.length && !allowedProductIds.length) {
       return { items: [], total: 0, page, limit, hasMore: false };
     }
+
+    const allowedProductObjectIds = allowedProductIds.map(
+      (id) => new Types.ObjectId(id),
+    );
 
     const skip = (page - 1) * limit;
 
     const pipeline: any[] = [
+      // =======================
+      // 📁 CATEGORIES
+      // =======================
       {
         $match: {
-          categoryPath: { $in: allowedCategoryPaths },
-          ...(searchTerm ? { $text: { $search: searchTerm } } : {}),
+          ...(searchTerm ? { $text: { $search: `"${searchTerm}"` } } : {}),
         },
       },
       {
@@ -194,47 +202,74 @@ export class SearchService {
         $project: { _id: 1, type: 1, label: 1, path: 1, score: 1 },
       },
 
+      // =======================
+      // 📦 PRODUCTS
+      // =======================
       {
         $unionWith: {
           coll: 'products',
           pipeline: [
+            // 🔍 text search
             {
               $match: {
                 ...(searchTerm ? { $text: { $search: searchTerm } } : {}),
               },
             },
+            {
+              $match: {
+                productName: {
+                  $regex: `^${searchTerm}$`,
+                  $options: 'i',
+                },
+              },
+            },
+
+            // 🔒 PRODUCT ID PERMISSION (THE IMPORTANT FIX)
+            {
+              $match: {
+                _id: { $in: allowedProductObjectIds },
+              },
+            },
+
+            // 🧭 path reachability
             { $unwind: '$productPath' },
+
             {
               $match: {
                 productPath: { $in: allowedProductPaths },
               },
             },
+
+            // 🔁 regroup
             {
               $group: {
                 _id: '$_id',
                 label: { $first: '$productName' },
-                score: { $max: searchTerm ? { $meta: 'textScore' } : 0 },
+                score: {
+                  $max: searchTerm ? { $meta: 'textScore' } : 0,
+                },
                 paths: { $addToSet: '$productPath' },
               },
             },
+
             {
               $addFields: {
                 type: 'product',
                 path: '$paths',
               },
             },
-            { $project: { _id: 1, type: 1, label: 1, path: 1, score: 1 } },
+
+            {
+              $project: { _id: 1, type: 1, label: 1, path: 1, score: 1 },
+            },
           ],
         },
       },
 
-      {
-        $sort: {
-          score: -1,
-          type: 1,
-          label: 1,
-        },
-      },
+      // =======================
+      // 🔀 SORT + PAGINATION
+      // =======================
+      { $sort: { score: -1, type: 1, label: 1 } },
       { $skip: skip },
       { $limit: limit + 1 },
     ];
@@ -245,23 +280,12 @@ export class SearchService {
     if (hasMore) results.pop();
 
     return {
-      items: results.map((r) => {
-        const rawPaths: string[] = Array.isArray(r.path) ? r.path : [r.path];
-
-        const finalPaths =
-          r.type === 'product' && userRole !== 'editor'
-            ? rawPaths.filter((p) => allowedProductPaths.includes(p))
-            : rawPaths.filter(
-                (p) => allowedCategoryPaths.includes(p) || r.type === 'product',
-              );
-
-        return {
-          type: r.type,
-          id: r._id.toString(),
-          label: r.label,
-          paths: finalPaths,
-        };
-      }),
+      items: results.map((r) => ({
+        type: r.type,
+        id: r._id.toString(),
+        label: r.label,
+        paths: Array.isArray(r.path) ? r.path : [r.path],
+      })),
       total: results.length,
       page,
       limit,
