@@ -357,9 +357,7 @@ export class ProductsService {
     // Check for conflicts
     for (const newPath of newPaths) {
       if (product.productPath.includes(newPath)) {
-        throw new BadRequestException(
-          `Product already exists at: ${newPath}`,
-        );
+        throw new BadRequestException(`Product already exists at: ${newPath}`);
       }
 
       const existingProduct = await this.productModel.findOne({
