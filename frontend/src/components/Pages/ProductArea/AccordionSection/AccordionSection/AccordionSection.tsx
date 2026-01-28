@@ -107,7 +107,7 @@ const AccordionSection: FC<AccordionSectionProps> = ({
             }}
           >
             {isEditing && (
-              <div className="absolute -top-3 -right-3 z-10">
+              <div className="absolute -top-3 -right-3 z-10 group">
                 <div className="w-10 h-10 rounded-full bg-[#fffaf1] shadow-lg border-2 border-[#F5E7C6] flex items-center justify-center overflow-hidden">
                   <img
                     src={
@@ -119,12 +119,21 @@ const AccordionSection: FC<AccordionSectionProps> = ({
                     className="w-6 h-6 object-contain"
                   />
                 </div>
+                <span className="absolute top-1/2 -translate-y-1/2 left-12 bg-gray-900 text-white text-xs px-3 py-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-lg">
+                  {item.type === "bullets" ? "נקודות" : "טקסט"}
+                </span>
               </div>
             )}
             <AccordionTrigger className="w-full text-right text-lg font-semibold text-stockblue py-4 px-2 rounded-lg hover:bg-stockblue/5 transition-colors [&>svg]:text-stockblue">
-              {isEditing && (
-                <div className="flex items-center gap-2 ml-3 text-gray-500 cursor-grab">
+            {isEditing && (
+              <div className="flex items-center gap-2 ml-3 text-gray-500">
+                <div className="group relative cursor-grab">
                   <GripVertical size={18} className="cursor-grab" />
+                  <span className="absolute top-1/2 -translate-y-1/2 left-8 bg-gray-900 text-white text-xs px-3 py-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-lg z-50">
+                    גרור לשינוי סדר
+                  </span>
+                </div>
+                <div className="group relative">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -132,12 +141,15 @@ const AccordionSection: FC<AccordionSectionProps> = ({
                       removeAccordion(item.uiId);
                     }}
                     className="text-black hover:text-gray-700 transition-colors font-bold"
-                    title="הסר אקורדיון"
                   >
                     ✕
                   </button>
+                  <span className="absolute top-1/2 -translate-y-1/2 left-8 bg-gray-900 text-white text-xs px-3 py-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-lg z-50">
+                    הסר אקורדיון
+                  </span>
                 </div>
-              )}
+              </div>
+            )}
               {isEditing ? (
                 <input
                   type="text"
