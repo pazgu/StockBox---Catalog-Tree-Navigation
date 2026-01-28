@@ -334,28 +334,27 @@ export class CategoriesService {
         { updatePipeline: true },
       );
 
-      await this.productModel.updateMany(
-        { productPath: new RegExp(`^${oldCategoryPath}`) },
-        [
-          {
-            $set: {
-              productPath: {
-                $concat: [
-                  newCategoryPath,
-                  {
-                    $substr: [
-                      '$productPath',
-                      oldCategoryPath.length,
-                      { $strLenCP: '$productPath' },
-                    ],
-                  },
-                ],
-              },
-            },
-          },
-        ],
-        { updatePipeline: true },
+      const escapedOldPath = oldCategoryPath.replace(
+        /[.*+?^${}()|[\]\\]/g,
+        '\\$&',
       );
+      const productsToUpdate = await this.productModel.find({
+        productPath: new RegExp(`^${escapedOldPath}`),
+      });
+
+      for (const product of productsToUpdate) {
+        const updatedPaths = product.productPath.map((path) => {
+          if (path.startsWith(oldCategoryPath)) {
+            return newCategoryPath + path.substring(oldCategoryPath.length);
+          }
+          return path;
+        });
+
+        await this.productModel.updateOne(
+          { _id: product._id },
+          { $set: { productPath: updatedPaths } },
+        );
+      }
     }
 
     return updatedCategory;
@@ -435,32 +434,24 @@ export class CategoriesService {
       { updatePipeline: true },
     );
 
-    await this.productModel.updateMany(
-      {
-        productPath: new RegExp(
-          `^${oldPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`,
-        ),
-      },
-      [
-        {
-          $set: {
-            productPath: {
-              $concat: [
-                newPath,
-                {
-                  $substr: [
-                    '$productPath',
-                    oldPath.length,
-                    { $strLenCP: '$productPath' },
-                  ],
-                },
-              ],
-            },
-          },
-        },
-      ],
-      { updatePipeline: true },
-    );
+    const escapedOldPath = oldPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const productsToUpdate = await this.productModel.find({
+      productPath: new RegExp(`^${escapedOldPath}`),
+    });
+
+    for (const product of productsToUpdate) {
+      const updatedPaths = product.productPath.map((path) => {
+        if (path.startsWith(oldPath)) {
+          return newPath + path.substring(oldPath.length);
+        }
+        return path;
+      });
+
+      await this.productModel.updateOne(
+        { _id: product._id },
+        { $set: { productPath: updatedPaths } },
+      );
+    }
 
     return {
       success: true,
@@ -468,6 +459,7 @@ export class CategoriesService {
       category: await this.categoryModel.findById(id),
     };
   }
+
   async getCategoryById(id: string) {
     const category = await this.categoryModel.findById(id);
     if (!category) {
