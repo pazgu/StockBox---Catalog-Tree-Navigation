@@ -181,13 +181,16 @@ export class SearchService {
 
     const skip = (page - 1) * limit;
 
+    const tokens = searchTerm.trim().split(/\s+/).filter(Boolean);
+    const isSpecificSearch = tokens.length > 1;
+
+    const fuzzyRegex = tokens.join('.*');
+
     const pipeline: any[] = [
-      // =======================
-      // 📁 CATEGORIES
-      // =======================
       {
         $match: {
-          ...(searchTerm ? { $text: { $search: `"${searchTerm}"` } } : {}),
+          ...(searchTerm ? { $text: { $search: searchTerm } } : {}),
+          categoryPath: { $in: allowedCategoryPaths },
         },
       },
       {
@@ -201,53 +204,47 @@ export class SearchService {
       {
         $project: { _id: 1, type: 1, label: 1, path: 1, score: 1 },
       },
-
-      // =======================
-      // 📦 PRODUCTS
-      // =======================
       {
         $unionWith: {
           coll: 'products',
           pipeline: [
-            // 🔍 text search
             {
               $match: {
                 ...(searchTerm ? { $text: { $search: searchTerm } } : {}),
               },
             },
-            {
-              $match: {
-                productName: {
-                  $regex: `^${searchTerm}$`,
-                  $options: 'i',
-                },
-              },
-            },
 
-            // 🔒 PRODUCT ID PERMISSION (THE IMPORTANT FIX)
+            ...(isSpecificSearch
+              ? [
+                  {
+                    $match: {
+                      productName: {
+                        $regex: fuzzyRegex,
+                        $options: 'i',
+                      },
+                    },
+                  },
+                ]
+              : []),
+
             {
               $match: {
                 _id: { $in: allowedProductObjectIds },
               },
             },
 
-            // 🧭 path reachability
             { $unwind: '$productPath' },
-
             {
               $match: {
                 productPath: { $in: allowedProductPaths },
               },
             },
 
-            // 🔁 regroup
             {
               $group: {
                 _id: '$_id',
                 label: { $first: '$productName' },
-                score: {
-                  $max: searchTerm ? { $meta: 'textScore' } : 0,
-                },
+                score: { $max: searchTerm ? { $meta: 'textScore' } : 0 },
                 paths: { $addToSet: '$productPath' },
               },
             },
@@ -266,9 +263,6 @@ export class SearchService {
         },
       },
 
-      // =======================
-      // 🔀 SORT + PAGINATION
-      // =======================
       { $sort: { score: -1, type: 1, label: 1 } },
       { $skip: skip },
       { $limit: limit + 1 },
