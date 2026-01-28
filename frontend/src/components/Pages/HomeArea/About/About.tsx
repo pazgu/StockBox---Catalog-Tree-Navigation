@@ -823,25 +823,33 @@ const About: FC<AboutProps> = () => {
                   : ""
               }`}
             >
-              {/* Section Controls */}
-              {isEditing && (
-                <div className="absolute -right-3 -top-3 flex gap-2 z-20">
+            {isEditing && (
+              <div className="absolute -right-3 -top-3 flex gap-2 z-20">
+                <div className="group relative">
                   <div className="p-2 bg-stockblue text-white rounded-lg cursor-grab active:cursor-grabbing shadow-md hover:bg-stockblue/90 transition">
                     <GripVertical size={20} />
                   </div>
-                  {sections.length > 1 && (
+                  <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-50">
+                    גרור לשינוי סדר
+                  </span>
+                </div>
+                {sections.length > 1 && (
+                  <div className="group relative">
                     <button
                       onClick={() => {
                         removeSection(sectionIndex);
                       }}
-                      className="p-2 bg-red-500 text-white rounded-lg transition shadow-md"
-                      title="מחיקת מקטע"
+                      className="p-2 bg-red-500 text-white rounded-lg transition shadow-md hover:bg-red-600"
                     >
                       <Trash2 size={18} />
                     </button>
-                  )}
-                </div>
-              )}
+                    <span className="absolute top-1/2 -translate-y-1/2 right-full mr-2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-50">
+                      מחיקת מקטע
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
 
               {/* INTRO SECTION */}
               {section.type === "intro" && (

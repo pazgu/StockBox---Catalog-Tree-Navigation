@@ -183,8 +183,11 @@ const BulletsSection: React.FC<BulletsSectionProps> = ({
               onDragEnd={handleDragEnd}
             >
               {isEditing && (
-                <div className="flex-shrink-0 text-stockblue/40 cursor-move mt-1">
+                <div className="flex-shrink-0 text-stockblue/40 cursor-move mt-1 group relative">
                   <GripVertical size={18} />
+                  <span className="absolute top-1/2 -translate-y-1/2 left-7 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-50">
+                    גרור לשינוי סדר
+                  </span>
                 </div>
               )}
 
