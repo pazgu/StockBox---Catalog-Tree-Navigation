@@ -146,6 +146,29 @@ export class PermissionsService {
         })),
         { ordered: false },
       );
+      for (const dto of validDtos) {
+        if (dto.entityType === EntityType.CATEGORY && dto.inheritToChildren) {
+          const descendants = await this.getAllCategoryDescendants(
+            dto.entityId,
+          );
+          await Promise.all(
+            descendants.map(async (child) => {
+              const exists = await this.permissionModel.exists({
+                entityType: child.entityType,
+                entityId: child.entityId,
+                allowed: dto.allowed,
+              });
+              if (!exists) {
+                await this.permissionModel.create({
+                  entityType: child.entityType,
+                  entityId: child.entityId,
+                  allowed: dto.allowed,
+                });
+              }
+            }),
+          );
+        }
+      }
     }
     return {
       success: true,
