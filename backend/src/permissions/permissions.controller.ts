@@ -1,14 +1,22 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/require-await */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { Controller, Delete, Get, Post, Param } from '@nestjs/common';
+import {
+  Controller,
+  Delete,
+  Get,
+  Post,
+  Param,
+  Body,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { PermissionsService } from './permissions.service';
-import { Body } from '@nestjs/common';
 import { CreatePermissionDto } from './dto/createPermission.dto';
-import { UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { Req } from '@nestjs/common';
 @Controller('permissions')
 export class PermissionsController {
   constructor(private permissionsService: PermissionsService) {}
@@ -16,6 +24,18 @@ export class PermissionsController {
   @UseGuards(AuthGuard('jwt'))
   createPermission(@Body() createPermissionDto: CreatePermissionDto) {
     return this.permissionsService.createPermission(createPermissionDto);
+  }
+  @Post('batch')
+  @UseGuards(AuthGuard('jwt'))
+  async createPermissionsBatch(
+    @Body() body: { permissions: CreatePermissionDto[] },
+  ) {
+    return this.permissionsService.createPermissionsBatch(body.permissions);
+  }
+  @Post('batch-delete')
+  @UseGuards(AuthGuard('jwt'))
+  async deletePermissionsBatch(@Body() body: { permissionIds: string[] }) {
+    return this.permissionsService.deletePermissionsBatch(body.permissionIds);
   }
   @Get()
   @UseGuards(AuthGuard('jwt'))

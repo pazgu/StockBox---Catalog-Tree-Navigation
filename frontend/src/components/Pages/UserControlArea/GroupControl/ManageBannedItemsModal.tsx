@@ -197,33 +197,46 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
   const handleBulkAction = async () => {
     setIsLoading(true);
     try {
-      const promises = Array.from(selectedItems).map(async (itemId) => {
-        const item =
-          activeTab === "banned"
+      const items = Array.from(selectedItems)
+        .map((itemId) => {
+          return activeTab === "banned"
             ? localBannedItems.find((i) => i.id === itemId)
             : availableItems.find((i) => i.id === itemId);
+        })
+        .filter((item): item is BannedItem => item !== undefined);
 
-        if (!item) return;
+      if (activeTab === "banned") {
+        await permissionsService.createPermissionsBatch(
+          items.map(item => ({
+            entityType: item.type,
+            entityId: String(item.id),
+            allowed: groupId,
+          }))
+        );
+      } else {
+        const permissionIds = items
+          .map((item) => {
+            const key = keyOf(item.type, item.id);
+            return permissionIdByKey[key];
+          })
+          .filter((id): id is string => !!id);
 
-        if (activeTab === "banned") {
-          await permissionsService.createPermission(
-            item.type,
-            String(item.id),
-            groupId,
-          );
-        } else {
-          const key = keyOf(item.type, item.id);
-          const permId = permissionIdByKey[key];
-          if (permId) {
-            await permissionsService.deletePermission(permId);
-          }
+        if (permissionIds.length > 0) {
+          await permissionsService.deletePermissionsBatch(permissionIds);
         }
-      });
-      await Promise.all(promises);
+      }
       await load(true);
       setSelectedItems(new Set());
-    } catch (e) {
+      toast.success(
+        `${items.length} פריטים ${activeTab === "banned" ? "שוחררו" : "נחסמו"} בהצלחה`,
+      );
+    } catch (e: any) {
       console.error("Bulk action failed:", e);
+      if (e.response?.data?.message) {
+        toast.error(e.response.data.message);
+      } else {
+        toast.error("שגיאה בביצוע הפעולה");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -401,7 +414,8 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
 
           {isLoading ? (
             <div className="text-center py-12 text-gray-500">
-              טוען נתונים...
+              <div className="inline-block w-8 h-8 border-4 border-gray-300 border-t-slate-700 rounded-full animate-spin mb-2"></div>
+              <p>טוען נתונים...</p>
             </div>
           ) : (
             <div
