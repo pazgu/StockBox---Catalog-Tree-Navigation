@@ -10,8 +10,17 @@ interface InheritanceModalProps {
 
 const InheritanceModal: React.FC<InheritanceModalProps> = ({ open, onClose, onConfirm }) => {
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md" >
+    <Dialog
+      open={open}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) onClose();
+      }}
+    >
+      <DialogContent
+        className="max-w-md"
+        onInteractOutside={(e) => e.preventDefault()}
+        onPointerDownOutside={(e) => e.preventDefault()}
+      >
         <DialogHeader>
             <div className="text-right mt-2 mb-4 mt-4">
                 <DialogTitle>להחיל הרשאות גם על כל הצאצאים של הקטגוריה הנבחרת?</DialogTitle>

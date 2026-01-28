@@ -18,6 +18,7 @@ import { Link } from "react-router-dom";
 import { BannedItem } from "../../../../types/types";
 import { permissionsService } from "../../../../services/permissions.service";
 import { toast } from "sonner";
+import InheritanceModal from "../../SharedComponents/DialogModal/DialogModal";
 
 interface ManageBannedItemsModalProps {
   groupId: string;
@@ -46,9 +47,9 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
     new Set(),
   );
   const [isLoading, setIsLoading] = useState(false);
-  const [permissionIdByKey, setPermissionIdByKey] = useState<
-    Record<string, string>
-  >({});
+  const [permissionIdByKey, setPermissionIdByKey] = useState<Record<string, string>>({});
+  const [showInheritanceModal, setShowInheritanceModal] = useState(false);
+  const [pendingUnblockItems, setPendingUnblockItems] = useState<BannedItem[]>([]);
 
   const keyOf = (type: "product" | "category", id: string | number) =>
     `${type}:${String(id)}`;
@@ -144,7 +145,11 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
         String(item.id),
         groupId,
       );
-      await load(true);
+      const data = await permissionsService.getBlockedItemsForGroup(groupId);
+      setPermissionIdByKey(data.permissionIdByKey);
+      setAllItems([...data.blocked, ...data.available]);
+      setLocalBannedItems(data.blocked);  
+      toast.success("הפריט שוחרר בהצלחה");
     } catch (e: any) {
       if (e.response?.status === 400) {
         toast.error(e.response?.data?.message || "לא ניתן לשחרר פריט זה");
@@ -166,8 +171,12 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
         await permissionsService.deletePermission(permId);
       }
 
-      await load(true);
+      const data = await permissionsService.getBlockedItemsForGroup(groupId);
+      setPermissionIdByKey(data.permissionIdByKey);
+      setAllItems([...data.blocked, ...data.available]);
+      setLocalBannedItems(data.blocked);
       setSearchQuery("");
+      toast.success("הפריט נחסם בהצלחה");
     } catch (e) {
       console.error("Failed to block:", e);
       toast.error("שגיאה בחסימת הפריט");
@@ -193,46 +202,89 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
     if (selectedItems.size === currentItems.length) setSelectedItems(new Set());
     else setSelectedItems(new Set(allIds));
   };
-
-  const handleBulkAction = async () => {
-    setIsLoading(true);
+  const executeUnblock = async (items: BannedItem[], inheritToChildren: boolean) => {
     try {
-      const promises = Array.from(selectedItems).map(async (itemId) => {
-        const item =
-          activeTab === "banned"
-            ? localBannedItems.find((i) => i.id === itemId)
-            : availableItems.find((i) => i.id === itemId);
-
-        if (!item) return;
-
-        if (activeTab === "banned") {
-          await permissionsService.createPermission(
-            item.type,
-            String(item.id),
-            groupId,
-          );
-        } else {
-          const key = keyOf(item.type, item.id);
-          const permId = permissionIdByKey[key];
-          if (permId) {
-            await permissionsService.deletePermission(permId);
-          }
-        }
-      });
-      await Promise.all(promises);
-      await load(true);
+      setIsLoading(true);
+      await permissionsService.createPermissionsBatch(
+        items.map(item => ({
+          entityType: item.type,
+          entityId: String(item.id),
+          allowed: groupId,
+          inheritToChildren,
+        }))
+      );
+      const data = await permissionsService.getBlockedItemsForGroup(groupId);
+      setPermissionIdByKey(data.permissionIdByKey);
+      setAllItems([...data.blocked, ...data.available]);
+      setLocalBannedItems(data.blocked);
       setSelectedItems(new Set());
-    } catch (e) {
-      console.error("Bulk action failed:", e);
+      toast.success(
+        `${items.length} פריטים שוחררו בהצלחה${inheritToChildren ? ' (כולל צאצאים)' : ''}`,
+      );
+    } catch (e: any) {
+      console.error("Bulk unblock failed:", e);
+      if (e.response?.data?.message) {
+        toast.error(e.response.data.message);
+      } else {
+        toast.error("שגיאה בשחרור הפריטים");
+      }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleBulkAction = async () => {
+    const items = Array.from(selectedItems)
+      .map((itemId) => {
+        return activeTab === "banned"
+          ? localBannedItems.find((i) => i.id === itemId)
+          : availableItems.find((i) => i.id === itemId);
+      })
+      .filter((item): item is BannedItem => item !== undefined);
+
+    if (activeTab === "banned") {
+      const hasCategories = items.some(item => item.type === "category");
+      if (hasCategories) {
+        setPendingUnblockItems(items);
+        setShowInheritanceModal(true);
+      } else {
+        await executeUnblock(items, false);
+      }
+    } else {
+      const permissionIds = items
+        .map((item) => {
+          const key = keyOf(item.type, item.id);
+          return permissionIdByKey[key];
+        })
+        .filter((id): id is string => !!id);
+
+      if (permissionIds.length > 0) {
+        try {
+          setIsLoading(true);
+          await permissionsService.deletePermissionsBatch(permissionIds);
+          const data = await permissionsService.getBlockedItemsForGroup(groupId);
+          setPermissionIdByKey(data.permissionIdByKey);
+          setAllItems([...data.blocked, ...data.available]);
+          setLocalBannedItems(data.blocked);
+          setSelectedItems(new Set());
+          toast.success(`${items.length} פריטים נחסמו בהצלחה`);
+        } catch (e: any) {
+          console.error("Bulk block failed:", e);
+          toast.error("שגיאה בחסימת הפריטים");
+        } finally {
+          setIsLoading(false);
+        }
+      }
     }
   };
 
   return (
     <div
       className="fixed inset-0 bg-slate-900/90 backdrop-blur-sm flex items-center justify-center z-50 p-2 overflow-y-auto"
-      onClick={onClose}
+      onClick={() => {
+        if (showInheritanceModal) return;
+        onClose();
+      }}
     >
       <div
         className="bg-white rounded-xl w-full max-w-5xl shadow-2xl text-right flex flex-col my-auto"
@@ -401,7 +453,8 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
 
           {isLoading ? (
             <div className="text-center py-12 text-gray-500">
-              טוען נתונים...
+              <div className="inline-block w-8 h-8 border-4 border-gray-300 border-t-slate-700 rounded-full animate-spin mb-2"></div>
+              <p>טוען נתונים...</p>
             </div>
           ) : (
             <div
@@ -577,6 +630,19 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
           )}
         </div>
       </div>
+      <InheritanceModal
+        open={showInheritanceModal}
+        onClose={() => {
+          setShowInheritanceModal(false);
+          executeUnblock(pendingUnblockItems, false);
+          setPendingUnblockItems([]);
+        }}
+        onConfirm={() => {
+          setShowInheritanceModal(false);
+          executeUnblock(pendingUnblockItems, true);
+          setPendingUnblockItems([]);
+        }}
+      />
     </div>
   );
 };
