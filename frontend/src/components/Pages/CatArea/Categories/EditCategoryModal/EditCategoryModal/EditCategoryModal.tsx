@@ -179,19 +179,39 @@ const EditCategoryModal: React.FC<Props> = ({
   };
 
   const handleSave = async () => {
+  const trimmed = name.trim();
+
+  if (!trimmed) {
+    toast.error("שם קטגוריה חובה");
+    return;
+  }
+
   const updated = {
     ...category,
-    categoryName: name.trim(),
+    categoryName: trimmed,
     imageFile,
   } as any;
 
   try {
     setIsSaving(true);
     await onSave(updated);
+    toast.success("הקטגוריה עודכנה בהצלחה");
+  } catch (error: any) {
+    const serverMessage =
+      error?.response?.data?.message || error?.response?.data?.error;
+
+    if (typeof serverMessage === "string" && serverMessage.trim()) {
+      toast.error(serverMessage);
+    } else {
+      toast.error("שגיאה בעדכון הקטגוריה");
+    }
+
+    console.error("Edit category failed:", error);
   } finally {
     setIsSaving(false);
   }
 };
+
 
 
 

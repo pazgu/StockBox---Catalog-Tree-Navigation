@@ -66,9 +66,11 @@ export const Categories: FC<CategoriesProps> = () => {
             }
           });
           setFavorites(favoritesMap);
-        } catch (error) {
-          console.error("Error loading favorites:", error);
-        }
+        }  catch (error) {
+  toast.error("שגיאה בטעינת מועדפים");
+  console.error("Error loading favorites:", error);
+}
+
       }
     } catch (error) {
       toast.error("שגיאה בטעינת קטגוריות");
@@ -149,7 +151,10 @@ export const Categories: FC<CategoriesProps> = () => {
   };
 
   const handleAddCategory = async ({ name, imageFile }: AddCategoryResult) => {
-    const categoryPath = `/categories/${name.toLowerCase().replace(/\s+/g, "-")}`;
+  try {
+    const categoryPath = `/categories/${name
+      .toLowerCase()
+      .replace(/\s+/g, "-")}`;
 
     const newCategory = await categoriesService.createCategory({
       categoryName: name,
@@ -160,7 +165,20 @@ export const Categories: FC<CategoriesProps> = () => {
     setCategories((prev) => [...prev, newCategory]);
     setShowAddCatModal(false);
     toast.success(`הקטגוריה "${name}" נוספה בהצלחה!`);
-  };
+  } catch (error: any) {
+    const serverMessage =
+      error?.response?.data?.message || error?.response?.data?.error;
+
+    if (typeof serverMessage === "string" && serverMessage.trim()) {
+      toast.error(serverMessage);
+    } else {
+      toast.error("שגיאה בהוספת קטגוריה");
+    }
+
+    console.error("Error creating category:", error);
+  }
+};
+
 
   const handleSaveEdit = async (updatedCategory: CategoryEditPayload) => {
     try {
