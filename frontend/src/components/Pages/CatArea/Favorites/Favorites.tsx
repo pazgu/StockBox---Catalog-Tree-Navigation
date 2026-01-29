@@ -35,6 +35,9 @@ export const Favorites: React.FC = () => {
         setLoading(true);
         const userFavorites = await userService.getFavorites();
         setFavorites(userFavorites);
+        let failedProducts = 0;
+        let failedCategories = 0;
+
         const productIds = userFavorites
           .filter((fav: FavoriteItem) => fav.type === "product")
           .map((fav: FavoriteItem) => fav.id);      
@@ -43,10 +46,12 @@ export const Favorites: React.FC = () => {
           .map((fav: FavoriteItem) => fav.id);
         if (categoryIds.length > 0) {
           const categoryPromises = categoryIds.map((categoryId: string) =>
-            categoriesService.getCategoryById(categoryId).catch(err => {
-              console.error(`Failed to load category ${categoryId}:`, err);
-              return null;
-            })
+            categoriesService.getCategoryById(categoryId).catch((err) => {
+  failedCategories += 1;
+  console.error(`Failed to load category ${categoryId}:`, err);
+  return null;
+})
+
           );
           const loadedCategories = await Promise.all(categoryPromises);
           const validCategories = loadedCategories.filter(c => c !== null) as CategoryDTO[];
@@ -54,10 +59,12 @@ export const Favorites: React.FC = () => {
         }
         if (productIds.length > 0) {
           const productPromises = productIds.map((productId: string) =>
-            ProductsService.getById(productId).catch(err => {
-              console.error(`Failed to load product ${productId}:`, err);
-              return null;
-            })
+            ProductsService.getById(productId).catch((err) => {
+  failedProducts += 1;
+  console.error(`Failed to load product ${productId}:`, err);
+  return null;
+})
+
           );
           const loadedProducts = await Promise.all(productPromises);
           const validProducts = loadedProducts.filter(p => p !== null) as ProductDto[];
