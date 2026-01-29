@@ -591,33 +591,42 @@ const SingleProd: FC<SingleProdProps> = () => {
           {role === "editor" && (
             <div className="fixed bottom-8 left-6 flex flex-col gap-3 z-50">
               {isEditing && (
-                <button
-                  onClick={cancelEdit}
-                  disabled={isSaving}
-                  aria-label="ביטול עריכה"
-                  title="ביטול עריכה"
-                  className={`flex items-center justify-center w-14 h-14 rounded-full font-semibold bg-white text-red-600 shadow-lg ring-2 ring-red-500/20 hover:ring-red-500/30 hover:bg-red-50 transition-all duration-300
-          ${isSaving ? "opacity-70 cursor-not-allowed" : ""}`}
-                >
-                  <X size={22} />
-                </button>
+                <div className="relative">
+                  <button
+                    onClick={cancelEdit}
+                    disabled={isSaving}
+                    aria-label="ביטול עריכה"
+                    className={`peer flex items-center justify-center w-14 h-14 rounded-full font-semibold bg-white text-red-600 shadow-lg ring-2 ring-red-500/20 hover:ring-red-500/30 hover:bg-red-50 transition-all duration-300
+                      ${isSaving ? "opacity-70 cursor-not-allowed" : ""}`}
+                  >
+                    <X size={22} />
+                  </button>
+                  <span className="absolute left-16 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs px-3 py-2 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                    ביטול עריכה
+                  </span>
+                </div>
               )}
 
-              <button
-                onClick={handleSaveClick}
-                disabled={isSaving}
-                aria-label={isEditing ? "סיום עריכה" : "עריכת דף"}
-                className={`flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300
-        ${isSaving ? "opacity-70 cursor-not-allowed" : ""}`}
-              >
-                {isSaving ? (
-                  <Spinner className="size-6 text-white" />
-                ) : isEditing ? (
-                  <Save size={22} />
-                ) : (
-                  <PencilLine size={22} />
-                )}
-              </button>
+              <div className="relative">
+                <button
+                  onClick={handleSaveClick}
+                  disabled={isSaving}
+                  aria-label={isEditing ? "שמירת שינויים" : "עריכת דף"}
+                  className={`peer flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300
+                    ${isSaving ? "opacity-70 cursor-not-allowed" : ""}`}
+                >
+                  {isSaving ? (
+                    <Spinner className="size-6 text-white" />
+                  ) : isEditing ? (
+                    <Save size={22} />
+                  ) : (
+                    <PencilLine size={22} />
+                  )}
+                </button>
+                <span className="absolute left-16 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs px-3 py-2 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                  {isSaving ? "שומר..." : isEditing ? "שמור שינויים" : "עריכת דף"}
+                </span>
+              </div>
             </div>
           )}
         </div>

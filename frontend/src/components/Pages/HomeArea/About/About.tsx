@@ -4,7 +4,7 @@ import React, { FC, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
-import { Compass, Edit2, Check, GripVertical, Trash2, X } from "lucide-react";
+import { Compass, Edit2, Check, GripVertical, Trash2, X, Save } from "lucide-react";
 import { ICONS_HE } from "../../../../mockdata/icons";
 import FeaturesSection from "./FeaturesSection/FeaturesSection";
 import AboutImagesPanel from "./AboutImagesPanel/AboutImagesPanel";
@@ -744,57 +744,68 @@ const About: FC<AboutProps> = () => {
   };
 
   const handleDragOverContainer = (e: React.DragEvent) => {
-  if (!isEditing) return;
+    if (!isEditing) return;
 
-  const threshold = 120; 
-  const speed = 25; 
-  const viewportHeight = window.innerHeight;
-  const cursorY = e.clientY;
+    const threshold = 120;
+    const speed = 25;
+    const viewportHeight = window.innerHeight;
+    const cursorY = e.clientY;
 
-  if (cursorY < threshold) {
-    const scrollAmount = -speed * ((threshold - cursorY) / threshold);
-    window.scrollBy({ top: scrollAmount, behavior: 'auto' });
-  } 
-  else if (viewportHeight - cursorY < threshold) {
-    const scrollAmount = speed * ((threshold - (viewportHeight - cursorY)) / threshold);
-    window.scrollBy({ top: scrollAmount, behavior: 'auto' });
-  }
-};
+    if (cursorY < threshold) {
+      const scrollAmount = -speed * ((threshold - cursorY) / threshold);
+      window.scrollBy({ top: scrollAmount, behavior: "auto" });
+    } else if (viewportHeight - cursorY < threshold) {
+      const scrollAmount =
+        speed * ((threshold - (viewportHeight - cursorY)) / threshold);
+      window.scrollBy({ top: scrollAmount, behavior: "auto" });
+    }
+  };
 
   return (
-    <div onDragOver={handleDragOverContainer} className="pt-8 min-h-screen font-['Arial'] direction-rtl" dir="rtl">
+    <div
+      onDragOver={handleDragOverContainer}
+      className="pt-8 min-h-screen font-['Arial'] direction-rtl"
+      dir="rtl"
+    >
       <div className="max-w-6xl mx-auto flex items-start gap-15 py-10 flex-wrap lg:flex-nowrap">
         <div className="flex-1 p-5 lg:ml-[400px] order-2 lg:order-1">
           {role === "editor" && (
             <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-50">
               {isEditing && (
-                <button
-                  onClick={cancelEdit}
-                  className="inline-flex items-center justify-center w-12 h-12 rounded-full border border-red-500/30 bg-white text-red-600 shadow-md hover:bg-red-50 transition-all duration-300"
-                  title="ביטול עריכה"
-                  aria-label="ביטול עריכה"
-                >
-                  <X size={18} />
-                </button>
+                <div className="relative">
+                  <button
+                    onClick={cancelEdit}
+                    aria-label="ביטול עריכה"
+                    className="peer flex items-center justify-center w-14 h-14 rounded-full font-semibold bg-white text-red-600 shadow-lg ring-2 ring-red-500/20 hover:ring-red-500/30 hover:bg-red-50 transition-all duration-300"
+                  >
+                    <X size={22} />
+                  </button>
+                  <span className="absolute right-16 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs px-3 py-2 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                    ביטול עריכה
+                  </span>
+                </div>
               )}
 
-              <button
-                onClick={() => {
-                  if (isEditing) {
-                    handleSaveChanges();
-                    return;
-                  }
-                  setIsEditing(true);
-                }}
-                className="inline-flex items-center justify-center w-12 h-12 rounded-full border border-stockblue/30 bg-white text-xl font-semibold text-stockblue shadow-md hover:bg-stockblue hover:text-white transition-all duration-300"
-                aria-label={isEditing ? "שמירת שינויים" : "עריכה"}
-                title={isEditing ? "שמירת שינויים" : "עריכה"}
-              >
-                {isEditing ? <Check size={18} /> : <Edit2 size={18} />}
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    if (isEditing) {
+                      handleSaveChanges();
+                      return;
+                    }
+                    setIsEditing(true);
+                  }}
+                  aria-label={isEditing ? "שמירת שינויים" : "עריכה"}
+                  className="peer flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300"
+                >
+                  {isEditing ? <Save size={22}></Save> : <Edit2 size={22} />}
+                </button>
+                <span className="absolute right-16 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs px-3 py-2 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                  {isEditing ? "שמירת שינויים" : "עריכה"}
+                </span>
+              </div>
             </div>
           )}
-
           {/* Render all sections dynamically */}
           {sections.map((section, sectionIndex) => (
             <div
@@ -823,25 +834,33 @@ const About: FC<AboutProps> = () => {
                   : ""
               }`}
             >
-              {/* Section Controls */}
-              {isEditing && (
-                <div className="absolute -right-3 -top-3 flex gap-2 z-20">
+            {isEditing && (
+              <div className="absolute -right-3 -top-3 flex gap-2 z-20">
+                <div className="group relative">
                   <div className="p-2 bg-stockblue text-white rounded-lg cursor-grab active:cursor-grabbing shadow-md hover:bg-stockblue/90 transition">
                     <GripVertical size={20} />
                   </div>
-                  {sections.length > 1 && (
+                  <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-50">
+                    גרור לשינוי סדר
+                  </span>
+                </div>
+                {sections.length > 1 && (
+                  <div className="group relative">
                     <button
                       onClick={() => {
                         removeSection(sectionIndex);
                       }}
-                      className="p-2 bg-red-500 text-white rounded-lg transition shadow-md"
-                      title="מחיקת מקטע"
+                      className="p-2 bg-red-500 text-white rounded-lg transition shadow-md hover:bg-red-600"
                     >
                       <Trash2 size={18} />
                     </button>
-                  )}
-                </div>
-              )}
+                    <span className="absolute top-1/2 -translate-y-1/2 right-full mr-2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-50">
+                      מחיקת מקטע
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
 
               {/* INTRO SECTION */}
               {section.type === "intro" && (

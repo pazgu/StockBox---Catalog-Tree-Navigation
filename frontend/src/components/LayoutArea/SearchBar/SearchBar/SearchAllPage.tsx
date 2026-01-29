@@ -75,16 +75,6 @@ const SearchResultsPage = () => {
                       StockBox
                     </span>
                     <div className="flex flex-col">
-                      <span
-                        className="text-[12px] text-gray-500 flex items-center gap-1"
-                        dir="ltr"
-                      >
-                        {item.type === "product"
-                          ? ""
-                          : (item.paths?.[0] ?? "")
-                              .replace(/^\//, "")
-                              .replace(/\//g, " › ")}
-                      </span>
                       <small
                         className="text-gray-500 hover:text-blue-600 hover:underline cursor-pointer"
                         onClick={(e) => {

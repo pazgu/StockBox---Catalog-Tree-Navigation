@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
 /* eslint-disable @typescript-eslint/no-duplicate-type-constituents */
 /* eslint-disable @typescript-eslint/no-redundant-type-constituents */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
@@ -47,6 +48,14 @@ export class PermissionsService {
 
   async createPermission(dto: CreatePermissionDto) {
     const { entityType, entityId, allowed, inheritToChildren } = dto;
+    const existingPermission = await this.permissionModel.findOne({
+      entityType,
+      entityId,
+      allowed,
+    });
+    if (existingPermission) {
+      return existingPermission;
+    }
     const validation = await this.canCreatePermission(
       entityType,
       entityId.toString(),
@@ -91,6 +100,159 @@ export class PermissionsService {
     );
 
     return created;
+  }
+  async createPermissionsBatch(dtos: CreatePermissionDto[]) {
+    const existingPermissions = await this.permissionModel.find({
+      $or: dtos.map((dto) => ({
+        entityType: dto.entityType,
+        entityId: dto.entityId,
+        allowed: dto.allowed,
+      })),
+    });
+    const existingKeys = new Set(
+      existingPermissions.map(
+        (p) => `${p.entityType}:${p.entityId}:${p.allowed}`,
+      ),
+    );
+    const dtosToProcess = dtos.filter((dto) => {
+      const key = `${dto.entityType}:${dto.entityId}:${dto.allowed}`;
+      return !existingKeys.has(key);
+    });
+    const validationPromises = dtosToProcess.map(async (dto) => {
+      const validation = await this.canCreatePermission(
+        dto.entityType,
+        dto.entityId.toString(),
+        dto.allowed.toString(),
+      );
+      return { dto, validation };
+    });
+    const validationResults = await Promise.all(validationPromises);
+    const validDtos = validationResults
+      .filter((r) => r.validation.canCreate)
+      .map((r) => r.dto);
+    const failedDtos = validationResults
+      .filter((r) => !r.validation.canCreate)
+      .map((r) => ({
+        dto: r.dto,
+        reason: r.validation.reason || 'לא ניתן ליצור הרשאה זו',
+      }));
+    let createdPermissions: any[] = [];
+    if (validDtos.length > 0) {
+      createdPermissions = await this.permissionModel.insertMany(
+        validDtos.map((dto) => ({
+          entityType: dto.entityType,
+          entityId: dto.entityId,
+          allowed: dto.allowed,
+        })),
+        { ordered: false },
+      );
+      for (const dto of validDtos) {
+        if (dto.entityType === EntityType.CATEGORY && dto.inheritToChildren) {
+          const descendants = await this.getAllCategoryDescendants(
+            dto.entityId,
+          );
+          await Promise.all(
+            descendants.map(async (child) => {
+              const exists = await this.permissionModel.exists({
+                entityType: child.entityType,
+                entityId: child.entityId,
+                allowed: dto.allowed,
+              });
+              if (!exists) {
+                await this.permissionModel.create({
+                  entityType: child.entityType,
+                  entityId: child.entityId,
+                  allowed: dto.allowed,
+                });
+              }
+            }),
+          );
+        }
+      }
+    }
+    return {
+      success: true,
+      total: dtos.length,
+      created: createdPermissions.length,
+      existing: existingPermissions.length,
+      failed: failedDtos.length,
+      details: {
+        created: createdPermissions.map((p, i) => ({
+          dto: validDtos[i],
+          permission: p,
+        })),
+        existing: existingPermissions.map((p) => {
+          const matchingDto = dtos.find(
+            (dto) =>
+              dto.entityType === p.entityType &&
+              String(dto.entityId) === String(p.entityId) &&
+              String(dto.allowed) === String(p.allowed),
+          );
+          return { dto: matchingDto, permission: p };
+        }),
+        failed: failedDtos,
+      },
+    };
+  }
+  async deletePermissionsBatch(ids: string[]) {
+    const permissions = await this.permissionModel
+      .find({
+        _id: { $in: ids.map((id) => new mongoose.Types.ObjectId(id)) },
+      })
+      .exec();
+    const foundIds = new Set(permissions.map((p) => p._id.toString()));
+    const notFoundIds = ids.filter((id) => !foundIds.has(id));
+    const categoryPermissions = permissions.filter(
+      (p) => p.entityType === EntityType.CATEGORY,
+    );
+    const descendantsPromises = categoryPermissions.map(async (permission) => {
+      const descendants = await this.getAllCategoryDescendants(
+        permission.entityId.toString(),
+      );
+      return { permission, descendants };
+    });
+
+    const descendantsResults = await Promise.all(descendantsPromises);
+    const idsToDelete = new Set<string>(
+      permissions.map((p) => p._id.toString()),
+    );
+
+    for (const result of descendantsResults) {
+      if (result.descendants.length > 0) {
+        const descendantPermissions = await this.permissionModel
+          .find({
+            $or: result.descendants.map((child) => ({
+              entityType: child.entityType,
+              entityId: new mongoose.Types.ObjectId(child.entityId),
+              allowed: result.permission.allowed,
+            })),
+          })
+          .select('_id')
+          .exec();
+        descendantPermissions.forEach((p) => idsToDelete.add(p._id.toString()));
+      }
+    }
+    const deleteResult = await this.permissionModel
+      .deleteMany({
+        _id: {
+          $in: Array.from(idsToDelete).map(
+            (id) => new mongoose.Types.ObjectId(id),
+          ),
+        },
+      })
+      .exec();
+    return {
+      success: true,
+      total: ids.length,
+      deleted: deleteResult.deletedCount,
+      notFound: notFoundIds.length,
+      failed: 0,
+      details: {
+        deleted: Array.from(idsToDelete),
+        notFound: notFoundIds,
+        failed: [],
+      },
+    };
   }
 
   async deletePermission(id: string) {
