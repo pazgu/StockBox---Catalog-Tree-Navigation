@@ -64,7 +64,7 @@ const Login: FC<LoginProps> = () => {
       } else if (error?.response?.status === 500) {
   toast.error("שם משתמש או אימייל שגויים");
 } else {
-  toast.error("שגיאה לא צפויה, נסה שוב");
+  toast.error("שגיאה לא צפויה, אנא נסה שוב");
 }
 
 
