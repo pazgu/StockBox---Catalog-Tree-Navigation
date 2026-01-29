@@ -509,7 +509,32 @@ const About: FC<AboutProps> = () => {
     }
   }, [images.length, currentImageIndex]);
 
+  const hasActualChanges = () => {
+  const currentBlocks = sectionsToBlocks(sections);
+  const originalBlocks = sectionsToBlocks(originalData.sections);
+  const currentImages = editableImages
+    .filter((i) => !i.isPreview)
+    .map((i) => i.url);
+
+  const originalImages = originalData.images.map((i) => i.url);
+
+  return (
+    JSON.stringify(currentBlocks) !== JSON.stringify(originalBlocks) ||
+    JSON.stringify(currentImages) !== JSON.stringify(originalImages)
+  );
+};
+
+
+
+
   const handleSaveChanges = async () => {
+
+  if (!hasActualChanges()) {
+    setIsEditing(false);
+    return;
+  }
+
+    
     const invalidIndex = sections.findIndex((s) => !isSectionFilledEnough(s));
 
     if (invalidIndex !== -1) {
