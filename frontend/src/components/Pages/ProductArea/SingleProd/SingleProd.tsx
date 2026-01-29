@@ -101,7 +101,19 @@ const SingleProd: FC<SingleProdProps> = () => {
           }));
           setAccordionData(accordion);
         }
+        if (id && productId) {
+          const favorited = await userService.isFavorite(productId);
 
+          setUser(
+            (prev) =>
+              ({
+                ...prev!,
+                favorites: favorited
+                  ? [{ id: productId, type: "product" }]
+                  : [],
+              }) as User,
+          );
+        }
         const folders =
           product.uploadFolders?.[0]?.folders.map((folder: any) => ({
             uiId: folder._id,
