@@ -113,7 +113,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
   <img
     src={shownSrc}
     alt={title || "תמונה"}
-    className="w-full h-40 object-contain relative z-10 transition-all duration-500 ease-in-out transform drop-shadow-md"
+    className="w-full h-52 object-contain relative z-10 transition-all duration-500 ease-in-out transform drop-shadow-md"
     draggable={false}
     onError={(e) => {
       // if image breaks, hide it and show placeholder instead
