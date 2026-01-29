@@ -303,10 +303,11 @@ const SingleCat: FC = () => {
   };
 
   const handleMoveSuccess = async () => {
-    await loadAllContent();
-    setShowMoveModal(false);
-    setItemToMove(null);
-  };
+  await loadAllContent();
+  toast.success("הפריט הועבר בהצלחה!");
+  setShowMoveModal(false);
+  setItemToMove(null);
+};
 
   const handleDuplicate = (item: DisplayItem) => {
     setItemToDuplicate(item);
@@ -314,10 +315,11 @@ const SingleCat: FC = () => {
   };
 
   const handleDuplicateSuccess = async () => {
-    await loadAllContent();
-    setShowDuplicateModal(false);
-    setItemToDuplicate(null);
-  };
+  await loadAllContent();
+  toast.success("המוצר שוכפל בהצלחה!");
+  setShowDuplicateModal(false);
+  setItemToDuplicate(null);
+};
 
   const handleSaveProduct = async (data: {
     name: string;

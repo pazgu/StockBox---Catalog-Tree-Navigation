@@ -56,7 +56,11 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
     }
   };
 
-  const loadAllSubcategoriesRecursively = async (categoryPath: string): Promise<void> => {
+  const loadAllSubcategoriesRecursively = async (
+  categoryPath: string,
+  showToastOnFail: boolean = false
+): Promise<void> => {
+
     if (subcategoriesCache[categoryPath]) {
       return;
     }
@@ -78,9 +82,13 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
       await Promise.all(
         filteredSubcats.map(subcat => loadAllSubcategoriesRecursively(subcat.categoryPath))
       );
-    } catch (error) {
-      console.error("Error loading subcategories:", error);
+     } catch (error) {
+    if (showToastOnFail) {
+      toast.error("שגיאה בטעינת תתי-קטגוריות");
     }
+    console.error("Error loading subcategories:", error);
+  }
+
   };
 
   const toggleCategory = async (categoryPath: string) => {
@@ -93,7 +101,7 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
       
       if (!subcategoriesCache[categoryPath]) {
         setLoadingSubcats(prev => new Set(prev).add(categoryPath));
-        await loadAllSubcategoriesRecursively(categoryPath);
+        await loadAllSubcategoriesRecursively(categoryPath, true);
         setLoadingSubcats(prev => {
           const newSet = new Set(prev);
           newSet.delete(categoryPath);
@@ -186,8 +194,11 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
       onSuccess();
       onClose();
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || "שגיאה בהעברת תת-הקטגוריה";
-      toast.error(errorMessage);
+      const errorMessage =
+  error?.response?.data?.message ||
+  error?.response?.data?.error ||
+  "שגיאה בהעברת הקטגוריה";
+toast.error(errorMessage);
       console.error(error);
     } finally {
       setLoading(false);
@@ -198,9 +209,12 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 bg-slate-900 bg-opacity-85 backdrop-blur-xl flex items-center justify-center z-50 transition-all duration-300 p-4"
-      onClick={onClose}
-    >
+  className="fixed inset-0 bg-slate-900 bg-opacity-85 backdrop-blur-xl flex items-center justify-center z-50 transition-all duration-300 p-4"
+  onClick={() => {
+    if (!loading) onClose();
+  }}
+>
+
       <div
         className="bg-white p-8 rounded-xl w-[600px] max-w-[95%] max-h-[90vh] overflow-y-auto shadow-2xl text-center"
         onClick={(e) => e.stopPropagation()}

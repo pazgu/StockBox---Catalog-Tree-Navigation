@@ -61,9 +61,13 @@ const Login: FC<LoginProps> = () => {
             })
             .catch(() => toast.error("שגיאה בשליחת הבקשה"));
         }
-      } else {
-        toast.error("שגיאה לא צפויה, נסה שוב");
-      }
+      } else if (error?.response?.status === 500) {
+  toast.error("שם משתמש או אימייל שגויים");
+} else {
+  toast.error("שגיאה לא צפויה, נסה שוב");
+}
+
+
     }
   };
 
