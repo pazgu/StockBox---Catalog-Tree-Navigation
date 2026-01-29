@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Trash, AlertTriangle } from "lucide-react";
 
 interface SmartDeleteModalProps {
@@ -9,6 +9,7 @@ interface SmartDeleteModalProps {
   onClose: () => void;
   onDeleteFromCurrent: () => void;
   onDeleteFromAll: () => void;
+  onDeleteSelected?: (paths: string[]) => void;
   isDeleting: boolean;
 }
 
@@ -20,11 +21,33 @@ const SmartDeleteModal: React.FC<SmartDeleteModalProps> = ({
   onClose,
   onDeleteFromCurrent,
   onDeleteFromAll,
+  onDeleteSelected,
   isDeleting,
 }) => {
+  const [selectedPaths, setSelectedPaths] = useState<string[]>([]);
+
   if (!isOpen) return null;
 
   const isMultiLocation = currentPaths.length > 1;
+
+  const togglePathSelection = (path: string) => {
+    setSelectedPaths((prev) =>
+      prev.includes(path) ? prev.filter((p) => p !== path) : [...prev, path]
+    );
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedPaths.length === 0) return;
+
+    if (selectedPaths.length === currentPaths.length) {
+      onDeleteFromAll();
+    } else if (onDeleteSelected) {
+      onDeleteSelected(selectedPaths);
+    } else {
+      console.warn("onDeleteSelected not provided, falling back to delete all");
+      onDeleteFromAll();
+    }
+  };
 
   return (
     <div
@@ -96,16 +119,24 @@ const SmartDeleteModal: React.FC<SmartDeleteModalProps> = ({
                         }`}
                       >
                         <div className="flex items-center justify-between gap-3">
-                          <span
-                            className={`text-xs font-mono ${
-                              path.startsWith(currentCategoryPath)
-                                ? "text-blue-900 font-medium"
-                                : "text-slate-600"
-                            }`}
-                            dir="ltr"
-                          >
-                            {path}
-                          </span>
+                          <div className="flex items-center gap-2 flex-1">
+                            <input
+                              type="checkbox"
+                              checked={selectedPaths.includes(path)}
+                              onChange={() => togglePathSelection(path)}
+                              className="w-4 h-4 cursor-pointer accent-blue-600"
+                            />
+                            <span
+                              className={`text-xs font-mono ${
+                                path.startsWith(currentCategoryPath)
+                                  ? "text-blue-900 font-medium"
+                                  : "text-slate-600"
+                              }`}
+                              dir="ltr"
+                            >
+                              {path}
+                            </span>
+                          </div>
                           {path.startsWith(currentCategoryPath) && (
                             <span className="bg-blue-600 text-white px-2 py-0.5 rounded text-[10px] font-medium whitespace-nowrap">
                               מיקום נוכחי
@@ -135,64 +166,131 @@ const SmartDeleteModal: React.FC<SmartDeleteModalProps> = ({
               </h5>
 
               {isMultiLocation && (
-                <button
-                  onClick={onDeleteFromCurrent}
-                  disabled={isDeleting}
-                  className={`w-full group ${
-                    isDeleting
-                      ? "opacity-50 cursor-not-allowed"
-                      : "hover:shadow-md"
-                  } transition-all duration-200`}
-                >
-                  <div
-                    className={`p-5 rounded-xl border-2 text-right ${
-                      isDeleting
-                        ? "bg-slate-50 border-slate-200"
-                        : "bg-white border-amber-200 group-hover:border-amber-300 group-hover:bg-amber-50/30"
-                    }`}
+                <>
+                  <button
+                    onClick={handleDeleteSelected}
+                    disabled={isDeleting || selectedPaths.length === 0}
+                    className={`w-full group ${
+                      isDeleting || selectedPaths.length === 0
+                        ? "opacity-50 cursor-not-allowed"
+                        : "hover:shadow-md"
+                    } transition-all duration-200`}
                   >
-                    <div className="flex items-start gap-4">
-                      <div
-                        className={`p-3 rounded-lg ${
-                          isDeleting
-                            ? "bg-slate-100"
-                            : "bg-amber-100 group-hover:bg-amber-200"
-                        } transition-colors`}
-                      >
-                        <Trash
-                          className={
-                            isDeleting ? "text-slate-400" : "text-amber-700"
-                          }
-                          size={20}
-                        />
-                      </div>
-                      <div className="flex-1">
+                    <div
+                      className={`p-5 rounded-xl border-2 text-right ${
+                        isDeleting || selectedPaths.length === 0
+                          ? "bg-slate-50 border-slate-200"
+                          : "bg-white border-orange-200 group-hover:border-orange-300 group-hover:bg-orange-50/30"
+                      }`}
+                    >
+                      <div className="flex items-start gap-4">
                         <div
-                          className={`font-semibold mb-1.5 ${
-                            isDeleting ? "text-slate-400" : "text-slate-800"
-                          }`}
+                          className={`p-3 rounded-lg ${
+                            isDeleting || selectedPaths.length === 0
+                              ? "bg-slate-100"
+                              : "bg-orange-100 group-hover:bg-orange-200"
+                          } transition-colors`}
                         >
-                          מחיקה ממיקום נוכחי בלבד
+                          <Trash
+                            className={
+                              isDeleting || selectedPaths.length === 0
+                                ? "text-slate-400"
+                                : "text-orange-700"
+                            }
+                            size={20}
+                          />
                         </div>
-                        <p
-                          className={`text-sm leading-relaxed ${
-                            isDeleting ? "text-slate-400" : "text-slate-600"
-                          }`}
-                        >
-                          המוצר יוסר מהקטגוריה הנוכחית אך יישאר זמין ב-
-                          {currentPaths.length - 1} מיקומים נוספים במערכת
-                        </p>
+                        <div className="flex-1">
+                          <div
+                            className={`font-semibold mb-1.5 ${
+                              isDeleting || selectedPaths.length === 0
+                                ? "text-slate-400"
+                                : "text-slate-800"
+                            }`}
+                          >
+                            מחק מיקומים נבחרים ({selectedPaths.length})
+                          </div>
+                          <p
+                            className={`text-sm leading-relaxed ${
+                              isDeleting || selectedPaths.length === 0
+                                ? "text-slate-400"
+                                : "text-slate-600"
+                            }`}
+                          >
+                            {selectedPaths.length === 0
+                              ? "אנא בחר לפחות מיקום אחד למחיקה"
+                              : `המוצר יימחק מ-${selectedPaths.length} ${
+                                  selectedPaths.length === 1
+                                    ? "מיקום"
+                                    : "מיקומים"
+                                }`}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </button>
+                  </button>
+
+                  <button
+                    onClick={onDeleteFromCurrent}
+                    disabled={isDeleting}
+                    className={`w-full group ${
+                      isDeleting
+                        ? "opacity-50 cursor-not-allowed"
+                        : "hover:shadow-md"
+                    } transition-all duration-200`}
+                  >
+                    <div
+                      className={`p-5 rounded-xl border-2 text-right ${
+                        isDeleting
+                          ? "bg-slate-50 border-slate-200"
+                          : "bg-white border-amber-200 group-hover:border-amber-300 group-hover:bg-amber-50/30"
+                      }`}
+                    >
+                      <div className="flex items-start gap-4">
+                        <div
+                          className={`p-3 rounded-lg ${
+                            isDeleting
+                              ? "bg-slate-100"
+                              : "bg-amber-100 group-hover:bg-amber-200"
+                          } transition-colors`}
+                        >
+                          <Trash
+                            className={
+                              isDeleting ? "text-slate-400" : "text-amber-700"
+                            }
+                            size={20}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <div
+                            className={`font-semibold mb-1.5 ${
+                              isDeleting ? "text-slate-400" : "text-slate-800"
+                            }`}
+                          >
+                            מחיקה ממיקום נוכחי בלבד
+                          </div>
+                          <p
+                            className={`text-sm leading-relaxed ${
+                              isDeleting ? "text-slate-400" : "text-slate-600"
+                            }`}
+                          >
+                            המוצר יוסר מהקטגוריה הנוכחית אך יישאר זמין ב-
+                            {currentPaths.length - 1} מיקומים נוספים במערכת
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                </>
               )}
 
               <button
                 onClick={onDeleteFromAll}
                 disabled={isDeleting}
                 className={`w-full group ${
-                  isDeleting ? "opacity-50 cursor-not-allowed" : "hover:shadow-lg"
+                  isDeleting
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:shadow-lg"
                 } transition-all duration-200`}
               >
                 <div
