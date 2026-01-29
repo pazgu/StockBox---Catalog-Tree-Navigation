@@ -231,7 +231,6 @@ const SingleCat: FC = () => {
   const handleDelete = (item: DisplayItem) => {
     setItemToDelete(item);
 
-    // If it's a product with multiple locations, show smart delete modal
     if (item.type === "product" && item.path.length > 1) {
       setShowSmartDeleteModal(true);
     } else {
@@ -247,7 +246,6 @@ const SingleCat: FC = () => {
         await categoriesService.deleteCategory(itemToDelete.id);
         toast.success(`הקטגוריה "${itemToDelete.name}" נמחקה בהצלחה!`);
       } else {
-        // Delete from all categories (full delete)
         await ProductsService.deleteProduct(itemToDelete.id);
         toast.success(`המוצר "${itemToDelete.name}" נמחק מכל המיקומים!`);
       }
