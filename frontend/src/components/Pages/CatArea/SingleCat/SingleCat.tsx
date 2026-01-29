@@ -297,16 +297,43 @@ const SingleCat: FC = () => {
     }
   };
 
+  const handleDeleteFromSpecificPaths = async (paths: string[]) => {
+    if (!itemToDelete) return;
+    try {
+      setIsDeletingItem(true);
+      await ProductsService.deleteFromSpecificPaths(itemToDelete.id, paths);
+      
+      const stillInCurrentCategory = paths.every(
+        (path) => !path.startsWith(categoryPath)
+      );
+      
+      if (!stillInCurrentCategory) {
+        setItems(items.filter((item) => item.id !== itemToDelete.id));
+      }
+      
+      toast.success(
+        `המוצר "${itemToDelete.name}" הוסר מ-${paths.length} מיקום${paths.length > 1 ? 'ים' : ''}!`
+      );
+    } catch (error) {
+      toast.error("שגיאה במחיקה מהמיקומים הנבחרים");
+    } finally {
+      setIsDeletingItem(false);
+      setShowSmartDeleteModal(false);
+      setItemToDelete(null);
+    }
+  };
+
   const handleMove = (item: DisplayItem) => {
     setItemToMove(item);
     setShowMoveModal(true);
   };
 
   const handleMoveSuccess = async () => {
-    await loadAllContent();
-    setShowMoveModal(false);
-    setItemToMove(null);
-  };
+  await loadAllContent();
+  toast.success("הפריט הועבר בהצלחה!");
+  setShowMoveModal(false);
+  setItemToMove(null);
+};
 
   const handleDuplicate = (item: DisplayItem) => {
     setItemToDuplicate(item);
@@ -314,10 +341,11 @@ const SingleCat: FC = () => {
   };
 
   const handleDuplicateSuccess = async () => {
-    await loadAllContent();
-    setShowDuplicateModal(false);
-    setItemToDuplicate(null);
-  };
+  await loadAllContent();
+  toast.success("המוצר שוכפל בהצלחה!");
+  setShowDuplicateModal(false);
+  setItemToDuplicate(null);
+};
 
   const handleSaveProduct = async (data: {
     name: string;
@@ -818,6 +846,7 @@ const SingleCat: FC = () => {
           onClose={closeAllModals}
           onDeleteFromCurrent={handleDeleteFromCurrent}
           onDeleteFromAll={handleDeleteFromAll}
+          onDeleteSelected={handleDeleteFromSpecificPaths}
           isDeleting={isDeletingItem}
         />
       )}

@@ -238,4 +238,30 @@ export class ProductsService {
     );
     return data;
   }
+
+
+static async deleteFromSpecificPaths(
+  id: string,
+  paths: string[],
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const { data } = await api.delete(
+      `${this.baseUrl}/${id}/paths`,
+      {
+        ...this.getAuthHeaders(),
+        data: { paths },
+      },
+    );
+    return data;
+  } catch (error) {
+    const err = error as AxiosError;
+    const status = err.response?.status;
+    
+    if (status === 401) throw new Error("Unauthorized - please login");
+    if (status === 403) throw new Error("Only editors can delete products");
+    if (status === 404) throw new Error("Product not found");
+
+    throw new Error("Failed to delete product from specific paths");
+  }
+}
 }
