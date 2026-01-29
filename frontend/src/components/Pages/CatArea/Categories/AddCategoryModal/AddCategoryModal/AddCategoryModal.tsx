@@ -201,11 +201,23 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   const file = dataURLtoFile(finalImage, `${safeName}.jpg`);
 
   try {
-    setIsSaving(true);
-    await onSave({ name: newCatName.trim(), imageFile: file });
-  } finally {
-    setIsSaving(false);
+  setIsSaving(true);
+  await onSave({ name: newCatName.trim(), imageFile: file });
+} catch (error: any) {
+  const serverMessage =
+    error?.response?.data?.message || error?.response?.data?.error;
+
+  if (typeof serverMessage === "string" && serverMessage.trim()) {
+    toast.error(serverMessage);
+  } else {
+    toast.error("שגיאה בהוספת קטגוריה");
   }
+
+  console.error("Add category failed:", error);
+} finally {
+  setIsSaving(false);
+}
+
 };
 
 

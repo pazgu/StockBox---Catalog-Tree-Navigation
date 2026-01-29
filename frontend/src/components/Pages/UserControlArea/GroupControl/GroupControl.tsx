@@ -34,6 +34,8 @@ const GroupControl: React.FC = () => {
 
   const [groups, setGroups] = useState<Group[]>([]);
   const [isBannedLoading, setIsBannedLoading] = useState(false);
+  const MAX_GROUP_NAME_LEN = 30;
+
 
 useEffect(() => {
   if (selectedGroup) {
@@ -102,6 +104,11 @@ useEffect(() => {
   const saveNewGroup = async () => {
     const trimmedName = newGroupName.trim();
     if (!trimmedName) return;
+    
+    if (trimmedName.length > MAX_GROUP_NAME_LEN) {
+    toast.error(`שם הקבוצה ארוך מדי (מקסימום ${MAX_GROUP_NAME_LEN} תווים)`);
+    return;
+  }
 
     if (groups.some((g) => g.name === trimmedName)) {
       toast.error("כבר קיימת קבוצה עם שם זה. אנא בחר שם אחר.");
@@ -234,6 +241,11 @@ useEffect(() => {
       toast.error("שם הקבוצה לא יכול להיות ריק");
       return;
     }
+
+    if (trimmedName.length > MAX_GROUP_NAME_LEN) {
+     toast.error(`שם הקבוצה ארוך מדי (מקסימום ${MAX_GROUP_NAME_LEN} תווים)`);
+    return;
+  }
     
     if (groups.some((g) => g.name === trimmedName && g.id !== groupToEdit.id)) {
       toast.error("כבר קיימת קבוצה עם שם זה");
@@ -379,14 +391,16 @@ useEffect(() => {
           <div className="bg-white rounded-xl p-6 w-96 text-center shadow-lg">
             <h3 className="text-lg font-semibold mb-3">יצירת קבוצה חדשה</h3>
             <input
-              ref={inputRef}
-              type="text"
-              value={newGroupName}
-              onChange={(e) => setNewGroupName(e.target.value)}
-              placeholder="שם הקבוצה"
-              className="w-full p-2 mb-4 border border-gray-300 rounded-lg text-right"
-              aria-label="שם הקבוצה החדשה"
-            />
+  ref={inputRef}
+  type="text"
+  value={newGroupName}
+  maxLength={MAX_GROUP_NAME_LEN}
+  onChange={(e) => setNewGroupName(e.target.value.slice(0, MAX_GROUP_NAME_LEN))}
+  placeholder="שם הקבוצה"
+  className="w-full p-2 mb-4 border border-gray-300 rounded-lg text-right"
+  aria-label="שם הקבוצה החדשה"
+/>
+
             <div className="flex justify-between gap-3">
               <button
                 onClick={closeAddGroupModal}
@@ -436,12 +450,16 @@ useEffect(() => {
           <div className="bg-white rounded-xl p-6 w-96 text-center shadow-lg">
             <h3 className="text-lg font-semibold mb-3">עריכת שם הקבוצה</h3>
             <input
-              type="text"
-              value={editedGroupName}
-              onChange={(e) => setEditedGroupName(e.target.value)}
-              placeholder="שם חדש לקבוצה"
-              className="w-full p-2 mb-4 border border-gray-300 rounded-lg text-right"
-            />
+  type="text"
+  value={editedGroupName}
+  maxLength={MAX_GROUP_NAME_LEN}
+  onChange={(e) =>
+    setEditedGroupName(e.target.value.slice(0, MAX_GROUP_NAME_LEN))
+  }
+  placeholder="שם חדש לקבוצה"
+  className="w-full p-2 mb-4 border border-gray-300 rounded-lg text-right"
+/>
+
             <div className="flex justify-between gap-3">
               <button
                 onClick={() => setGroupToEdit(null)}
