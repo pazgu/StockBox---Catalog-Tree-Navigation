@@ -665,7 +665,7 @@ const SingleCat: FC = () => {
               <img
                 src={item.image}
                 alt={item.name}
-                className={`max-h-full max-w-full object-contain transition-transform duration-300 hover:scale-105 ${
+                className={`max-h-full max-w-full object-contain ${
                   item.type === "category" ? "rounded-full" : ""
                 }`}
               />
