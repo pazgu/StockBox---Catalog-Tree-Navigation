@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Ban } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { User } from "../../../models/user.models";
+import { groupService } from "../../../../services/GroupService";
 
 const ROLE_OPTIONS: Array<{ value: User["role"]; label: string }> = [
   { value: "editor", label: "עורך" },
@@ -47,7 +48,7 @@ const AllUsers: FC<AllUsersProps> = () => {
   const filteredUsers = users.filter(
     (user) =>
       user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
@@ -55,7 +56,7 @@ const AllUsers: FC<AllUsersProps> = () => {
   const startIndex = (currentPage - 1) * usersPerPage;
   const currentUsers = filteredUsers.slice(
     startIndex,
-    startIndex + usersPerPage
+    startIndex + usersPerPage,
   );
 
   const handleAddClick = () => navigate("/new-user");
@@ -100,15 +101,15 @@ const AllUsers: FC<AllUsersProps> = () => {
       try {
         const updatedUser = await userService.block(
           userId,
-          !currentBlockStatus
+          !currentBlockStatus,
         );
 
         setUsers((prev) =>
-          prev.map((u) => (u._id === userId ? updatedUser : u))
+          prev.map((u) => (u._id === userId ? updatedUser : u)),
         );
 
         toast.success(
-          currentBlockStatus ? "המשתמש שוחרר מהחסימה" : "המשתמש נחסם בהצלחה"
+          currentBlockStatus ? "המשתמש שוחרר מהחסימה" : "המשתמש נחסם בהצלחה",
         );
       } catch (error) {
         toast.error("אירעה שגיאה בעדכון סטטוס החסימה");
@@ -119,17 +120,44 @@ const AllUsers: FC<AllUsersProps> = () => {
     }
   };
   const handleApproveClick = (index: number) => setApproveUserIndex(index);
-  const confirmApprove = () => {
+  const confirmApprove = async () => {
     if (approveUserIndex !== null) {
-      const userId = currentUsers[approveUserIndex]._id;
+      const user = currentUsers[approveUserIndex];
+      const userId = user._id;
       if (!userId) {
         return;
       }
-      userService.update(userId, { approved: true });
-      toast.success("המשתמש אושר בהצלחה!");
-      setApproveUserIndex(null);
+
+      try {
+        const updatedUser = await userService.update(userId, {
+          approved: true,
+        });
+
+        if (user.role === "viewer") {
+          const groups = await groupService.getGroups();
+          const newUsersGroup = groups.find((g) => g.name === "New Users");
+
+          if (newUsersGroup && !newUsersGroup.members.includes(userId)) {
+            await groupService.updateGroupMembers(newUsersGroup.id, [
+              ...newUsersGroup.members,
+              userId,
+            ]);
+          }
+        }
+
+        setUsers((prev) =>
+          prev.map((u) => (u._id === userId ? updatedUser : u)),
+        );
+
+        toast.success("המשתמש אושר בהצלחה!");
+        setApproveUserIndex(null);
+      } catch (error) {
+        console.error("Error approving user:", error);
+        toast.error("שגיאה באישור המשתמש");
+      }
     }
   };
+
   const cancelDelete = () => setDeleteUserIndex(null);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -154,7 +182,7 @@ const AllUsers: FC<AllUsersProps> = () => {
     try {
       const updatedUser = await userService.update(userToEdit._id, userToEdit);
       setUsers((prev) =>
-        prev.map((u) => (u._id === updatedUser._id ? updatedUser : u))
+        prev.map((u) => (u._id === updatedUser._id ? updatedUser : u)),
       );
       toast.success("המשתמש עודכן בהצלחה!");
       setShowEditModal(false);
@@ -267,12 +295,11 @@ const AllUsers: FC<AllUsersProps> = () => {
                 </button>
 
                 <button
-  className="w-6 h-6 rounded flex items-center justify-center
+                  className="w-6 h-6 rounded flex items-center justify-center
              hover:bg-red-500 hover:text-white
              opacity-60 hover:opacity-100 transition"
-  onClick={() => handleDeleteClick(index)}
->
-
+                  onClick={() => handleDeleteClick(index)}
+                >
                   <svg
                     width="14"
                     height="14"
