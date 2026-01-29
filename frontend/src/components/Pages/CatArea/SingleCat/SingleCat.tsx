@@ -3,8 +3,9 @@
 import React, { FC, useState, ChangeEvent, useEffect } from "react";
 import {
   Heart,
-  Pen,
+  Lock,
   Trash,
+  Pen,
   PackageCheck,
   Boxes,
   FolderInput,
@@ -664,7 +665,7 @@ const SingleCat: FC = () => {
               <img
                 src={item.image}
                 alt={item.name}
-                className={`max-h-full max-w-full object-contain transition-transform duration-300 hover:scale-105 ${
+                className={`max-h-full max-w-full object-contain ${
                   item.type === "category" ? "rounded-full" : ""
                 }`}
               />
@@ -684,7 +685,7 @@ const SingleCat: FC = () => {
                     }}
                     className="flex items-center gap-2 text-sm font-medium text-white bg-[#0D305B] px-4 py-2 rounded-xl shadow-md transition-all duration-300 hover:bg-[#16447A] hover:shadow-lg focus:ring-2 focus:ring-[#0D305B]/40"
                   >
-                    <Pen size={16} className="text-white" />
+                    <Lock size={16} className="text-white" />
                     ניהול הרשאות
                   </button>
                 </div>
