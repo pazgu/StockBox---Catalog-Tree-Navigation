@@ -611,7 +611,7 @@ const SingleProd: FC<SingleProdProps> = () => {
                 <button
                   onClick={handleSaveClick}
                   disabled={isSaving}
-                  aria-label={isEditing ? "שמור שינויים" : "עריכת דף"}
+                  aria-label={isEditing ? "שמירת שינויים" : "עריכת דף"}
                   className={`peer flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300
                     ${isSaving ? "opacity-70 cursor-not-allowed" : ""}`}
                 >

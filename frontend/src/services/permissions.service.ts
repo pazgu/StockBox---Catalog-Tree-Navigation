@@ -31,9 +31,26 @@ export const permissionsService = {
   );
 },
 
+  createPermissionsBatch: async (
+    permissions: Array<{
+      entityType: string;
+      entityId: string;
+      allowed: string;
+      inheritToChildren?: boolean;
+    }>,
+  ) => {
+    return api.post(`${API_URL}/batch`, { permissions }, getAuthHeader());
+  },
 
   deletePermission: async (permissionId: string) => {
     return api.delete(`${API_URL}/${permissionId}`, getAuthHeader());
+  },
+  deletePermissionsBatch: async (permissionIds: string[]) => {
+    return api.post(
+      `${API_URL}/batch-delete`,
+      { permissionIds },
+      getAuthHeader(),
+    );
   },
 
   getPotentialViewers: async () => {
