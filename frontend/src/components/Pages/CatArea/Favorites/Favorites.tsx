@@ -248,7 +248,7 @@ export const Favorites: React.FC = () => {
                     הסר ממועדפים
                   </span>
                 </div>
-                <Link to={`${product.productPath}`}>
+                <Link to={`/products/${product._id}`}>
                   <img
                     src={product.productImages?.[0] || "/placeholder.png"}
                     alt={product.productName}
