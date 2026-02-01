@@ -79,14 +79,16 @@ export class PermissionsService {
       allowed,
     });
 
+    if (entityType === EntityType.CATEGORY) {
+      await this.categoryModel.updateOne(
+        { _id: entityId },
+        { $set: { permissionsInheritedToChildren: !!inheritToChildren } },
+      );
+    }
+
     if (entityType !== EntityType.CATEGORY || !inheritToChildren) {
       return created;
     }
-
-    await this.categoryModel.updateOne(
-      { _id: entityId, permissionsInheritedToChildren: { $ne: true } },
-      { $set: { permissionsInheritedToChildren: true } },
-    );
 
     const descendants = await this.getAllCategoryDescendants(entityId);
     if (!descendants.length) return created;
