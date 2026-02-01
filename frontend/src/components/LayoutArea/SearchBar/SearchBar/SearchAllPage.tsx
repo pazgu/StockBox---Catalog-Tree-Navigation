@@ -1,5 +1,6 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { Package, FolderTree, Loader2, ArrowRight } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { searchService } from "../../../../services/search.service";
 import { useUser } from "../../../../context/UserContext";
@@ -7,20 +8,28 @@ import { useUser } from "../../../../context/UserContext";
 const SearchResultsPage = () => {
   const [results, setResults] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string>("");
   const { role } = useUser();
   const isEditor = role === "editor";
+  const [error, setError] = useState<string>("");
+  const [hasMore, setHasMore] = useState(false);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const loaderRef = useRef<HTMLDivElement>(null);
 
   const { search } = useLocation();
   const navigate = useNavigate();
   const searchTerm = new URLSearchParams(search).get("q") || "";
+
   useEffect(() => {
     const fetchResults = async () => {
       setIsLoading(true);
+      setResults([]);
+      setCurrentPage(1);
       try {
         console.log("Search Term:", searchTerm);
-        const response = await searchService.getFullSearch(searchTerm);
+        const response = await searchService.getFullSearch(searchTerm, 1, 20);
         setResults(response.items);
+        setHasMore(response.hasMore);
       } catch (err) {
         setError("שגיאה בטעינת תוצאות החיפוש.");
       } finally {
@@ -30,14 +39,51 @@ const SearchResultsPage = () => {
     fetchResults();
   }, [searchTerm]);
 
+  const loadMore = useCallback(async () => {
+    if (isFetchingMore || !hasMore) return;
+
+    setIsFetchingMore(true);
+    try {
+      const nextPage = currentPage + 1;
+      const response = await searchService.getFullSearch(
+        searchTerm,
+        nextPage,
+        20,
+      );
+      setResults((prev) => [...prev, ...response.items]);
+      setHasMore(response.hasMore);
+      setCurrentPage(nextPage);
+    } catch (err) {
+      console.error("Error loading more results:", err);
+    } finally {
+      setIsFetchingMore(false);
+    }
+  }, [currentPage, hasMore, isFetchingMore, searchTerm]);
+
+  useEffect(() => {
+    if (!loaderRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isFetchingMore) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1 },
+    );
+
+    observer.observe(loaderRef.current);
+
+    return () => observer.disconnect();
+  }, [hasMore, isFetchingMore, loadMore]);
+
   return (
     <div className="min-h-screen py-10 px-4 md:px-20 font-sans mt-20" dir="rtl">
       <div className="max-w-3xl">
-        {" "}
         <div className="mb-8 border-b border-gray-100 pb-6">
           <button
             onClick={() => navigate(-1)}
-            className="text-gray-400 hover:text-gray-600 mb-4 flex items-center gap-1 text-sm"
+            className="fixed top-48 right-2 text-gray-400 hover:text-gray-600 mb-4 flex items-center gap-1 text-sm z-50 border-l border-gray-300 pl-4"
           >
             <ArrowRight size={14} /> חזור
           </button>
@@ -45,19 +91,15 @@ const SearchResultsPage = () => {
             תוצאות עבור:{" "}
             <span className="font-bold">"{searchTerm || "הכל"}"</span>
           </h1>
-          <p className="text-sm text-gray-500 mt-1 italic">
-            נמצאו {results.length} תוצאות
-          </p>
         </div>
         {isLoading ? (
           <div className="flex py-20 justify-center">
             <Loader2 className="animate-spin text-blue-500" />
           </div>
         ) : (
-          <div className="flex flex-col gap-10">
-            {" "}
+          <div className="flex flex-col gap-10 mr-4">
             {results.map((item) => (
-              <div key={item.id} className="group max-w-2xl">
+              <div key={`${item.type}-${item.id}`} className="group max-w-2xl">
                 <div className="flex items-center gap-3 mb-1">
                   <div
                     className={`w-7 h-7 rounded-full flex items-center justify-center border border-gray-100 shadow-sm ${
@@ -136,11 +178,23 @@ const SearchResultsPage = () => {
                     ? `צפה בפרטי המוצר המלאים במערכת. מזהה פריט: ${item.id}.`
                     : `עיון בקטגוריית ${item.label}. לחץ לצפייה בכל המוצרים והתת-קטגוריות המשוייכים לנתיב זה.`}
                 </p>
-                <div className="border-b border-gray-00 my-4" />
+                <div className="border-b border-gray-100 my-4" />
               </div>
             ))}
           </div>
         )}
+        <p className="fixed bottom-2 left-3 text-sm text-gray-500 italic">
+          נמצאו {results.length}
+          {hasMore ? "+" : ""} תוצאות
+        </p>
+        {hasMore && !isLoading && (
+          <div ref={loaderRef} className="flex py-10 justify-center">
+            {isFetchingMore && (
+              <Loader2 className="animate-spin text-blue-500" size={20} />
+            )}
+          </div>
+        )}
+
         {results.length === 0 && !isLoading && (
           <div className="py-20 text-gray-500">
             לא נמצאו תוצאות התואמות את החיפוש שלך.
