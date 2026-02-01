@@ -359,6 +359,94 @@ export class PermissionsService {
       await this.permissionModel.insertMany(permissions);
     }
   }
+  async updatePermissionsOnMove(
+    entityId: string,
+    entityType: EntityType,
+    newParentPath: string,
+  ): Promise<void> {
+    const parentCategory = await this.categoryModel
+      .findOne({ categoryPath: newParentPath })
+      .select('_id')
+      .lean();
+
+    if (!parentCategory) {
+      console.warn(`Parent category not found for path: ${newParentPath}`);
+      return;
+    }
+    const parentAllowedUsers = await this.getAllowedUsersForEntity(
+      parentCategory._id.toString(),
+      EntityType.CATEGORY,
+    );
+    await this.permissionModel.deleteMany({
+      entityType,
+      entityId: new mongoose.Types.ObjectId(entityId),
+    });
+    const newPermissions = parentAllowedUsers.map((userId) => ({
+      entityType,
+      entityId: new mongoose.Types.ObjectId(entityId),
+      allowed: new mongoose.Types.ObjectId(userId),
+    }));
+
+    if (newPermissions.length > 0) {
+      await this.permissionModel.insertMany(newPermissions);
+    }
+    if (entityType === EntityType.CATEGORY) {
+      const descendants = await this.getAllCategoryDescendants(entityId);
+
+      for (const descendant of descendants) {
+        await this.permissionModel.deleteMany({
+          entityType: descendant.entityType,
+          entityId: new mongoose.Types.ObjectId(descendant.entityId),
+        });
+        const descendantPermissions = parentAllowedUsers.map((userId) => ({
+          entityType: descendant.entityType,
+          entityId: new mongoose.Types.ObjectId(descendant.entityId),
+          allowed: new mongoose.Types.ObjectId(userId),
+        }));
+        if (descendantPermissions.length > 0) {
+          await this.permissionModel.insertMany(descendantPermissions);
+        }
+      }
+    }
+  }
+  async assignPermissionsOnDuplicate(
+    productId: string,
+    additionalCategoryPaths: string[],
+  ): Promise<void> {
+    for (const categoryPath of additionalCategoryPaths) {
+      const parentCategory = await this.categoryModel
+        .findOne({ categoryPath })
+        .select('_id')
+        .lean();
+      if (!parentCategory) {
+        console.warn(`Category not found for path: ${categoryPath}`);
+        continue;
+      }
+      const allowedUsers = await this.getAllowedUsersForEntity(
+        parentCategory._id.toString(),
+        EntityType.CATEGORY,
+      );
+      const existingPermissions = await this.permissionModel
+        .find({
+          entityType: EntityType.PRODUCT,
+          entityId: new mongoose.Types.ObjectId(productId),
+        })
+        .lean();
+      const existingAllowedIds = new Set(
+        existingPermissions.map((p) => p.allowed.toString()),
+      );
+      const newPermissions = allowedUsers
+        .filter((userId) => !existingAllowedIds.has(userId))
+        .map((userId) => ({
+          entityType: EntityType.PRODUCT,
+          entityId: new mongoose.Types.ObjectId(productId),
+          allowed: new mongoose.Types.ObjectId(userId),
+        }));
+      if (newPermissions.length > 0) {
+        await this.permissionModel.insertMany(newPermissions);
+      }
+    }
+  }
 
   async getDirectChildrenToDelete(categoryId: string) {
     if (!categoryId) return [];
