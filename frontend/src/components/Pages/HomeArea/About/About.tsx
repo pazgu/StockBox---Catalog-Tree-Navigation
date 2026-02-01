@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { FC, useState, useEffect } from "react";
+import React, { FC, useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
@@ -12,6 +12,7 @@ import AddSectionButton from "./AddSectionButton/AddSectionButton/AddSectionButt
 import { aboutApi } from "../../../../services/aboutApi";
 import BulletsSection from "./BulletsSection/BulletsSection";
 import { AboutBlock } from "@/components/models/about.models";
+import { debounce } from "../../../../lib/utils";
 
 const uid = () => crypto.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
 type FeatureItem = {
@@ -509,9 +510,10 @@ const About: FC<AboutProps> = () => {
     }
   }, [images.length, currentImageIndex]);
 
-  const hasActualChanges = () => {
+ const hasActualChanges = useCallback(() => {
   const currentBlocks = sectionsToBlocks(sections);
   const originalBlocks = sectionsToBlocks(originalData.sections);
+
   const currentImages = editableImages
     .filter((i) => !i.isPreview)
     .map((i) => i.url);
@@ -522,12 +524,12 @@ const About: FC<AboutProps> = () => {
     JSON.stringify(currentBlocks) !== JSON.stringify(originalBlocks) ||
     JSON.stringify(currentImages) !== JSON.stringify(originalImages)
   );
-};
+}, [sections, editableImages, originalData.sections, originalData.images]);
 
 
 
+  const handleSaveChanges = useCallback(async () => {
 
-  const handleSaveChanges = async () => {
 
   if (!hasActualChanges()) {
     setIsEditing(false);
@@ -598,9 +600,19 @@ const About: FC<AboutProps> = () => {
     } catch (e) {
       toast.error(TOAST.saveError);
     }
-  };
+  }, [
+  sections,
+  editableImages,
+  originalData.sections,
+  originalData.images,
+  hasActualChanges,
+  TOAST.saveSuccess,
+  TOAST.saveError,
+]);
 
-  const cancelEdit = async () => {
+
+  const cancelEdit = useCallback(async () => {
+
     try {
       await aboutApi.replace({
         blocks: sectionsToBlocks(originalData.sections),
@@ -621,7 +633,8 @@ const About: FC<AboutProps> = () => {
     } catch (e) {
       toast.error("שגיאה בביטול העריכה. נסה שוב.");
     }
-  };
+ }, [originalData.sections, originalData.images]);
+
 
   const buildSnapshotFromSections = (secs: SectionType[]) => {
     const snap: Record<string, string> = {};
@@ -732,7 +745,8 @@ const About: FC<AboutProps> = () => {
     }
   };
 
-  const removeImage = async (index: number) => {
+  const removeImage = useCallback(async (index: number) => {
+
     if (!isEditing) return;
 
     setIsImagesLoading(true);
@@ -751,9 +765,11 @@ const About: FC<AboutProps> = () => {
     } finally {
       setIsImagesLoading(false);
     }
-  };
+ }, [isEditing]);
 
-  const clearAllImages = async () => {
+
+  const clearAllImages = useCallback(async () => {
+
     if (!isEditing) return;
 
     setIsImagesLoading(true);
@@ -766,7 +782,29 @@ const About: FC<AboutProps> = () => {
     } finally {
       setIsImagesLoading(false);
     }
-  };
+  }, [isEditing]);
+
+
+const debouncedSaveChanges = useMemo(
+  () => debounce(() => { void handleSaveChanges(); }, 600),
+  [handleSaveChanges]
+);
+
+const debouncedCancelEdit = useMemo(
+  () => debounce(() => { void cancelEdit(); }, 600),
+  [cancelEdit]
+);
+
+const debouncedClearAllImages = useMemo(
+  () => debounce(() => { void clearAllImages(); }, 600),
+  [clearAllImages]
+);
+
+const debouncedRemoveImage = useMemo(
+  () => debounce((index: number) => { void removeImage(index); }, 400),
+  [removeImage]
+);
+
 
   const handleDragOverContainer = (e: React.DragEvent) => {
     if (!isEditing) return;
@@ -799,7 +837,7 @@ const About: FC<AboutProps> = () => {
               {isEditing && (
                 <div className="relative">
                   <button
-                    onClick={cancelEdit}
+                    onClick={debouncedCancelEdit}
                     aria-label="ביטול עריכה"
                     className="peer flex items-center justify-center w-14 h-14 rounded-full font-semibold bg-white text-red-600 shadow-lg ring-2 ring-red-500/20 hover:ring-red-500/30 hover:bg-red-50 transition-all duration-300"
                   >
@@ -815,7 +853,7 @@ const About: FC<AboutProps> = () => {
                 <button
                   onClick={() => {
                     if (isEditing) {
-                      handleSaveChanges();
+                        debouncedSaveChanges();
                       return;
                     }
                     setIsEditing(true);
@@ -1275,8 +1313,8 @@ const About: FC<AboutProps> = () => {
           currentIndex={currentImageIndex}
           onPrev={goPrev}
           onNext={goNext}
-          onRemoveImage={removeImage}
-          onClearAll={clearAllImages}
+          onRemoveImage={debouncedRemoveImage}
+          onClearAll={debouncedClearAllImages}
           onReplaceImage={handleReplaceImage}
           onAddImages={handleAddImages}
           replaceInputRef={replaceInputRef}
