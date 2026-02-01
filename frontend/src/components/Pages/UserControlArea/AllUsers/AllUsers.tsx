@@ -137,12 +137,15 @@ const AllUsers: FC<AllUsersProps> = () => {
           const groups = await groupService.getGroups();
           const newUsersGroup = groups.find((g) => g.name === "New Users");
 
-          if (newUsersGroup && !newUsersGroup.members.includes(userId)) {
-            await groupService.updateGroupMembers(newUsersGroup.id, [
-              ...newUsersGroup.members,
-              userId,
-            ]);
-          }
+          const userIdStr = String(userId);
+
+if (newUsersGroup && !newUsersGroup.members.includes(userIdStr)) {
+  await groupService.updateGroupMembers(newUsersGroup.id, [
+    ...newUsersGroup.members,
+    userIdStr,
+  ]);
+}
+
         }
 
         setUsers((prev) =>
