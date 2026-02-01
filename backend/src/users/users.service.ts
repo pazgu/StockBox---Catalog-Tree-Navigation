@@ -32,7 +32,12 @@ export class UsersService {
     if (savedUser.role !== UserRole.EDITOR) {
       const defaultGroup = await this.groupsService.getOrCreateDefaultGroup();
 
-      defaultGroup.members.push(savedUser._id.toString());
+      const userObjectId =
+        savedUser._id instanceof Types.ObjectId
+          ? savedUser._id
+          : new Types.ObjectId(savedUser._id);
+
+      defaultGroup.members.push(userObjectId);
       await defaultGroup.save();
     }
 
