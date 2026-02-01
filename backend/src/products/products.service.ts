@@ -322,6 +322,13 @@ export class ProductsService {
 
     product.productPath = newPaths;
     await product.save();
+    if (newCategoryPath.length > 0) {
+      await this.permissionsService.updatePermissionsOnMove(
+        id,
+        EntityType.PRODUCT,
+        newCategoryPath[0],
+      );
+    }
 
     return {
       success: true,
@@ -372,9 +379,12 @@ export class ProductsService {
       }
     }
 
-    // Add new paths to existing paths
     product.productPath = [...product.productPath, ...newPaths];
     await product.save();
+    await this.permissionsService.assignPermissionsOnDuplicate(
+      id,
+      additionalCategoryPaths,
+    );
 
     return {
       success: true,

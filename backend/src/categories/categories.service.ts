@@ -452,6 +452,11 @@ export class CategoriesService {
         { $set: { productPath: updatedPaths } },
       );
     }
+    await this.permissionsService.updatePermissionsOnMove(
+      id,
+      EntityType.CATEGORY,
+      newParentPath,
+    );
 
     return {
       success: true,
