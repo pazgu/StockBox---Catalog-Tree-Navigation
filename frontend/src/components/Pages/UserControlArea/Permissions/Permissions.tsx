@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
+import { ChevronDown, ChevronUp, ArrowRight, RefreshCcw } from "lucide-react";
 import { Switch } from "../../../ui/switch";
 import { Button } from "../../../ui/button";
 import { Card, CardContent } from "../../../ui/card";
@@ -42,11 +42,17 @@ const Permissions: React.FC = () => {
   const [existingPermissions, setExistingPermissions] = useState<Permission[]>(
     [],
   );
+  const [inheritanceApplied, setInheritanceApplied] = useState(false);
+  const [isSyncingChildren, setIsSyncingChildren] = useState(false);
+
   const [search, setSearch] = useState("");
   const [entityData, setEntityData] = useState<{
     name: string;
     image: string;
+    permissionsInheritedToChildren: boolean; 
+
   } | null>(null);
+  
 
   useEffect(() => {
     if (role !== "editor") {
@@ -67,7 +73,6 @@ const Permissions: React.FC = () => {
         const perms: Permission[] = permsRaw;
         setEntityData(entity);
         setExistingPermissions(perms);
-
         const { users: rawUsers, groups: rawGroups } = viewersData;
         const userToGroupsMap = new Map<string, string[]>();
         rawGroups.forEach((group: any) => {
@@ -160,6 +165,47 @@ const Permissions: React.FC = () => {
       );
     }
   };
+  const hasAddedPermissions = useMemo(() => {
+    const usersToAllow = users.filter((u) => u.enabled).map((u) => u._id);
+    const groupsToAllow = groups.filter((g) => g.memebers).map((g) => g._id);
+    const finalAllowedIds = [...usersToAllow, ...groupsToAllow];
+
+    const currentDbIds = existingPermissions.map((p) => p.allowed);
+    const toCreate = finalAllowedIds.filter(
+      (id) => !currentDbIds.includes(id),
+    );
+
+    return toCreate.length > 0;
+  }, [users, groups, existingPermissions]);
+
+  const handleSyncToChildren = async () => {
+    if (!cleanId || type !== "category") return;
+
+    try {
+      setIsSyncingChildren(true);
+
+      await permissionsService.syncCategoryPermissionsToChildren(cleanId);
+
+      toast.success("הרשאות הוחלו בהצלחה על כל הצאצאים");
+      setInheritanceApplied(true);
+    } catch (err) {
+      toast.error("שגיאה בהחלת הרשאות על הצאצאים");
+    } finally {
+      setIsSyncingChildren(false);
+    }
+  };
+  const hasLocalChanges = useMemo(() => {
+  const usersToAllow = users.filter(u => u.enabled).map(u => u._id);
+  const groupsToAllow = groups.filter(g => g.memebers).map(g => g._id);
+  const finalAllowedIds = [...usersToAllow, ...groupsToAllow];
+  const currentDbIds = existingPermissions.map(p => p.allowed);
+
+  const addedOrRemoved = finalAllowedIds.length !== currentDbIds.length
+    || finalAllowedIds.some(id => !currentDbIds.includes(id));
+
+  return addedOrRemoved;
+}, [users, groups, existingPermissions]);
+
 
   const savePermissions = async (inheritToChildren: boolean) => {
     try {
@@ -210,6 +256,9 @@ const Permissions: React.FC = () => {
       } else {
         navigate(-1);
       }
+     if (inheritToChildren) {
+      setInheritanceApplied(true);
+    }
     } catch (err) {
       toast.error("שגיאה בשמירה");
     }
@@ -238,6 +287,13 @@ const Permissions: React.FC = () => {
       savePermissions(false);
     }
   };
+
+const showManualInheritButton =
+  type === "category" &&
+  entityData?.permissionsInheritedToChildren === false &&
+  existingPermissions.length > 0 &&
+  !hasLocalChanges; 
+
 
   return (
     <div
@@ -416,21 +472,42 @@ const Permissions: React.FC = () => {
               savePermissions(true);
             }}
           />
-          <div className="flex justify-end gap-3 mt-6">
-            <Button
-              variant="outline"
-              className="px-8 py-2 border-gray-300 hover:bg-gray-300 transition-all font-medium"
-              onClick={() => navigate(-1)}
-            >
-              ביטול
-            </Button>
-            <Button
-              className="bg-green-600 text-white hover:bg-green-700 px-10 shadow-lg"
-              onClick={handleSave}
-            >
-              שמירה
-            </Button>
-          </div>
+             <div className="mt-6 flex justify-between items-start gap-3">
+                <div className="min-w-[240px]">
+                {showManualInheritButton && (
+                  <Button
+                    variant="outline"
+                    className="flex items-center gap-2 border-blue-500 text-blue-600 hover:bg-blue-50 px-4 py-2 font-medium shadow-sm"
+                    disabled={isSyncingChildren}
+                    onClick={handleSyncToChildren}
+                  >
+                    <RefreshCcw className="w-4 h-4" />
+                    {isSyncingChildren
+                      ? "מעדכן הרשאות לצאצאים..."
+                      : "החלת הרשאות על כל הצאצאים"}
+                  </Button>
+                )}
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="px-8 py-2 border-gray-300 hover:bg-gray-300 transition-all font-medium"
+                  onClick={() => navigate(-1)}
+                >
+                  ביטול
+                </Button>
+                <Button
+                  className="bg-green-600 text-white hover:bg-green-700 px-10 shadow-lg"
+                  onClick={handleSave}
+                >
+                  שמירה
+                </Button>
+              </div>
+            </div>
+
+
+                        
         </CardContent>
       </Card>
     </div>
