@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Plus, Upload } from "lucide-react";
 import { UserRole } from "../../../../models/user.models";
 import { Spinner } from "../../../../ui/spinner";
-
+import { environment } from "../../../../../environments/environment";
 
 type AboutImagesPanelProps = {
   isEditing: boolean;
@@ -25,11 +25,11 @@ type AboutImagesPanelProps = {
   onAddImages: (e: React.ChangeEvent<HTMLInputElement>) => void;
 
   replaceInputRef?:
-    | React.RefObject<HTMLInputElement>
-    | React.MutableRefObject<HTMLInputElement | null>;
+  | React.RefObject<HTMLInputElement>
+  | React.MutableRefObject<HTMLInputElement | null>;
   addInputRef?:
-    | React.RefObject<HTMLInputElement>
-    | React.MutableRefObject<HTMLInputElement | null>;
+  | React.RefObject<HTMLInputElement>
+  | React.MutableRefObject<HTMLInputElement | null>;
 };
 
 const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
@@ -110,10 +110,9 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
           className={`relative z-10 w-full h-full rounded-[3rem] overflow-hidden
             bg-gradient-to-br from-white via-blue-50 to-blue-100/70
             shadow-2xl border-4 border-white/60 backdrop-blur-sm
-            ${
-              isEditing
-                ? ""
-                : "transition-all duration-700 ease-out hover:shadow-[0_30px_80px_rgba(59,130,246,0.3)] hover:scale-105 hover:-translate-y-2 hover:rotate-2"
+            ${isEditing
+              ? ""
+              : "transition-all duration-700 ease-out hover:shadow-[0_30px_80px_rgba(59,130,246,0.3)] hover:scale-105 hover:-translate-y-2 hover:rotate-2"
             }
           `}
         >
@@ -121,50 +120,48 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
           <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-blue-600/10 z-10 pointer-events-none" />
           <div
             className={`absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent z-20 pointer-events-none skew-x-12
-              ${
-                isEditing
-                  ? ""
-                  : "-translate-x-full hover:translate-x-full transition-transform duration-1000"
+              ${isEditing
+                ? ""
+                : "-translate-x-full hover:translate-x-full transition-transform duration-1000"
               }
             `}
           />
 
           {images.length > 0 ? (
             <>
-             <img
-  src={toFullUrl(images[currentIndex] ?? images[0] ?? "")}
-  alt="StockBox preview"
-  className={`w-full h-full object-cover scale-105 ${
-    isEditing ? "" : "transition-all duration-1000 ease-out hover:scale-110"
-  } pointer-events-none`}
-/>
+              <img
+                src={toFullUrl(images[currentIndex] ?? images[0] ?? "")}
+                alt="StockBox preview"
+                className={`w-full h-full object-cover scale-105 ${isEditing ? "" : "transition-all duration-1000 ease-out hover:scale-110"
+                  } pointer-events-none`}
+              />
 
               {isEditing && images.length > 1 && (
                 <>
                   <button
-  type="button"
-  disabled={isLoading}
-  onClick={onPrev}
-  className={`absolute right-3 top-1/2 -translate-y-1/2 z-60 h-9 w-9 rounded-full grid place-items-center bg-white/90 text-gray-800 shadow hover:bg-white focus:outline-none
+                    type="button"
+                    disabled={isLoading}
+                    onClick={onPrev}
+                    className={`absolute right-3 top-1/2 -translate-y-1/2 z-60 h-9 w-9 rounded-full grid place-items-center bg-white/90 text-gray-800 shadow hover:bg-white focus:outline-none
     ${isLoading ? "opacity-50 pointer-events-none" : ""}
   `}
->
-  ‹
-</button>
+                  >
+                    ‹
+                  </button>
 
 
                   <button
-  type="button"
-  disabled={isLoading}
-  onClick={onNext}
-  className={`absolute left-3 top-1/2 -translate-y-1/2 z-60 h-9 w-9 rounded-full grid place-items-center bg-white/90 text-gray-800 shadow hover:bg-white focus:outline-none
+                    type="button"
+                    disabled={isLoading}
+                    onClick={onNext}
+                    className={`absolute left-3 top-1/2 -translate-y-1/2 z-60 h-9 w-9 rounded-full grid place-items-center bg-white/90 text-gray-800 shadow hover:bg-white focus:outline-none
     ${isLoading ? "opacity-50 pointer-events-none" : ""}
   `}
-  aria-label="תמונה הבאה"
-  title="הבא"
->
-  ›
-</button>
+                    aria-label="תמונה הבאה"
+                    title="הבא"
+                  >
+                    ›
+                  </button>
 
                 </>
               )}
@@ -176,27 +173,27 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
               {isEditing && role === "editor" && (
                 <>
                   <button
-  disabled={isLoading}
-  onClick={() => onRemoveImage(currentIndex)}
-  className={`absolute top-4 right-4 z-[60] pointer-events-auto inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold text-white bg-red-600/90 hover:bg-red-700 shadow-xl transition-all
+                    disabled={isLoading}
+                    onClick={() => onRemoveImage(currentIndex)}
+                    className={`absolute top-4 right-4 z-[60] pointer-events-auto inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold text-white bg-red-600/90 hover:bg-red-700 shadow-xl transition-all
     ${isLoading ? "opacity-50 pointer-events-none" : ""}
   `}
->
-  מחיקת תמונה
-</button>
+                  >
+                    מחיקת תמונה
+                  </button>
 
 
                   {images.length > 0 && (
                     <button
-  disabled={isLoading}
-  onClick={() => setShowClearDialog(true)}
-  className={`absolute top-4 left-4 z-[60] pointer-events-auto inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold text-red-700 bg-white/90 border border-red-200 hover:bg-red-50 shadow transition-all
+                      disabled={isLoading}
+                      onClick={() => setShowClearDialog(true)}
+                      className={`absolute top-4 left-4 z-[60] pointer-events-auto inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold text-red-700 bg-white/90 border border-red-200 hover:bg-red-50 shadow transition-all
     ${isLoading ? "opacity-50 pointer-events-none" : ""}
   `}
-  title="מחק את כל התמונות"
->
-  מחיקת הכל
-</button>
+                      title="מחק את כל התמונות"
+                    >
+                      מחיקת הכל
+                    </button>
 
                   )}
 
@@ -233,27 +230,27 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
               {isEditing && role === "editor" && (
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[60] pointer-events-auto flex items-center gap-3 rounded-2xl bg-white/80 backdrop-blur shadow-lg px-3 py-2">
                   {/* replace current */}
-                 <button
-  disabled={isLoading}
-  onClick={() => replaceRef.current?.click()}
-  className={`h-8 rounded-full px-3 text-xs font-semibold bg-white text-stockblue border border-stockblue/20 hover:bg-blue-50
+                  <button
+                    disabled={isLoading}
+                    onClick={() => replaceRef.current?.click()}
+                    className={`h-8 rounded-full px-3 text-xs font-semibold bg-white text-stockblue border border-stockblue/20 hover:bg-blue-50
     ${isLoading ? "opacity-50 pointer-events-none" : ""}
   `}
->
-  החלף
-</button>
+                  >
+                    החלף
+                  </button>
 
-<button
-  disabled={isLoading}
-  onClick={() => addRef.current?.click()}
-  className={`h-8 rounded-full px-3 text-xs font-semibold bg-stockblue text-white hover:bg-blue-700
+                  <button
+                    disabled={isLoading}
+                    onClick={() => addRef.current?.click()}
+                    className={`h-8 rounded-full px-3 text-xs font-semibold bg-stockblue text-white hover:bg-blue-700
     ${isLoading ? "opacity-50 pointer-events-none" : ""}
   `}
->
-  <span className="inline-flex items-center gap-1">
-    <Plus size={14} /> הוסף
-  </span>
-</button>
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      <Plus size={14} /> הוסף
+                    </span>
+                  </button>
 
                   <input
                     ref={replaceRef}
@@ -265,66 +262,64 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
                 </div>
               )}
             </>
- ) : (
-  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-6">
-    {role === "editor" ? (
-      // EDITOR EMPTY STATE (clickable upload)
-      <button
-        onClick={() => {
-          if (!isEditing) return;
-          addRef.current?.click();
-        }}
-        className={`group w-full h-full rounded-[3rem] border-2 border-dashed border-stockblue/30 bg-white/70 backdrop-blur-sm flex flex-col items-center justify-center gap-3 transition
+          ) : (
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-6">
+              {role === "editor" ? (
+                // EDITOR EMPTY STATE (clickable upload)
+                <button
+                  onClick={() => {
+                    if (!isEditing) return;
+                    addRef.current?.click();
+                  }}
+                  className={`group w-full h-full rounded-[3rem] border-2 border-dashed border-stockblue/30 bg-white/70 backdrop-blur-sm flex flex-col items-center justify-center gap-3 transition
           ${isEditing ? "hover:border-stockblue/50 hover:bg-white" : "opacity-70 cursor-not-allowed"}
         `}
-        title={isEditing ? "העלה תמונה" : "היכנסו לעריכה כדי להעלות"}
-        aria-label="העלאת תמונה"
-      >
-        <Upload size={32} className="opacity-70 group-hover:opacity-100" />
-        <span className="text-stockblue/80 font-semibold">
-          אין תמונות כרגע - לחצו כדי להעלות
-        </span>
-        <span className="text-xs text-slate-500">PNG · JPG · JPEG</span>
-      </button>
-    ) : (
-      // VIEWER EMPTY STATE (no upload icon, not clickable)
-      <div className="w-full h-full rounded-[3rem] border-2 border-dashed border-stockblue/20 bg-white/60 backdrop-blur-sm flex flex-col items-center justify-center gap-2">
-        <span className="text-stockblue/80 font-semibold">אין תמונות כרגע</span>
-      </div>
-    )}
-  </div>
-)}
+                  title={isEditing ? "העלה תמונה" : "היכנסו לעריכה כדי להעלות"}
+                  aria-label="העלאת תמונה"
+                >
+                  <Upload size={32} className="opacity-70 group-hover:opacity-100" />
+                  <span className="text-stockblue/80 font-semibold">
+                    אין תמונות כרגע - לחצו כדי להעלות
+                  </span>
+                  <span className="text-xs text-slate-500">PNG · JPG · JPEG</span>
+                </button>
+              ) : (
+                // VIEWER EMPTY STATE (no upload icon, not clickable)
+                <div className="w-full h-full rounded-[3rem] border-2 border-dashed border-stockblue/20 bg-white/60 backdrop-blur-sm flex flex-col items-center justify-center gap-2">
+                  <span className="text-stockblue/80 font-semibold">אין תמונות כרגע</span>
+                </div>
+              )}
+            </div>
+          )}
 
-<input
-  ref={addRef}
-  type="file"
-  accept="image/*"
-  multiple
-  className="hidden"
-  onChange={onAddImages}
-/>
+          <input
+            ref={addRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={onAddImages}
+          />
 
-{isLoading && (
-  <div className="absolute inset-0 z-[80] grid place-items-center bg-white/55 backdrop-blur-sm">
-    <div className="flex items-center gap-2 rounded-2xl bg-white/80 px-4 py-2 shadow">
-      <Spinner className="size-5" />
-      <span className="text-sm font-semibold text-[#103e76]">טוען…</span>
-    </div>
-  </div>
-)}
+          {isLoading && (
+            <div className="absolute inset-0 z-[80] grid place-items-center bg-white/55 backdrop-blur-sm">
+              <div className="flex items-center gap-2 rounded-2xl bg-white/80 px-4 py-2 shadow">
+                <Spinner className="size-5" />
+                <span className="text-sm font-semibold text-[#103e76]">טוען…</span>
+              </div>
+            </div>
+          )}
 
         </div>
 
         {/* floating glows */}
         <div
-          className={`absolute -top-6 -right-6 w-24 h-24 bg-gradient-to-br from-blue-400/40 to-purple-400/30 rounded-full blur-2xl pointer-events-none -z-10 ${
-            isEditing ? "" : "animate-pulse"
-          }`}
+          className={`absolute -top-6 -right-6 w-24 h-24 bg-gradient-to-br from-blue-400/40 to-purple-400/30 rounded-full blur-2xl pointer-events-none -z-10 ${isEditing ? "" : "animate-pulse"
+            }`}
         />
         <div
-          className={`absolute -bottom-8 -left-8 w-32 h-32 bg-gradient-to-tr from-purple-500/20 to-blue-500/30 rounded-full blur-3xl pointer-events-none -z-10 ${
-            isEditing ? "" : "animate-pulse"
-          }`}
+          className={`absolute -bottom-8 -left-8 w-32 h-32 bg-gradient-to-tr from-purple-500/20 to-blue-500/30 rounded-full blur-3xl pointer-events-none -z-10 ${isEditing ? "" : "animate-pulse"
+            }`}
         />
       </div>
     </aside>
@@ -332,7 +327,8 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
 };
 
 
-const API_BASE = "http://localhost:4000";
+const API_BASE = environment.API_URL;
+
 
 const toFullUrl = (raw: string) => {
   if (!raw) return "";
