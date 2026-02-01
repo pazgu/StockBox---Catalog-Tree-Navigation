@@ -6,7 +6,7 @@ import { MoveRight, ChevronLeft } from "lucide-react";
 
 interface MoveCategoryModalProps {
   isOpen: boolean;
-  category: Category; 
+  category: Category;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -18,11 +18,23 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
   onSuccess,
 }) => {
   const [allCategories, setAllCategories] = useState<Category[]>([]);
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
+    new Set(),
+  );
   const [selectedParentPath, setSelectedParentPath] = useState<string>("");
   const [loading, setLoading] = useState(false);
-  const [subcategoriesCache, setSubcategoriesCache] = useState<Record<string, Category[]>>({});
+  const [subcategoriesCache, setSubcategoriesCache] = useState<
+    Record<string, Category[]>
+  >({});
   const [loadingSubcats, setLoadingSubcats] = useState<Set<string>>(new Set());
+
+  const getCurrentParentPath = (): string => {
+    const parts = category.categoryPath.split("/");
+    parts.pop();
+    return parts.join("/");
+  };
+
+  const currentParentPath = getCurrentParentPath();
 
   useEffect(() => {
     if (isOpen) {
@@ -36,17 +48,20 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
     try {
       setLoading(true);
       const mainCategories = await categoriesService.getCategories();
-      
+
       const filteredCategories = mainCategories.filter((cat) => {
         if (cat._id === category._id) return false;
-        if (cat.categoryPath.startsWith(category.categoryPath + "/")) return false;
+        if (cat.categoryPath.startsWith(category.categoryPath + "/"))
+          return false;
         return true;
       });
 
       setAllCategories(filteredCategories);
 
       await Promise.all(
-        filteredCategories.map(cat => loadAllSubcategoriesRecursively(cat.categoryPath))
+        filteredCategories.map((cat) =>
+          loadAllSubcategoriesRecursively(cat.categoryPath),
+        ),
       );
     } catch (error) {
       toast.error("שגיאה בטעינת קטגוריות");
@@ -57,20 +72,20 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
   };
 
   const loadAllSubcategoriesRecursively = async (
-  categoryPath: string,
-  showToastOnFail: boolean = false
-): Promise<void> => {
-
+    categoryPath: string,
+    showToastOnFail: boolean = false,
+  ): Promise<void> => {
     if (subcategoriesCache[categoryPath]) {
       return;
     }
 
     try {
       const subcats = await categoriesService.getDirectChildren(categoryPath);
-      
+
       const filteredSubcats = subcats.filter((cat) => {
         if (cat._id === category._id) return false;
-        if (cat.categoryPath.startsWith(category.categoryPath + "/")) return false;
+        if (cat.categoryPath.startsWith(category.categoryPath + "/"))
+          return false;
         return true;
       });
 
@@ -80,36 +95,37 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
       }));
 
       await Promise.all(
-        filteredSubcats.map(subcat => loadAllSubcategoriesRecursively(subcat.categoryPath))
+        filteredSubcats.map((subcat) =>
+          loadAllSubcategoriesRecursively(subcat.categoryPath),
+        ),
       );
-     } catch (error) {
-    if (showToastOnFail) {
-      toast.error("שגיאה בטעינת תתי-קטגוריות");
+    } catch (error) {
+      if (showToastOnFail) {
+        toast.error("שגיאה בטעינת תתי-קטגוריות");
+      }
+      console.error("Error loading subcategories:", error);
     }
-    console.error("Error loading subcategories:", error);
-  }
-
   };
 
   const toggleCategory = async (categoryPath: string) => {
     const newExpanded = new Set(expandedCategories);
-    
+
     if (newExpanded.has(categoryPath)) {
       newExpanded.delete(categoryPath);
     } else {
       newExpanded.add(categoryPath);
-      
+
       if (!subcategoriesCache[categoryPath]) {
-        setLoadingSubcats(prev => new Set(prev).add(categoryPath));
+        setLoadingSubcats((prev) => new Set(prev).add(categoryPath));
         await loadAllSubcategoriesRecursively(categoryPath, true);
-        setLoadingSubcats(prev => {
+        setLoadingSubcats((prev) => {
           const newSet = new Set(prev);
           newSet.delete(categoryPath);
           return newSet;
         });
       }
     }
-    
+
     setExpandedCategories(newExpanded);
   };
 
@@ -119,11 +135,17 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
     const isExpanded = expandedCategories.has(cat.categoryPath);
     const isLoading = loadingSubcats.has(cat.categoryPath);
 
+    const isCurrentParent = cat.categoryPath === currentParentPath;
+
     return (
       <div key={cat._id} style={{ marginRight: `${level * 20}px` }}>
         <label
           className={`flex items-center gap-2 p-3 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-all mb-2 ${
-            selectedParentPath === cat.categoryPath ? "border-slate-700 bg-slate-50" : "border-gray-200"
+            selectedParentPath === cat.categoryPath
+              ? "border-slate-700 bg-slate-50"
+              : isCurrentParent
+                ? "border-amber-400 bg-amber-50"
+                : "border-gray-200"
           }`}
         >
           {hasSubcats && (
@@ -146,7 +168,7 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
               )}
             </button>
           )}
-          
+
           <input
             type="radio"
             name="destination"
@@ -156,7 +178,7 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
             className="w-4 h-4"
             disabled={loading}
           />
-          
+
           <div className="flex items-center gap-2 flex-1">
             {cat.categoryImage && (
               <img
@@ -166,7 +188,14 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
               />
             )}
             <div className="text-right">
-              <p className="font-medium">{cat.categoryName}</p>
+              <p className="font-medium">
+                {cat.categoryName}
+                {isCurrentParent && (
+                  <span className="mr-2 text-xs text-amber-600 font-semibold">
+                    (קיים כאן)
+                  </span>
+                )}
+              </p>
               <p className="text-xs text-gray-500">{cat.categoryPath}</p>
             </div>
           </div>
@@ -195,10 +224,10 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
       onClose();
     } catch (error: any) {
       const errorMessage =
-  error?.response?.data?.message ||
-  error?.response?.data?.error ||
-  "שגיאה בהעברת הקטגוריה";
-toast.error(errorMessage);
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        "שגיאה בהעברת הקטגוריה";
+      toast.error(errorMessage);
       console.error(error);
     } finally {
       setLoading(false);
@@ -209,12 +238,11 @@ toast.error(errorMessage);
 
   return (
     <div
-  className="fixed inset-0 bg-slate-900 bg-opacity-85 backdrop-blur-xl flex items-center justify-center z-50 transition-all duration-300 p-4"
-  onClick={() => {
-    if (!loading) onClose();
-  }}
->
-
+      className="fixed inset-0 bg-slate-900 bg-opacity-85 backdrop-blur-xl flex items-center justify-center z-50 transition-all duration-300 p-4"
+      onClick={() => {
+        if (!loading) onClose();
+      }}
+    >
       <div
         className="bg-white p-8 rounded-xl w-[600px] max-w-[95%] max-h-[90vh] overflow-y-auto shadow-2xl text-center"
         onClick={(e) => e.stopPropagation()}
@@ -227,7 +255,9 @@ toast.error(errorMessage);
           <p className="text-gray-700 mb-2">
             מעביר: <strong>{category.categoryName}</strong>
           </p>
-          <p className="text-sm text-gray-500">נתיב נוכחי: {category.categoryPath}</p>
+          <p className="text-sm text-gray-500">
+            נתיב נוכחי: {category.categoryPath}
+          </p>
         </div>
 
         <div className="text-right mb-6">
