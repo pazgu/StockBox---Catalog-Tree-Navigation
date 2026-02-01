@@ -60,8 +60,10 @@ export class SearchService {
       };
     }
 
+    const userObjectId = new Types.ObjectId(userId);
+
     const userGroups = await this.groupModel
-      .find({ members: userId })
+      .find({ members: userObjectId })
       .select('_id')
       .lean();
 
@@ -106,8 +108,12 @@ export class SearchService {
             .map(([categoryId]) => categoryId)
         : Array.from(categoryUserPermissions);
 
+    const allowedCategoryObjectIds = allowedCategoryIds.map(
+      (id) => new Types.ObjectId(id),
+    );
+
     const categories = await this.categoryModel
-      .find({ _id: { $in: allowedCategoryIds } })
+      .find({ _id: { $in: allowedCategoryObjectIds } })
       .select({ categoryPath: 1 })
       .lean();
 
@@ -139,8 +145,12 @@ export class SearchService {
             .map(([productId]) => productId)
         : Array.from(productUserPermissions);
 
+    const allowedProductObjectIds = allowedProductIds.map(
+      (id) => new Types.ObjectId(id),
+    );
+
     const products = await this.productModel
-      .find({ _id: { $in: allowedProductIds } })
+      .find({ _id: { $in: allowedProductObjectIds } })
       .select({ productPath: 1 })
       .lean();
 
