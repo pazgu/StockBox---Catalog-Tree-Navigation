@@ -15,6 +15,7 @@ export class CreatePermissionDto {
   @IsNotEmpty()
   @IsMongoId({ message: 'allowed must be a valid MongoDB ObjectId' })
   allowed: string;
+
   @IsOptional()
   inheritToChildren?: boolean;
 }

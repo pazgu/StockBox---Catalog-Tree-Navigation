@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -9,7 +9,7 @@ import { User,USER_ROLES  } from "../../../models/user.models";
 import { Group } from "../../../models/group.models";
 import { useNavigate } from "react-router-dom";
 import { X, UserRound } from "lucide-react";
-
+import { debounce } from "../../../../lib/utils";
 import { useUser } from "../../../../context/UserContext";
 import api from "../../../../services/axios";
 
@@ -129,7 +129,17 @@ const NewUser: React.FC = () => {
       console.error("שגיאה בשליחת הנתונים:", error);
       toast.error("שגיאה בשליחת נתונים");
     }
+
   };
+
+    const debouncedSubmit = useMemo(
+  () =>
+    debounce(() => {
+      handleSubmit(onSubmit)();
+    }, 500),
+  [handleSubmit]
+);
+
 
   return (
     <div className="flex justify-center items-start pt-36 w-full box-border top-16">
@@ -361,7 +371,7 @@ const NewUser: React.FC = () => {
         </form>
 
        <motion.button
-  type="submit"
+  type="button"
   className={`mt-6 bg-[#0D305B] text-white py-2.5 px-6 text-sm font-semibold
   rounded-md cursor-pointer self-center min-w-[140px]
   border border-[#0D305B]/20
@@ -373,7 +383,7 @@ const NewUser: React.FC = () => {
   disabled={isSubmitting}
   whileHover={{ scale: 1.0 }}
   whileTap={{ scale: 0.99 }}
-  onClick={handleSubmit(onSubmit)}
+  onClick={debouncedSubmit}
 >
   {isSubmitting ? "מוסיף..." : "הוסף משתמש"}
 </motion.button>

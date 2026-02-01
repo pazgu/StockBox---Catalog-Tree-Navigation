@@ -26,6 +26,9 @@ const SearchBar: React.FC<SearchHeaderProps> = ({
 
   const searchRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const latestRequestIdRef = useRef(0);
+  const debounceTimerRef = useRef<number | null>(null);
+
   const navigate = useNavigate();
   const { role } = useUser();
   const isEditor = role === "editor";
@@ -47,46 +50,67 @@ const SearchBar: React.FC<SearchHeaderProps> = ({
   }, []);
 
   // Debounced search
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (searchQuery.trim().length > 0) {
-        performSearch(searchQuery.trim());
-      } else {
-        setResults([]);
-        setShowResults(false);
-        setError("");
-      }
-    }, 300);
+ useEffect(() => {
+  const q = searchQuery.trim();
 
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
+  // clear previous timer
+  if (debounceTimerRef.current) {
+    window.clearTimeout(debounceTimerRef.current);
+  }
 
-  const performSearch = async (query: string) => {
-    if (query.length === 0) return;
-
-    setIsLoading(true);
+  // if empty -> reset UI
+  if (!q) {
+    setResults([]);
+    setShowResults(false);
     setError("");
+    setIsLoading(false);
+    return;
+  }
 
-    try {
-      const token = localStorage.getItem("token");
+  debounceTimerRef.current = window.setTimeout(() => {
+    void performSearch(q);
+  }, 300);
 
-      if (!token) {
-        throw new Error("נדרשת התחברות");
-      }
-
-      const response = await searchService.getDropdownResults(query);
-
-      setResults(response.items);
-
-      setShowResults(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "שגיאה בחיפוש");
-      setResults([]);
-      setShowResults(true);
-    } finally {
-      setIsLoading(false);
+  return () => {
+    if (debounceTimerRef.current) {
+      window.clearTimeout(debounceTimerRef.current);
     }
   };
+}, [searchQuery]);
+
+
+  const performSearch = async (query: string) => {
+  if (!query) return;
+
+  const requestId = ++latestRequestIdRef.current;
+
+  setIsLoading(true);
+  setError("");
+
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("נדרשת התחברות");
+
+    const response = await searchService.getDropdownResults(query);
+
+    if (requestId !== latestRequestIdRef.current) return;
+    const items = (response.items ?? []).slice(0, maxVisibleResults);
+
+    setResults(items);
+    setShowResults(true);
+  } catch (err) {
+    if (requestId !== latestRequestIdRef.current) return;
+
+    setError(err instanceof Error ? err.message : "שגיאה בחיפוש");
+    setResults([]);
+    setShowResults(true);
+  } finally {
+    if (requestId === latestRequestIdRef.current) {
+      setIsLoading(false);
+    }
+  }
+};
+
 
   const handleSelectResult = (item: SearchResult) => {
     setShowResults(false);

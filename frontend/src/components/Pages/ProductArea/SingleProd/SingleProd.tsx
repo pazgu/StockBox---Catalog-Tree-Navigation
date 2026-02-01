@@ -33,10 +33,13 @@ import { useNavigate } from "react-router-dom";
 import { handleEntityRouteError } from "../../../../lib/routing/handleEntityRouteError";
 
 import { useLocation } from "react-router-dom";
+import { userService } from "../../../../services/UserService";
+import { User } from "@/components/models/user.models";
+
 interface SingleProdProps {}
 
 const SingleProd: FC<SingleProdProps> = () => {
-  const { role } = useUser();
+  const { role, id } = useUser();
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -53,7 +56,6 @@ const SingleProd: FC<SingleProdProps> = () => {
   const [productImages, setProductImages] = useState<string[]>([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [draggedItem, setDraggedItem] = useState<AccordionData | null>(null);
-  const [isFavorite, setIsFavorite] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [showNewFolderInput, setShowNewFolderInput] = useState(false);
   const [folders, setFolders] = useState<FileFolder[]>([]);
@@ -63,9 +65,8 @@ const SingleProd: FC<SingleProdProps> = () => {
   const addImagesInputRef = React.useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const [isUploadingImages, setIsUploadingImages] = useState(false);
-
-
   const { productId } = useParams<{ productId: string }>();
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     if (!productId) return;
@@ -100,7 +101,19 @@ const SingleProd: FC<SingleProdProps> = () => {
           }));
           setAccordionData(accordion);
         }
+        if (id && productId) {
+          const favorited = await userService.isFavorite(productId);
 
+          setUser(
+            (prev) =>
+              ({
+                ...prev!,
+                favorites: favorited
+                  ? [{ id: productId, type: "product" }]
+                  : [],
+              }) as User,
+          );
+        }
         const folders =
           product.uploadFolders?.[0]?.folders.map((folder: any) => ({
             uiId: folder._id,
@@ -124,10 +137,9 @@ const SingleProd: FC<SingleProdProps> = () => {
     };
 
     loadProduct();
-  }, [productId, navigate]);
+  }, [productId, navigate, id]);
 
   const location = useLocation();
-
   const breadcrumbPath = useMemo(() => {
     const hasPassedBreadcrumbs = Boolean(location.state?.searchBreadcrumbs);
     const searchVar = location.state?.searchBreadcrumbs;
@@ -205,54 +217,52 @@ const SingleProd: FC<SingleProdProps> = () => {
   };
 
   const handleAddImages = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const files = e.target.files;
-  if (!files || files.length === 0) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-  setIsUploadingImages(true);
+    setIsUploadingImages(true);
 
-  try {
-    const uploads = Array.from(files).map((file) =>
-      CloudinaryService.uploadFile(file, "products/images"),
-    );
+    try {
+      const uploads = Array.from(files).map((file) =>
+        CloudinaryService.uploadFile(file, "products/images"),
+      );
 
-    const results = await Promise.all(uploads);
-    const urls = results.map((r) => r.url);
+      const results = await Promise.all(uploads);
+      const urls = results.map((r) => r.url);
 
-    setProductImages((prev) => [...prev, ...urls]);
-  } catch (err) {
-    console.error("Image upload failed", err);
-    toast.error("העלאת תמונות נכשלה");
-  } finally {
-    setIsUploadingImages(false);
-    e.target.value = ""; 
-  }
-};
-
+      setProductImages((prev) => [...prev, ...urls]);
+    } catch (err) {
+      console.error("Image upload failed", err);
+      toast.error("העלאת תמונות נכשלה");
+    } finally {
+      setIsUploadingImages(false);
+      e.target.value = "";
+    }
+  };
 
   const handleReplaceImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const files = e.target.files;
-  if (!files || files.length === 0) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-  setIsUploadingImages(true);
+    setIsUploadingImages(true);
 
-  try {
-    const result = await CloudinaryService.uploadFile(
-      files[0],
-      "products/images",
-    );
+    try {
+      const result = await CloudinaryService.uploadFile(
+        files[0],
+        "products/images",
+      );
 
-    setProductImages((prev) =>
-      prev.map((img, i) => (i === currentImageIndex ? result.url : img)),
-    );
-  } catch (err) {
-    console.error("Image replacement failed", err);
-    toast.error("החלפת תמונה נכשלה");
-  } finally {
-    setIsUploadingImages(false);
-    e.target.value = "";
-  }
-};
-
+      setProductImages((prev) =>
+        prev.map((img, i) => (i === currentImageIndex ? result.url : img)),
+      );
+    } catch (err) {
+      console.error("Image replacement failed", err);
+      toast.error("החלפת תמונה נכשלה");
+    } finally {
+      setIsUploadingImages(false);
+      e.target.value = "";
+    }
+  };
 
   const handleDeleteImage = () => {
     setProductImages((prev) => {
@@ -266,15 +276,6 @@ const SingleProd: FC<SingleProdProps> = () => {
       );
       return updated;
     });
-  };
-
-  const toggleFavorite = () => {
-    if (isFavorite) {
-      toast.info("הוסר מהמועדפים ");
-    } else {
-      toast.success("נוסף למועדפים ");
-    }
-    setIsFavorite((prev) => !prev);
   };
   const handleAccordionContentChange = (uiId: string, newContent: string) => {
     setAccordionData((prevData) =>
@@ -568,6 +569,43 @@ const SingleProd: FC<SingleProdProps> = () => {
     setFolders((prev) => prev.filter((f) => f.uiId !== folderUiId));
   };
 
+  const toggleFavorite = async (itemId: string) => {
+    if (!id) {
+      toast.error("יש להתחבר כדי להוסיף למועדפים");
+      return;
+    }
+
+    const previousUser = user;
+    const isFavorite = user?.favorites?.some((fav) => fav.id === itemId);
+
+    setUser((prev) => {
+      if (!prev) return prev;
+      const favorites = prev.favorites ?? [];
+      return {
+        ...prev,
+        favorites: isFavorite
+          ? favorites.filter((fav) => fav.id !== itemId)
+          : [...favorites, { id: itemId, type: "product" }],
+      };
+    });
+
+    try {
+      const updatedUser = await userService.toggleFavorite(itemId, "product");
+
+      setUser(updatedUser);
+
+      toast[isFavorite ? "info" : "success"](
+        `${product?.productName} ${isFavorite ? "הוסר מהמועדפים" : "נוסף למועדפים"}`,
+      );
+    } catch (err) {
+      setUser(previousUser);
+      toast.error("שגיאה בעדכון המועדפים. נסה שוב.");
+      console.error(err);
+    }
+  };
+  const isFavorite = useMemo(() => {
+    return user?.favorites?.some((fav) => fav.id === product?._id) ?? false;
+  }, [user?.favorites, product?._id]);
   return (
     <div className="pt-16 px-6 pb-10 font-sans-['Noto_Sans_Hebrew'] rtl">
       <Breadcrumbs path={breadcrumbPath} />
@@ -624,7 +662,11 @@ const SingleProd: FC<SingleProdProps> = () => {
                   )}
                 </button>
                 <span className="absolute left-16 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs px-3 py-2 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                  {isSaving ? "שומר..." : isEditing ? "שמור שינויים" : "עריכת דף"}
+                  {isSaving
+                    ? "שומר..."
+                    : isEditing
+                      ? "שמור שינויים"
+                      : "עריכת דף"}
                 </span>
               </div>
             </div>
@@ -646,157 +688,160 @@ const SingleProd: FC<SingleProdProps> = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
           <div className="lg:col-span-1 order-2 lg:order-1">
-            <div className="group relative bg-white p-6 rounded-2xl border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+            <div className="group relative bg-white p-4 rounded-2xl border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-stockblue to-stockblue"></div>
 
-             {productImages.length > 0 ? (
-  <div className="relative mb-4">
-    {isUploadingImages && (
-      <div className="absolute inset-0 z-50 grid place-items-center bg-white/60 backdrop-blur-sm rounded-2xl">
-        <div className="flex items-center gap-2 rounded-2xl bg-white/80 px-4 py-2 shadow">
-          <Spinner className="size-6 text-stockblue" />
-          <span className="text-sm font-semibold text-stockblue">
-            מעלה תמונות…
-          </span>
-        </div>
-      </div>
-    )}
-    <ImageCarousel
-      productImages={productImages}
-      currentImageIndex={currentImageIndex}
-      setCurrentImageIndex={setCurrentImageIndex}
-      prevImage={prevImage}
-      nextImage={nextImage}
-      isEditing={isEditing}
-      handleReplaceImage={handleReplaceImage}
-      handleAddImages={handleAddImages}
-      handleDeleteImage={handleDeleteImage}
-      isUploading={isUploadingImages}
-      title={title}
-    />
-  </div>
-) : (
-  <div className="relative mb-4">
-    {/* outer soft card */}
-    <div
-      className={`relative overflow-hidden rounded-[32px] p-[14px] shadow-[0_18px_55px_rgba(15,23,42,0.12)]
+              {productImages.length > 0 ? (
+                <div className="relative mb-4">
+                  {isUploadingImages && (
+                    <div className="absolute inset-0 z-50 grid place-items-center bg-white/60 backdrop-blur-sm rounded-2xl">
+                      <div className="flex items-center gap-2 rounded-2xl bg-white/80 px-4 py-2 shadow">
+                        <Spinner className="size-6 text-stockblue" />
+                        <span className="text-sm font-semibold text-stockblue">
+                          מעלה תמונות…
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  <ImageCarousel
+                    productImages={productImages}
+                    currentImageIndex={currentImageIndex}
+                    setCurrentImageIndex={setCurrentImageIndex}
+                    prevImage={prevImage}
+                    nextImage={nextImage}
+                    isEditing={isEditing}
+                    handleReplaceImage={handleReplaceImage}
+                    handleAddImages={handleAddImages}
+                    handleDeleteImage={handleDeleteImage}
+                    isUploading={isUploadingImages}
+                    title={title}
+                  />
+                </div>
+              ) : (
+                <div className="relative mb-4">
+                  {/* outer soft card */}
+                  <div
+                    className={`relative overflow-hidden rounded-[32px] p-[14px] shadow-[0_18px_55px_rgba(15,23,42,0.12)]
 ${isEditing ? "cursor-pointer" : "cursor-not-allowed opacity-80"}`}
-    >
-      {/* dreamy background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#f7fbff] via-white to-[#eaf1ff]" />
-      <div className="absolute -top-10 -left-10 w-40 h-40 rounded-full bg-blue-200/25 blur-3xl" />
-      <div className="absolute -bottom-14 -right-14 w-48 h-48 rounded-full bg-indigo-200/25 blur-3xl" />
+                  >
+                    {/* dreamy background */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#f7fbff] via-white to-[#eaf1ff]" />
+                    <div className="absolute -top-10 -left-10 w-40 h-40 rounded-full bg-blue-200/25 blur-3xl" />
+                    <div className="absolute -bottom-14 -right-14 w-48 h-48 rounded-full bg-indigo-200/25 blur-3xl" />
 
-      {/* uploading overlay - ADD THIS BACK */}
-      {isUploadingImages && (
-        <div className="absolute inset-0 z-50 grid place-items-center bg-white/60 backdrop-blur-sm rounded-[32px]">
-          <div className="flex items-center gap-2 rounded-2xl bg-white/80 px-4 py-2 shadow">
-            <Spinner className="size-6 text-stockblue" />
-            <span className="text-sm font-semibold text-stockblue">
-              מעלה תמונות…
-            </span>
-          </div>
-        </div>
-      )}
+                    {/* uploading overlay - ADD THIS BACK */}
+                    {isUploadingImages && (
+                      <div className="absolute inset-0 z-50 grid place-items-center bg-white/60 backdrop-blur-sm rounded-[32px]">
+                        <div className="flex items-center gap-2 rounded-2xl bg-white/80 px-4 py-2 shadow">
+                          <Spinner className="size-6 text-stockblue" />
+                          <span className="text-sm font-semibold text-stockblue">
+                            מעלה תמונות…
+                          </span>
+                        </div>
+                      </div>
+                    )}
 
-      {/* inner dashed area */}
-      <button
-        type="button"
-        disabled={isUploadingImages}
-        onClick={() => {
-          if (!isEditing) {
-            toast.info("כדי להעלות תמונות יש להיכנס למצב עריכה");
-            return;
-          }
-          addImagesInputRef.current?.click();
-        }}
-        className={`relative z-10 w-full h-[320px] rounded-[28px]
+                    {/* inner dashed area */}
+                    <button
+                      type="button"
+                      disabled={isUploadingImages}
+                      onClick={() => {
+                        if (!isEditing) {
+                          toast.info("כדי להעלות תמונות יש להיכנס למצב עריכה");
+                          return;
+                        }
+                        addImagesInputRef.current?.click();
+                      }}
+                      className={`relative z-10 w-full h-[320px] rounded-[28px]
           border-2 border-dashed border-slate-300/80
           bg-white/55 backdrop-blur-sm
           flex flex-col items-center justify-center gap-3
           transition-all
           ${isEditing ? "hover:bg-white/70 hover:border-slate-400/90" : ""}
           ${isUploadingImages ? "opacity-60 cursor-not-allowed" : ""}`}
-      >
-        {/* upload icon bubble */}
-        <div className="h-14 w-14 rounded-2xl bg-white/70 shadow-sm grid place-items-center">
-          <Upload className="h-7 w-7 text-slate-500" />
-        </div>
+                    >
+                      {/* upload icon bubble */}
+                      <div className="h-14 w-14 rounded-2xl bg-white/70 shadow-sm grid place-items-center">
+                        <Upload className="h-7 w-7 text-slate-500" />
+                      </div>
 
-        <div className="text-center leading-snug">
-          <div className="text-[18px] font-semibold text-slate-500">
-            אין תמונות כרגע – לחצו כדי להעלות
-          </div>
-          <div className="mt-2 text-[13px] tracking-wide text-slate-400">
-            PNG · JPG · JPEG
-          </div>
-        </div>
-      </button>
+                      <div className="text-center leading-snug">
+                        <div className="text-[18px] font-semibold text-slate-500">
+                          אין תמונות כרגע – לחצו כדי להעלות
+                        </div>
+                        <div className="mt-2 text-[13px] tracking-wide text-slate-400">
+                          PNG · JPG · JPEG
+                        </div>
+                      </div>
+                    </button>
 
-      <input
-        ref={addImagesInputRef}
-        type="file"
-        accept="image/*"
-        multiple
-        className="hidden"
-        onChange={handleAddImages}
-      />
-    </div>
-  </div>
-)}
+                    <input
+                      ref={addImagesInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={handleAddImages}
+                    />
+                  </div>
+                </div>
+              )}
 
               {role === "viewer" ? (
-              <div className="space-y-2 relative z-10 flex flex-row justify-center gap-12">
-                <div className="relative">
-                  <button
-                    onClick={() => {
-                      const email = process.env.REACT_APP_CONTACT_EMAIL;
-                      const subject = encodeURIComponent(`${title}`);
-                      const body = process.env.REACT_APP_EMAIL_BODY || "";
-                      window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
-                    }}
-                    className="peer w-14 h-12 py-3 px-4 rounded-lg font-semibold text-stockblue transition-all duration-300 transform hover:scale-105 active:scale-95"
-                    dir="rtl"
-                    style={{
-                      fontFamily: "system-ui, -apple-system, sans-serif",
-                    }}
-                  >
-                    <MailQuestionIcon size={24} />
-                  </button>
-                  <span className="absolute top-12 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                    צור קשר
-                  </span>
-                </div>
+                <div className="space-y-2 relative z-10 flex flex-row justify-center gap-12">
+                  <div className="relative">
+                    <button
+                      onClick={() => {
+                        const email = process.env.REACT_APP_CONTACT_EMAIL;
+                        const subject = encodeURIComponent(`${title}`);
+                        const body = process.env.REACT_APP_EMAIL_BODY || "";
+                        window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+                      }}
+                      className="peer w-14 h-12 py-3 px-4 rounded-lg font-semibold text-stockblue transition-all duration-300 transform hover:scale-105 active:scale-95"
+                      dir="rtl"
+                      style={{
+                        fontFamily: "system-ui, -apple-system, sans-serif",
+                      }}
+                    >
+                      <MailQuestionIcon size={24} />
+                    </button>
+                    <span className="absolute top-12 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                      צור קשר
+                    </span>
+                  </div>
 
-                <h3 className="pt-1">|</h3>
+                  <h3 className="pt-1">|</h3>
 
-                <div className="relative">
-                  <button
-                    onClick={toggleFavorite}
-                    className={`peer w-14 h-12 flex items-center justify-center rounded-lg hover:scale-105 transition-all duration-300 transform
+                  <div className="relative">
+                    <button
+                      className={`peer w-14 h-12 flex items-center justify-center rounded-lg hover:scale-105 transition-all duration-300 transform
                       ${isFavorite ? "text-red-600" : "text-gray-700"}`}
-                  >
-                    <Heart
-                      size={24}
-                      fill={isFavorite ? "currentColor" : "none"}
-                      className="transition-all duration-300 mb-3.5 text-red-700 size-6"
-                    />
-                  </button>
-                  <span className="absolute top-12 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                    {isFavorite ? "הסר ממועדפים" : "הוסף למועדפים"}
-                  </span>
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavorite(product?._id || "");
+                      }}
+                    >
+                      <Heart
+                        size={24}
+                        fill={isFavorite ? "currentColor" : "none"}
+                        className="transition-all duration-300 mb-3.5 text-red-700 size-6"
+                      />
+                    </button>
+                    <span className="absolute top-10 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                      {isFavorite ? "הסר ממועדפים" : "הוסף למועדפים"}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ) : role === "editor" ? (
-              <div className="relative z-10">
-                <Link
-                  to={`/permissions/product/${product?._id}`}
-                  className="block w-full text-center py-3 px-4 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-800 shadow-md transition-all duration-300"
-                >
-                  נהל הרשאות
-                </Link>
-              </div>
-            ) : null}
+              ) : role === "editor" ? (
+                <div className="relative z-10">
+                  <Link
+                    to={`/permissions/product/${product?._id}`}
+                    className="block w-full text-center py-3 px-4 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-800 shadow-md transition-all duration-300"
+                  >
+                    נהל הרשאות
+                  </Link>
+                </div>
+              ) : null}
             </div>
           </div>
 

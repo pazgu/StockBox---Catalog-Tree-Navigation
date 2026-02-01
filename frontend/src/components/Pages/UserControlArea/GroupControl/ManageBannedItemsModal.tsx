@@ -137,53 +137,6 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
     });
   }, [allItems, localBannedItems, searchQuery, filterType]);
 
-  const handleRemoveItem = async (item: BannedItem) => {
-    try {
-      setIsLoading(true);
-      await permissionsService.createPermission(
-        item.type,
-        String(item.id),
-        groupId,
-      );
-      const data = await permissionsService.getBlockedItemsForGroup(groupId);
-      setPermissionIdByKey(data.permissionIdByKey);
-      setAllItems([...data.blocked, ...data.available]);
-      setLocalBannedItems(data.blocked);  
-      toast.success("הפריט שוחרר בהצלחה");
-    } catch (e: any) {
-      if (e.response?.status === 400) {
-        toast.error(e.response?.data?.message || "לא ניתן לשחרר פריט זה");
-      } else {
-        toast.error("שגיאה בשחרור הפריט");
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleAddItem = async (item: BannedItem) => {
-    const key = keyOf(item.type, item.id);
-    const permId = permissionIdByKey[key];
-
-    try {
-      setIsLoading(true);
-      if (permId) {
-        await permissionsService.deletePermission(permId);
-      }
-
-      const data = await permissionsService.getBlockedItemsForGroup(groupId);
-      setPermissionIdByKey(data.permissionIdByKey);
-      setAllItems([...data.blocked, ...data.available]);
-      setLocalBannedItems(data.blocked);
-      setSearchQuery("");
-      toast.success("הפריט נחסם בהצלחה");
-    } catch (e) {
-      console.error("Failed to block:", e);
-      toast.error("שגיאה בחסימת הפריט");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleToggleSelection = (itemId: string | number) => {
     setSelectedItems((prev) => {
@@ -205,7 +158,8 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
   const executeUnblock = async (items: BannedItem[], inheritToChildren: boolean) => {
     try {
       setIsLoading(true);
-      await permissionsService.createPermissionsBatch(
+      const requestedItemIds = new Set(items.map(item => String(item.id)));    
+      const result = await permissionsService.createPermissionsBatch(
         items.map(item => ({
           entityType: item.type,
           entityId: String(item.id),
@@ -218,9 +172,37 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
       setAllItems([...data.blocked, ...data.available]);
       setLocalBannedItems(data.blocked);
       setSelectedItems(new Set());
-      toast.success(
-        `${items.length} פריטים שוחררו בהצלחה${inheritToChildren ? ' (כולל צאצאים)' : ''}`,
+      const afterBlockedIds = new Set(data.blocked.map((item: BannedItem) => String(item.id)));
+      const stillBlockedRequestedItems = items.filter(item => 
+        afterBlockedIds.has(String(item.id))
       );
+      const actuallyUnblockedCount = items.length - stillBlockedRequestedItems.length;
+      if (stillBlockedRequestedItems.length > 0) {
+        if (actuallyUnblockedCount > 0) {
+          const failedRequestedItems = result.data?.details?.failed?.filter((f: any) => 
+            requestedItemIds.has(String(f.dto?.entityId))
+          ) || [];
+          const reason = failedRequestedItems[0]?.reason || "לא ניתן לשחרר חלק מהפריטים";
+          toast.warning(
+            `${actuallyUnblockedCount} פריטים שוחררו בהצלחה, ${stillBlockedRequestedItems.length} נכשלו. ${reason}`
+          );
+        } else {
+          const failedRequestedItems = result.data?.details?.failed?.filter((f: any) => 
+            requestedItemIds.has(String(f.dto?.entityId))
+          ) || []; 
+          if (failedRequestedItems[0]?.reason) {
+            toast.error(failedRequestedItems[0].reason);
+          } else {
+            toast.error("לא ניתן לשחרר את הפריטים. ייתכן שקטגוריות אב חסומות");
+          }
+        }
+      } else {
+        const totalCreated = result.data?.created || items.length;
+        const message = actuallyUnblockedCount === items.length 
+          ? `${items.length} פריטים שוחררו בהצלחה${inheritToChildren && totalCreated > items.length ? ' (כולל צאצאים)' : ''}`
+          : `${actuallyUnblockedCount} פריטים שוחררו בהצלחה`;
+        toast.success(message);
+      }
     } catch (e: any) {
       console.error("Bulk unblock failed:", e);
       if (e.response?.data?.message) {
@@ -634,7 +616,12 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
         open={showInheritanceModal}
         onClose={() => {
           setShowInheritanceModal(false);
-          executeUnblock(pendingUnblockItems, false);
+          const onlyCategories = pendingUnblockItems.filter(item => item.type === "category");
+          if (onlyCategories.length > 0) {
+            executeUnblock(onlyCategories, false);
+          } else {
+            toast.info("לא נבחרו קטגוריות לשחרור");
+          }
           setPendingUnblockItems([]);
         }}
         onConfirm={() => {

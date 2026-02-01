@@ -3,8 +3,9 @@
 import React, { FC, useState, ChangeEvent, useEffect } from "react";
 import {
   Heart,
-  Pen,
+  Lock,
   Trash,
+  Pen,
   PackageCheck,
   Boxes,
   FolderInput,
@@ -31,6 +32,7 @@ import AddSubCategoryModal from "./AddSubCategoryModal/AddSubCategoryModal";
 import { handleEntityRouteError } from "../../../../lib/routing/handleEntityRouteError";
 import SmartDeleteModal from "../../ProductArea/SmartDeleteModal/SmartDeleteModal";
 import DuplicateProductModal from "../../ProductArea/DuplicateProductModal/DuplicateProductModal";
+import MoveMultipleItemsModal from "./MoveMultipleItemsModal/MoveMultipleItemsModal";
 
 const SingleCat: FC = () => {
   const [items, setItems] = useState<DisplayItem[]>([]);
@@ -42,6 +44,7 @@ const SingleCat: FC = () => {
   const [showSmartDeleteModal, setShowSmartDeleteModal] = useState(false);
   const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
   const [showMoveModal, setShowMoveModal] = useState(false);
+  const [showMoveMultipleModal, setShowMoveMultipleModal] = useState(false);
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<DisplayItem | null>(null);
   const [itemToMove, setItemToMove] = useState<DisplayItem | null>(null);
@@ -80,7 +83,9 @@ const SingleCat: FC = () => {
   const pathParts = categoryPath
     .replace("/categories/", "")
     .split("/")
-    .filter(Boolean);
+    .filter(Boolean)
+    .map((part) => part.replace(/-/g, " "));
+
   const breadcrumbPath = ["categories", ...pathParts];
 
   useEffect(() => {
@@ -230,7 +235,6 @@ const SingleCat: FC = () => {
   const handleDelete = (item: DisplayItem) => {
     setItemToDelete(item);
 
-    // If it's a product with multiple locations, show smart delete modal
     if (item.type === "product" && item.path.length > 1) {
       setShowSmartDeleteModal(true);
     } else {
@@ -246,13 +250,13 @@ const SingleCat: FC = () => {
         await categoriesService.deleteCategory(itemToDelete.id);
         toast.success(`הקטגוריה "${itemToDelete.name}" נמחקה בהצלחה!`);
       } else {
-        // Delete from all categories (full delete)
         await ProductsService.deleteProduct(itemToDelete.id);
         toast.success(`המוצר "${itemToDelete.name}" נמחק מכל המיקומים!`);
       }
       setItems(items.filter((item) => item.id !== itemToDelete.id));
       toast.success(
-        `${itemToDelete.type === "category" ? "הקטגוריה" : "המוצר"} "${itemToDelete.name
+        `${itemToDelete.type === "category" ? "הקטגוריה" : "המוצר"} "${
+          itemToDelete.name
         }" נמחק בהצלחה!`,
       );
     } catch (error) {
@@ -296,6 +300,32 @@ const SingleCat: FC = () => {
     }
   };
 
+  const handleDeleteFromSpecificPaths = async (paths: string[]) => {
+    if (!itemToDelete) return;
+    try {
+      setIsDeletingItem(true);
+      await ProductsService.deleteFromSpecificPaths(itemToDelete.id, paths);
+
+      const stillInCurrentCategory = paths.every(
+        (path) => !path.startsWith(categoryPath),
+      );
+
+      if (!stillInCurrentCategory) {
+        setItems(items.filter((item) => item.id !== itemToDelete.id));
+      }
+
+      toast.success(
+        `המוצר "${itemToDelete.name}" הוסר מ-${paths.length} מיקום${paths.length > 1 ? "ים" : ""}!`,
+      );
+    } catch (error) {
+      toast.error("שגיאה במחיקה מהמיקומים הנבחרים");
+    } finally {
+      setIsDeletingItem(false);
+      setShowSmartDeleteModal(false);
+      setItemToDelete(null);
+    }
+  };
+
   const handleMove = (item: DisplayItem) => {
     setItemToMove(item);
     setShowMoveModal(true);
@@ -303,6 +333,7 @@ const SingleCat: FC = () => {
 
   const handleMoveSuccess = async () => {
     await loadAllContent();
+    toast.success("הפריט הועבר בהצלחה!");
     setShowMoveModal(false);
     setItemToMove(null);
   };
@@ -314,6 +345,7 @@ const SingleCat: FC = () => {
 
   const handleDuplicateSuccess = async () => {
     await loadAllContent();
+    toast.success("המוצר שוכפל בהצלחה!");
     setShowDuplicateModal(false);
     setItemToDuplicate(null);
   };
@@ -397,6 +429,7 @@ const SingleCat: FC = () => {
     setItemToDuplicate(null);
     setShowEditModal(false);
     setItemToEdit(null);
+    setShowMoveMultipleModal(false);
   };
 
   const handleManagePermissions = (id: string, type: string) => {
@@ -445,17 +478,14 @@ const SingleCat: FC = () => {
       toast.error("אנא בחר לפחות פריט אחד להעברה");
       return;
     }
-    setShowMoveModal(true);
+    setShowMoveMultipleModal(true);
   };
 
-  const confirmMove = (destination: string) => {
-    setItems((prev) => prev.filter((item) => !selectedItems.includes(item.id)));
-    toast.success(
-      `${selectedItems.length} פריטים הועברו בהצלחה לקטגוריה: ${destination}`,
-    );
+  const handleMoveMultipleSuccess = async () => {
+    await loadAllContent();
     setSelectedItems([]);
     setIsSelectionMode(false);
-    setShowMoveModal(false);
+    setShowMoveMultipleModal(false);
   };
 
   if (loading) {
@@ -465,6 +495,10 @@ const SingleCat: FC = () => {
       </div>
     );
   }
+
+  const selectedItemsData = items.filter((item) =>
+    selectedItems.includes(item.id)
+  );
 
   return (
     <div className="max-w-290 mx-auto rtl mt-28 mr-4">
@@ -628,29 +662,29 @@ const SingleCat: FC = () => {
             )}
 
             {!isSelectionMode && (
-            <div className="absolute right-3 top-3">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleFavorite(item.id, item.name, item.type);
-                }}
-                className="peer group-hover:opacity-100 transition-all duration-200 h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110"
-              >
-                <Heart
-                  size={22}
-                  strokeWidth={2}
-                  className={
-                    item.favorite
-                      ? "fill-red-500 text-red-500"
-                      : "text-gray-700"
-                  }
-                />
-              </button>
-              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                {item.favorite ? "הסר ממועדפים" : "הוסף למועדפים"}
-              </span>
-            </div>
-          )}
+              <div className="absolute right-3 top-3">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleFavorite(item.id, item.name, item.type);
+                  }}
+                  className="peer group-hover:opacity-100 transition-all duration-200 h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110"
+                >
+                  <Heart
+                    size={22}
+                    strokeWidth={2}
+                    className={
+                      item.favorite
+                        ? "fill-red-500 text-red-500"
+                        : "text-gray-700"
+                    }
+                  />
+                </button>
+                <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                  {item.favorite ? "הסר ממועדפים" : "הוסף למועדפים"}
+                </span>
+              </div>
+            )}
             <div
               className="h-[140px] w-full flex justify-center items-center p-5 cursor-pointer"
               onClick={() => {
@@ -664,16 +698,14 @@ const SingleCat: FC = () => {
               <img
                 src={item.image}
                 alt={item.name}
-                className={`max-h-full max-w-full object-contain transition-transform duration-300 hover:scale-105 ${
+                className={`max-h-full max-w-full object-contain ${
                   item.type === "category" ? "rounded-full" : ""
                 }`}
               />
             </div>
 
             <div className="w-full text-center pt-4 border-t border-gray-200">
-              <h2 className="text-[1.1rem] text-[#0D305B] mb-2">
-                {item.name}
-              </h2>
+              <h2 className="text-[1.1rem] text-[#0D305B] mb-2">{item.name}</h2>
 
               {role === "editor" && !isSelectionMode && (
                 <div className="mt-2 flex justify-center">
@@ -684,7 +716,7 @@ const SingleCat: FC = () => {
                     }}
                     className="flex items-center gap-2 text-sm font-medium text-white bg-[#0D305B] px-4 py-2 rounded-xl shadow-md transition-all duration-300 hover:bg-[#16447A] hover:shadow-lg focus:ring-2 focus:ring-[#0D305B]/40"
                   >
-                    <Pen size={16} className="text-white" />
+                    <Lock size={16} className="text-white" />
                     ניהול הרשאות
                   </button>
                 </div>
@@ -817,6 +849,7 @@ const SingleCat: FC = () => {
           onClose={closeAllModals}
           onDeleteFromCurrent={handleDeleteFromCurrent}
           onDeleteFromAll={handleDeleteFromAll}
+          onDeleteSelected={handleDeleteFromSpecificPaths}
           isDeleting={isDeletingItem}
         />
       )}
@@ -843,7 +876,8 @@ const SingleCat: FC = () => {
                 onClick={confirmDeleteSelected}
                 className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors"
               >
-מחיקת הכל              </button>
+                מחיקת הכל{" "}
+              </button>
               <button
                 onClick={closeAllModals}
                 className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400 transition-colors"
@@ -890,6 +924,15 @@ const SingleCat: FC = () => {
             />
           )}
         </>
+      )}
+
+      {showMoveMultipleModal && (
+        <MoveMultipleItemsModal
+          isOpen={showMoveMultipleModal}
+          selectedItems={selectedItemsData}
+          onClose={() => setShowMoveMultipleModal(false)}
+          onSuccess={handleMoveMultipleSuccess}
+        />
       )}
 
       {showDuplicateModal && itemToDuplicate && (
