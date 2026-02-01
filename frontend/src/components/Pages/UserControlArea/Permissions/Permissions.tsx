@@ -461,9 +461,12 @@ const showManualInheritButton =
               )}
             </AnimatePresence>
           </div>
-          <InheritanceModal
+         <InheritanceModal
             open={showInheritanceModal}
-            onClose={() => {
+            onDismiss={() => {
+              setShowInheritanceModal(false);
+            }}
+            onDecline={() => {
               setShowInheritanceModal(false);
               savePermissions(false);
             }}
@@ -472,6 +475,7 @@ const showManualInheritButton =
               savePermissions(true);
             }}
           />
+
              <div className="mt-6 flex justify-between items-start gap-3">
                 <div className="min-w-[240px]">
                 {showManualInheritButton && (
