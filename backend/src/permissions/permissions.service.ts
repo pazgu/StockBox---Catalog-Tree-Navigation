@@ -9,6 +9,7 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model } from 'mongoose';
+import { AnyBulkWriteOperation, Filter, UpdateFilter } from 'mongodb';
 import { EntityType, Permission } from 'src/schemas/Permissions.schema';
 import { Types } from 'mongoose';
 import { CreatePermissionDto } from './dto/createPermission.dto';
@@ -48,14 +49,17 @@ export class PermissionsService {
 
   async createPermission(dto: CreatePermissionDto) {
     const { entityType, entityId, allowed, inheritToChildren } = dto;
+
     const existingPermission = await this.permissionModel.findOne({
       entityType,
       entityId,
       allowed,
     });
+
     if (existingPermission) {
       return existingPermission;
     }
+
     const validation = await this.canCreatePermission(
       entityType,
       entityId.toString(),
@@ -75,32 +79,45 @@ export class PermissionsService {
       allowed,
     });
 
+    if (entityType === EntityType.CATEGORY) {
+      await this.categoryModel.updateOne(
+        { _id: entityId },
+        { $set: { permissionsInheritedToChildren: !!inheritToChildren } },
+      );
+    }
+
     if (entityType !== EntityType.CATEGORY || !inheritToChildren) {
       return created;
     }
 
     const descendants = await this.getAllCategoryDescendants(entityId);
+    if (!descendants.length) return created;
 
-    await Promise.all(
-      descendants.map(async (child) => {
-        const exists = await this.permissionModel.exists({
-          entityType: child.entityType,
-          entityId: child.entityId,
-          allowed,
-        });
-
-        if (!exists) {
-          await this.permissionModel.create({
+    const bulkOps: AnyBulkWriteOperation<Permission>[] = descendants.map(
+      (child) => ({
+        updateOne: {
+          filter: {
             entityType: child.entityType,
-            entityId: child.entityId,
-            allowed,
-          });
-        }
+            entityId: new Types.ObjectId(child.entityId),
+            allowed: new Types.ObjectId(allowed),
+          },
+          update: {
+            $setOnInsert: {
+              entityType: child.entityType,
+              entityId: new Types.ObjectId(child.entityId),
+              allowed: new Types.ObjectId(allowed),
+            },
+          },
+          upsert: true,
+        },
       }),
     );
 
+    await this.permissionModel.bulkWrite(bulkOps);
+
     return created;
   }
+
   async createPermissionsBatch(dtos: CreatePermissionDto[]) {
     const existingPermissions = await this.permissionModel.find({
       $or: dtos.map((dto) => ({
@@ -742,5 +759,103 @@ export class PermissionsService {
         entityId: p._id.toString(),
       })),
     ];
+  }
+
+  async syncCategoryPermissionsToChildren(categoryId: string) {
+    const categoryObjectId = new Types.ObjectId(categoryId);
+
+    const parentPermissions = await this.permissionModel
+      .find({
+        entityType: EntityType.CATEGORY,
+        entityId: categoryObjectId,
+      })
+      .lean();
+
+    const parentAllowedIds = parentPermissions.map((p) => p.allowed.toString());
+
+    const descendants = await this.getAllCategoryDescendants(categoryId);
+
+    if (descendants.length === 0) {
+      await this.categoryModel.updateOne(
+        { _id: categoryObjectId },
+        { $set: { permissionsInheritedToChildren: true } },
+      );
+
+      return { success: true, message: 'אין צאצאים לעדכון' };
+    }
+
+    const descendantEntityIds = descendants.map(
+      (d) => new Types.ObjectId(d.entityId),
+    );
+
+    const allDescendantPermissions = await this.permissionModel
+      .find({
+        entityId: { $in: descendantEntityIds },
+        entityType: { $in: [EntityType.CATEGORY, EntityType.PRODUCT] },
+      })
+      .lean();
+
+    const permissionsByEntity = new Map<string, string[]>();
+
+    for (const perm of allDescendantPermissions) {
+      const key = perm.entityId.toString();
+      if (!permissionsByEntity.has(key)) {
+        permissionsByEntity.set(key, []);
+      }
+      permissionsByEntity.get(key)!.push(perm.allowed.toString());
+    }
+
+    const bulkOps: AnyBulkWriteOperation<Permission>[] = [];
+
+    for (const child of descendants) {
+      const childEntityId = new Types.ObjectId(child.entityId);
+      const childAllowed =
+        permissionsByEntity.get(childEntityId.toString()) || [];
+
+      for (const allowed of parentAllowedIds) {
+        if (!childAllowed.includes(allowed)) {
+          bulkOps.push({
+            insertOne: {
+              document: {
+                entityType: child.entityType,
+                entityId: childEntityId,
+                allowed: new Types.ObjectId(allowed),
+              },
+            },
+          });
+        }
+      }
+
+      for (const allowed of childAllowed) {
+        if (!parentAllowedIds.includes(allowed)) {
+          bulkOps.push({
+            deleteOne: {
+              filter: {
+                entityType: child.entityType,
+                entityId: childEntityId,
+                allowed: new Types.ObjectId(allowed),
+              },
+            },
+          });
+        }
+      }
+    }
+
+    if (bulkOps.length > 0) {
+      await this.permissionModel.bulkWrite(bulkOps, {
+        ordered: false,
+      });
+    }
+
+    await this.categoryModel.updateOne(
+      { _id: categoryObjectId },
+      { $set: { permissionsInheritedToChildren: true } },
+    );
+
+    return {
+      success: true,
+      updatedEntities: descendants.length,
+      operations: bulkOps.length,
+    };
   }
 }

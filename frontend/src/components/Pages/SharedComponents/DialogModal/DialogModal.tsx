@@ -4,16 +4,22 @@ import { Button } from "../../../ui/button";
 
 interface InheritanceModalProps {
   open: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
+  onDismiss: () => void; 
+  onDecline: () => void; 
+  onConfirm: () => void; 
 }
 
-const InheritanceModal: React.FC<InheritanceModalProps> = ({ open, onClose, onConfirm }) => {
+const InheritanceModal: React.FC<InheritanceModalProps> = ({
+  open,
+  onDismiss,
+  onDecline,
+  onConfirm,
+}) => {
   return (
     <Dialog
       open={open}
       onOpenChange={(isOpen) => {
-        if (!isOpen) onClose();
+        if (!isOpen) onDismiss(); 
       }}
     >
       <DialogContent
@@ -22,25 +28,35 @@ const InheritanceModal: React.FC<InheritanceModalProps> = ({ open, onClose, onCo
         onPointerDownOutside={(e) => e.preventDefault()}
       >
         <DialogHeader>
-            <div className="text-right mt-2 mb-4 mt-4">
-                <DialogTitle>להחיל הרשאות גם על כל הצאצאים של הקטגוריה הנבחרת?</DialogTitle>
-            </div>
+          <div className="text-right mt-4 mb-4">
+            <DialogTitle>
+              להחיל הרשאות גם על כל הצאצאים של הקטגוריה הנבחרת?
+            </DialogTitle>
+          </div>
         </DialogHeader>
-       <div className="text-right mt-2 mb-4">
-        כל ההרשאות יעברו לתתי הקטגוריות והמוצרים שבצאצאים.
-       <p>
-       </p>
-        <p className="text-sm text-gray-500 mt-2">
+
+        <div className="text-right mb-4">
+          כל ההרשאות יעברו לתתי הקטגוריות והמוצרים שבצאצאים.
+          <p className="text-sm text-gray-500 mt-2">
             כברירת מחדל כל ההרשאות שהוסרו גם יוסרו עבור כל הצאצאים.
-        </p>
+          </p>
         </div>
+
         <DialogFooter className="flex justify-between">
-          <Button variant="outline" onClick={onClose}>לא</Button>
-          <Button className="bg-green-600 text-white hover:bg-green-700" onClick={onConfirm}>כן</Button>
+          <Button variant="outline" onClick={onDecline}>
+            לא
+          </Button>
+          <Button
+            className="bg-green-600 text-white hover:bg-green-700"
+            onClick={onConfirm}
+          >
+            כן
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 };
+
 
 export default InheritanceModal;

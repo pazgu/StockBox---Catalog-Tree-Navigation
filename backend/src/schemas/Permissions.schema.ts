@@ -30,3 +30,14 @@ export class Permission {
 }
 
 export const PermissionSchema = SchemaFactory.createForClass(Permission);
+PermissionSchema.index(
+  {
+    entityType: 1,
+    entityId: 1,
+    allowed: 1,
+  },
+  {
+    unique: true,
+    name: 'permission_unique_entity_allowed',
+  },
+);

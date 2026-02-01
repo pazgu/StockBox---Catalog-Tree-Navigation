@@ -17,6 +17,7 @@ import {
 import { PermissionsService } from './permissions.service';
 import { CreatePermissionDto } from './dto/createPermission.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { EditorGuard } from 'src/gaurds/editor.guard';
 @Controller('permissions')
 export class PermissionsController {
   constructor(private permissionsService: PermissionsService) {}
@@ -36,6 +37,16 @@ export class PermissionsController {
   @UseGuards(AuthGuard('jwt'))
   async deletePermissionsBatch(@Body() body: { permissionIds: string[] }) {
     return this.permissionsService.deletePermissionsBatch(body.permissionIds);
+  }
+
+  @Post('sync-children/:categoryId')
+  @UseGuards(AuthGuard('jwt'),EditorGuard)
+  async syncCategoryPermissionsToChildren(
+    @Param('categoryId') categoryId: string,
+  ) {
+    return this.permissionsService.syncCategoryPermissionsToChildren(
+      categoryId,
+    );
   }
   @Get()
   @UseGuards(AuthGuard('jwt'))
