@@ -183,7 +183,7 @@ const SearchResultsPage = () => {
             ))}
           </div>
         )}
-        <p className="fixed bottom-2 left-3 text-sm text-gray-500 italic">
+        <p className="fixed top-44 left-3 text-sm text-gray-500 italic">
           נמצאו {results.length}
           {hasMore ? "+" : ""} תוצאות
         </p>
