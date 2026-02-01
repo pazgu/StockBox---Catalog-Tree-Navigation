@@ -32,6 +32,7 @@ import AddSubCategoryModal from "./AddSubCategoryModal/AddSubCategoryModal";
 import { handleEntityRouteError } from "../../../../lib/routing/handleEntityRouteError";
 import SmartDeleteModal from "../../ProductArea/SmartDeleteModal/SmartDeleteModal";
 import DuplicateProductModal from "../../ProductArea/DuplicateProductModal/DuplicateProductModal";
+import MoveMultipleItemsModal from "./MoveMultipleItemsModal/MoveMultipleItemsModal";
 
 const SingleCat: FC = () => {
   const [items, setItems] = useState<DisplayItem[]>([]);
@@ -43,6 +44,7 @@ const SingleCat: FC = () => {
   const [showSmartDeleteModal, setShowSmartDeleteModal] = useState(false);
   const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
   const [showMoveModal, setShowMoveModal] = useState(false);
+  const [showMoveMultipleModal, setShowMoveMultipleModal] = useState(false);
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<DisplayItem | null>(null);
   const [itemToMove, setItemToMove] = useState<DisplayItem | null>(null);
@@ -427,6 +429,7 @@ const SingleCat: FC = () => {
     setItemToDuplicate(null);
     setShowEditModal(false);
     setItemToEdit(null);
+    setShowMoveMultipleModal(false);
   };
 
   const handleManagePermissions = (id: string, type: string) => {
@@ -475,17 +478,14 @@ const SingleCat: FC = () => {
       toast.error("אנא בחר לפחות פריט אחד להעברה");
       return;
     }
-    setShowMoveModal(true);
+    setShowMoveMultipleModal(true);
   };
 
-  const confirmMove = (destination: string) => {
-    setItems((prev) => prev.filter((item) => !selectedItems.includes(item.id)));
-    toast.success(
-      `${selectedItems.length} פריטים הועברו בהצלחה לקטגוריה: ${destination}`,
-    );
+  const handleMoveMultipleSuccess = async () => {
+    await loadAllContent();
     setSelectedItems([]);
     setIsSelectionMode(false);
-    setShowMoveModal(false);
+    setShowMoveMultipleModal(false);
   };
 
   if (loading) {
@@ -495,6 +495,10 @@ const SingleCat: FC = () => {
       </div>
     );
   }
+
+  const selectedItemsData = items.filter((item) =>
+    selectedItems.includes(item.id)
+  );
 
   return (
     <div className="max-w-290 mx-auto rtl mt-28 mr-4">
@@ -920,6 +924,15 @@ const SingleCat: FC = () => {
             />
           )}
         </>
+      )}
+
+      {showMoveMultipleModal && (
+        <MoveMultipleItemsModal
+          isOpen={showMoveMultipleModal}
+          selectedItems={selectedItemsData}
+          onClose={() => setShowMoveMultipleModal(false)}
+          onSuccess={handleMoveMultipleSuccess}
+        />
       )}
 
       {showDuplicateModal && itemToDuplicate && (
