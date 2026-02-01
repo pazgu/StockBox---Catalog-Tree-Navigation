@@ -17,7 +17,7 @@ interface FavoriteItem {
 }
 
 export const Favorites: React.FC = () => {
-  const { user , id } = useUser();
+  const { id } = useUser();
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [products, setProducts] = useState<ProductDto[]>([]);
   const [categories, setCategories] = useState<CategoryDTO[]>([]);
@@ -78,43 +78,67 @@ export const Favorites: React.FC = () => {
       }
     };
     const toggleProductFavorite = async (productId: string, productName: string) => {
-      if (!id) {
-        toast.error("יש להתחבר כדי להוסיף למועדפים");
-        return;
-      }
-      try {
-        await userService.toggleFavorite(productId, "product");
-        const isFavorite = favorites.some(fav => fav.id === productId);
-        if (isFavorite) {
-          setFavorites(prev => prev.filter(fav => fav.id !== productId));
-          setProducts(prev => prev.filter(p => p._id !== productId));
-          toast.info(`${productName} הוסר מהמועדפים`);
-        } else {
-          toast.success(`${productName} נוסף למועדפים`);
-        }
-      } catch (error) {
-        toast.error("שגיאה בעדכון המועדפים");
-      }
-    };
+  if (!id) {
+    toast.error("יש להתחבר כדי להוסיף למועדפים");
+    return;
+  }
+
+  const isFavorite = favorites.some((fav) => fav.id === productId);
+
+  try {
+    await userService.toggleFavorite(productId, "product");
+
+    if (isFavorite) {
+      setFavorites((prev) => prev.filter((fav) => fav.id !== productId));
+      setProducts((prev) => prev.filter((p) => p._id !== productId));
+      toast.info(`${productName} הוסר מהמועדפים`);
+      return;
+    }
+
+    setFavorites((prev) => [...prev, { id: productId, type: "product" }]);
+
+    const fullProduct = await ProductsService.getById(productId);
+    if (fullProduct) {
+      setProducts((prev) => [fullProduct, ...prev]);
+    }
+
+    toast.success(`${productName} נוסף למועדפים`);
+  } catch (error) {
+    toast.error("שגיאה בעדכון המועדפים");
+  }
+};
+
     const toggleCategoryFavorite = async (categoryId: string, categoryName: string) => {
-      if (!id) {
-        toast.error("יש להתחבר כדי להוסיף למועדפים");
-        return;
-      }
-      try {
-        await userService.toggleFavorite( categoryId, "category");
-        const isFavorite = favorites.some(fav => fav.id === categoryId);
-        if (isFavorite) {
-          setFavorites(prev => prev.filter(fav => fav.id !== categoryId));
-          setCategories(prev => prev.filter(c => c._id !== categoryId));
-          toast.info(`${categoryName} הוסר מהמועדפים`);
-        } else {
-          toast.success(`${categoryName} נוסף למועדפים`);
-        }
-      } catch (error) {
-        toast.error("שגיאה בעדכון המועדפים");
-      }
-    };
+  if (!id) {
+    toast.error("יש להתחבר כדי להוסיף למועדפים");
+    return;
+  }
+
+  const isFavorite = favorites.some((fav) => fav.id === categoryId);
+
+  try {
+    await userService.toggleFavorite(categoryId, "category");
+
+    if (isFavorite) {
+      setFavorites((prev) => prev.filter((fav) => fav.id !== categoryId));
+      setCategories((prev) => prev.filter((c) => c._id !== categoryId));
+      toast.info(`${categoryName} הוסר מהמועדפים`);
+      return;
+    }
+
+    setFavorites((prev) => [...prev, { id: categoryId, type: "category" }]);
+
+    const fullCategory = await categoriesService.getCategoryById(categoryId);
+    if (fullCategory) {
+      setCategories((prev) => [fullCategory, ...prev]);
+    }
+
+    toast.success(`${categoryName} נוסף למועדפים`);
+  } catch (error) {
+    toast.error("שגיאה בעדכון המועדפים");
+  }
+};
+
   const showCategories = activeFilter === "all" || activeFilter === "categories";
   const showProducts = activeFilter === "all" || activeFilter === "products";
   if (!id) {

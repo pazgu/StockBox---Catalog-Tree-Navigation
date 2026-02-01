@@ -163,14 +163,13 @@ export class ProductsController {
     return this.productsService.getById(id, request.user);
   }
 
-
-@ProductDelete(':id/paths')
-@ProductUseGuards(JwtAuthGuard, EditorGuard)
-@HttpCode(HttpStatus.OK)
-async deleteFromSpecificPaths(
-  @ProductParam('id', ParseObjectIdPipe) id: string,
-  @ProductBody() body: { paths: string[] },
-) {
-  return this.productsService.deleteFromSpecificPaths(id, body.paths);
-}
+  @ProductDelete(':id/paths')
+  @ProductUseGuards(JwtAuthGuard, EditorGuard)
+  @HttpCode(HttpStatus.OK)
+  async deleteFromSpecificPaths(
+    @ProductParam('id', ParseObjectIdPipe) id: string,
+    @ProductBody() body: { paths: string[] },
+  ) {
+    return this.productsService.deleteFromSpecificPaths(id, body.paths);
+  }
 }
