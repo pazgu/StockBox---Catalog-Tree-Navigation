@@ -32,7 +32,7 @@ interface Permission {
 const Permissions: React.FC = () => {
   const navigate = useNavigate();
   const { role } = useUser();
-  const { type, id } = useParams<{ type: string; id: string }>();
+  const { id } = useParams<{ id: string }>();
   const cleanId = useMemo(() => id?.replace(/^:/, ""), [id]);
   const [showInheritanceModal, setShowInheritanceModal] = useState(false);
   const [isExpandedUsers, setIsExpandedUsers] = useState(false);
@@ -62,12 +62,12 @@ const Permissions: React.FC = () => {
 
     const loadData = async () => {
       try {
-        if (!cleanId || !type) return;
+        if (!cleanId) return;
 
         const [permsRaw, viewersData, entity] = await Promise.all([
           permissionsService.getPermissionsByEntity(cleanId),
           permissionsService.getPotentialViewers(),
-          permissionsService.getEntityDetails(type as any, cleanId),
+          permissionsService.getEntityDetails("category", cleanId),
         ]);
 
         const perms: Permission[] = permsRaw;
@@ -110,7 +110,7 @@ const Permissions: React.FC = () => {
     };
 
     loadData();
-  }, [cleanId, type, role, navigate]);
+  }, [cleanId, role, navigate]);
 
   const enabledGroupIds = useMemo(() => {
     return new Set(groups.filter((g) => g.memebers).map((g) => g._id));
@@ -179,7 +179,7 @@ const Permissions: React.FC = () => {
   }, [users, groups, existingPermissions]);
 
   const handleSyncToChildren = async () => {
-    if (!cleanId || type !== "category") return;
+    if (!cleanId) return;
 
     try {
       setIsSyncingChildren(true);
@@ -209,7 +209,7 @@ const Permissions: React.FC = () => {
 
   const savePermissions = async (inheritToChildren: boolean) => {
     try {
-      if (!cleanId || !type) return;
+      if (!cleanId) return;
 
       const usersToAllow = users.filter((u) => u.enabled).map((u) => u._id);
       const groupsToAllow = groups.filter((g) => g.memebers).map((g) => g._id);
@@ -226,7 +226,7 @@ const Permissions: React.FC = () => {
       const createResults = await Promise.allSettled(
         toCreate.map((allowedId) =>
           permissionsService.createPermission(
-            type,
+            "category",
             cleanId,
             allowedId,
             inheritToChildren,
@@ -264,7 +264,7 @@ const Permissions: React.FC = () => {
     }
   };
   const handleSave = async () => {
-    if (!cleanId || !type) return;
+    if (!cleanId) return;
 
     const usersToAllow = users.filter((u) => u.enabled).map((u) => u._id);
     const groupsToAllow = groups.filter((g) => g.memebers).map((g) => g._id);
@@ -281,15 +281,10 @@ const Permissions: React.FC = () => {
       return;
     }
 
-    if (type === "category") {
-      setShowInheritanceModal(true);
-    } else {
-      savePermissions(false);
-    }
+    setShowInheritanceModal(true);
   };
 
 const showManualInheritButton =
-  type === "category" &&
   entityData?.permissionsInheritedToChildren === false &&
   existingPermissions.length > 0 &&
   !hasLocalChanges; 
@@ -320,7 +315,7 @@ const showManualInheritButton =
                 alt="entity"
               />
               <span className="absolute -bottom-2 -left-2 bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded-full uppercase font-bold">
-                {type === "category" ? "קטגוריה" : "מוצר"}
+                קטגוריה
               </span>
             </div>
             <div className="flex-1 text-right">
