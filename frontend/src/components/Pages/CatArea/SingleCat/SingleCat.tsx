@@ -66,27 +66,35 @@ const SingleCat: FC = () => {
   const getCategoryPathFromUrl = () => {
     const wildcardPath = params["*"];
     if (wildcardPath) {
-      return `/categories/${wildcardPath}`;
+      return `/categories/${decodeURIComponent(wildcardPath)}`;
     }
 
     const pathParts = location.pathname.split("/").filter(Boolean);
     const categoryIndex = pathParts.indexOf("categories");
     if (categoryIndex !== -1 && categoryIndex < pathParts.length - 1) {
-      return `/categories/${pathParts.slice(categoryIndex + 1).join("/")}`;
+      const encodedParts = pathParts.slice(categoryIndex + 1);
+      const decodedParts = encodedParts.map((part) => decodeURIComponent(part));
+      return `/categories/${decodedParts.join("/")}`;
     }
 
     return "";
   };
+  const categoryPath = getCategoryPathFromUrl(); // Has dashes, used for API calls
 
-  const categoryPath = getCategoryPathFromUrl();
-
-  const pathParts = categoryPath
+  // Create display-friendly breadcrumb path (with spaces for display only)
+  const breadcrumbPathParts = categoryPath
     .replace("/categories/", "")
     .split("/")
     .filter(Boolean)
-    .map((part) => part.replace(/-/g, " "));
+    .map((part) => part.replace(/-/g, " ")); // Spaces for display
+  // In SingleCat component
+  const categoryPathSegments = categoryPath
+    .replace("/categories/", "")
+    .split("/")
+    .filter(Boolean);
+  // ← DON'T convert dashes to spaces here
 
-  const breadcrumbPath = ["categories", ...pathParts];
+  const breadcrumbPath = ["categories", ...categoryPathSegments];
 
   useEffect(() => {
     loadAllContent();
@@ -497,7 +505,7 @@ const SingleCat: FC = () => {
   }
 
   const selectedItemsData = items.filter((item) =>
-    selectedItems.includes(item.id)
+    selectedItems.includes(item.id),
   );
 
   return (
@@ -507,7 +515,7 @@ const SingleCat: FC = () => {
         <h1 className="text-[48px] font-light font-alef text-[#0D305B] border-b-4 border-gray-400 pb-1 mb-5 tracking-tight">
           {categoryInfo
             ? categoryInfo.categoryName
-            : pathParts[pathParts.length - 1] || "קטגוריה"}
+            : breadcrumbPathParts[breadcrumbPathParts.length - 1] || "קטגוריה"}
         </h1>
         <div className="flex items-center gap-4">
           <span className="text-base">סך הכל פריטים: {items.length}</span>
@@ -691,7 +699,7 @@ const SingleCat: FC = () => {
                 if (item.type === "product") {
                   navigate(`/products/${item.id}`);
                 } else {
-                  navigate(`${item.path}`);
+                  navigate(encodeURI(item.path[0]));
                 }
               }}
             >

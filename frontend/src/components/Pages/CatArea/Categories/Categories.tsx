@@ -39,7 +39,6 @@ export const Categories: FC<CategoriesProps> = () => {
   const path: string[] = ["categories"];
   const [isDeleting, setIsDeleting] = useState(false);
 
-
   useEffect(() => {
     if (role !== undefined) {
       if (role) {
@@ -66,11 +65,10 @@ export const Categories: FC<CategoriesProps> = () => {
             }
           });
           setFavorites(favoritesMap);
-        }  catch (error) {
-  toast.error("שגיאה בטעינת מועדפים");
-  console.error("Error loading favorites:", error);
-}
-
+        } catch (error) {
+          toast.error("שגיאה בטעינת מועדפים");
+          console.error("Error loading favorites:", error);
+        }
       }
     } catch (error) {
       toast.error("שגיאה בטעינת קטגוריות");
@@ -109,33 +107,31 @@ export const Categories: FC<CategoriesProps> = () => {
   };
 
   const confirmDelete = async () => {
-  if (!categoryToDelete) return;
+    if (!categoryToDelete) return;
 
-  try {
-    setIsDeleting(true);
-    await new Promise((r) => setTimeout(r, 800));
+    try {
+      setIsDeleting(true);
+      await new Promise((r) => setTimeout(r, 800));
 
+      await categoriesService.deleteCategory(categoryToDelete._id);
 
-    await categoriesService.deleteCategory(categoryToDelete._id);
+      setCategories(
+        categories.filter((cat) => cat._id !== categoryToDelete._id),
+      );
 
-    setCategories(
-      categories.filter((cat) => cat._id !== categoryToDelete._id)
-    );
+      toast.success(
+        `הקטגוריה "${categoryToDelete.categoryName}" וכל התכנים שבה נמחקו בהצלחה!`,
+      );
 
-    toast.success(
-      `הקטגוריה "${categoryToDelete.categoryName}" וכל התכנים שבה נמחקו בהצלחה!`
-    );
-
-    setShowDeleteModal(false);
-    setCategoryToDelete(null);
-  } catch (error) {
-    toast.error("שגיאה במחיקת הקטגוריה");
-    console.error("Error deleting category:", error);
-  } finally {
-    setIsDeleting(false);
-  }
-};
-
+      setShowDeleteModal(false);
+      setCategoryToDelete(null);
+    } catch (error) {
+      toast.error("שגיאה במחיקת הקטגוריה");
+      console.error("Error deleting category:", error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const handleEdit = (category: Category) => {
     setCategoryToEdit(category);
@@ -151,34 +147,33 @@ export const Categories: FC<CategoriesProps> = () => {
   };
 
   const handleAddCategory = async ({ name, imageFile }: AddCategoryResult) => {
-  try {
-    const categoryPath = `/categories/${name
-      .toLowerCase()
-      .replace(/\s+/g, "-")}`;
+    try {
+      const categoryPath = `/categories/${name
+        .toLowerCase()
+        .replace(/\s+/g, "-")}`;
 
-    const newCategory = await categoriesService.createCategory({
-      categoryName: name,
-      categoryPath,
-      imageFile,
-    });
+      const newCategory = await categoriesService.createCategory({
+        categoryName: name,
+        categoryPath,
+        imageFile,
+      });
 
-    setCategories((prev) => [...prev, newCategory]);
-    setShowAddCatModal(false);
-    toast.success(`הקטגוריה "${name}" נוספה בהצלחה!`);
-  } catch (error: any) {
-    const serverMessage =
-      error?.response?.data?.message || error?.response?.data?.error;
+      setCategories((prev) => [...prev, newCategory]);
+      setShowAddCatModal(false);
+      toast.success(`הקטגוריה "${name}" נוספה בהצלחה!`);
+    } catch (error: any) {
+      const serverMessage =
+        error?.response?.data?.message || error?.response?.data?.error;
 
-    if (typeof serverMessage === "string" && serverMessage.trim()) {
-      toast.error(serverMessage);
-    } else {
-      toast.error("שגיאה בהוספת קטגוריה");
+      if (typeof serverMessage === "string" && serverMessage.trim()) {
+        toast.error(serverMessage);
+      } else {
+        toast.error("שגיאה בהוספת קטגוריה");
+      }
+
+      console.error("Error creating category:", error);
     }
-
-    console.error("Error creating category:", error);
-  }
-};
-
+  };
 
   const handleSaveEdit = async (updatedCategory: CategoryEditPayload) => {
     try {
@@ -205,7 +200,7 @@ export const Categories: FC<CategoriesProps> = () => {
   };
 
   const handleCategoryClick = (category: Category) => {
-    navigate(category.categoryPath);
+    navigate(encodeURI(category.categoryPath));
   };
 
   if (isLoading) {
@@ -275,7 +270,9 @@ export const Categories: FC<CategoriesProps> = () => {
                       />
                     </button>
                     <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                      {favorites[category._id] ? "הסר ממועדפים" : "הוסף למועדפים"}
+                      {favorites[category._id]
+                        ? "הסר ממועדפים"
+                        : "הוסף למועדפים"}
                     </span>
                   </div>
                   <img
@@ -298,7 +295,8 @@ export const Categories: FC<CategoriesProps> = () => {
                           <Trash size={18} />
                         </button>
                         <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap">
-מחיקת קטגוריה                        </span>
+                          מחיקת קטגוריה{" "}
+                        </span>
                       </div>
 
                       <div className="relative pointer-events-auto">
@@ -313,7 +311,8 @@ export const Categories: FC<CategoriesProps> = () => {
                           <Pen size={18} />
                         </button>
                         <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap">
-עריכת קטגוריה                        </span>
+                          עריכת קטגוריה{" "}
+                        </span>
                       </div>
 
                       <div className="relative pointer-events-auto">
@@ -395,31 +394,29 @@ export const Categories: FC<CategoriesProps> = () => {
 
                 <div className="flex justify-between gap-3 mt-5">
                   <button
-  onClick={closeAllModals}
-  disabled={isDeleting}
-  className={`flex-1 p-3 border-none rounded-lg text-base font-medium transition-all duration-200
+                    onClick={closeAllModals}
+                    disabled={isDeleting}
+                    className={`flex-1 p-3 border-none rounded-lg text-base font-medium transition-all duration-200
     ${isDeleting ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"}`}
->
-  ביטול
-</button>
-
+                  >
+                    ביטול
+                  </button>
 
                   <button
-  onClick={confirmDelete}
-  disabled={isDeleting}
-  className={`flex-1 p-3 border-none rounded-lg text-base font-medium transition-all duration-200 shadow-md
+                    onClick={confirmDelete}
+                    disabled={isDeleting}
+                    className={`flex-1 p-3 border-none rounded-lg text-base font-medium transition-all duration-200 shadow-md
     ${isDeleting ? "bg-red-400 cursor-not-allowed text-white" : "bg-red-600 text-white hover:bg-red-700 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"}`}
->
-  {isDeleting ? (
-    <span className="flex items-center justify-center gap-2">
-      <Spinner className="size-4 text-white" />
-      מוחק...
-    </span>
-  ) : (
-    "מחיקה"
-  )}
-</button>
-
+                  >
+                    {isDeleting ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <Spinner className="size-4 text-white" />
+                        מוחק...
+                      </span>
+                    ) : (
+                      "מחיקה"
+                    )}
+                  </button>
                 </div>
               </div>
             </div>

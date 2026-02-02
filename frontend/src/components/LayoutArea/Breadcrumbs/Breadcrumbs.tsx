@@ -26,22 +26,6 @@ const Breadcrumbs: FC<BreadcrumbsProps> = ({ path }) => {
 
   const pathSegments = path || location.pathname.split("/").filter(Boolean);
 
-  const getDisplayName = (
-    segment: string,
-    index: number,
-    segments: string[]
-  ) => {
-    if (index === segments.length - 1) return segment;
-
-    const isDynamic =
-      !segmentMap[segment.toLowerCase()] && /\d+|-/g.test(segment);
-    if (isDynamic && index === segments.length) {
-      return decodeURIComponent(segment);
-    }
-
-    return segmentMap[segment.toLowerCase()] || segment;
-  };
-
   return (
     <div className="relative group mb-4 mt-14">
       {/* Breadcrumbs */}
@@ -52,28 +36,18 @@ const Breadcrumbs: FC<BreadcrumbsProps> = ({ path }) => {
         <FolderOpen className="size-8 fill-[#e7d6ba]"></FolderOpen>
         {pathSegments.map((segment, index) => {
           const pathToHere = "/" + pathSegments.slice(0, index + 1).join("/");
-          const getDisplayName = (
-            segment: string,
-            index: number,
-            segments: string[]
-          ) => {
-            const decoded = decodeURIComponent(segment);
-            const lower = decoded.toLowerCase();
+          const decoded = decodeURIComponent(segment);
+          const displayName = decoded.replace(/-/g, " ");
+          const lower = decoded.toLowerCase();
 
-            if (segmentMap[lower]) return segmentMap[lower];
-
-            if (index === segments.length - 1) return decoded;
-
-            return decoded;
-          };
           const isLast = index === pathSegments.length - 1;
+          const finalDisplayName = segmentMap[lower] || displayName;
 
           return (
-  <span
-    key={`${segment}-${index}`}
-    className="flex items-center gap-1"
-  >
-
+            <span
+              key={`${segment}-${index}`}
+              className="flex items-center gap-1"
+            >
               <span
                 role="img"
                 aria-label="Cute cat peeking"
@@ -102,9 +76,9 @@ const Breadcrumbs: FC<BreadcrumbsProps> = ({ path }) => {
                     ? "cursor-pointer hover:underline"
                     : "font-semibold text-gray-700"
                 } transition-colors duration-200`}
-                onClick={() => !isLast && navigate(pathToHere)}
+                onClick={() => !isLast && navigate(encodeURI(pathToHere))}
               >
-                {getDisplayName(segment, index, pathSegments)}
+                {finalDisplayName}
               </span>
               {!isLast && <span className="mx-1">{">"}</span>}
             </span>
