@@ -25,6 +25,7 @@ import { EntityType } from 'src/schemas/Permissions.schema';
 import { UpdateProductDto } from './dtos/UpdateProduct.dto';
 import { Category } from 'src/schemas/Categories.schema';
 import { Group } from 'src/schemas/Groups.schema';
+import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class ProductsService {
@@ -32,6 +33,8 @@ export class ProductsService {
     @InjectModel(Product.name) private productModel: Model<Product>,
     @InjectModel(Category.name) private categoryModel: Model<Category>,
     @InjectModel(Group.name) private groupModel: Model<Group>,
+      private usersService: UsersService,
+
     private permissionsService: PermissionsService,
   ) {}
 
@@ -181,63 +184,63 @@ export class ProductsService {
     }
   }
 
-  async delete(
-    id: string,
-    categoryPath?: string,
-  ): Promise<{ success: boolean; message: string }> {
-    const product = await this.productModel.findById(id);
+async delete(
+  id: string,
+  categoryPath?: string,
+): Promise<{ success: boolean; message: string }> {
+  const product = await this.productModel.findById(id);
 
-    if (!product) {
-      throw new NotFoundException(`Product with ID ${id} not found`);
-    }
+  if (!product) {
+    throw new NotFoundException(`Product with ID ${id} not found`);
+  }
 
-    try {
-      // If categoryPath is provided, remove only from that category
-      if (categoryPath && product.productPath.length > 1) {
-        const updatedPaths = product.productPath.filter(
-          (path) => !path.startsWith(categoryPath),
-        );
+  try {
+    if (categoryPath && product.productPath.length > 1) {
+      const updatedPaths = product.productPath.filter(
+        (path) => !path.startsWith(categoryPath),
+      );
 
-        if (updatedPaths.length === product.productPath.length) {
-          throw new BadRequestException(
-            `Product does not exist in category: ${categoryPath}`,
-          );
-        }
-
-        product.productPath = updatedPaths;
-        await product.save();
-
-        return {
-          success: true,
-          message: `Product "${product.productName}" removed from this category`,
-        };
-      }
-
-      // Delete from all categories (full delete)
-      if (product.productImages && product.productImages.length > 0) {
-        await Promise.all(
-          product.productImages.map((url) => this.deleteProductImage(url)),
+      if (updatedPaths.length === product.productPath.length) {
+        throw new BadRequestException(
+          `Product does not exist in category: ${categoryPath}`,
         );
       }
 
-      await this.productModel.findByIdAndDelete(id);
+      product.productPath = updatedPaths;
+      await product.save();
 
       return {
         success: true,
-        message: `Product "${product.productName}" deleted from all categories`,
+        message: `Product "${product.productName}" removed from this category`,
       };
-    } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException
-      ) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        `Failed to delete product: ${(error as Error).message}`,
+    }
+
+    if (product.productImages && product.productImages.length > 0) {
+      await Promise.all(
+        product.productImages.map((url) => this.deleteProductImage(url)),
       );
     }
+
+    await this.productModel.findByIdAndDelete(id);
+    
+    await this.usersService.removeItemFromAllUserFavorites(id);
+
+    return {
+      success: true,
+      message: `Product "${product.productName}" deleted from all categories`,
+    };
+  } catch (error) {
+    if (
+      error instanceof NotFoundException ||
+      error instanceof BadRequestException
+    ) {
+      throw error;
+    }
+    throw new InternalServerErrorException(
+      `Failed to delete product: ${(error as Error).message}`,
+    );
   }
+}
 
   async update(id: string, dto: UpdateProductDto) {
     const existing = await this.productModel.findById(id);
@@ -338,7 +341,6 @@ export class ProductsService {
 
     const { additionalCategoryPaths } = duplicateProductDto;
 
-    // Validate all category paths exist
     for (const path of additionalCategoryPaths) {
       const categoryExists = await this.categoryModel.findOne({
         categoryPath: path,
@@ -354,7 +356,6 @@ export class ProductsService {
       (catPath) => `${catPath}/${productName}`,
     );
 
-    // Check for conflicts
     for (const newPath of newPaths) {
       if (product.productPath.includes(newPath)) {
         throw new BadRequestException(`Product already exists at: ${newPath}`);
@@ -372,7 +373,6 @@ export class ProductsService {
       }
     }
 
-    // Add new paths to existing paths
     product.productPath = [...product.productPath, ...newPaths];
     await product.save();
 
@@ -506,6 +506,9 @@ async deleteFromSpecificPaths(
         );
       }
       await this.productModel.findByIdAndDelete(id);
+      
+      await this.usersService.removeItemFromAllUserFavorites(id);
+      
       return {
         success: true,
         message: `Product "${product.productName}" deleted completely`,
