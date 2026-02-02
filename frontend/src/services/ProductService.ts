@@ -202,34 +202,32 @@ export class ProductsService {
   }
 
 
-  static async deleteProduct(
-    id: string,
-    categoryPath?: string,
-  ): Promise<void> {
-    const url = categoryPath
-      ? `${this.baseUrl}/${id}?categoryPath=${encodeURIComponent(categoryPath)}`
-      : `${this.baseUrl}/${id}`;
+static async deleteProduct(
+  id: string,
+  categoryPath?: string,
+): Promise<void> {
+  const url = categoryPath
+    ? `${this.baseUrl}/${id}?categoryPath=${encodeURIComponent(categoryPath)}`
+    : `${this.baseUrl}/${id}`;
 
-        try {
-      await api.delete(
-        `${this.baseUrl}/${id}`,
-        this.getAuthHeaders(),
-      );
-    } catch (error) {
-      const err = error as AxiosError;
-      const status = err.response?.status;
-      if (status === 401)
-        throw new Error("Unauthorized - please login");
-      if (status === 403)
-        throw new Error("Only editors can delete products");
-      if (status === 404)
-        throw new Error("Product not found");
+  try {
+    await api.delete(
+      url,
+      this.getAuthHeaders(),
+    );
+  } catch (error) {
+    const err = error as AxiosError;
+    const status = err.response?.status;
+    if (status === 401)
+      throw new Error("Unauthorized - please login");
+    if (status === 403)
+      throw new Error("Only editors can delete products");
+    if (status === 404)
+      throw new Error("Product not found");
 
-      throw new Error("Failed to delete product");
-
-    }
-    
+    throw new Error("Failed to delete product");
   }
+}
 
   static async getAllProducts(): Promise<ProductDto[]> {
     const { data } = await api.get<ProductDto[]>(
