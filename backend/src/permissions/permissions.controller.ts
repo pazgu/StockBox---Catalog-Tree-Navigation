@@ -40,7 +40,7 @@ export class PermissionsController {
   }
 
   @Post('sync-children/:categoryId')
-  @UseGuards(AuthGuard('jwt'),EditorGuard)
+  @UseGuards(AuthGuard('jwt'), EditorGuard)
   async syncCategoryPermissionsToChildren(
     @Param('categoryId') categoryId: string,
   ) {
@@ -66,6 +66,11 @@ export class PermissionsController {
   @UseGuards(AuthGuard('jwt'))
   async getPermissionsForGroup(@Param('groupId') groupId: string) {
     return this.permissionsService.getPermissionsForAllowedId(groupId);
+  }
+  @Get('product-paths/:productId')
+  @UseGuards(AuthGuard('jwt'))
+  async getProductPathsWithPermissions(@Param('productId') productId: string) {
+    return this.permissionsService.getProductPathsWithPermissions(productId);
   }
 
   @Get(':entityId')
