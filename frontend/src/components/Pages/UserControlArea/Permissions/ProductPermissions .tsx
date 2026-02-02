@@ -87,13 +87,11 @@ const ProductPermissions: React.FC = () => {
       try {
         if (!cleanId) return;
 
-        // FIXED: Get product paths with permissions - this returns product details too
         const [productPathsData, viewersData] = await Promise.all([
           permissionsService.getProductPathsWithPermissions(cleanId),
           permissionsService.getPotentialViewers(),
         ]);
 
-        // Use product details from productPathsData
         setProductData({
           _id: productPathsData.product._id,
           name: productPathsData.product.name,
@@ -102,8 +100,6 @@ const ProductPermissions: React.FC = () => {
         setPaths(productPathsData.paths);
 
         const { users: rawUsers, groups: rawGroups } = viewersData;
-
-        // Create user to groups map
         const userToGroupsMap = new Map<string, string[]>();
         rawGroups.forEach((group: any) => {
           const groupId = group.id || group._id;
@@ -391,7 +387,7 @@ const ProductPermissions: React.FC = () => {
             <div className="relative">
               <img
                 src={productData.image || "/placeholder-image.png"}
-                className="w-20 h-20 rounded-xl border-2 border-white shadow-lg object-cover bg-white"
+                className="w-24 h-24 rounded-xl border-2 border-white shadow-lg object-cover bg-white"
                 alt={productData.name}
               />
               <span className="absolute -bottom-2 -left-2 bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded-full uppercase font-bold">
@@ -400,7 +396,7 @@ const ProductPermissions: React.FC = () => {
             </div>
             <div className="flex-1 text-right">
               <h2 className="text-xl font-bold text-gray-800">
-                ניהול הרשאות עבור:{" "}
+                ניהול הרשאות מוצר:{" "}
                 <span className="text-blue-700">{productData.name}</span>
               </h2>
               <div className="flex items-center gap-2 mt-2 text-sm text-gray-600">
@@ -437,19 +433,19 @@ const ProductPermissions: React.FC = () => {
                     onClick={() =>
                       setExpandedPath(isExpanded ? null : pathData.path)
                     }
-                    className="w-full justify-between p-4 hover:bg-gray-50"
+                    className="w-full justify-between p-4 hover:bg-gray-50 h-auto"
                   >
-                    <div className="flex items-center gap-3 flex-1 text-right">
+                    <div className="flex items-center gap-3 flex-1 text-right min-w-0">
                       <img
                         src={pathData.categoryImage || "/placeholder-image.png"}
-                        className="w-12 h-12 rounded-lg object-cover border border-gray-200"
+                        className="w-14 h-14 rounded-lg object-cover border border-gray-200 flex-shrink-0"
                         alt={pathData.categoryName}
                       />
-                      <div className="flex-1">
-                        <div className="font-medium text-gray-800">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-gray-800 truncate">
                           {pathData.categoryName}
                         </div>
-                        <div className="text-xs text-gray-500 font-mono">
+                        <div className="text-xs text-gray-500 font-mono break-all">
                           {pathData.path}
                         </div>
                         {hasChanges && (
@@ -459,7 +455,9 @@ const ProductPermissions: React.FC = () => {
                         )}
                       </div>
                     </div>
-                    {isExpanded ? <ChevronUp /> : <ChevronDown />}
+                    <div className="flex-shrink-0 mr-2">
+                      {isExpanded ? <ChevronUp /> : <ChevronDown />}
+                    </div>
                   </Button>
 
                   {/* Accordion Content */}
