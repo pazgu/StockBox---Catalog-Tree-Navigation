@@ -127,6 +127,23 @@ export class UsersService {
       throw new InternalServerErrorException('Failed to remove favorite');
     }
   }
+
+  async removeItemFromAllUserFavorites(itemId: string): Promise<void> {
+  try {
+    if (!Types.ObjectId.isValid(itemId)) {
+      throw new BadRequestException('Invalid item ID');
+    }
+    const objectId = new Types.ObjectId(itemId);
+    
+    await this.userModel.updateMany(
+      { 'favorites.id': objectId },
+      { $pull: { favorites: { id: objectId } } }
+    );
+  } catch (error) {
+    console.error('Failed to remove item from user favorites:', error);
+  }
+}
+
   async getUserFavorites(userId: string) {
     try {
       if (!Types.ObjectId.isValid(userId)) {
