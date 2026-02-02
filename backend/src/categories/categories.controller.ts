@@ -48,8 +48,12 @@ export class CategoriesController {
   }
 
   @Delete(':id')
-  async deleteCategory(@Param('id') id: string) {
-    return await this.categoriesService.deleteCategory(id);
+  async deleteCategory(@Param('id') id: string, @Req() req: any) {
+    const strategy = req.query?.strategy as 'cascade' | 'move_up' | undefined;
+    return await this.categoriesService.deleteCategory(
+      id,
+      strategy ?? 'cascade',
+    );
   }
 
   @Get('children/*path')
