@@ -830,12 +830,12 @@ export class PermissionsService {
 
     const descendants = await this.getAllCategoryDescendants(categoryId);
 
-    if (descendants.length === 0) {
-      await this.categoryModel.updateOne(
-        { _id: categoryObjectId },
-        { $set: { permissionsInheritedToChildren: true } },
-      );
+    await this.categoryModel.updateOne(
+      { _id: categoryObjectId },
+      { $set: { permissionsInheritedToChildren: true } },
+    );
 
+    if (descendants.length === 0) {
       return { success: true, message: 'אין צאצאים לעדכון' };
     }
 
@@ -902,10 +902,16 @@ export class PermissionsService {
       });
     }
 
-    await this.categoryModel.updateOne(
-      { _id: categoryObjectId },
-      { $set: { permissionsInheritedToChildren: true } },
-    );
+    const descendantCategoryIds = descendants
+      .filter((d) => d.entityType === EntityType.CATEGORY)
+      .map((d) => new Types.ObjectId(d.entityId));
+
+    if (descendantCategoryIds.length > 0) {
+      await this.categoryModel.updateMany(
+        { _id: { $in: descendantCategoryIds } },
+        { $set: { permissionsInheritedToChildren: true } },
+      );
+    }
 
     return {
       success: true,
