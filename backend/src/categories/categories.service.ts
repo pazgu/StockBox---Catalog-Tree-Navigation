@@ -228,40 +228,41 @@ export class CategoriesService {
     return visibleChildren;
   }
 
-async deleteCategory(id: string) {
-  const category = await this.categoryModel.findById(id);
-  if (!category) {
-    throw new NotFoundException('Category not found');
+  async deleteCategory(id: string) {
+    const category = await this.categoryModel.findById(id);
+    if (!category) {
+      throw new NotFoundException('Category not found');
+    }
+
+    const categoryPath = category.categoryPath;
+
+    const subcategoriesToDelete = await this.categoryModel.find({
+      categoryPath: new RegExp(`^${categoryPath}/`),
+    });
+
+    await this.categoryModel.deleteMany({
+      categoryPath: new RegExp(`^${categoryPath}/`),
+    });
+
+    await this.productModel.deleteMany({
+      productPath: new RegExp(`^${categoryPath}`),
+    });
+
+    await this.categoryModel.findByIdAndDelete(id);
+
+    await this.usersService.removeItemFromAllUserFavorites(id);
+    for (const subcat of subcategoriesToDelete) {
+      await this.usersService.removeItemFromAllUserFavorites(
+        subcat._id.toString(),
+      );
+    }
+
+    return {
+      success: true,
+      message: 'Category and all nested content deleted successfully',
+      deletedCategoryPath: categoryPath,
+    };
   }
-
-  const categoryPath = category.categoryPath;
-
-  const subcategoriesToDelete = await this.categoryModel.find({
-    categoryPath: new RegExp(`^${categoryPath}/`),
-  });
-
-  await this.categoryModel.deleteMany({
-    categoryPath: new RegExp(`^${categoryPath}/`),
-  });
-
-  await this.productModel.deleteMany({
-    productPath: new RegExp(`^${categoryPath}`),
-  });
-
-  await this.categoryModel.findByIdAndDelete(id);
-
-  await this.usersService.removeItemFromAllUserFavorites(id);
-  for (const subcat of subcategoriesToDelete) {
-    await this.usersService.removeItemFromAllUserFavorites(subcat._id.toString());
-  }
-
-  return {
-    success: true,
-    message: 'Category and all nested content deleted successfully',
-    deletedCategoryPath: categoryPath,
-  };
-}
-
 
   async getById(id: string) {
     const category = await this.categoryModel.findById(id).lean();

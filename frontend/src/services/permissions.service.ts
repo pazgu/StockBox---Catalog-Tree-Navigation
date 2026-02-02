@@ -97,4 +97,11 @@ export const permissionsService = {
       getAuthHeader(),
     );
   },
+  getProductPathsWithPermissions: async (productId: string) => {
+    const response = await api.get(
+      `${API_URL}/product-paths/${productId}`,
+      getAuthHeader(),
+    );
+    return response.data;
+  },
 };
