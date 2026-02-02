@@ -45,11 +45,14 @@ const AllUsers: FC<AllUsersProps> = () => {
     }
   }, [searchParams]);
 
-  const filteredUsers = users.filter(
-    (user) =>
-      user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+    const filteredUsers = users
+    .filter(
+      (user) =>
+        user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase()),
+    )
+    .sort((a, b) => Number(a.approved) - Number(b.approved));
+
 
   const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
 
