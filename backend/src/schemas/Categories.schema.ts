@@ -11,7 +11,7 @@ export class Category {
 
   @Prop({ required: false, default: '' })
   categoryImage?: string;
-  
+
   @Prop({ default: false })
   permissionsInheritedToChildren: boolean;
 }
