@@ -255,7 +255,14 @@ export class CategoriesService {
     }
 
     await this.categoryModel.findByIdAndDelete(id);
+    await this.categoryModel.findByIdAndDelete(id);
 
+    await this.usersService.removeItemFromAllUserFavorites(id);
+    for (const subcat of subcategoriesToDelete) {
+      await this.usersService.removeItemFromAllUserFavorites(
+        subcat._id.toString(),
+      );
+    }
     await this.usersService.removeItemFromAllUserFavorites(id);
     for (const subcat of subcategoriesToDelete) {
       await this.usersService.removeItemFromAllUserFavorites(
