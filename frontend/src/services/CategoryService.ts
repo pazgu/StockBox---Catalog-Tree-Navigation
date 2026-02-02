@@ -76,17 +76,21 @@ class CategoriesService {
     }
   }
 
-  async deleteCategory(id: string): Promise<DeleteCategoryResponse> {
-    try {
-      const response = await api.delete<DeleteCategoryResponse>(
-        `${this.baseUrl}/${id}`,
-      );
-      return response.data;
-    } catch (error) {
-      console.error("Error deleting category:", error);
-      throw error;
-    }
+  async deleteCategory(
+  id: string,
+  strategy: "cascade" | "move_up" = "cascade",
+): Promise<DeleteCategoryResponse> {
+  try {
+    const response = await api.delete<DeleteCategoryResponse>(
+      `${this.baseUrl}/${id}?strategy=${strategy}`,
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting category:", error);
+    throw error;
   }
+}
+
 
   async updateCategory(
     id: string,
