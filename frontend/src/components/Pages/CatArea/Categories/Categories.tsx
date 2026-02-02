@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { FC, useState, useEffect } from "react";
-import { Pen, Trash, Lock, Heart } from "lucide-react";
+import { Pen, Trash, Lock, Heart, Boxes, PackageCheck, FolderInput, Copy  } from "lucide-react";
 import { useUser } from "../../../../context/UserContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -11,6 +11,13 @@ import { categoriesService } from "../../../../services/CategoryService";
 import { AddCategoryResult } from "../../../models/category.models";
 import { userService } from "../../../../services/UserService";
 import { Spinner } from "../../../ui/spinner";
+import { ProductsService } from "../../../../services/ProductService";
+import { DisplayItem } from "../../../../components/models/item.models";
+import { ProductDto } from "../../../../components/models/product.models";
+import { handleEntityRouteError } from "../../../../lib/routing/handleEntityRouteError";
+import MoveMultipleItemsModal from "../SingleCat/MoveMultipleItemsModal/MoveMultipleItemsModal";
+import DuplicateProductModal from "../../ProductArea/DuplicateProductModal/DuplicateProductModal";
+
 
 interface CategoriesProps {}
 
@@ -22,6 +29,8 @@ export interface Category {
 }
 
 type CategoryEditPayload = Category & { imageFile?: File };
+type FilterType = "all" | "categories" | "products";
+
 
 export const Categories: FC<CategoriesProps> = () => {
   const [showAddCatModal, setShowAddCatModal] = useState(false);
@@ -32,12 +41,53 @@ export const Categories: FC<CategoriesProps> = () => {
   );
   const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [favorites, setFavorites] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(true);
   const { role, id } = useUser();
   const navigate = useNavigate();
   const path: string[] = ["categories"];
   const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteStrategyLoading, setDeleteStrategyLoading] = useState<
+  "cascade" | "move_up" | null
+>(null);
+const [items, setItems] = useState<DisplayItem[]>([]);
+const [activeFilter, setActiveFilter] = useState<FilterType>("all");
+
+const [showMoveModal, setShowMoveModal] = useState(false);
+const [moveSelectedItems, setMoveSelectedItems] = useState<DisplayItem[]>([]);
+const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+const [duplicateProductId, setDuplicateProductId] = useState("");
+const [duplicateProductName, setDuplicateProductName] = useState("");
+const [duplicateCurrentPaths, setDuplicateCurrentPaths] = useState<string[]>([]);
+
+const openDuplicateForProduct = (item: DisplayItem) => {
+  setDuplicateProductId(item.id);
+  setDuplicateProductName(item.name);
+  setDuplicateCurrentPaths(item.path); // product paths (array)
+  setShowDuplicateModal(true);
+};
+
+const closeDuplicateModal = () => {
+  setShowDuplicateModal(false);
+  setDuplicateProductId("");
+  setDuplicateProductName("");
+  setDuplicateCurrentPaths([]);
+};
+
+
+const openMoveForItem = (item: DisplayItem) => {
+  setMoveSelectedItems([item]); // move single product from this page
+  setShowMoveModal(true);
+};
+
+const closeMoveModal = () => {
+  setShowMoveModal(false);
+  setMoveSelectedItems([]);
+};
+
+
+
+
+
 
 
   useEffect(() => {
@@ -50,80 +100,139 @@ export const Categories: FC<CategoriesProps> = () => {
     }
   }, [role, id]);
 
-  const loadCategoriesAndFavorites = async () => {
+ const loadCategoriesAndFavorites = async () => {
+  try {
+    setIsLoading(true);
+
+    // 1) fetch categories
+    const categoriesData = await categoriesService.getCategories();
+    setCategories(categoriesData);
+
+
+
+    // 2) fetch products that are under /categories
+    let products: ProductDto[] = [];
     try {
-      setIsLoading(true);
-      const categoriesData = await categoriesService.getCategories();
-      setCategories(categoriesData);
-      if (id) {
-        try {
-          const userFavorites = await userService.getFavorites();
-          const favoritesMap: Record<string, boolean> = {};
+      products = await ProductsService.getProductsByPath("/categories");
+    } catch (err) {
+      if (handleEntityRouteError(err, navigate)) return;
+      console.error(err);
+      toast.error("שגיאה בטעינת מוצרים");
+      products = [];
+    }
 
-          userFavorites.forEach((fav: any) => {
-            if (fav.type === "category") {
-              favoritesMap[fav.id.toString()] = true;
-            }
-          });
-          setFavorites(favoritesMap);
-        }  catch (error) {
-  toast.error("שגיאה בטעינת מועדפים");
-  console.error("Error loading favorites:", error);
-}
-
+    // 3) favorites (both product + category)
+    let userFavorites: { id: string; type: string }[] = [];
+    if (id) {
+      try {
+        const favs = await userService.getFavorites();
+        userFavorites = favs.map((f: any) => ({
+          id: f.id.toString(),
+          type: f.type,
+        }));
+      } catch (error) {
+        toast.error("שגיאה בטעינת מועדפים");
+        console.error("Error loading favorites:", error);
       }
-    } catch (error) {
-      toast.error("שגיאה בטעינת קטגוריות");
-      console.error("Error fetching categories:", error);
-    } finally {
-      setIsLoading(false);
     }
-  };
 
-  const toggleFavorite = async (categoryId: string) => {
-    if (!id) {
-      toast.error("יש להתחבר כדי להוסיף למועדפים");
-      return;
-    }
-    const category = categories.find((c) => c._id === categoryId);
-    if (!category) return;
+    const favCategoryIds = new Set(
+      userFavorites.filter((f) => f.type === "category").map((f) => f.id),
+    );
+    const favProductIds = new Set(
+      userFavorites.filter((f) => f.type === "product").map((f) => f.id),
+    );
 
-    const wasFavorite = favorites[categoryId];
-    try {
-      setFavorites((prev) => ({ ...prev, [categoryId]: !wasFavorite }));
-      await userService.toggleFavorite(categoryId, "category");
-      if (!wasFavorite) {
-        toast.success(`${category.categoryName} נוסף למועדפים`);
-      } else {
-        toast.info(`${category.categoryName} הוסר מהמועדפים`);
-      }
-    } catch (error) {
-      toast.error("שגיאה בעדכון המועדפים");
-      setFavorites((prev) => ({ ...prev, [categoryId]: wasFavorite }));
-    }
-  };
+    // 4) map categories into DisplayItem
+    const categoryItems: DisplayItem[] = categoriesData.map((cat: any) => ({
+      id: cat._id,
+      name: cat.categoryName,
+      image: cat.categoryImage,
+      type: "category",
+      path: [cat.categoryPath],
+      favorite: favCategoryIds.has(cat._id.toString()),
+    }));
+
+    // 5) map products into DisplayItem (same as SingleCat)
+    const productItems: DisplayItem[] = products.map((prod: ProductDto) => ({
+      id: prod._id!,
+      name: prod.productName,
+      image: prod.productImages?.[0] ?? "/assets/images/placeholder.png",
+      type: "product",
+      path: Array.isArray(prod.productPath)
+        ? prod.productPath
+        : [prod.productPath],
+      description: prod.productDescription,
+      customFields: prod.customFields,
+      favorite: favProductIds.has(prod._id!.toString()),
+    }));
+
+    setItems([...categoryItems, ...productItems]);
+  } catch (error) {
+    toast.error("שגיאה בטעינת קטגוריות");
+    console.error("Error fetching categories:", error);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+
+  const toggleFavorite = async (itemId: string, itemName: string, itemType: "category" | "product") => {
+  if (!id) {
+    toast.error("יש להתחבר כדי להוסיף למועדפים");
+    return;
+  }
+
+  const wasFavorite = items.find((x) => x.id === itemId)?.favorite ?? false;
+
+  try {
+    // optimistic UI update
+    setItems((prev) =>
+      prev.map((x) =>
+        x.id === itemId ? { ...x, favorite: !wasFavorite } : x
+      )
+    );
+
+    await userService.toggleFavorite(itemId, itemType);
+
+    if (!wasFavorite) toast.success(`${itemName} נוסף למועדפים`);
+    else toast.info(`${itemName} הוסר מהמועדפים`);
+  } catch (error) {
+    toast.error("שגיאה בעדכון המועדפים");
+
+    // rollback
+    setItems((prev) =>
+      prev.map((x) =>
+        x.id === itemId ? { ...x, favorite: wasFavorite } : x
+      )
+    );
+  }
+};
+
 
   const handleDelete = (category: Category) => {
     setCategoryToDelete(category);
     setShowDeleteModal(true);
   };
 
-  const confirmDelete = async () => {
+  const confirmDelete = async (strategy: "cascade" | "move_up") => {
   if (!categoryToDelete) return;
 
   try {
     setIsDeleting(true);
+    setDeleteStrategyLoading(strategy);
+
     await new Promise((r) => setTimeout(r, 800));
 
+    await categoriesService.deleteCategory(categoryToDelete._id, strategy);
 
-    await categoriesService.deleteCategory(categoryToDelete._id);
 
-    setCategories(
-      categories.filter((cat) => cat._id !== categoryToDelete._id)
-    );
+    await loadCategoriesAndFavorites();
 
     toast.success(
-      `הקטגוריה "${categoryToDelete.categoryName}" וכל התכנים שבה נמחקו בהצלחה!`
+      strategy === "cascade"
+        ? `הקטגוריה "${categoryToDelete.categoryName}" וכל התכנים שבה נמחקו בהצלחה!`
+        : `הקטגוריה "${categoryToDelete.categoryName}" נמחקה והתכנים הועברו שכבה אחת למעלה!`,
     );
 
     setShowDeleteModal(false);
@@ -133,8 +242,11 @@ export const Categories: FC<CategoriesProps> = () => {
     console.error("Error deleting category:", error);
   } finally {
     setIsDeleting(false);
+    setDeleteStrategyLoading(null);
   }
 };
+
+
 
 
   const handleEdit = (category: Category) => {
@@ -225,6 +337,14 @@ export const Categories: FC<CategoriesProps> = () => {
     );
   }
 
+  const categoryItems = items.filter((x) => x.type === "category");
+  const productItems = items.filter((x) => x.type === "product");
+  const showCategories = activeFilter === "all" || activeFilter === "categories";
+  const hasProducts = productItems.length > 0;
+  const showProducts = (activeFilter === "all" || activeFilter === "products") && hasProducts;
+
+
+
   return (
     <div
       className="mt-12 p-4 font-system direction-rtl text-right overflow-x-hidden"
@@ -232,116 +352,283 @@ export const Categories: FC<CategoriesProps> = () => {
     >
       <Breadcrumbs path={path} />
 
-      <div className="text-right">
-        <h2 className="text-5xl font-light text-slate-700 mb-2 tracking-tight">
-          קטגוריות
-        </h2>
-      </div>
 
-      {categories.length === 0 ? (
-        <div className="w-full h-40 flex justify-center items-center my-12 text-slate-500">
-          {role === "editor" ? (
-            <p className="text-lg">אין קטגוריות להצגה. הוסף קטגוריה חדשה!</p>
-          ) : (
-            <p className="text-lg">אין קטגוריות להצגה!</p>
+
+
+     {/* Filter Buttons */}
+{hasProducts ? (
+  <div className="flex justify-center gap-3 mb-8 flex-wrap mt-8">
+    <button
+      onClick={() => setActiveFilter("all")}
+      className={`px-6 py-2 rounded-full font-medium transition-all ${
+        activeFilter === "all"
+          ? "bg-blue-950 text-white shadow-md"
+          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+      }`}
+    >
+      הכל
+    </button>
+
+    <button
+      onClick={() => setActiveFilter("categories")}
+      className={`px-6 py-2 rounded-full font-medium transition-all ${
+        activeFilter === "categories"
+          ? "bg-blue-950 text-white shadow-md"
+          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+      }`}
+    >
+      קטגוריות
+    </button>
+
+    <button
+      onClick={() => setActiveFilter("products")}
+      className={`px-6 py-2 rounded-full font-medium transition-all ${
+        activeFilter === "products"
+          ? "bg-blue-950 text-white shadow-md"
+          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+      }`}
+    >
+      מוצרים
+    </button>
+  </div>
+) : (
+  <div className="text-right mt-8 mb-6">
+    <h2 className="text-5xl font-light text-slate-700 mb-2 tracking-tight">
+      קטגוריות
+    </h2>
+  </div>
+)}
+
+
+
+
+
+{items.length === 0 ? (
+  <div className="w-full h-40 flex justify-center items-center my-12 text-slate-500">
+    <p className="text-lg">אין פריטים להצגה</p>
+  </div>
+) : (
+  <>
+    {showCategories && categoryItems.length > 0 && (
+  <div className="mx-auto flex justify-center flex-wrap gap-10 my-12 px-4 sm:px-8">
+
+       {categoryItems.map((item) => {
+  // find the real category object so delete/edit can use the old functions
+  const category = categories.find((c) => c._id === item.id);
+
+  return (
+    <div
+      key={item.id}
+      className="flex flex-col items-center cursor-pointer transition-transform duration-200 hover:translate-y-[-2px] relative group"
+    >
+      <div className="flex items-center justify-center relative">
+        <div
+          onClick={() => navigate(item.path[0])}
+          className="relative"
+        >
+          <div className="absolute top-3 right-3 z-10">
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleFavorite(item.id, item.name, "category");
+              }}
+              className="peer p-2 rounded-full bg-black/40 hover:bg-black/60 transition-colors relative"
+            >
+              <Heart
+                size={22}
+                strokeWidth={2}
+                className={
+                  item.favorite ? "fill-red-500 text-red-500" : "text-white"
+                }
+              />
+            </button>
+            <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+              {item.favorite ? "הסר ממועדפים" : "הוסף למועדפים"}
+            </span>
+          </div>
+
+          <img
+            src={item.image}
+            alt={item.name}
+            className="w-44 h-44 object-cover rounded-full shadow-md mt-2"
+          />
+
+          {role === "editor" && category && (
+            <div className="w-60 absolute inset-0 flex mr-16 gap-3 mb-4">
+              <div className="relative pointer-events-auto">
+                <button
+                  className="peer -mt-1.5 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleDelete(category);
+                  }}
+                >
+                  <Trash size={18} />
+                </button>
+                <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap">
+                  מחיקת קטגוריה
+                </span>
+              </div>
+
+              <div className="relative pointer-events-auto">
+                <button
+                  className="peer opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl mt-2.1"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleEdit(category);
+                  }}
+                >
+                  <Pen size={18} />
+                </button>
+                <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap">
+                  עריכת קטגוריה
+                </span>
+              </div>
+
+              <div className="relative pointer-events-auto">
+                <button
+                  className="peer mt-8 -mr-2.5 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    navigate(`/permissions/category/${category._id}`);
+                  }}
+                >
+                  <Lock size={18} />
+                </button>
+                <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap">
+                  ניהול הרשאות
+                </span>
+              </div>
+            </div>
           )}
         </div>
-      ) : (
-        <div className="mx-auto flex justify-center flex-wrap gap-10 my-12 px-4 sm:px-8">
-          {categories.map((category) => (
+      </div>
+
+      <span className="text-base text-slate-700 font-medium mt-2">
+        {item.name}
+      </span>
+    </div>
+  );
+})}
+
+      </div>
+    )}
+
+  {showProducts && productItems.length > 0 && (
+  <div className={activeFilter === "products" ? "mt-6" : "mt-16"}>
+    {activeFilter === "all" && (
+      <h3 className="text-3xl font-light text-slate-700 mb-6 tracking-tight">
+        מוצרים
+      </h3>
+    )}
+
+
+        <main className="grid grid-cols-[repeat(auto-fill,minmax(290px,1fr))] gap-24 my-12">
+          {productItems.map((item) => (
             <div
-              key={category._id}
-              className="flex flex-col items-center cursor-pointer transition-transform duration-200 hover:translate-y-[-2px] relative group"
+              key={item.id}
+              className="flex flex-col items-center p-5 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 border-gray-200 cursor-pointer"
+              onClick={() => navigate(`/products/${item.id}`)}
             >
-              <div className="flex items-center justify-center relative">
-                <div onClick={() => handleCategoryClick(category)}>
-                  <div className="absolute top-3 right-3 z-10">
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        toggleFavorite(category._id);
-                      }}
-                      className="peer p-2 rounded-full bg-black/40 hover:bg-black/60 transition-colors relative"
-                    >
-                      <Heart
-                        size={22}
-                        strokeWidth={2}
-                        className={
-                          favorites[category._id]
-                            ? "fill-red-500 text-red-500"
-                            : "text-white"
-                        }
-                      />
-                    </button>
-                    <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                      {favorites[category._id] ? "הסר ממועדפים" : "הוסף למועדפים"}
-                    </span>
-                  </div>
-                  <img
-                    src={category.categoryImage}
-                    alt={category.categoryName}
-                    className="w-44 h-44 object-cover rounded-full shadow-md mt-2"
-                  />
-
-                  {role === "editor" && (
-                    <div className="w-60 absolute inset-0 flex mr-16 gap-3 mb-4">
-                      <div className="relative pointer-events-auto">
-                        <button
-                          className="peer -mt-1.5 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleDelete(category);
-                          }}
-                        >
-                          <Trash size={18} />
-                        </button>
-                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap">
-מחיקת קטגוריה                        </span>
-                      </div>
-
-                      <div className="relative pointer-events-auto">
-                        <button
-                          className="peer opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl mt-2.1"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleEdit(category);
-                          }}
-                        >
-                          <Pen size={18} />
-                        </button>
-                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap">
-עריכת קטגוריה                        </span>
-                      </div>
-
-                      <div className="relative pointer-events-auto">
-                        <button
-                          className="peer mt-8 -mr-2.5 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            navigate(`/permissions/category/${category._id}`);
-                          }}
-                        >
-                          <Lock size={18} />
-                        </button>
-                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap">
-                          ניהול הרשאות
-                        </span>
-                      </div>
-                    </div>
-                  )}
+              <div className="absolute top-2 left-2 px-3 py-1 text-xs font-medium rounded-full">
+                <div className="flex flex-col items-center text-green-700">
+                  <PackageCheck />
+                  <span>מוצר</span>
                 </div>
               </div>
-              <span className="text-base text-slate-700 font-medium mt-2">
-                {category.categoryName}
-              </span>
+
+<div className="absolute right-3 top-3 flex gap-2">
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      toggleFavorite(item.id, item.name, "product");
+    }}
+    className="h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110 transition-all duration-200"
+  >
+    <Heart
+      size={22}
+      strokeWidth={2}
+      className={
+        item.favorite ? "fill-red-500 text-red-500" : "text-gray-700"
+      }
+    />
+  </button>
+
+  {role === "editor" && (
+    <button
+     onClick={(e) => {
+  e.stopPropagation();
+  openMoveForItem(item);
+}}
+      className="h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110 transition-all duration-200 text-gray-700"
+      title="העבר מוצר"
+    >
+      <FolderInput size={20} />
+    </button>
+  )}
+  
+{role === "editor" && (
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      openDuplicateForProduct(item);
+    }}
+    className="h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110 transition-all duration-200 text-gray-700"
+    title="שכפל מוצר"
+  >
+    <Copy size={20} />
+  </button>
+)}
+
+</div>
+
+
+
+              <div className="h-[140px] w-full flex justify-center items-center p-5">
+                <img
+                  src={item.image}
+                  alt={item.name}
+                  className="max-h-full max-w-full object-contain"
+                />
+              </div>
+
+              <div className="w-full text-center pt-4 border-t border-gray-200">
+                <h2 className="text-[1.1rem] text-[#0D305B] mb-2">
+                  {item.name}
+                </h2>
+              </div>
             </div>
           ))}
-        </div>
-      )}
+        </main>
+      </div>
+    )}
+  </>
+)}
+
+
+
+      <MoveMultipleItemsModal
+  isOpen={showMoveModal}
+  selectedItems={moveSelectedItems}
+  onClose={closeMoveModal}
+  onSuccess={loadCategoriesAndFavorites}
+/>
+
+<DuplicateProductModal
+  isOpen={showDuplicateModal}
+  productId={duplicateProductId}
+  productName={duplicateProductName}
+  currentPaths={duplicateCurrentPaths}
+  onClose={closeDuplicateModal}
+  onSuccess={loadCategoriesAndFavorites}
+/>
+
+
+
 
       {role === "editor" && (
         <div
@@ -389,38 +676,54 @@ export const Categories: FC<CategoriesProps> = () => {
                   האם ברצונך למחוק את הקטגוריה "{categoryToDelete.categoryName}
                   "?
                 </p>
-                <small className="text-gray-500">
-                  לא ניתן לבטל פעולה זו לאחר מכן
-                </small>
 
-                <div className="flex justify-between gap-3 mt-5">
-                  <button
-  onClick={closeAllModals}
+
+                <div className="flex flex-col gap-3 mt-5">
+  <button
+  onClick={() => confirmDelete("cascade")}
   disabled={isDeleting}
-  className={`flex-1 p-3 border-none rounded-lg text-base font-medium transition-all duration-200
-    ${isDeleting ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"}`}
->
-  ביטול
-</button>
-
-
-                  <button
-  onClick={confirmDelete}
-  disabled={isDeleting}
-  className={`flex-1 p-3 border-none rounded-lg text-base font-medium transition-all duration-200 shadow-md
+  className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 shadow-md
     ${isDeleting ? "bg-red-400 cursor-not-allowed text-white" : "bg-red-600 text-white hover:bg-red-700 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"}`}
 >
-  {isDeleting ? (
+  {isDeleting && deleteStrategyLoading === "cascade" ? (
     <span className="flex items-center justify-center gap-2">
       <Spinner className="size-4 text-white" />
       מוחק...
     </span>
   ) : (
-    "מחיקה"
+    "מחק הכל (כולל כל הצאצאים)"
   )}
 </button>
 
-                </div>
+
+  <button
+  onClick={() => confirmDelete("move_up")}
+  disabled={isDeleting}
+  className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 shadow-md
+    ${isDeleting ? "bg-orange-200 cursor-not-allowed text-orange-900" : "bg-orange-100 text-orange-900 hover:bg-orange-200 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"}`}
+>
+  {isDeleting && deleteStrategyLoading === "move_up" ? (
+    <span className="flex items-center justify-center gap-2">
+      <Spinner className="size-4 text-orange-900" />
+      מוחק...
+    </span>
+  ) : (
+    "מחק רק קטגוריה (העבר צאצאים למעלה)"
+  )}
+</button>
+
+
+
+  <button
+    onClick={closeAllModals}
+    disabled={isDeleting}
+    className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200
+      ${isDeleting ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"}`}
+  >
+    ביטול
+  </button>
+</div>
+
               </div>
             </div>
           )}
