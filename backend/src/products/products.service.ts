@@ -325,6 +325,13 @@ async delete(
 
     product.productPath = newPaths;
     await product.save();
+    if (newCategoryPath.length > 0) {
+      await this.permissionsService.updatePermissionsOnMove(
+        id,
+        EntityType.PRODUCT,
+        newCategoryPath[0],
+      );
+    }
 
     return {
       success: true,
@@ -375,6 +382,10 @@ async delete(
 
     product.productPath = [...product.productPath, ...newPaths];
     await product.save();
+    await this.permissionsService.assignPermissionsOnDuplicate(
+      id,
+      additionalCategoryPaths,
+    );
 
     return {
       success: true,
@@ -477,61 +488,58 @@ async delete(
     return product;
   }
 
+  async deleteFromSpecificPaths(
+    id: string,
+    pathsToDelete: string[],
+  ): Promise<{ success: boolean; message: string }> {
+    const product = await this.productModel.findById(id);
 
-async deleteFromSpecificPaths(
-  id: string,
-  pathsToDelete: string[],
-): Promise<{ success: boolean; message: string }> {
-  const product = await this.productModel.findById(id);
-
-  if (!product) {
-    throw new NotFoundException(`Product with ID ${id} not found`);
-  }
-
-  try {
-    const updatedPaths = product.productPath.filter(
-      (path) => !pathsToDelete.includes(path),
-    );
-
-    if (updatedPaths.length === product.productPath.length) {
-      throw new BadRequestException(
-        `None of the specified paths exist for this product`,
-      );
+    if (!product) {
+      throw new NotFoundException(`Product with ID ${id} not found`);
     }
 
-    if (updatedPaths.length === 0) {
-      if (product.productImages && product.productImages.length > 0) {
-        await Promise.all(
-          product.productImages.map((url) => this.deleteProductImage(url)),
+    try {
+      const updatedPaths = product.productPath.filter(
+        (path) => !pathsToDelete.includes(path),
+      );
+
+      if (updatedPaths.length === product.productPath.length) {
+        throw new BadRequestException(
+          `None of the specified paths exist for this product`,
         );
       }
-      await this.productModel.findByIdAndDelete(id);
-      
-      await this.usersService.removeItemFromAllUserFavorites(id);
-      
+
+      if (updatedPaths.length === 0) {
+        if (product.productImages && product.productImages.length > 0) {
+          await Promise.all(
+            product.productImages.map((url) => this.deleteProductImage(url)),
+          );
+        }
+        await this.productModel.findByIdAndDelete(id);
+        await this.usersService.removeItemFromAllUserFavorites(id);
+        return {
+          success: true,
+          message: `Product "${product.productName}" deleted completely`,
+        };
+      }
+
+      product.productPath = updatedPaths;
+      await product.save();
+
       return {
         success: true,
-        message: `Product "${product.productName}" deleted completely`,
+        message: `Product "${product.productName}" removed from ${pathsToDelete.length} location(s)`,
       };
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        `Failed to delete product from specific paths: ${(error as Error).message}`,
+      );
     }
-
-    product.productPath = updatedPaths;
-    await product.save();
-
-    return {
-      success: true,
-      message: `Product "${product.productName}" removed from ${pathsToDelete.length} location(s)`,
-    };
-  } catch (error) {
-    if (
-      error instanceof NotFoundException ||
-      error instanceof BadRequestException
-    ) {
-      throw error;
-    }
-    throw new InternalServerErrorException(
-      `Failed to delete product from specific paths: ${(error as Error).message}`,
-    );
   }
-}
 }

@@ -612,24 +612,36 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
           )}
         </div>
       </div>
-      <InheritanceModal
-        open={showInheritanceModal}
-        onClose={() => {
-          setShowInheritanceModal(false);
-          const onlyCategories = pendingUnblockItems.filter(item => item.type === "category");
-          if (onlyCategories.length > 0) {
-            executeUnblock(onlyCategories, false);
-          } else {
-            toast.info("לא נבחרו קטגוריות לשחרור");
-          }
-          setPendingUnblockItems([]);
-        }}
-        onConfirm={() => {
-          setShowInheritanceModal(false);
-          executeUnblock(pendingUnblockItems, true);
-          setPendingUnblockItems([]);
-        }}
-      />
+     <InheritanceModal
+  open={showInheritanceModal}
+  onDismiss={() => {
+    setShowInheritanceModal(false);
+    setPendingUnblockItems([]);
+  }}
+
+  onDecline={() => {
+    setShowInheritanceModal(false);
+
+    const onlyCategories = pendingUnblockItems.filter(
+      (item) => item.type === "category"
+    );
+
+    if (onlyCategories.length > 0) {
+      executeUnblock(onlyCategories, false);
+    } else {
+      toast.info("לא נבחרו קטגוריות לשחרור");
+    }
+
+    setPendingUnblockItems([]);
+  }}
+
+  onConfirm={() => {
+    setShowInheritanceModal(false);
+    executeUnblock(pendingUnblockItems, true);
+    setPendingUnblockItems([]);
+  }}
+/>
+
     </div>
   );
 };

@@ -463,6 +463,11 @@ async deleteCategory(id: string) {
         { $set: { productPath: updatedPaths } },
       );
     }
+    await this.permissionsService.updatePermissionsOnMove(
+      id,
+      EntityType.CATEGORY,
+      newParentPath,
+    );
 
     return {
       success: true,
