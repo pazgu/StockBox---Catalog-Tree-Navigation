@@ -1,3 +1,4 @@
+/* eslint-disable no-constant-binary-expression */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
@@ -16,7 +17,7 @@ export class SearchController {
   async dropdown(@Query() query: SearchQueryDto, @Req() req) {
     const userId = req.user.userId;
     const userRole = req.user.role;
-    const limit = Math.min(query.limit ?? 10, 10);
+    const limit = Math.min(Number(query.limit) ?? 10, 10);
     return this.searchService.searchEntities(
       userId,
       query.q,
@@ -29,8 +30,8 @@ export class SearchController {
   @Get()
   @UseGuards(AuthGuard('jwt'))
   async fullSearch(@Query() query: SearchQueryDto, @Req() req) {
-    const page = query.page || 1;
-    const limit = query.limit || 20;
+    const page = Number(query.page || 1);
+    const limit = Number(query.limit || 20);
     const userRole = req.user.role;
     return this.searchService.searchEntities(
       req.user.userId,
