@@ -65,8 +65,10 @@ export class CategoriesController {
       return [];
     }
 
+    const decodedPath = decodeURIComponent(pathPart);
+
     return await this.categoriesService.getDirectChildren(
-      pathPart,
+      decodedPath,
       request.user,
     );
   }

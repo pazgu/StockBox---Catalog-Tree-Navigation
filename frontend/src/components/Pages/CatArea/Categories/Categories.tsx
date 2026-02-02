@@ -1,6 +1,15 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { FC, useState, useEffect } from "react";
-import { Pen, Trash, Lock, Heart, Boxes, PackageCheck, FolderInput, Copy  } from "lucide-react";
+import {
+  Pen,
+  Trash,
+  Lock,
+  Heart,
+  Boxes,
+  PackageCheck,
+  FolderInput,
+  Copy,
+} from "lucide-react";
 import { useUser } from "../../../../context/UserContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -18,7 +27,6 @@ import { handleEntityRouteError } from "../../../../lib/routing/handleEntityRout
 import MoveMultipleItemsModal from "../SingleCat/MoveMultipleItemsModal/MoveMultipleItemsModal";
 import DuplicateProductModal from "../../ProductArea/DuplicateProductModal/DuplicateProductModal";
 
-
 interface CategoriesProps {}
 
 export interface Category {
@@ -30,7 +38,6 @@ export interface Category {
 
 type CategoryEditPayload = Category & { imageFile?: File };
 type FilterType = "all" | "categories" | "products";
-
 
 export const Categories: FC<CategoriesProps> = () => {
   const [showAddCatModal, setShowAddCatModal] = useState(false);
@@ -47,48 +54,43 @@ export const Categories: FC<CategoriesProps> = () => {
   const path: string[] = ["categories"];
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteStrategyLoading, setDeleteStrategyLoading] = useState<
-  "cascade" | "move_up" | null
->(null);
-const [items, setItems] = useState<DisplayItem[]>([]);
-const [activeFilter, setActiveFilter] = useState<FilterType>("all");
+    "cascade" | "move_up" | null
+  >(null);
+  const [items, setItems] = useState<DisplayItem[]>([]);
+  const [activeFilter, setActiveFilter] = useState<FilterType>("all");
 
-const [showMoveModal, setShowMoveModal] = useState(false);
-const [moveSelectedItems, setMoveSelectedItems] = useState<DisplayItem[]>([]);
-const [showDuplicateModal, setShowDuplicateModal] = useState(false);
-const [duplicateProductId, setDuplicateProductId] = useState("");
-const [duplicateProductName, setDuplicateProductName] = useState("");
-const [duplicateCurrentPaths, setDuplicateCurrentPaths] = useState<string[]>([]);
+  const [showMoveModal, setShowMoveModal] = useState(false);
+  const [moveSelectedItems, setMoveSelectedItems] = useState<DisplayItem[]>([]);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [duplicateProductId, setDuplicateProductId] = useState("");
+  const [duplicateProductName, setDuplicateProductName] = useState("");
+  const [duplicateCurrentPaths, setDuplicateCurrentPaths] = useState<string[]>(
+    [],
+  );
 
-const openDuplicateForProduct = (item: DisplayItem) => {
-  setDuplicateProductId(item.id);
-  setDuplicateProductName(item.name);
-  setDuplicateCurrentPaths(item.path); // product paths (array)
-  setShowDuplicateModal(true);
-};
+  const openDuplicateForProduct = (item: DisplayItem) => {
+    setDuplicateProductId(item.id);
+    setDuplicateProductName(item.name);
+    setDuplicateCurrentPaths(item.path); // product paths (array)
+    setShowDuplicateModal(true);
+  };
 
-const closeDuplicateModal = () => {
-  setShowDuplicateModal(false);
-  setDuplicateProductId("");
-  setDuplicateProductName("");
-  setDuplicateCurrentPaths([]);
-};
+  const closeDuplicateModal = () => {
+    setShowDuplicateModal(false);
+    setDuplicateProductId("");
+    setDuplicateProductName("");
+    setDuplicateCurrentPaths([]);
+  };
 
+  const openMoveForItem = (item: DisplayItem) => {
+    setMoveSelectedItems([item]); // move single product from this page
+    setShowMoveModal(true);
+  };
 
-const openMoveForItem = (item: DisplayItem) => {
-  setMoveSelectedItems([item]); // move single product from this page
-  setShowMoveModal(true);
-};
-
-const closeMoveModal = () => {
-  setShowMoveModal(false);
-  setMoveSelectedItems([]);
-};
-
-
-
-
-
-
+  const closeMoveModal = () => {
+    setShowMoveModal(false);
+    setMoveSelectedItems([]);
+  };
 
   useEffect(() => {
     if (role !== undefined) {
@@ -100,115 +102,115 @@ const closeMoveModal = () => {
     }
   }, [role, id]);
 
- const loadCategoriesAndFavorites = async () => {
-  try {
-    setIsLoading(true);
-
-    // 1) fetch categories
-    const categoriesData = await categoriesService.getCategories();
-    setCategories(categoriesData);
-
-
-
-    // 2) fetch products that are under /categories
-    let products: ProductDto[] = [];
+  const loadCategoriesAndFavorites = async () => {
     try {
-      products = await ProductsService.getProductsByPath("/categories");
-    } catch (err) {
-      if (handleEntityRouteError(err, navigate)) return;
-      console.error(err);
-      toast.error("שגיאה בטעינת מוצרים");
-      products = [];
-    }
+      setIsLoading(true);
 
-    // 3) favorites (both product + category)
-    let userFavorites: { id: string; type: string }[] = [];
-    if (id) {
+      // 1) fetch categories
+      const categoriesData = await categoriesService.getCategories();
+      setCategories(categoriesData);
+
+      // 2) fetch products that are under /categories
+      let products: ProductDto[] = [];
       try {
-        const favs = await userService.getFavorites();
-        userFavorites = favs.map((f: any) => ({
-          id: f.id.toString(),
-          type: f.type,
-        }));
-      } catch (error) {
-        toast.error("שגיאה בטעינת מועדפים");
-        console.error("Error loading favorites:", error);
+        products = await ProductsService.getProductsByPath("/categories");
+      } catch (err) {
+        if (handleEntityRouteError(err, navigate)) return;
+        console.error(err);
+        toast.error("שגיאה בטעינת מוצרים");
+        products = [];
       }
+
+      // 3) favorites (both product + category)
+      let userFavorites: { id: string; type: string }[] = [];
+      if (id) {
+        try {
+          const favs = await userService.getFavorites();
+          userFavorites = favs.map((f: any) => ({
+            id: f.id.toString(),
+            type: f.type,
+          }));
+        } catch (error) {
+          toast.error("שגיאה בטעינת מועדפים");
+          console.error("Error loading favorites:", error);
+        }
+      }
+
+      const favCategoryIds = new Set(
+        userFavorites.filter((f) => f.type === "category").map((f) => f.id),
+      );
+      const favProductIds = new Set(
+        userFavorites.filter((f) => f.type === "product").map((f) => f.id),
+      );
+
+      // 4) map categories into DisplayItem
+      const categoryItems: DisplayItem[] = categoriesData.map((cat: any) => ({
+        id: cat._id,
+        name: cat.categoryName,
+        image: cat.categoryImage,
+        type: "category",
+        path: [cat.categoryPath],
+        favorite: favCategoryIds.has(cat._id.toString()),
+      }));
+
+      // 5) map products into DisplayItem (same as SingleCat)
+      const productItems: DisplayItem[] = products.map((prod: ProductDto) => ({
+        id: prod._id!,
+        name: prod.productName,
+        image: prod.productImages?.[0] ?? "/assets/images/placeholder.png",
+        type: "product",
+        path: Array.isArray(prod.productPath)
+          ? prod.productPath
+          : [prod.productPath],
+        description: prod.productDescription,
+        customFields: prod.customFields,
+        favorite: favProductIds.has(prod._id!.toString()),
+      }));
+
+      setItems([...categoryItems, ...productItems]);
+    } catch (error) {
+      toast.error("שגיאה בטעינת קטגוריות");
+      console.error("Error fetching categories:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const toggleFavorite = async (
+    itemId: string,
+    itemName: string,
+    itemType: "category" | "product",
+  ) => {
+    if (!id) {
+      toast.error("יש להתחבר כדי להוסיף למועדפים");
+      return;
     }
 
-    const favCategoryIds = new Set(
-      userFavorites.filter((f) => f.type === "category").map((f) => f.id),
-    );
-    const favProductIds = new Set(
-      userFavorites.filter((f) => f.type === "product").map((f) => f.id),
-    );
+    const wasFavorite = items.find((x) => x.id === itemId)?.favorite ?? false;
 
-    // 4) map categories into DisplayItem
-    const categoryItems: DisplayItem[] = categoriesData.map((cat: any) => ({
-      id: cat._id,
-      name: cat.categoryName,
-      image: cat.categoryImage,
-      type: "category",
-      path: [cat.categoryPath],
-      favorite: favCategoryIds.has(cat._id.toString()),
-    }));
+    try {
+      // optimistic UI update
+      setItems((prev) =>
+        prev.map((x) =>
+          x.id === itemId ? { ...x, favorite: !wasFavorite } : x,
+        ),
+      );
 
-    // 5) map products into DisplayItem (same as SingleCat)
-    const productItems: DisplayItem[] = products.map((prod: ProductDto) => ({
-      id: prod._id!,
-      name: prod.productName,
-      image: prod.productImages?.[0] ?? "/assets/images/placeholder.png",
-      type: "product",
-      path: Array.isArray(prod.productPath)
-        ? prod.productPath
-        : [prod.productPath],
-      description: prod.productDescription,
-      customFields: prod.customFields,
-      favorite: favProductIds.has(prod._id!.toString()),
-    }));
+      await userService.toggleFavorite(itemId, itemType);
 
-    setItems([...categoryItems, ...productItems]);
-  } catch (error) {
-    toast.error("שגיאה בטעינת קטגוריות");
-    console.error("Error fetching categories:", error);
-  } finally {
-    setIsLoading(false);
-  }
-};
+      if (!wasFavorite) toast.success(`${itemName} נוסף למועדפים`);
+      else toast.info(`${itemName} הוסר מהמועדפים`);
+    } catch (error) {
+      toast.error("שגיאה בעדכון המועדפים");
 
-
-  const toggleFavorite = async (itemId: string, itemName: string, itemType: "category" | "product") => {
-  if (!id) {
-    toast.error("יש להתחבר כדי להוסיף למועדפים");
-    return;
-  }
-
-  const wasFavorite = items.find((x) => x.id === itemId)?.favorite ?? false;
-
-  try {
-    // optimistic UI update
-    setItems((prev) =>
-      prev.map((x) =>
-        x.id === itemId ? { ...x, favorite: !wasFavorite } : x
-      )
-    );
-
-    await userService.toggleFavorite(itemId, itemType);
-
-    if (!wasFavorite) toast.success(`${itemName} נוסף למועדפים`);
-    else toast.info(`${itemName} הוסר מהמועדפים`);
-  } catch (error) {
-    toast.error("שגיאה בעדכון המועדפים");
-
-    // rollback
-    setItems((prev) =>
-      prev.map((x) =>
-        x.id === itemId ? { ...x, favorite: wasFavorite } : x
-      )
-    );
-  }
-};
-
+      // rollback
+      setItems((prev) =>
+        prev.map((x) =>
+          x.id === itemId ? { ...x, favorite: wasFavorite } : x,
+        ),
+      );
+    }
+  };
 
   const handleDelete = (category: Category) => {
     setCategoryToDelete(category);
@@ -216,38 +218,34 @@ const closeMoveModal = () => {
   };
 
   const confirmDelete = async (strategy: "cascade" | "move_up") => {
-  if (!categoryToDelete) return;
+    if (!categoryToDelete) return;
 
-  try {
-    setIsDeleting(true);
-    setDeleteStrategyLoading(strategy);
+    try {
+      setIsDeleting(true);
+      setDeleteStrategyLoading(strategy);
 
-    await new Promise((r) => setTimeout(r, 800));
+      await new Promise((r) => setTimeout(r, 800));
 
-    await categoriesService.deleteCategory(categoryToDelete._id, strategy);
+      await categoriesService.deleteCategory(categoryToDelete._id, strategy);
 
+      await loadCategoriesAndFavorites();
 
-    await loadCategoriesAndFavorites();
+      toast.success(
+        strategy === "cascade"
+          ? `הקטגוריה "${categoryToDelete.categoryName}" וכל התכנים שבה נמחקו בהצלחה!`
+          : `הקטגוריה "${categoryToDelete.categoryName}" נמחקה והתכנים הועברו שכבה אחת למעלה!`,
+      );
 
-    toast.success(
-      strategy === "cascade"
-        ? `הקטגוריה "${categoryToDelete.categoryName}" וכל התכנים שבה נמחקו בהצלחה!`
-        : `הקטגוריה "${categoryToDelete.categoryName}" נמחקה והתכנים הועברו שכבה אחת למעלה!`,
-    );
-
-    setShowDeleteModal(false);
-    setCategoryToDelete(null);
-  } catch (error) {
-    toast.error("שגיאה במחיקת הקטגוריה");
-    console.error("Error deleting category:", error);
-  } finally {
-    setIsDeleting(false);
-    setDeleteStrategyLoading(null);
-  }
-};
-
-
-
+      setShowDeleteModal(false);
+      setCategoryToDelete(null);
+    } catch (error) {
+      toast.error("שגיאה במחיקת הקטגוריה");
+      console.error("Error deleting category:", error);
+    } finally {
+      setIsDeleting(false);
+      setDeleteStrategyLoading(null);
+    }
+  };
 
   const handleEdit = (category: Category) => {
     setCategoryToEdit(category);
@@ -263,34 +261,33 @@ const closeMoveModal = () => {
   };
 
   const handleAddCategory = async ({ name, imageFile }: AddCategoryResult) => {
-  try {
-    const categoryPath = `/categories/${name
-      .toLowerCase()
-      .replace(/\s+/g, "-")}`;
+    try {
+      const categoryPath = `/categories/${name
+        .toLowerCase()
+        .replace(/\s+/g, "-")}`;
 
-    const newCategory = await categoriesService.createCategory({
-      categoryName: name,
-      categoryPath,
-      imageFile,
-    });
+      const newCategory = await categoriesService.createCategory({
+        categoryName: name,
+        categoryPath,
+        imageFile,
+      });
 
-    setCategories((prev) => [...prev, newCategory]);
-    setShowAddCatModal(false);
-    toast.success(`הקטגוריה "${name}" נוספה בהצלחה!`);
-  } catch (error: any) {
-    const serverMessage =
-      error?.response?.data?.message || error?.response?.data?.error;
+      setCategories((prev) => [...prev, newCategory]);
+      setShowAddCatModal(false);
+      toast.success(`הקטגוריה "${name}" נוספה בהצלחה!`);
+    } catch (error: any) {
+      const serverMessage =
+        error?.response?.data?.message || error?.response?.data?.error;
 
-    if (typeof serverMessage === "string" && serverMessage.trim()) {
-      toast.error(serverMessage);
-    } else {
-      toast.error("שגיאה בהוספת קטגוריה");
+      if (typeof serverMessage === "string" && serverMessage.trim()) {
+        toast.error(serverMessage);
+      } else {
+        toast.error("שגיאה בהוספת קטגוריה");
+      }
+
+      console.error("Error creating category:", error);
     }
-
-    console.error("Error creating category:", error);
-  }
-};
-
+  };
 
   const handleSaveEdit = async (updatedCategory: CategoryEditPayload) => {
     try {
@@ -317,7 +314,7 @@ const closeMoveModal = () => {
   };
 
   const handleCategoryClick = (category: Category) => {
-    navigate(category.categoryPath);
+    navigate(encodeURI(category.categoryPath));
   };
 
   if (isLoading) {
@@ -339,11 +336,11 @@ const closeMoveModal = () => {
 
   const categoryItems = items.filter((x) => x.type === "category");
   const productItems = items.filter((x) => x.type === "product");
-  const showCategories = activeFilter === "all" || activeFilter === "categories";
+  const showCategories =
+    activeFilter === "all" || activeFilter === "categories";
   const hasProducts = productItems.length > 0;
-  const showProducts = (activeFilter === "all" || activeFilter === "products") && hasProducts;
-
-
+  const showProducts =
+    (activeFilter === "all" || activeFilter === "products") && hasProducts;
 
   return (
     <div
@@ -352,283 +349,271 @@ const closeMoveModal = () => {
     >
       <Breadcrumbs path={path} />
 
+      {/* Filter Buttons */}
+      {hasProducts ? (
+        <div className="flex justify-center gap-3 mb-8 flex-wrap mt-8">
+          <button
+            onClick={() => setActiveFilter("all")}
+            className={`px-6 py-2 rounded-full font-medium transition-all ${
+              activeFilter === "all"
+                ? "bg-blue-950 text-white shadow-md"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}
+          >
+            הכל
+          </button>
 
+          <button
+            onClick={() => setActiveFilter("categories")}
+            className={`px-6 py-2 rounded-full font-medium transition-all ${
+              activeFilter === "categories"
+                ? "bg-blue-950 text-white shadow-md"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}
+          >
+            קטגוריות
+          </button>
 
+          <button
+            onClick={() => setActiveFilter("products")}
+            className={`px-6 py-2 rounded-full font-medium transition-all ${
+              activeFilter === "products"
+                ? "bg-blue-950 text-white shadow-md"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}
+          >
+            מוצרים
+          </button>
+        </div>
+      ) : (
+        <div className="text-right mt-8 mb-6">
+          <h2 className="text-5xl font-light text-slate-700 mb-2 tracking-tight">
+            קטגוריות
+          </h2>
+        </div>
+      )}
 
-     {/* Filter Buttons */}
-{hasProducts ? (
-  <div className="flex justify-center gap-3 mb-8 flex-wrap mt-8">
-    <button
-      onClick={() => setActiveFilter("all")}
-      className={`px-6 py-2 rounded-full font-medium transition-all ${
-        activeFilter === "all"
-          ? "bg-blue-950 text-white shadow-md"
-          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-      }`}
-    >
-      הכל
-    </button>
+      {items.length === 0 ? (
+        <div className="w-full h-40 flex justify-center items-center my-12 text-slate-500">
+          <p className="text-lg">אין פריטים להצגה</p>
+        </div>
+      ) : (
+        <>
+          {showCategories && categoryItems.length > 0 && (
+            <div className="mx-auto flex justify-center flex-wrap gap-10 my-12 px-4 sm:px-8">
+              {categoryItems.map((item) => {
+                // find the real category object so delete/edit can use the old functions
+                const category = categories.find((c) => c._id === item.id);
 
-    <button
-      onClick={() => setActiveFilter("categories")}
-      className={`px-6 py-2 rounded-full font-medium transition-all ${
-        activeFilter === "categories"
-          ? "bg-blue-950 text-white shadow-md"
-          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-      }`}
-    >
-      קטגוריות
-    </button>
+                return (
+                  <div
+                    key={item.id}
+                    className="flex flex-col items-center cursor-pointer transition-transform duration-200 hover:translate-y-[-2px] relative group"
+                  >
+                    <div className="flex items-center justify-center relative">
+                      <div
+                        onClick={() => navigate(item.path[0])}
+                        className="relative"
+                      >
+                        <div className="absolute top-3 right-3 z-10">
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              toggleFavorite(item.id, item.name, "category");
+                            }}
+                            className="peer p-2 rounded-full bg-black/40 hover:bg-black/60 transition-colors relative"
+                          >
+                            <Heart
+                              size={22}
+                              strokeWidth={2}
+                              className={
+                                item.favorite
+                                  ? "fill-red-500 text-red-500"
+                                  : "text-white"
+                              }
+                            />
+                          </button>
+                          <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                            {item.favorite ? "הסר ממועדפים" : "הוסף למועדפים"}
+                          </span>
+                        </div>
 
-    <button
-      onClick={() => setActiveFilter("products")}
-      className={`px-6 py-2 rounded-full font-medium transition-all ${
-        activeFilter === "products"
-          ? "bg-blue-950 text-white shadow-md"
-          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-      }`}
-    >
-      מוצרים
-    </button>
-  </div>
-) : (
-  <div className="text-right mt-8 mb-6">
-    <h2 className="text-5xl font-light text-slate-700 mb-2 tracking-tight">
-      קטגוריות
-    </h2>
-  </div>
-)}
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="w-44 h-44 object-cover rounded-full shadow-md mt-2"
+                        />
 
+                        {role === "editor" && category && (
+                          <div className="w-60 absolute inset-0 flex mr-16 gap-3 mb-4">
+                            <div className="relative pointer-events-auto">
+                              <button
+                                className="peer -mt-1.5 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleDelete(category);
+                                }}
+                              >
+                                <Trash size={18} />
+                              </button>
+                              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap">
+                                מחיקת קטגוריה
+                              </span>
+                            </div>
 
+                            <div className="relative pointer-events-auto">
+                              <button
+                                className="peer opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl mt-2.1"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleEdit(category);
+                                }}
+                              >
+                                <Pen size={18} />
+                              </button>
+                              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap">
+                                עריכת קטגוריה
+                              </span>
+                            </div>
 
+                            <div className="relative pointer-events-auto">
+                              <button
+                                className="peer mt-8 -mr-2.5 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  navigate(
+                                    `/permissions/category/${category._id}`,
+                                  );
+                                }}
+                              >
+                                <Lock size={18} />
+                              </button>
+                              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap">
+                                ניהול הרשאות
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
 
-
-{items.length === 0 ? (
-  <div className="w-full h-40 flex justify-center items-center my-12 text-slate-500">
-    <p className="text-lg">אין פריטים להצגה</p>
-  </div>
-) : (
-  <>
-    {showCategories && categoryItems.length > 0 && (
-  <div className="mx-auto flex justify-center flex-wrap gap-10 my-12 px-4 sm:px-8">
-
-       {categoryItems.map((item) => {
-  // find the real category object so delete/edit can use the old functions
-  const category = categories.find((c) => c._id === item.id);
-
-  return (
-    <div
-      key={item.id}
-      className="flex flex-col items-center cursor-pointer transition-transform duration-200 hover:translate-y-[-2px] relative group"
-    >
-      <div className="flex items-center justify-center relative">
-        <div
-          onClick={() => navigate(item.path[0])}
-          className="relative"
-        >
-          <div className="absolute top-3 right-3 z-10">
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                toggleFavorite(item.id, item.name, "category");
-              }}
-              className="peer p-2 rounded-full bg-black/40 hover:bg-black/60 transition-colors relative"
-            >
-              <Heart
-                size={22}
-                strokeWidth={2}
-                className={
-                  item.favorite ? "fill-red-500 text-red-500" : "text-white"
-                }
-              />
-            </button>
-            <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-              {item.favorite ? "הסר ממועדפים" : "הוסף למועדפים"}
-            </span>
-          </div>
-
-          <img
-            src={item.image}
-            alt={item.name}
-            className="w-44 h-44 object-cover rounded-full shadow-md mt-2"
-          />
-
-          {role === "editor" && category && (
-            <div className="w-60 absolute inset-0 flex mr-16 gap-3 mb-4">
-              <div className="relative pointer-events-auto">
-                <button
-                  className="peer -mt-1.5 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleDelete(category);
-                  }}
-                >
-                  <Trash size={18} />
-                </button>
-                <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap">
-                  מחיקת קטגוריה
-                </span>
-              </div>
-
-              <div className="relative pointer-events-auto">
-                <button
-                  className="peer opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl mt-2.1"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleEdit(category);
-                  }}
-                >
-                  <Pen size={18} />
-                </button>
-                <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap">
-                  עריכת קטגוריה
-                </span>
-              </div>
-
-              <div className="relative pointer-events-auto">
-                <button
-                  className="peer mt-8 -mr-2.5 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    navigate(`/permissions/category/${category._id}`);
-                  }}
-                >
-                  <Lock size={18} />
-                </button>
-                <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap">
-                  ניהול הרשאות
-                </span>
-              </div>
+                    <span className="text-base text-slate-700 font-medium mt-2">
+                      {item.name}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           )}
-        </div>
-      </div>
 
-      <span className="text-base text-slate-700 font-medium mt-2">
-        {item.name}
-      </span>
-    </div>
-  );
-})}
+          {showProducts && productItems.length > 0 && (
+            <div className={activeFilter === "products" ? "mt-6" : "mt-16"}>
+              {activeFilter === "all" && (
+                <h3 className="text-3xl font-light text-slate-700 mb-6 tracking-tight">
+                  מוצרים
+                </h3>
+              )}
 
-      </div>
-    )}
+              <main className="grid grid-cols-[repeat(auto-fill,minmax(290px,1fr))] gap-24 my-12">
+                {productItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex flex-col items-center p-5 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 border-gray-200 cursor-pointer"
+                    onClick={() => navigate(`/products/${item.id}`)}
+                  >
+                    <div className="absolute top-2 left-2 px-3 py-1 text-xs font-medium rounded-full">
+                      <div className="flex flex-col items-center text-green-700">
+                        <PackageCheck />
+                        <span>מוצר</span>
+                      </div>
+                    </div>
 
-  {showProducts && productItems.length > 0 && (
-  <div className={activeFilter === "products" ? "mt-6" : "mt-16"}>
-    {activeFilter === "all" && (
-      <h3 className="text-3xl font-light text-slate-700 mb-6 tracking-tight">
-        מוצרים
-      </h3>
-    )}
+                    <div className="absolute right-3 top-3 flex gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFavorite(item.id, item.name, "product");
+                        }}
+                        className="h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110 transition-all duration-200"
+                      >
+                        <Heart
+                          size={22}
+                          strokeWidth={2}
+                          className={
+                            item.favorite
+                              ? "fill-red-500 text-red-500"
+                              : "text-gray-700"
+                          }
+                        />
+                      </button>
 
+                      {role === "editor" && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openMoveForItem(item);
+                          }}
+                          className="h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110 transition-all duration-200 text-gray-700"
+                          title="העבר מוצר"
+                        >
+                          <FolderInput size={20} />
+                        </button>
+                      )}
 
-        <main className="grid grid-cols-[repeat(auto-fill,minmax(290px,1fr))] gap-24 my-12">
-          {productItems.map((item) => (
-            <div
-              key={item.id}
-              className="flex flex-col items-center p-5 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 border-gray-200 cursor-pointer"
-              onClick={() => navigate(`/products/${item.id}`)}
-            >
-              <div className="absolute top-2 left-2 px-3 py-1 text-xs font-medium rounded-full">
-                <div className="flex flex-col items-center text-green-700">
-                  <PackageCheck />
-                  <span>מוצר</span>
-                </div>
-              </div>
+                      {role === "editor" && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openDuplicateForProduct(item);
+                          }}
+                          className="h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110 transition-all duration-200 text-gray-700"
+                          title="שכפל מוצר"
+                        >
+                          <Copy size={20} />
+                        </button>
+                      )}
+                    </div>
 
-<div className="absolute right-3 top-3 flex gap-2">
-  <button
-    onClick={(e) => {
-      e.stopPropagation();
-      toggleFavorite(item.id, item.name, "product");
-    }}
-    className="h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110 transition-all duration-200"
-  >
-    <Heart
-      size={22}
-      strokeWidth={2}
-      className={
-        item.favorite ? "fill-red-500 text-red-500" : "text-gray-700"
-      }
-    />
-  </button>
+                    <div className="h-[140px] w-full flex justify-center items-center p-5">
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="max-h-full max-w-full object-contain"
+                      />
+                    </div>
 
-  {role === "editor" && (
-    <button
-     onClick={(e) => {
-  e.stopPropagation();
-  openMoveForItem(item);
-}}
-      className="h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110 transition-all duration-200 text-gray-700"
-      title="העבר מוצר"
-    >
-      <FolderInput size={20} />
-    </button>
-  )}
-  
-{role === "editor" && (
-  <button
-    onClick={(e) => {
-      e.stopPropagation();
-      openDuplicateForProduct(item);
-    }}
-    className="h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110 transition-all duration-200 text-gray-700"
-    title="שכפל מוצר"
-  >
-    <Copy size={20} />
-  </button>
-)}
-
-</div>
-
-
-
-              <div className="h-[140px] w-full flex justify-center items-center p-5">
-                <img
-                  src={item.image}
-                  alt={item.name}
-                  className="max-h-full max-w-full object-contain"
-                />
-              </div>
-
-              <div className="w-full text-center pt-4 border-t border-gray-200">
-                <h2 className="text-[1.1rem] text-[#0D305B] mb-2">
-                  {item.name}
-                </h2>
-              </div>
+                    <div className="w-full text-center pt-4 border-t border-gray-200">
+                      <h2 className="text-[1.1rem] text-[#0D305B] mb-2">
+                        {item.name}
+                      </h2>
+                    </div>
+                  </div>
+                ))}
+              </main>
             </div>
-          ))}
-        </main>
-      </div>
-    )}
-  </>
-)}
-
-
+          )}
+        </>
+      )}
 
       <MoveMultipleItemsModal
-  isOpen={showMoveModal}
-  selectedItems={moveSelectedItems}
-  onClose={closeMoveModal}
-  onSuccess={loadCategoriesAndFavorites}
-/>
+        isOpen={showMoveModal}
+        selectedItems={moveSelectedItems}
+        onClose={closeMoveModal}
+        onSuccess={loadCategoriesAndFavorites}
+      />
 
-<DuplicateProductModal
-  isOpen={showDuplicateModal}
-  productId={duplicateProductId}
-  productName={duplicateProductName}
-  currentPaths={duplicateCurrentPaths}
-  onClose={closeDuplicateModal}
-  onSuccess={loadCategoriesAndFavorites}
-/>
-
-
-
+      <DuplicateProductModal
+        isOpen={showDuplicateModal}
+        productId={duplicateProductId}
+        productName={duplicateProductName}
+        currentPaths={duplicateCurrentPaths}
+        onClose={closeDuplicateModal}
+        onSuccess={loadCategoriesAndFavorites}
+      />
 
       {role === "editor" && (
         <div
@@ -677,53 +662,48 @@ const closeMoveModal = () => {
                   "?
                 </p>
 
-
                 <div className="flex flex-col gap-3 mt-5">
-  <button
-  onClick={() => confirmDelete("cascade")}
-  disabled={isDeleting}
-  className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 shadow-md
+                  <button
+                    onClick={() => confirmDelete("cascade")}
+                    disabled={isDeleting}
+                    className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 shadow-md
     ${isDeleting ? "bg-red-400 cursor-not-allowed text-white" : "bg-red-600 text-white hover:bg-red-700 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"}`}
->
-  {isDeleting && deleteStrategyLoading === "cascade" ? (
-    <span className="flex items-center justify-center gap-2">
-      <Spinner className="size-4 text-white" />
-      מוחק...
-    </span>
-  ) : (
-    "מחק הכל (כולל כל הצאצאים)"
-  )}
-</button>
+                  >
+                    {isDeleting && deleteStrategyLoading === "cascade" ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <Spinner className="size-4 text-white" />
+                        מוחק...
+                      </span>
+                    ) : (
+                      "מחק הכל (כולל כל הצאצאים)"
+                    )}
+                  </button>
 
-
-  <button
-  onClick={() => confirmDelete("move_up")}
-  disabled={isDeleting}
-  className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 shadow-md
+                  <button
+                    onClick={() => confirmDelete("move_up")}
+                    disabled={isDeleting}
+                    className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 shadow-md
     ${isDeleting ? "bg-orange-200 cursor-not-allowed text-orange-900" : "bg-orange-100 text-orange-900 hover:bg-orange-200 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"}`}
->
-  {isDeleting && deleteStrategyLoading === "move_up" ? (
-    <span className="flex items-center justify-center gap-2">
-      <Spinner className="size-4 text-orange-900" />
-      מוחק...
-    </span>
-  ) : (
-    "מחק רק קטגוריה (העבר צאצאים למעלה)"
-  )}
-</button>
+                  >
+                    {isDeleting && deleteStrategyLoading === "move_up" ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <Spinner className="size-4 text-orange-900" />
+                        מוחק...
+                      </span>
+                    ) : (
+                      "מחק רק קטגוריה (העבר צאצאים למעלה)"
+                    )}
+                  </button>
 
-
-
-  <button
-    onClick={closeAllModals}
-    disabled={isDeleting}
-    className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200
+                  <button
+                    onClick={closeAllModals}
+                    disabled={isDeleting}
+                    className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200
       ${isDeleting ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"}`}
-  >
-    ביטול
-  </button>
-</div>
-
+                  >
+                    ביטול
+                  </button>
+                </div>
               </div>
             </div>
           )}

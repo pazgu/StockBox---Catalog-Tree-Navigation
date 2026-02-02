@@ -49,7 +49,6 @@ export class ProductsController {
   findAll() {
     return this.productsService.findAll();
   }
-
   @ProductUseGuards(ProductAuthGuard('jwt'), ProductPermissionGuard)
   @ProductGet('by-path/*')
   findByPath(
@@ -58,7 +57,8 @@ export class ProductsController {
   ) {
     const fullUrl = request.url;
     const pathPart = fullUrl.split('by-path/')[1];
-    const fullPath = `/${pathPart}`;
+    const decodedPath = decodeURIComponent(pathPart);
+    const fullPath = `/${decodedPath}`;
 
     if (!request.user) {
       return [];
@@ -68,7 +68,6 @@ export class ProductsController {
 
     return this.productsService.findByPath(fullPath, user);
   }
-
   @ProductPost()
   @ProductUseGuards(JwtAuthGuard, EditorGuard)
   @HttpCode(HttpStatus.CREATED)
