@@ -8,6 +8,7 @@ import { Category, CategorySchema } from '../schemas/Categories.schema';
 import { AuthModule } from 'src/auth/auth.module';
 import { PermissionsModule } from 'src/permissions/permissions.module';
 import { Group, GroupSchema } from 'src/schemas/Groups.schema';
+import { UsersModule } from 'src/users/users.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { Group, GroupSchema } from 'src/schemas/Groups.schema';
       { name: Group.name, schema: GroupSchema },
     ]),
     PermissionsModule,
+    UsersModule,  
   ],
   controllers: [ProductsController],
   providers: [ProductsService],
