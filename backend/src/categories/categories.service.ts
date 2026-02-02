@@ -228,30 +228,103 @@ export class CategoriesService {
     return visibleChildren;
   }
 
-  async deleteCategory(id: string) {
+  async deleteCategory(
+    id: string,
+    strategy: 'cascade' | 'move_up' = 'cascade',
+  ) {
     const category = await this.categoryModel.findById(id);
     if (!category) {
       throw new NotFoundException('Category not found');
     }
 
     const categoryPath = category.categoryPath;
+    const parentPath = this.getParentPath(categoryPath);
 
-    await this.categoryModel.deleteMany({
-      categoryPath: new RegExp(`^${categoryPath}/`),
+    const escapedCategoryPath = categoryPath.replace(
+      /[.*+?^${}()|[\]\\]/g,
+      '\\$&',
+    );
+
+    if (strategy === 'cascade') {
+      await this.categoryModel.deleteMany({
+        categoryPath: new RegExp(`^${escapedCategoryPath}/`),
+      });
+
+      await this.productModel.deleteMany({
+        productPath: new RegExp(`^${escapedCategoryPath}`),
+      });
+
+      await this.categoryModel.findByIdAndDelete(id);
+
+      return {
+        success: true,
+        strategy,
+        message: 'Category and all nested content deleted successfully',
+        deletedCategoryPath: categoryPath,
+      };
+    }
+
+    const newPrefix = parentPath;
+
+    await this.categoryModel.updateMany(
+      { categoryPath: new RegExp(`^${escapedCategoryPath}/`) },
+      [
+        {
+          $set: {
+            categoryPath: {
+              $concat: [
+                newPrefix,
+                {
+                  $substr: [
+                    '$categoryPath',
+                    categoryPath.length,
+                    { $strLenCP: '$categoryPath' },
+                  ],
+                },
+              ],
+            },
+          },
+        },
+      ],
+      { updatePipeline: true },
+    );
+
+    const productsToUpdate = await this.productModel.find({
+      productPath: {
+        $elemMatch: { $regex: new RegExp(`^${escapedCategoryPath}(/|$)`) },
+      },
     });
 
-    await this.productModel.deleteMany({
-      productPath: new RegExp(`^${categoryPath}`),
-    });
+    for (const product of productsToUpdate) {
+      const updatedPaths = product.productPath.map((p) => {
+        if (p.startsWith(categoryPath + '/')) {
+          return newPrefix + p.substring(categoryPath.length);
+        }
+
+        if (p === categoryPath) {
+          return newPrefix;
+        }
+
+        return p;
+      });
+
+      await this.productModel.updateOne(
+        { _id: product._id },
+        { $set: { productPath: updatedPaths } },
+      );
+    }
 
     await this.categoryModel.findByIdAndDelete(id);
 
     return {
       success: true,
-      message: 'Category and all nested content deleted successfully',
+      strategy,
+      message: 'Category deleted and nested entities moved one level up',
       deletedCategoryPath: categoryPath,
+      movedTo: newPrefix,
     };
   }
+
   async getById(id: string) {
     const category = await this.categoryModel.findById(id).lean();
     if (!category) {
