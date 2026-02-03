@@ -26,7 +26,7 @@ import { ProductDto } from "../../../../components/models/product.models";
 import { handleEntityRouteError } from "../../../../lib/routing/handleEntityRouteError";
 import MoveMultipleItemsModal from "../SingleCat/MoveMultipleItemsModal/MoveMultipleItemsModal";
 import DuplicateProductModal from "../../ProductArea/DuplicateProductModal/DuplicateProductModal";
-
+import ImagePreviewHover from "../../ProductArea/ImageCarousel/ImageCarousel/ImagePreviewHover";
 interface CategoriesProps {}
 
 export interface Category {
@@ -143,21 +143,19 @@ export const Categories: FC<CategoriesProps> = () => {
         userFavorites.filter((f) => f.type === "product").map((f) => f.id),
       );
 
-      // 4) map categories into DisplayItem
       const categoryItems: DisplayItem[] = categoriesData.map((cat: any) => ({
         id: cat._id,
         name: cat.categoryName,
-        image: cat.categoryImage,
+        images: cat.categoryImage,
         type: "category",
         path: [cat.categoryPath],
         favorite: favCategoryIds.has(cat._id.toString()),
       }));
 
-      // 5) map products into DisplayItem (same as SingleCat)
       const productItems: DisplayItem[] = products.map((prod: ProductDto) => ({
         id: prod._id!,
         name: prod.productName,
-        image: prod.productImages?.[0] ?? "/assets/images/placeholder.png",
+        images: prod.productImages || [],
         type: "product",
         path: Array.isArray(prod.productPath)
           ? prod.productPath
@@ -440,7 +438,11 @@ export const Categories: FC<CategoriesProps> = () => {
                         </div>
 
                         <img
-                          src={item.image}
+                          src={
+                            typeof item.images === "string"
+                              ? item.images
+                              : item.images?.[0]
+                          }
                           alt={item.name}
                           className="w-44 h-44 object-cover rounded-full shadow-md mt-2"
                         />
@@ -570,7 +572,7 @@ export const Categories: FC<CategoriesProps> = () => {
                             e.stopPropagation();
                             openDuplicateForProduct(item);
                           }}
-                          className="h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110 transition-all duration-200 text-gray-700"
+                          className="mt-20 mr-48 h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110 transition-all duration-200 text-gray-700"
                           title="שכפל מוצר"
                         >
                           <Copy size={20} />
@@ -578,11 +580,11 @@ export const Categories: FC<CategoriesProps> = () => {
                       )}
                     </div>
 
-                    <div className="h-[140px] w-full flex justify-center items-center p-5">
-                      <img
-                        src={item.image}
+                    <div className="h-36 w-full flex justify-center items-center p-5 rounded-none mr-2">
+                      <ImagePreviewHover
+                        images={item.images}
                         alt={item.name}
-                        className="max-h-full max-w-full object-contain"
+                        className="h-32 w-32"
                       />
                     </div>
 
