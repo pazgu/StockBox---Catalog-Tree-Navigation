@@ -34,7 +34,7 @@ import SmartDeleteModal from "../../ProductArea/SmartDeleteModal/SmartDeleteModa
 import DuplicateProductModal from "../../ProductArea/DuplicateProductModal/DuplicateProductModal";
 import MoveMultipleItemsModal from "./MoveMultipleItemsModal/MoveMultipleItemsModal";
 import { usePath } from "../../../../context/PathContext";
-
+import ImagePreviewHover from "../../ProductArea/ImageCarousel/ImageCarousel/ImagePreviewHover";
 const SingleCat: FC = () => {
   const [items, setItems] = useState<DisplayItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,9 +42,10 @@ const SingleCat: FC = () => {
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [showAddSubCategoryModal, setShowAddSubCategoryModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showCategoryDeleteChoice, setShowCategoryDeleteChoice] = useState(false);
+  const [showCategoryDeleteChoice, setShowCategoryDeleteChoice] =
+    useState(false);
   const [categoryDeleteStrategyLoading, setCategoryDeleteStrategyLoading] =
-  useState<"cascade" | "move_up" | null>(null);
+    useState<"cascade" | "move_up" | null>(null);
   const [showSmartDeleteModal, setShowSmartDeleteModal] = useState(false);
   const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
   const [showMoveModal, setShowMoveModal] = useState(false);
@@ -84,20 +85,17 @@ const SingleCat: FC = () => {
 
     return "";
   };
-  const categoryPath = getCategoryPathFromUrl(); // Has dashes, used for API calls
+  const categoryPath = getCategoryPathFromUrl(); 
 
-  // Create display-friendly breadcrumb path (with spaces for display only)
   const breadcrumbPathParts = categoryPath
     .replace("/categories/", "")
     .split("/")
     .filter(Boolean)
-    .map((part) => part.replace(/-/g, " ")); // Spaces for display
-  // In SingleCat component
+    .map((part) => part.replace(/-/g, " ")); 
   const categoryPathSegments = categoryPath
     .replace("/categories/", "")
     .split("/")
     .filter(Boolean);
-  // ← DON'T convert dashes to spaces here
 
   const breadcrumbPath = ["categories", ...categoryPathSegments];
 
@@ -153,7 +151,7 @@ const SingleCat: FC = () => {
         (cat: CategoryDTO) => ({
           id: cat._id,
           name: cat.categoryName,
-          image: cat.categoryImage,
+          images: cat.categoryImage,
           type: "category",
           path: [cat.categoryPath],
           favorite: userFavorites.includes(cat._id),
@@ -163,7 +161,7 @@ const SingleCat: FC = () => {
       const productItems: DisplayItem[] = products.map((prod: ProductDto) => ({
         id: prod._id!,
         name: prod.productName,
-        image: prod.productImages?.[0] ?? "/assets/images/placeholder.png",
+        images: prod.productImages || [],
         type: "product",
         path: Array.isArray(prod.productPath)
           ? prod.productPath
@@ -257,34 +255,32 @@ const SingleCat: FC = () => {
     setItemToDelete(item);
 
     if (item.type === "product" && item.path.length > 1) {
-  setShowSmartDeleteModal(true);
-} else if (item.type === "category") {
-  setShowCategoryDeleteChoice(true);
-} else {
-  setShowDeleteModal(true);
-}
-
+      setShowSmartDeleteModal(true);
+    } else if (item.type === "category") {
+      setShowCategoryDeleteChoice(true);
+    } else {
+      setShowDeleteModal(true);
+    }
   };
 
- const confirmDelete = async () => {
-  if (!itemToDelete) return;
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
 
-  try {
-    setIsDeletingItem(true);
+    try {
+      setIsDeletingItem(true);
 
-    await ProductsService.deleteProduct(itemToDelete.id);
-    toast.success(`המוצר "${itemToDelete.name}" נמחק מכל המיקומים!`);
+      await ProductsService.deleteProduct(itemToDelete.id);
+      toast.success(`המוצר "${itemToDelete.name}" נמחק מכל המיקומים!`);
 
-    setItems(items.filter((item) => item.id !== itemToDelete.id));
-  } catch (error) {
-    toast.error("שגיאה במחיקה");
-  } finally {
-    setIsDeletingItem(false);
-    setShowDeleteModal(false);
-    setItemToDelete(null);
-  }
-};
-
+      setItems(items.filter((item) => item.id !== itemToDelete.id));
+    } catch (error) {
+      toast.error("שגיאה במחיקה");
+    } finally {
+      setIsDeletingItem(false);
+      setShowDeleteModal(false);
+      setItemToDelete(null);
+    }
+  };
 
   const handleDeleteFromCurrent = async () => {
     if (!itemToDelete) return;
@@ -357,32 +353,30 @@ const SingleCat: FC = () => {
   };
 
   const confirmCategoryDelete = async (strategy: "cascade" | "move_up") => {
-  if (!itemToDelete) return;
+    if (!itemToDelete) return;
 
-  try {
-    setIsDeletingItem(true);
-    setCategoryDeleteStrategyLoading(strategy);
+    try {
+      setIsDeletingItem(true);
+      setCategoryDeleteStrategyLoading(strategy);
 
-    await categoriesService.deleteCategory(itemToDelete.id, strategy);
+      await categoriesService.deleteCategory(itemToDelete.id, strategy);
 
-    await loadAllContent();
+      await loadAllContent();
 
-    toast.success(
-      strategy === "cascade"
-        ? `הקטגוריה "${itemToDelete.name}" וכל התכנים שבה נמחקו בהצלחה!`
-        : `הקטגוריה "${itemToDelete.name}" נמחקה והתכנים הועברו שכבה אחת למעלה!`,
-    );
-  } catch (error) {
-    toast.error("שגיאה במחיקת הקטגוריה");
-  } finally {
-    setIsDeletingItem(false);
-    setCategoryDeleteStrategyLoading(null);
-    setShowCategoryDeleteChoice(false);
-    setItemToDelete(null);
-  }
-};
-
-
+      toast.success(
+        strategy === "cascade"
+          ? `הקטגוריה "${itemToDelete.name}" וכל התכנים שבה נמחקו בהצלחה!`
+          : `הקטגוריה "${itemToDelete.name}" נמחקה והתכנים הועברו שכבה אחת למעלה!`,
+      );
+    } catch (error) {
+      toast.error("שגיאה במחיקת הקטגוריה");
+    } finally {
+      setIsDeletingItem(false);
+      setCategoryDeleteStrategyLoading(null);
+      setShowCategoryDeleteChoice(false);
+      setItemToDelete(null);
+    }
+  };
 
   const handleDuplicate = (item: DisplayItem) => {
     setItemToDuplicate(item);
@@ -416,8 +410,7 @@ const SingleCat: FC = () => {
       const newItem: DisplayItem = {
         id: createdProduct._id!,
         name: createdProduct.productName,
-        image:
-          createdProduct.productImages?.[0] ?? "/assets/images/placeholder.png",
+        images: createdProduct.productImages || [],
         type: "product",
         path: createdProduct.productPath,
         favorite: false,
@@ -449,7 +442,7 @@ const SingleCat: FC = () => {
       const newItem: DisplayItem = {
         id: newCategory._id,
         name: newCategory.categoryName,
-        image: newCategory.categoryImage,
+        images: newCategory.categoryImage,
         type: "category",
         path: [newCategory.categoryPath],
         favorite: false,
@@ -477,15 +470,12 @@ const SingleCat: FC = () => {
     setItemToEdit(null);
     setShowMoveMultipleModal(false);
     setShowCategoryDeleteChoice(false);
-
   };
 
   const handleManagePermissions = (id: string, type: string) => {
     setPreviousPath(location.pathname);
     navigate(`/permissions/${type}/${id}`);
   };
-
-
 
   const toggleSelectionMode = () => {
     setIsSelectionMode(!isSelectionMode);
@@ -628,12 +618,12 @@ const SingleCat: FC = () => {
             key={item.id}
             className={`flex flex-col items-center p-5 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 ${
               selectedItems.includes(item.id)
-                ? "bg-[#0D305B]/10 rounded-sm"
+                ? "bg-[#0D305B]/10"
                 : "border-gray-200"
             } ${!isSelectionMode ? "cursor-pointer" : ""}`}
           >
             <div
-              className={`absolute top-2 left-2 px-3 py-1 text-xs font-medium rounded-full ${
+              className={`absolute top-2 left-2 px-3 py-1 text-xs font-medium ${
                 item.type === "category" ? " text-blue-700" : " text-green-700"
               }`}
             >
@@ -717,6 +707,7 @@ const SingleCat: FC = () => {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
+                    e.preventDefault();
                     toggleFavorite(item.id, item.name, item.type);
                   }}
                   className="peer group-hover:opacity-100 transition-all duration-200 h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110"
@@ -737,8 +728,8 @@ const SingleCat: FC = () => {
               </div>
             )}
             <div
-              className="h-[140px] w-full flex justify-center items-center p-5 cursor-pointer"
-            onClick={() => {
+              className="h-[140px] w-full flex justify-center items-center p-2 cursor-pointer"
+              onClick={() => {
                 if (item.type === "product") {
                   // Save current path before navigating
                   setPreviousPath(location.pathname);
@@ -748,13 +739,21 @@ const SingleCat: FC = () => {
                 }
               }}
             >
-              <img
-                src={item.image}
-                alt={item.name}
-                className={`max-h-full max-w-full object-contain ${
-                  item.type === "category" ? "rounded-full" : ""
-                }`}
-              />
+              {item.type === "category" ? (
+                <img
+                  src={item.images as string}
+                  alt={item.name}
+                  className="max-h-full max-w-full object-contain"
+                />
+              ) : (
+                <div className="h-full w-full flex justify-center items-center">
+                  <ImagePreviewHover
+                    images={item.images}
+                    alt={item.name}
+                    className="w-full h-full"
+                  />
+                </div>
+              )}
             </div>
 
             <div className="w-full text-center pt-4 border-t border-gray-200">
@@ -767,7 +766,7 @@ const SingleCat: FC = () => {
                       e.stopPropagation();
                       handleManagePermissions(item.id, item.type);
                     }}
-                    className="flex items-center gap-2 text-sm font-medium text-white bg-[#0D305B] px-4 py-2 rounded-xl shadow-md transition-all duration-300 hover:bg-[#16447A] hover:shadow-lg focus:ring-2 focus:ring-[#0D305B]/40"
+                    className="flex items-center gap-2 text-sm font-medium text-white bg-[#0D305B] px-4 py-2 shadow-md transition-all duration-300 hover:bg-[#16447A] hover:shadow-lg focus:ring-2 focus:ring-[#0D305B]/40"
                   >
                     <Lock size={16} className="text-white" />
                     ניהול הרשאות
@@ -851,7 +850,7 @@ const SingleCat: FC = () => {
           onClick={closeAllModals}
         >
           <div
-            className="bg-white p-6 rounded-lg w-full max-w-md"
+            className="bg-white p-6 w-full max-w-md"
             onClick={(e) => e.stopPropagation()}
           >
             <h4 className="text-lg font-semibold mb-2">
@@ -889,76 +888,72 @@ const SingleCat: FC = () => {
                 ביטול
               </button>
             </div>
-            
           </div>
         </div>
       )}
 
       {role === "editor" && showCategoryDeleteChoice && itemToDelete && (
-  <div
-    className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-    onClick={closeAllModals}
-  >
-    <div
-      className="bg-white p-6 rounded-lg w-full max-w-md"
-      onClick={(e) => e.stopPropagation()}
-    >
-      <h4 className="text-lg font-semibold mb-2">מחיקת קטגוריה</h4>
-
-      <p className="mb-2">
-        מה תרצי לעשות עם התוכן שבתוך "{itemToDelete.name}"?
-      </p>
-
-      <div className="flex flex-col gap-3 mt-4">
-        <button
-          onClick={() => confirmCategoryDelete("cascade")}
-          disabled={isDeletingItem}
-          className={`bg-red-600 text-white px-4 py-2 rounded transition-colors
-            ${isDeletingItem ? "opacity-70 cursor-not-allowed" : "hover:bg-red-700"}`}
-        >
-          {isDeletingItem && categoryDeleteStrategyLoading === "cascade" ? (
-  <span className="flex items-center justify-center gap-2">
-    <Spinner className="size-4 text-white" />
-    מוחק...
-  </span>
-) : (
-  "מחק הכל (כולל תכנים)"
-)}
-
-        </button>
-
-        <button
-  onClick={() => confirmCategoryDelete("move_up")}
-  disabled={isDeletingItem}
-  className={`bg-orange-100 text-orange-900 px-4 py-2 rounded transition-colors
-    ${isDeletingItem ? "opacity-70 cursor-not-allowed" : "hover:bg-orange-200"}`}
->
-  {isDeletingItem && categoryDeleteStrategyLoading === "move_up" ? (
-    <span className="flex items-center justify-center gap-2">
-      <Spinner className="size-4 text-orange-900" />
-      מוחק...
-    </span>
-  ) : (
-    "מחק רק קטגוריה (העבר תכנים למעלה)"
-  )}
-</button>
-
-
-        <button
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
           onClick={closeAllModals}
-          disabled={isDeletingItem}
-          className={`bg-gray-300 px-4 py-2 rounded transition-colors
-            ${isDeletingItem ? "opacity-70 cursor-not-allowed" : "hover:bg-gray-400"}`}
         >
-          ביטול
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+          <div
+            className="bg-white p-6 rounded-lg w-full max-w-md"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h4 className="text-lg font-semibold mb-2">מחיקת קטגוריה</h4>
 
+            <p className="mb-2">
+              מה ברצונך לעשות עם התוכן שבתוך "{itemToDelete.name}"?
+            </p>
 
-      
+            <div className="flex flex-col gap-3 mt-4">
+              <button
+                onClick={() => confirmCategoryDelete("cascade")}
+                disabled={isDeletingItem}
+                className={`bg-red-600 text-white px-4 py-2 rounded transition-colors
+            ${isDeletingItem ? "opacity-70 cursor-not-allowed" : "hover:bg-red-700"}`}
+              >
+                {isDeletingItem &&
+                categoryDeleteStrategyLoading === "cascade" ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Spinner className="size-4 text-white" />
+                    מוחק...
+                  </span>
+                ) : (
+                  "מחק הכל (כולל תכנים)"
+                )}
+              </button>
+
+              <button
+                onClick={() => confirmCategoryDelete("move_up")}
+                disabled={isDeletingItem}
+                className={`bg-orange-100 text-orange-900 px-4 py-2 rounded transition-colors
+    ${isDeletingItem ? "opacity-70 cursor-not-allowed" : "hover:bg-orange-200"}`}
+              >
+                {isDeletingItem &&
+                categoryDeleteStrategyLoading === "move_up" ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Spinner className="size-4 text-orange-900" />
+                    מוחק...
+                  </span>
+                ) : (
+                  "מחק רק קטגוריה (העבר תכנים למעלה)"
+                )}
+              </button>
+
+              <button
+                onClick={closeAllModals}
+                disabled={isDeletingItem}
+                className={`bg-gray-300 px-4 py-2 rounded transition-colors
+            ${isDeletingItem ? "opacity-70 cursor-not-allowed" : "hover:bg-gray-400"}`}
+              >
+                ביטול
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {role === "editor" && showSmartDeleteModal && itemToDelete && (
         <SmartDeleteModal
@@ -1034,7 +1029,8 @@ const SingleCat: FC = () => {
                 _id: itemToMove.id,
                 categoryName: itemToMove.name,
                 categoryPath: itemToMove.path[0],
-                categoryImage: itemToMove.image,
+                categoryImage:
+                  itemToMove.images[0] || "/assets/images/placeholder.png",
               }}
               onClose={() => {
                 setShowMoveModal(false);
@@ -1080,7 +1076,7 @@ const SingleCat: FC = () => {
             _id: itemToEdit.id,
             categoryName: itemToEdit.name,
             categoryPath: itemToEdit.path[0],
-            categoryImage: itemToEdit.image,
+            categoryImage: itemToEdit.images[0],
           }}
           onClose={() => {
             setShowEditModal(false);
