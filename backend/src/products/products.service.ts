@@ -25,6 +25,7 @@ import { EntityType } from 'src/schemas/Permissions.schema';
 import { UpdateProductDto } from './dtos/UpdateProduct.dto';
 import { Category } from 'src/schemas/Categories.schema';
 import { Group } from 'src/schemas/Groups.schema';
+import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class ProductsService {
@@ -32,6 +33,8 @@ export class ProductsService {
     @InjectModel(Product.name) private productModel: Model<Product>,
     @InjectModel(Category.name) private categoryModel: Model<Category>,
     @InjectModel(Group.name) private groupModel: Model<Group>,
+    private usersService: UsersService,
+
     private permissionsService: PermissionsService,
   ) {}
 
@@ -192,7 +195,6 @@ export class ProductsService {
     }
 
     try {
-      // If categoryPath is provided, remove only from that category
       if (categoryPath && product.productPath.length > 1) {
         const updatedPaths = product.productPath.filter(
           (path) => !path.startsWith(categoryPath),
@@ -213,7 +215,6 @@ export class ProductsService {
         };
       }
 
-      // Delete from all categories (full delete)
       if (product.productImages && product.productImages.length > 0) {
         await Promise.all(
           product.productImages.map((url) => this.deleteProductImage(url)),
@@ -221,6 +222,8 @@ export class ProductsService {
       }
 
       await this.productModel.findByIdAndDelete(id);
+
+      await this.usersService.removeItemFromAllUserFavorites(id);
 
       return {
         success: true,
@@ -345,7 +348,6 @@ export class ProductsService {
 
     const { additionalCategoryPaths } = duplicateProductDto;
 
-    // Validate all category paths exist
     for (const path of additionalCategoryPaths) {
       const categoryExists = await this.categoryModel.findOne({
         categoryPath: path,
@@ -361,7 +363,6 @@ export class ProductsService {
       (catPath) => `${catPath}/${productName}`,
     );
 
-    // Check for conflicts
     for (const newPath of newPaths) {
       if (product.productPath.includes(newPath)) {
         throw new BadRequestException(`Product already exists at: ${newPath}`);
@@ -515,6 +516,7 @@ export class ProductsService {
           );
         }
         await this.productModel.findByIdAndDelete(id);
+        await this.usersService.removeItemFromAllUserFavorites(id);
         return {
           success: true,
           message: `Product "${product.productName}" deleted completely`,

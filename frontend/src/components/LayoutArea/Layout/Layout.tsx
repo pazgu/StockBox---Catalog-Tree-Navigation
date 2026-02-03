@@ -6,6 +6,7 @@ import Header from "../Header/Header";
 import AllUsers from "../../Pages/UserControlArea/AllUsers/AllUsers";
 import SingleCat from "../../Pages/CatArea/SingleCat/SingleCat";
 import Permissions from "../../Pages/UserControlArea/Permissions/Permissions";
+import ProductPermissions from "../../Pages/UserControlArea/Permissions/ProductPermissions ";
 import NewUser from "../../Pages/UserControlArea/NewUser/NewUser";
 import SingleProd from "../../Pages/ProductArea/SingleProd/SingleProd";
 import Page404 from "../../Pages/Page404/Page404";
@@ -40,9 +41,13 @@ const Layout: FC<LayoutProps> = () => {
           <Route path="/allUsers" element={<AllUsers></AllUsers>} />
           <Route path="/Favorites" element={<Favorites></Favorites>} />
           <Route
-            path="/permissions/:type/:id"
+            path="/permissions/product/:id"
+            element={<ProductPermissions></ProductPermissions>}
+          />
+          <Route
+            path="/permissions/category/:id"
             element={<Permissions></Permissions>}
-          />{" "}
+          />
           <Route path="/GroupControl" element={<GroupControl></GroupControl>} />
           <Route path="/403" element={<Page403 />} />
           <Route path="/404" element={<Page404 />} />

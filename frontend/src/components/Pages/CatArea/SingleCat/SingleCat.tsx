@@ -42,6 +42,9 @@ const SingleCat: FC = () => {
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [showAddSubCategoryModal, setShowAddSubCategoryModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showCategoryDeleteChoice, setShowCategoryDeleteChoice] = useState(false);
+  const [categoryDeleteStrategyLoading, setCategoryDeleteStrategyLoading] =
+  useState<"cascade" | "move_up" | null>(null);
   const [showSmartDeleteModal, setShowSmartDeleteModal] = useState(false);
   const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
   const [showMoveModal, setShowMoveModal] = useState(false);
@@ -68,27 +71,35 @@ const SingleCat: FC = () => {
   const getCategoryPathFromUrl = () => {
     const wildcardPath = params["*"];
     if (wildcardPath) {
-      return `/categories/${wildcardPath}`;
+      return `/categories/${decodeURIComponent(wildcardPath)}`;
     }
 
     const pathParts = location.pathname.split("/").filter(Boolean);
     const categoryIndex = pathParts.indexOf("categories");
     if (categoryIndex !== -1 && categoryIndex < pathParts.length - 1) {
-      return `/categories/${pathParts.slice(categoryIndex + 1).join("/")}`;
+      const encodedParts = pathParts.slice(categoryIndex + 1);
+      const decodedParts = encodedParts.map((part) => decodeURIComponent(part));
+      return `/categories/${decodedParts.join("/")}`;
     }
 
     return "";
   };
+  const categoryPath = getCategoryPathFromUrl(); // Has dashes, used for API calls
 
-  const categoryPath = getCategoryPathFromUrl();
-
-  const pathParts = categoryPath
+  // Create display-friendly breadcrumb path (with spaces for display only)
+  const breadcrumbPathParts = categoryPath
     .replace("/categories/", "")
     .split("/")
     .filter(Boolean)
-    .map((part) => part.replace(/-/g, " "));
+    .map((part) => part.replace(/-/g, " ")); // Spaces for display
+  // In SingleCat component
+  const categoryPathSegments = categoryPath
+    .replace("/categories/", "")
+    .split("/")
+    .filter(Boolean);
+  // ← DON'T convert dashes to spaces here
 
-  const breadcrumbPath = ["categories", ...pathParts];
+  const breadcrumbPath = ["categories", ...categoryPathSegments];
 
   useEffect(() => {
     loadAllContent();
@@ -246,37 +257,34 @@ const SingleCat: FC = () => {
     setItemToDelete(item);
 
     if (item.type === "product" && item.path.length > 1) {
-      setShowSmartDeleteModal(true);
-    } else {
-      setShowDeleteModal(true);
-    }
+  setShowSmartDeleteModal(true);
+} else if (item.type === "category") {
+  setShowCategoryDeleteChoice(true);
+} else {
+  setShowDeleteModal(true);
+}
+
   };
 
-  const confirmDelete = async () => {
-    if (!itemToDelete) return;
-    try {
-      setIsDeletingItem(true);
-      if (itemToDelete.type === "category") {
-        await categoriesService.deleteCategory(itemToDelete.id);
-        toast.success(`הקטגוריה "${itemToDelete.name}" נמחקה בהצלחה!`);
-      } else {
-        await ProductsService.deleteProduct(itemToDelete.id);
-        toast.success(`המוצר "${itemToDelete.name}" נמחק מכל המיקומים!`);
-      }
-      setItems(items.filter((item) => item.id !== itemToDelete.id));
-      toast.success(
-        `${itemToDelete.type === "category" ? "הקטגוריה" : "המוצר"} "${
-          itemToDelete.name
-        }" נמחק בהצלחה!`,
-      );
-    } catch (error) {
-      toast.error("שגיאה במחיקה");
-    } finally {
-      setIsDeletingItem(false);
-      setShowDeleteModal(false);
-      setItemToDelete(null);
-    }
-  };
+ const confirmDelete = async () => {
+  if (!itemToDelete) return;
+
+  try {
+    setIsDeletingItem(true);
+
+    await ProductsService.deleteProduct(itemToDelete.id);
+    toast.success(`המוצר "${itemToDelete.name}" נמחק מכל המיקומים!`);
+
+    setItems(items.filter((item) => item.id !== itemToDelete.id));
+  } catch (error) {
+    toast.error("שגיאה במחיקה");
+  } finally {
+    setIsDeletingItem(false);
+    setShowDeleteModal(false);
+    setItemToDelete(null);
+  }
+};
+
 
   const handleDeleteFromCurrent = async () => {
     if (!itemToDelete) return;
@@ -347,6 +355,34 @@ const SingleCat: FC = () => {
     setShowMoveModal(false);
     setItemToMove(null);
   };
+
+  const confirmCategoryDelete = async (strategy: "cascade" | "move_up") => {
+  if (!itemToDelete) return;
+
+  try {
+    setIsDeletingItem(true);
+    setCategoryDeleteStrategyLoading(strategy);
+
+    await categoriesService.deleteCategory(itemToDelete.id, strategy);
+
+    await loadAllContent();
+
+    toast.success(
+      strategy === "cascade"
+        ? `הקטגוריה "${itemToDelete.name}" וכל התכנים שבה נמחקו בהצלחה!`
+        : `הקטגוריה "${itemToDelete.name}" נמחקה והתכנים הועברו שכבה אחת למעלה!`,
+    );
+  } catch (error) {
+    toast.error("שגיאה במחיקת הקטגוריה");
+  } finally {
+    setIsDeletingItem(false);
+    setCategoryDeleteStrategyLoading(null);
+    setShowCategoryDeleteChoice(false);
+    setItemToDelete(null);
+  }
+};
+
+
 
   const handleDuplicate = (item: DisplayItem) => {
     setItemToDuplicate(item);
@@ -440,11 +476,15 @@ const SingleCat: FC = () => {
     setShowEditModal(false);
     setItemToEdit(null);
     setShowMoveMultipleModal(false);
+    setShowCategoryDeleteChoice(false);
+
   };
 
   const handleManagePermissions = (id: string, type: string) => {
     navigate(`/permissions/${type}/${id}`);
   };
+
+
 
   const toggleSelectionMode = () => {
     setIsSelectionMode(!isSelectionMode);
@@ -507,7 +547,7 @@ const SingleCat: FC = () => {
   }
 
   const selectedItemsData = items.filter((item) =>
-    selectedItems.includes(item.id)
+    selectedItems.includes(item.id),
   );
 
   return (
@@ -517,7 +557,7 @@ const SingleCat: FC = () => {
         <h1 className="text-[48px] font-light font-alef text-[#0D305B] border-b-4 border-gray-400 pb-1 mb-5 tracking-tight">
           {categoryInfo
             ? categoryInfo.categoryName
-            : pathParts[pathParts.length - 1] || "קטגוריה"}
+            : breadcrumbPathParts[breadcrumbPathParts.length - 1] || "קטגוריה"}
         </h1>
         <div className="flex items-center gap-4">
           <span className="text-base">סך הכל פריטים: {items.length}</span>
@@ -703,7 +743,7 @@ const SingleCat: FC = () => {
                   setPreviousPath(location.pathname);
                   navigate(`/products/${item.id}`);
                 } else {
-                  navigate(`${item.path}`);
+                  navigate(encodeURI(item.path[0]));
                 }
               }}
             >
@@ -848,9 +888,76 @@ const SingleCat: FC = () => {
                 ביטול
               </button>
             </div>
+            
           </div>
         </div>
       )}
+
+      {role === "editor" && showCategoryDeleteChoice && itemToDelete && (
+  <div
+    className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+    onClick={closeAllModals}
+  >
+    <div
+      className="bg-white p-6 rounded-lg w-full max-w-md"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <h4 className="text-lg font-semibold mb-2">מחיקת קטגוריה</h4>
+
+      <p className="mb-2">
+        מה תרצי לעשות עם התוכן שבתוך "{itemToDelete.name}"?
+      </p>
+
+      <div className="flex flex-col gap-3 mt-4">
+        <button
+          onClick={() => confirmCategoryDelete("cascade")}
+          disabled={isDeletingItem}
+          className={`bg-red-600 text-white px-4 py-2 rounded transition-colors
+            ${isDeletingItem ? "opacity-70 cursor-not-allowed" : "hover:bg-red-700"}`}
+        >
+          {isDeletingItem && categoryDeleteStrategyLoading === "cascade" ? (
+  <span className="flex items-center justify-center gap-2">
+    <Spinner className="size-4 text-white" />
+    מוחק...
+  </span>
+) : (
+  "מחק הכל (כולל תכנים)"
+)}
+
+        </button>
+
+        <button
+  onClick={() => confirmCategoryDelete("move_up")}
+  disabled={isDeletingItem}
+  className={`bg-orange-100 text-orange-900 px-4 py-2 rounded transition-colors
+    ${isDeletingItem ? "opacity-70 cursor-not-allowed" : "hover:bg-orange-200"}`}
+>
+  {isDeletingItem && categoryDeleteStrategyLoading === "move_up" ? (
+    <span className="flex items-center justify-center gap-2">
+      <Spinner className="size-4 text-orange-900" />
+      מוחק...
+    </span>
+  ) : (
+    "מחק רק קטגוריה (העבר תכנים למעלה)"
+  )}
+</button>
+
+
+        <button
+          onClick={closeAllModals}
+          disabled={isDeletingItem}
+          className={`bg-gray-300 px-4 py-2 rounded transition-colors
+            ${isDeletingItem ? "opacity-70 cursor-not-allowed" : "hover:bg-gray-400"}`}
+        >
+          ביטול
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+
+      
 
       {role === "editor" && showSmartDeleteModal && itemToDelete && (
         <SmartDeleteModal

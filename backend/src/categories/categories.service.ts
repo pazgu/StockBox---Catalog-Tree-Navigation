@@ -75,49 +75,17 @@ export class CategoriesService {
 
     console.log('User is viewer, filtering categories based on permissions');
 
-    const userGroups = await this.groupModel
-      .find({ members: user.userId })
-      .select('_id')
-      .lean();
+    const { userGroupIds, allowedByEntityId } =
+      await this.buildAllowedMapForUser(user);
 
-    const userGroupIds = userGroups.map((g) => g._id.toString());
-
-    const permissions = await this.permissionsService.getPermissionsForUser(
-      user.userId,
-      userGroupIds,
+    const visibleCategories = categories.filter((cat) =>
+      this.hasCategoryPermission(
+        cat._id.toString(),
+        user,
+        userGroupIds,
+        allowedByEntityId,
+      ),
     );
-
-    const categoryGroupPermissions = new Map<string, Set<string>>();
-    const categoryUserPermissions = new Set<string>();
-
-    for (const p of permissions) {
-      if (p.entityType !== EntityType.CATEGORY) continue;
-
-      const categoryId = p.entityId.toString();
-      const allowedId = p.allowed.toString();
-
-      if (userGroupIds.includes(allowedId)) {
-        if (!categoryGroupPermissions.has(categoryId)) {
-          categoryGroupPermissions.set(categoryId, new Set());
-        }
-        categoryGroupPermissions.get(categoryId)!.add(allowedId);
-      } else if (allowedId === user.userId) {
-        categoryUserPermissions.add(categoryId);
-      }
-    }
-
-    const visibleCategories = categories.filter((cat) => {
-      const categoryId = cat._id.toString();
-
-      if (userGroupIds.length > 0) {
-        const groupSet = categoryGroupPermissions.get(categoryId);
-        if (!groupSet) return false;
-
-        return userGroupIds.every((groupId) => groupSet.has(groupId));
-      }
-
-      return categoryUserPermissions.has(categoryId);
-    });
 
     return visibleCategories;
   }
@@ -157,50 +125,21 @@ export class CategoriesService {
 
     if (user.role !== 'viewer') return [];
 
-    const userGroups = await this.groupModel
-      .find({ members: user.userId })
-      .select('_id')
-      .lean();
-
-    const userGroupIds = userGroups.map((g) => g._id.toString());
-
-    const permissions = await this.permissionsService.getPermissionsForUser(
-      user.userId,
-      userGroupIds,
-    );
-
-    const categoryGroupPermissions = new Map<string, Set<string>>();
-    const categoryUserPermissions = new Set<string>();
-
-    for (const p of permissions) {
-      if (p.entityType !== EntityType.CATEGORY) continue;
-
-      const categoryId = p.entityId.toString();
-      const allowedId = p.allowed.toString();
-
-      if (userGroupIds.includes(allowedId)) {
-        if (!categoryGroupPermissions.has(categoryId)) {
-          categoryGroupPermissions.set(categoryId, new Set());
-        }
-        categoryGroupPermissions.get(categoryId)!.add(allowedId);
-      } else if (allowedId === user.userId) {
-        categoryUserPermissions.add(categoryId);
-      }
-    }
+    const { userGroupIds, allowedByEntityId } =
+      await this.buildAllowedMapForUser(user);
 
     const currentCategoryId = currentCategory._id.toString();
 
-    if (userGroupIds.length > 0) {
-      const groupSet = categoryGroupPermissions.get(currentCategoryId);
-      if (!groupSet || !userGroupIds.every((id) => groupSet.has(id))) {
-        throw new ForbiddenException('No permission to view this category');
-      }
-    } else {
-      if (!categoryUserPermissions.has(currentCategoryId)) {
-        throw new ForbiddenException('No permission to view this category');
-      }
+    if (
+      !this.hasCategoryPermission(
+        currentCategoryId,
+        user,
+        userGroupIds,
+        allowedByEntityId,
+      )
+    ) {
+      throw new ForbiddenException('No permission to view this category');
     }
-
     const allCategoryChildren = await this.categoryModel.find({
       categoryPath: new RegExp(
         `^${fullPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/`,
@@ -212,46 +151,134 @@ export class CategoriesService {
       return !remainingPath.includes('/');
     });
 
-    const visibleChildren = directCategoryChildren.filter((child) => {
-      const childId = child._id.toString();
-
-      if (userGroupIds.length > 0) {
-        const groupSet = categoryGroupPermissions.get(childId);
-        return (
-          !!groupSet && userGroupIds.every((groupId) => groupSet.has(groupId))
-        );
-      }
-
-      return categoryUserPermissions.has(childId);
-    });
+    const visibleChildren = directCategoryChildren.filter((child) =>
+      this.hasCategoryPermission(
+        child._id.toString(),
+        user,
+        userGroupIds,
+        allowedByEntityId,
+      ),
+    );
 
     return visibleChildren;
   }
 
-  async deleteCategory(id: string) {
+  async deleteCategory(
+    id: string,
+    strategy: 'cascade' | 'move_up' = 'cascade',
+  ) {
     const category = await this.categoryModel.findById(id);
     if (!category) {
       throw new NotFoundException('Category not found');
     }
 
     const categoryPath = category.categoryPath;
+    const parentPath = this.getParentPath(categoryPath);
 
-    await this.categoryModel.deleteMany({
-      categoryPath: new RegExp(`^${categoryPath}/`),
+    const escapedCategoryPath = categoryPath.replace(
+      /[.*+?^${}()|[\]\\]/g,
+      '\\$&',
+    );
+
+    if (strategy === 'cascade') {
+      await this.categoryModel.deleteMany({
+        categoryPath: new RegExp(`^${escapedCategoryPath}/`),
+      });
+
+      await this.productModel.deleteMany({
+        productPath: new RegExp(`^${escapedCategoryPath}`),
+      });
+
+      await this.categoryModel.findByIdAndDelete(id);
+
+      return {
+        success: true,
+        strategy,
+        message: 'Category and all nested content deleted successfully',
+        deletedCategoryPath: categoryPath,
+      };
+    }
+
+    const newPrefix = parentPath;
+
+    const subcategoriesToDelete = await this.categoryModel
+      .find({ categoryPath: new RegExp(`^${escapedCategoryPath}/`) })
+      .select('_id')
+      .lean();
+
+    await this.categoryModel.updateMany(
+      { categoryPath: new RegExp(`^${escapedCategoryPath}/`) },
+      [
+        {
+          $set: {
+            categoryPath: {
+              $concat: [
+                newPrefix,
+                {
+                  $substr: [
+                    '$categoryPath',
+                    categoryPath.length,
+                    { $strLenCP: '$categoryPath' },
+                  ],
+                },
+              ],
+            },
+          },
+        },
+      ],
+      { updatePipeline: true },
+    );
+
+    const productsToUpdate = await this.productModel.find({
+      productPath: {
+        $elemMatch: { $regex: new RegExp(`^${escapedCategoryPath}(/|$)`) },
+      },
     });
 
-    await this.productModel.deleteMany({
-      productPath: new RegExp(`^${categoryPath}`),
-    });
+    for (const product of productsToUpdate) {
+      const updatedPaths = product.productPath.map((p) => {
+        if (p.startsWith(categoryPath + '/')) {
+          return newPrefix + p.substring(categoryPath.length);
+        }
+
+        if (p === categoryPath) {
+          return newPrefix;
+        }
+
+        return p;
+      });
+
+      await this.productModel.updateOne(
+        { _id: product._id },
+        { $set: { productPath: updatedPaths } },
+      );
+    }
 
     await this.categoryModel.findByIdAndDelete(id);
+    await this.categoryModel.findByIdAndDelete(id);
+
+    await this.usersService.removeItemFromAllUserFavorites(id);
+    for (const subcat of subcategoriesToDelete) {
+      await this.usersService.removeItemFromAllUserFavorites(
+        subcat._id.toString(),
+      );
+    }
+    await this.usersService.removeItemFromAllUserFavorites(id);
+    for (const subcat of subcategoriesToDelete) {
+      await this.usersService.removeItemFromAllUserFavorites(
+        subcat._id.toString(),
+      );
+    }
 
     return {
       success: true,
-      message: 'Category and all nested content deleted successfully',
+      strategy,
+      message: 'Category deleted and nested entities moved one level up',
       deletedCategoryPath: categoryPath,
+      movedTo: newPrefix,
     };
   }
+
   async getById(id: string) {
     const category = await this.categoryModel.findById(id).lean();
     if (!category) {
@@ -480,6 +507,72 @@ export class CategoriesService {
       .replace(/[^\w\s-]/g, '')
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-');
+  }
+
+  private async buildAllowedMapForUser(user: {
+    userId: string;
+    role: string;
+  }): Promise<{
+    userGroupIds: string[];
+    allowedByEntityId: Map<string, { users: Set<string>; groups: Set<string> }>;
+  }> {
+    const userGroups = await this.groupModel
+      .find({ members: user.userId })
+      .select('_id')
+      .lean();
+
+    const userGroupIds = userGroups.map((g) => g._id.toString());
+
+    const permissions = await this.permissionsService.getPermissionsForUser(
+      user.userId,
+      userGroupIds,
+    );
+
+    const allowedByEntityId = new Map<
+      string,
+      { users: Set<string>; groups: Set<string> }
+    >();
+
+    for (const p of permissions) {
+      // keep only category permissions here (we're filtering categories)
+      if (p.entityType !== EntityType.CATEGORY) continue;
+
+      const entityId = p.entityId.toString();
+      const allowedId = p.allowed.toString();
+
+      if (!allowedByEntityId.has(entityId)) {
+        allowedByEntityId.set(entityId, {
+          users: new Set(),
+          groups: new Set(),
+        });
+      }
+
+      const entry = allowedByEntityId.get(entityId)!;
+
+      if (userGroupIds.includes(allowedId)) {
+        entry.groups.add(allowedId);
+      } else if (allowedId === user.userId) {
+        entry.users.add(allowedId);
+      }
+    }
+
+    return { userGroupIds, allowedByEntityId };
+  }
+
+  private hasCategoryPermission(
+    categoryId: string,
+    user: { userId: string; role: string },
+    userGroupIds: string[],
+    allowedByEntityId: Map<string, { users: Set<string>; groups: Set<string> }>,
+  ): boolean {
+    const entry = allowedByEntityId.get(categoryId);
+    if (!entry) return false;
+
+    if (userGroupIds.length > 0) {
+      return userGroupIds.every((gid) => entry.groups.has(gid));
+    }
+
+    return entry.users.has(user.userId);
   }
 
   private getParentPath(fullCategoryPath: string): string {
