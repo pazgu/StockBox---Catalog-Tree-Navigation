@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { searchService } from "../../../../services/search.service";
 import { useUser } from "../../../../context/UserContext";
+import { usePath } from "../../../../context/PathContext";
 
 const SearchResultsPage = () => {
   const [results, setResults] = useState<any[]>([]);
@@ -17,6 +18,8 @@ const SearchResultsPage = () => {
   const loaderRef = useRef<HTMLDivElement>(null);
 
   const { search } = useLocation();
+  const location = useLocation();
+  const { setPreviousPath } = usePath();
   const navigate = useNavigate();
   const searchTerm = new URLSearchParams(search).get("q") || "";
 
@@ -120,6 +123,8 @@ const SearchResultsPage = () => {
                       <small
                         className="text-gray-500 hover:text-blue-600 hover:underline cursor-pointer"
                         onClick={(e) => {
+                          setPreviousPath(location.pathname);
+
                           navigate(
                             item.type === "product"
                               ? `/products/${item.id}`

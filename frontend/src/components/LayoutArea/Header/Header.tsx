@@ -5,6 +5,7 @@ import logo from "../../../assets/logo.png";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../context/UserContext";
 import SearchBar from "../SearchBar/SearchBar/SearchBar";
+import { usePath } from "../../../context/PathContext";
 interface HeaderProps {
   logoSrc?: string;
   cartItemCount?: number;
@@ -22,6 +23,7 @@ const Header: React.FC<HeaderProps> = ({
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const {setPreviousPath} = usePath();
   const { role } = useUser();
 
   useEffect(() => {
@@ -123,6 +125,8 @@ const Header: React.FC<HeaderProps> = ({
             <SearchBar
               onSelectResult={(item) => {
                 if (item.type === "product") {
+                  setPreviousPath(location.pathname);
+
                   navigate(`/products/${item.id}`);
                 } else if (item.type === "category") {
                   navigate(`${item.paths[0]}`);
