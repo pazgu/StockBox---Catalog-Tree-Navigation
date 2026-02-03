@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, use } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronUp, ArrowRight, RefreshCcw } from "lucide-react";
 import { Switch } from "../../../ui/switch";
@@ -10,6 +10,7 @@ import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
 import { permissionsService } from "../../../../services/permissions.service";
 import InheritanceModal from "../../SharedComponents/DialogModal/DialogModal";
+import { usePath } from "../../../../context/PathContext";
 
 interface Group {
   _id: string;
@@ -44,7 +45,7 @@ const Permissions: React.FC = () => {
   );
   const [inheritanceApplied, setInheritanceApplied] = useState(false);
   const [isSyncingChildren, setIsSyncingChildren] = useState(false);
-
+  const {previousPath}=usePath();
   const [search, setSearch] = useState("");
   const [entityData, setEntityData] = useState<{
     name: string;
@@ -59,7 +60,7 @@ const Permissions: React.FC = () => {
       navigate("/");
       return;
     }
-
+    console.log(`path from previos page permissions.tsx ${previousPath}`);
     const loadData = async () => {
       try {
         if (!cleanId) return;

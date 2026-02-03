@@ -481,6 +481,7 @@ const SingleCat: FC = () => {
   };
 
   const handleManagePermissions = (id: string, type: string) => {
+    setPreviousPath(location.pathname);
     navigate(`/permissions/${type}/${id}`);
   };
 

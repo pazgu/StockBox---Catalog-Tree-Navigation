@@ -27,6 +27,7 @@ import { handleEntityRouteError } from "../../../../lib/routing/handleEntityRout
 import MoveMultipleItemsModal from "../SingleCat/MoveMultipleItemsModal/MoveMultipleItemsModal";
 import DuplicateProductModal from "../../ProductArea/DuplicateProductModal/DuplicateProductModal";
 import { usePath } from "../../../../context/PathContext";
+import { set } from "lodash";
 
 interface CategoriesProps {}
 
@@ -489,6 +490,7 @@ export const Categories: FC<CategoriesProps> = () => {
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   e.preventDefault();
+                                  setPreviousPath(location.pathname);
                                   navigate(
                                     `/permissions/category/${category._id}`,
                                   );
