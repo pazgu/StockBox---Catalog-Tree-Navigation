@@ -231,6 +231,7 @@ const Permissions: React.FC = () => {
             cleanId,
             allowedId,
             inheritToChildren,
+            previousPath ?? undefined
           ),
         ),
       );

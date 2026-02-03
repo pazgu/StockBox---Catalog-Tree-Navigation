@@ -276,6 +276,7 @@ const ProductPermissions: React.FC = () => {
             pathData.categoryId,
             allowedId,
             false,
+            previousPath??undefined
           ),
         ),
       );

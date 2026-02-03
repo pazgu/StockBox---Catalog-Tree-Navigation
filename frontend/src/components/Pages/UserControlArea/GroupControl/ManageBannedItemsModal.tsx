@@ -169,6 +169,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
           entityId: String(item.id),
           allowed: groupId,
           inheritToChildren,
+          contextPath: previousPath ?? undefined,
         }))
       );
       const data = await permissionsService.getBlockedItemsForGroup(groupId);

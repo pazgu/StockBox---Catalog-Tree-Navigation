@@ -1,4 +1,4 @@
-import { IsEnum, IsNotEmpty, IsMongoId, IsOptional } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsMongoId, IsOptional, IsString } from 'class-validator';
 import { EntityType } from 'src/schemas/Permissions.schema';
 
 export class CreatePermissionDto {
@@ -18,4 +18,8 @@ export class CreatePermissionDto {
 
   @IsOptional()
   inheritToChildren?: boolean;
+
+  @IsOptional()
+  @IsString()
+  contextPath?: string;
 }
