@@ -29,7 +29,6 @@ const SearchResultsPage = () => {
       setResults([]);
       setCurrentPage(1);
       try {
-        console.log("Search Term:", searchTerm);
         const response = await searchService.getFullSearch(searchTerm, 1, 20);
         setResults(response.items);
         setHasMore(response.hasMore);

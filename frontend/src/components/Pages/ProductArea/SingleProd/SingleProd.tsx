@@ -73,7 +73,6 @@ const SingleProd: FC<SingleProdProps> = () => {
   useEffect(() => {
     if (!productId) return;
 
-  console.log("Previous path before navigating to this product:", previousPath);
 
     const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(productId);
     if (!isValidObjectId) {

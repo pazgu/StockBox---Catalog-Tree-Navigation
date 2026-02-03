@@ -26,7 +26,6 @@ export async function tokenRenewInterceptor(
       try {
         const newToken = await renewToken(token);
         localStorage.setItem("token", newToken);
-        console.log("Token renewed", newToken);
         renewQueue.forEach((cb) => cb(newToken));
         renewQueue = [];
         token = newToken;
