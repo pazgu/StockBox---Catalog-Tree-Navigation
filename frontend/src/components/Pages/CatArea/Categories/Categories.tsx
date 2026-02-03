@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { FC, useState, useEffect } from "react";
+import React, { FC, useState, useEffect, use } from "react";
 import {
   Pen,
   Trash,
@@ -11,7 +11,7 @@ import {
   Copy,
 } from "lucide-react";
 import { useUser } from "../../../../context/UserContext";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import AddCategoryModal from "./AddCategoryModal/AddCategoryModal/AddCategoryModal";
 import EditCategoryModal from "./EditCategoryModal/EditCategoryModal/EditCategoryModal";
@@ -26,6 +26,8 @@ import { ProductDto } from "../../../../components/models/product.models";
 import { handleEntityRouteError } from "../../../../lib/routing/handleEntityRouteError";
 import MoveMultipleItemsModal from "../SingleCat/MoveMultipleItemsModal/MoveMultipleItemsModal";
 import DuplicateProductModal from "../../ProductArea/DuplicateProductModal/DuplicateProductModal";
+import { usePath } from "../../../../context/PathContext";
+import { set } from "lodash";
 import ImagePreviewHover from "../../ProductArea/ImageCarousel/ImageCarousel/ImagePreviewHover";
 interface CategoriesProps {}
 
@@ -58,7 +60,8 @@ export const Categories: FC<CategoriesProps> = () => {
   >(null);
   const [items, setItems] = useState<DisplayItem[]>([]);
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
-
+  const { setPreviousPath } = usePath();
+  const location= useLocation();
   const [showMoveModal, setShowMoveModal] = useState(false);
   const [moveSelectedItems, setMoveSelectedItems] = useState<DisplayItem[]>([]);
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
@@ -340,6 +343,8 @@ export const Categories: FC<CategoriesProps> = () => {
   const showProducts =
     (activeFilter === "all" || activeFilter === "products") && hasProducts;
 
+  
+
   return (
     <div
       className="mt-12 p-4 font-system direction-rtl text-right overflow-x-hidden"
@@ -487,6 +492,7 @@ export const Categories: FC<CategoriesProps> = () => {
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   e.preventDefault();
+                                  setPreviousPath(location.pathname);
                                   navigate(
                                     `/permissions/category/${category._id}`,
                                   );
@@ -522,10 +528,14 @@ export const Categories: FC<CategoriesProps> = () => {
 
               <main className="grid grid-cols-[repeat(auto-fill,minmax(290px,1fr))] gap-24 my-12">
                 {productItems.map((item) => (
-                  <div
+                 <div
                     key={item.id}
                     className="flex flex-col items-center p-5 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 border-gray-200 cursor-pointer"
-                    onClick={() => navigate(`/products/${item.id}`)}
+                    onClick={() => {
+                      setPreviousPath(location.pathname); // or location.pathname if you have useLocation()
+                      
+                      navigate(`/products/${item.id}`);
+                    }}
                   >
                     <div className="absolute top-2 left-2 px-3 py-1 text-xs font-medium rounded-full">
                       <div className="flex flex-col items-center text-green-700">

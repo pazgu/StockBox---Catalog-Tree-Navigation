@@ -15,6 +15,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
 import { permissionsService } from "../../../../services/permissions.service";
+import { usePath } from "../../../../context/PathContext";
 
 interface Group {
   _id: string;
@@ -76,12 +77,14 @@ const ProductPermissions: React.FC = () => {
 
   const [allUsers, setAllUsers] = useState<ViewerUser[]>([]);
   const [allGroups, setAllGroups] = useState<Group[]>([]);
+  const {previousPath} = usePath()
 
   useEffect(() => {
     if (role !== "editor") {
       navigate("/");
       return;
     }
+    console.log(`pre path product permission.tsx ${previousPath}`)
 
     const loadData = async () => {
       try {
@@ -273,6 +276,7 @@ const ProductPermissions: React.FC = () => {
             pathData.categoryId,
             allowedId,
             false,
+            previousPath??undefined
           ),
         ),
       );

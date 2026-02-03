@@ -35,6 +35,7 @@ import { handleEntityRouteError } from "../../../../lib/routing/handleEntityRout
 import { useLocation } from "react-router-dom";
 import { userService } from "../../../../services/UserService";
 import { User } from "@/components/models/user.models";
+import { usePath } from "../../../../context/PathContext";
 
 interface SingleProdProps {}
 
@@ -67,9 +68,11 @@ const SingleProd: FC<SingleProdProps> = () => {
   const [isUploadingImages, setIsUploadingImages] = useState(false);
   const { productId } = useParams<{ productId: string }>();
   const [user, setUser] = useState<User | null>(null);
+  const { previousPath } = usePath();
 
   useEffect(() => {
     if (!productId) return;
+
 
     const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(productId);
     if (!isValidObjectId) {

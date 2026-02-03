@@ -48,7 +48,7 @@ export class PermissionsService {
   }
 
   async createPermission(dto: CreatePermissionDto) {
-    const { entityType, entityId, allowed, inheritToChildren } = dto;
+    const { entityType, entityId, allowed, inheritToChildren,contextPath } = dto;
 
     const existingPermission = await this.permissionModel.findOne({
       entityType,
@@ -64,6 +64,8 @@ export class PermissionsService {
       entityType,
       entityId.toString(),
       allowed.toString(),
+      contextPath,
+
     );
 
     if (!validation.canCreate) {
@@ -140,6 +142,7 @@ export class PermissionsService {
         dto.entityType,
         dto.entityId.toString(),
         dto.allowed.toString(),
+        dto.contextPath
       );
       return { dto, validation };
     });
@@ -691,87 +694,144 @@ export class PermissionsService {
       permissionIdByKey,
     };
   }
-  async canCreatePermission(
+   async canCreatePermission(
     entityType: EntityType,
     entityId: string,
     allowedId: string,
+    contextPath?: string,
   ): Promise<{ canCreate: boolean; reason?: string }> {
     if (entityType === EntityType.CATEGORY) {
       const category = await this.categoryModel.findById(entityId).lean();
+
+
       if (!category) {
         return { canCreate: false, reason: 'הקטגוריה לא נמצאה' };
       }
-      const pathAsString = Array.isArray(category.categoryPath)
-        ? category.categoryPath[0]
-        : category.categoryPath;
-      const pathParts = pathAsString.split('/').filter(Boolean);
-      const normalizedParts =
-        pathParts[0] === 'categories' ? pathParts.slice(1) : pathParts;
-      const categoriesToCheck: string[] = [];
-      for (let i = 1; i < normalizedParts.length; i++) {
-        const parentPath =
-          '/categories/' + normalizedParts.slice(0, i).join('/');
-        categoriesToCheck.push(parentPath);
-      }
-      if (categoriesToCheck.length > 0) {
-        const parentCategories = await this.categoryModel
-          .find({ categoryPath: { $in: categoriesToCheck } })
-          .select('_id categoryName categoryPath')
-          .lean();
-        for (const parentCategory of parentCategories) {
-          const hasPermission = await this.permissionModel.findOne({
-            entityType: EntityType.CATEGORY,
-            entityId: parentCategory._id,
-            allowed: new mongoose.Types.ObjectId(allowedId),
-          });
-          if (!hasPermission) {
-            return {
-              canCreate: false,
-              reason: `לא ניתן לשחרר פריט זה כי קטגורית האב "${parentCategory.categoryName}" חסומה`,
-            };
-          }
-        }
-      }
-      return { canCreate: true };
+
+
+      const parentPaths = this.extractParentCategoryPaths(
+        category.categoryPath,
+      );
+
+
+      return this.validateParentCategoryPermissions(
+        parentPaths,
+        allowedId,
+        this.categoryModel,
+        this.permissionModel,
+      );
     }
+
+
     if (entityType === EntityType.PRODUCT) {
       const product = await this.productModel.findById(entityId).lean();
+
+
       if (!product) {
         return { canCreate: false, reason: 'המוצר לא נמצא' };
       }
-      const pathAsString = Array.isArray(product.productPath)
-        ? product.productPath[0]
-        : product.productPath;
 
-      const pathParts = pathAsString.split('/').filter(Boolean);
-      const categoriesToCheck: string[] = [];
-      for (let i = 1; i < pathParts.length; i++) {
-        const parentPath = '/categories/' + pathParts.slice(1, i + 1).join('/');
-        categoriesToCheck.push(parentPath);
+
+      if (!contextPath) {
+        return {
+          canCreate: false,
+          reason: 'חסר נתיב הקשר לבדיקת הרשאות',
+        };
       }
 
-      if (categoriesToCheck.length > 0) {
-        const parentCategories = await this.categoryModel
-          .find({ categoryPath: { $in: categoriesToCheck } })
-          .select('_id categoryName categoryPath')
-          .lean();
-        for (const parentCategory of parentCategories) {
-          const hasPermission = await this.permissionModel.findOne({
-            entityType: EntityType.CATEGORY,
-            entityId: parentCategory._id,
-            allowed: new mongoose.Types.ObjectId(allowedId),
-          });
-          if (!hasPermission) {
-            return {
-              canCreate: false,
-              reason: `לא ניתן לשחרר פריט זה כי קטגורית האב "${parentCategory.categoryName}" חסומה`,
-            };
-          }
-        }
+
+      if (!product.productPath.includes(contextPath)) {
+        return {
+          canCreate: false,
+          reason: 'המוצר אינו שייך לקטגוריה זו',
+        };
       }
+
+
+      const parentPaths = this.extractParentCategoryPaths(contextPath);
+
+
+      return this.validateParentCategoryPermissions(
+        parentPaths,
+        allowedId,
+        this.categoryModel,
+        this.permissionModel,
+      );
     }
+
+
     return { canCreate: true };
   }
+
+
+  async validateParentCategoryPermissions(
+    categoryPaths: string[],
+    allowedId: string,
+    categoryModel: Model<Category>,
+    permissionModel: Model<Permission>,
+  ): Promise<{ canCreate: boolean; reason?: string }> {
+    if (!categoryPaths.length) return { canCreate: true };
+
+
+    const parentCategories = await categoryModel
+      .find({ categoryPath: { $in: categoryPaths } })
+      .select('_id categoryName')
+      .lean();
+
+
+    if (!parentCategories.length) return { canCreate: true };
+
+
+    const parentIds = parentCategories.map((c) => c._id);
+
+
+    const permissions = await permissionModel
+      .find({
+        entityType: EntityType.CATEGORY,
+        entityId: { $in: parentIds },
+        allowed: new mongoose.Types.ObjectId(allowedId),
+      })
+      .select('entityId')
+      .lean();
+
+
+    const allowedSet = new Set(permissions.map((p) => p.entityId.toString()));
+
+
+    const blockedParent = parentCategories.find(
+      (c) => !allowedSet.has(c._id.toString()),
+    );
+
+
+    if (blockedParent) {
+      return {
+        canCreate: false,
+        reason: `לא ניתן לשחרר פריט זה כי קטגורית האב "${blockedParent.categoryName}" חסומה`,
+      };
+    }
+
+
+    return { canCreate: true };
+  }
+
+
+  extractParentCategoryPaths(path: string): string[] {
+    const parts = path.split('/').filter(Boolean);
+    const normalized = parts[0] === 'categories' ? parts.slice(1) : parts;
+
+
+    const parents: string[] = [];
+
+
+    for (let i = 1; i < normalized.length; i++) {
+      parents.push('/categories/' + normalized.slice(0, i).join('/'));
+    }
+
+
+    return parents;
+  }
+
+ 
   async getAllCategoryDescendants(
     categoryId: string,
   ): Promise<{ entityType: EntityType; entityId: string }[]> {

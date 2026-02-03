@@ -16,7 +16,6 @@ class AuthService {
 
    setSession(accessToken: string, user: any) {
     localStorage.setItem("token", accessToken);
-    console.log("token payload:", JSON.parse(atob(accessToken.split(".")[1])));
 
     localStorage.setItem("user", JSON.stringify(user));
   }

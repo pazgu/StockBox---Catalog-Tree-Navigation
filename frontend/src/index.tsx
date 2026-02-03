@@ -5,6 +5,7 @@ import reportWebVitals from './reportWebVitals';
 import Layout from './components/LayoutArea/Layout/Layout';
 import { BrowserRouter } from 'react-router-dom';
 import { UserProvider } from './context/UserContext';
+import { PathProvider } from './context/PathContext';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -14,7 +15,10 @@ root.render(
 
     <BrowserRouter>
     <UserProvider>
-      <Layout></Layout>
+      <PathProvider>
+          <Layout></Layout>
+      </PathProvider>
+    
       </UserProvider>
     
     </BrowserRouter>

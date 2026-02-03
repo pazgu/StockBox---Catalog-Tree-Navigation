@@ -18,6 +18,7 @@ export const permissionsService = {
     entityId: string,
     allowedId: string,
     inheritToChildren?: boolean,
+    contextPath?: string
   ) {
     return api.post(
       API_URL,
@@ -26,6 +27,7 @@ export const permissionsService = {
         entityId,
         allowed: allowedId,
         inheritToChildren,
+        contextPath
       },
       getAuthHeader(),
     );
@@ -37,6 +39,7 @@ export const permissionsService = {
       entityId: string;
       allowed: string;
       inheritToChildren?: boolean;
+      contextPath?: string;
     }>,
   ) => {
     return api.post(`${API_URL}/batch`, { permissions }, getAuthHeader());

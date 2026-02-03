@@ -14,11 +14,13 @@ import {
   Lock,
   LockOpen,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { BannedItem } from "../../../../types/types";
 import { permissionsService } from "../../../../services/permissions.service";
 import { toast } from "sonner";
 import InheritanceModal from "../../SharedComponents/DialogModal/DialogModal";
+import { set } from "lodash";
+import { usePath } from "../../../../context/PathContext";
 
 interface ManageBannedItemsModalProps {
   groupId: string;
@@ -50,7 +52,9 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
   const [permissionIdByKey, setPermissionIdByKey] = useState<Record<string, string>>({});
   const [showInheritanceModal, setShowInheritanceModal] = useState(false);
   const [pendingUnblockItems, setPendingUnblockItems] = useState<BannedItem[]>([]);
-
+  const navigate = useNavigate();
+  const { setPreviousPath,previousPath } = usePath();
+  const location = useLocation();
   const keyOf = (type: "product" | "category", id: string | number) =>
     `${type}:${String(id)}`;
 
@@ -165,6 +169,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
           entityId: String(item.id),
           allowed: groupId,
           inheritToChildren,
+          contextPath: previousPath ?? undefined,
         }))
       );
       const data = await permissionsService.getBlockedItemsForGroup(groupId);
@@ -498,15 +503,21 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
                                 "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400";
                             }}
                           />
-                          <Link
-                            to={`/permissions/${item.type}/${item.id}`}
-                            onClick={(e) => e.stopPropagation()}
-                            className="absolute bottom-1 left-1 px-1 py-1 bg-green-600 hover:bg-green-700 text-white text-[8px] font-bold rounded transition-all opacity-0 group-hover:opacity-100 flex items-center gap-0.5"
-                            title="נהל הרשאות"
-                          >
-                            <Settings className="w-2 h-2" />
-                            הרשאות
-                          </Link>
+                      <span
+                          onClick={(e) => {
+                            e.stopPropagation();
+
+                            setPreviousPath(location.pathname);
+
+                            navigate(`/permissions/${item.type}/${item.id}`);
+                          }}
+                          className="absolute bottom-1 left-1 px-1 py-1 bg-green-600 hover:bg-green-700 text-white text-[8px] font-bold rounded transition-all opacity-0 group-hover:opacity-100 flex items-center gap-0.5 cursor-pointer"
+                          title="נהל הרשאות"
+                        >
+                          <Settings className="w-2 h-2" />
+                          הרשאות
+                        </span>
+
 
                           <div
                             className={`absolute bottom-0.5 right-0.5 px-1 py-0.5 ${getTypeColor(
@@ -580,15 +591,20 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
                               "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400";
                           }}
                         />
-                        <Link
-                          to={`/permissions/${item.type}/${item.id}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="absolute bottom-1 left-1 px-1 py-1 bg-green-600 hover:bg-green-700 text-white text-[8px] font-bold rounded transition-all opacity-0 group-hover:opacity-100 flex items-center gap-0.5"
-                          title="נהל הרשאות"
-                        >
-                          <Settings className="w-2 h-2" />
-                          הרשאות
-                        </Link>
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPreviousPath(location.pathname);
+
+                          navigate(`/permissions/${item.type}/${item.id}`);
+                        }}
+                        className="absolute bottom-1 left-1 px-1 py-1 bg-green-600 hover:bg-green-700 text-white text-[8px] font-bold rounded transition-all opacity-0 group-hover:opacity-100 flex items-center gap-0.5 cursor-pointer"
+                        title="נהל הרשאות"
+                      >
+                        <Settings className="w-2 h-2" />
+                        הרשאות
+                      </span>
+
 
                         <div
                           className={`absolute bottom-0.5 right-0.5 px-1 py-0.5 ${getTypeColor(
