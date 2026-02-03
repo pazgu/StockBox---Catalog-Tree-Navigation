@@ -33,6 +33,7 @@ import { handleEntityRouteError } from "../../../../lib/routing/handleEntityRout
 import SmartDeleteModal from "../../ProductArea/SmartDeleteModal/SmartDeleteModal";
 import DuplicateProductModal from "../../ProductArea/DuplicateProductModal/DuplicateProductModal";
 import MoveMultipleItemsModal from "./MoveMultipleItemsModal/MoveMultipleItemsModal";
+import { usePath } from "../../../../context/PathContext";
 
 const SingleCat: FC = () => {
   const [items, setItems] = useState<DisplayItem[]>([]);
@@ -62,6 +63,7 @@ const SingleCat: FC = () => {
   const params = useParams();
   const { role, user, id } = useUser();
   const navigate = useNavigate();
+  const { setPreviousPath } = usePath();
 
   const getCategoryPathFromUrl = () => {
     const wildcardPath = params["*"];
@@ -91,6 +93,14 @@ const SingleCat: FC = () => {
   useEffect(() => {
     loadAllContent();
   }, [categoryPath, id]);
+
+  
+  useEffect(() => {
+  return () => {
+    setPreviousPath(null);
+  };
+}, []);
+
 
   const loadAllContent = async () => {
     try {
@@ -687,8 +697,10 @@ const SingleCat: FC = () => {
             )}
             <div
               className="h-[140px] w-full flex justify-center items-center p-5 cursor-pointer"
-              onClick={() => {
+            onClick={() => {
                 if (item.type === "product") {
+                  // Save current path before navigating
+                  setPreviousPath(location.pathname);
                   navigate(`/products/${item.id}`);
                 } else {
                   navigate(`${item.path}`);
