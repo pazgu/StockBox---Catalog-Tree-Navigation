@@ -1,7 +1,7 @@
 export interface DisplayItem {
   id: string;
   name: string;
-  image: string;
+  images: string | string[]; 
   type: "product" | "category";
   path: Array<string>;
   favorite?: boolean;
