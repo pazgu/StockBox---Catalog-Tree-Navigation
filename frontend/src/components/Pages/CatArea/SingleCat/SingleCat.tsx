@@ -891,7 +891,7 @@ const SingleCat: FC = () => {
             <h4 className="text-lg font-semibold mb-2">מחיקת קטגוריה</h4>
 
             <p className="mb-2">
-              מה בקצונך לעשות עם התוכן שבתוך "{itemToDelete.name}"?
+              מה ברצונך לעשות עם התוכן שבתוך "{itemToDelete.name}"?
             </p>
 
             <div className="flex flex-col gap-3 mt-4">
