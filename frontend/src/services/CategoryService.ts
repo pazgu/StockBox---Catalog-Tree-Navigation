@@ -148,6 +148,14 @@ class CategoriesService {
       return null;
     }
   }
+
+  async hasDescendants(id: string): Promise<boolean> {
+  const res = await api.get<{ hasDescendants: boolean }>(
+    `${this.baseUrl}/${id}/has-descendants`,
+  );
+  return res.data.hasDescendants;
+}
+
 }
 
 export const categoriesService = new CategoriesService();

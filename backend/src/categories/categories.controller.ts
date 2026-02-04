@@ -96,6 +96,12 @@ export class CategoriesController {
       file,
     );
   }
+
+  @Get(':id/has-descendants')
+  async hasDescendants(@Param('id') id: string) {
+    return this.categoriesService.hasDescendants(id);
+  }
+
   @Get(':id')
   async getCategoryById(@Param('id') id: string) {
     return this.categoriesService.getCategoryById(id);
