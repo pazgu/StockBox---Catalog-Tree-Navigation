@@ -275,7 +275,6 @@ const SingleCat: FC = () => {
           setShowDeleteModal(true); // simple confirmation modal
         }
       } catch (e) {
-        // fallback: if we can't check, assume it has descendants so we don't delete by mistake
         setHasDescendantsForDelete(true);
         setShowCategoryDeleteChoice(true);
       }
@@ -283,8 +282,6 @@ const SingleCat: FC = () => {
 
     return;
   }
-
-  // Product with single path -> normal confirmation modal
   setShowDeleteModal(true);
 };
 
@@ -296,7 +293,6 @@ const SingleCat: FC = () => {
     setIsDeletingItem(true);
 
     if (itemToDelete.type === "category") {
-      // simple delete for category with no descendants
       await categoriesService.deleteCategory(itemToDelete.id, "cascade");
       toast.success(`הקטגוריה "${itemToDelete.name}" נמחקה בהצלחה!`);
     } else {
