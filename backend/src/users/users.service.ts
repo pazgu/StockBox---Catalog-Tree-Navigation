@@ -112,7 +112,7 @@ export class UsersService {
           userId,
           {
             $pull: {
-              favorites: { id: objectId },
+              favorites: { id: { $in: [objectId, itemId] } },
             },
           },
           { new: true },
@@ -134,20 +134,20 @@ export class UsersService {
   }
 
   async removeItemFromAllUserFavorites(itemId: string): Promise<void> {
-  try {
-    if (!Types.ObjectId.isValid(itemId)) {
-      throw new BadRequestException('Invalid item ID');
+    try {
+      if (!Types.ObjectId.isValid(itemId)) {
+        throw new BadRequestException('Invalid item ID');
+      }
+      const objectId = new Types.ObjectId(itemId);
+
+      await this.userModel.updateMany(
+        { 'favorites.id': objectId },
+        { $pull: { favorites: { id: objectId } } },
+      );
+    } catch (error) {
+      console.error('Failed to remove item from user favorites:', error);
     }
-    const objectId = new Types.ObjectId(itemId);
-    
-    await this.userModel.updateMany(
-      { 'favorites.id': objectId },
-      { $pull: { favorites: { id: objectId } } }
-    );
-  } catch (error) {
-    console.error('Failed to remove item from user favorites:', error);
   }
-}
 
   async getUserFavorites(userId: string) {
     try {
@@ -183,8 +183,9 @@ export class UsersService {
       const objectId = new Types.ObjectId(itemId);
       const exists = await this.userModel.exists({
         _id: userId,
-        'favorites.id': objectId,
+        $or: [{ 'favorites.id': objectId }, { 'favorites.id': itemId }],
       });
+
       return !!exists;
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
