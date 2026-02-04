@@ -58,7 +58,6 @@ export class CategoriesService {
   }
 
   async getCategories(user: { userId: string; role: string }) {
-
     const categories = await this.categoryModel.find({
       categoryPath: /^\/categories\/[^\/]+$/,
     });
@@ -70,7 +69,6 @@ export class CategoriesService {
     if (user.role !== 'viewer') {
       return [];
     }
-
 
     const { userGroupIds, allowedByEntityId } =
       await this.buildAllowedMapForUser(user);
