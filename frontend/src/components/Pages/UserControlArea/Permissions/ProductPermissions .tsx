@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ChevronDown,
@@ -6,6 +6,7 @@ import {
   ArrowRight,
   MapPin,
   AlertCircle,
+  Lock,
 } from "lucide-react";
 import { Switch } from "../../../ui/switch";
 import { Button } from "../../../ui/button";
@@ -22,7 +23,6 @@ interface Group {
   groupName: string;
   members: boolean;
 }
-
 
 interface ViewerUser {
   _id: string;
@@ -74,25 +74,32 @@ const ProductPermissions: React.FC = () => {
   const [pathStates, setPathStates] = useState<
     Record<string, PathPermissionState>
   >({});
+  const [productPermissions, setProductPermissions] = useState<
+    Array<{ _id: string; allowed: string }>
+  >([]);
 
   const [allUsers, setAllUsers] = useState<ViewerUser[]>([]);
   const [allGroups, setAllGroups] = useState<Group[]>([]);
-  const {previousPath} = usePath()
+  const {previousPath} = usePath();
+  const savedPreviousPath = useRef<string | null>(null);
+  if (previousPath && !savedPreviousPath.current) {
+    savedPreviousPath.current = previousPath;
+  }
 
   useEffect(() => {
     if (role !== "editor") {
       navigate("/");
       return;
     }
-    console.log(`pre path product permission.tsx ${previousPath}`)
 
     const loadData = async () => {
       try {
         if (!cleanId) return;
 
-        const [productPathsData, viewersData] = await Promise.all([
+        const [productPathsData, viewersData, productPerms] = await Promise.all([
           permissionsService.getProductPathsWithPermissions(cleanId),
           permissionsService.getPotentialViewers(),
+          permissionsService.getPermissionsByEntity(cleanId),
         ]);
 
         setProductData({
@@ -101,6 +108,7 @@ const ProductPermissions: React.FC = () => {
           image: productPathsData.product.image,
         });
         setPaths(productPathsData.paths);
+        setProductPermissions(productPerms);
 
         const { users: rawUsers, groups: rawGroups } = viewersData;
         const userToGroupsMap = new Map<string, string[]>();
@@ -133,19 +141,24 @@ const ProductPermissions: React.FC = () => {
         setAllUsers(mappedUsers);
         setAllGroups(mappedGroups);
 
-        // Initialize path states
         const initialStates: Record<string, PathPermissionState> = {};
+        const productAllowedIds = productPerms.map((p: any) => p.allowed);
+
         productPathsData.paths.forEach((pathData: PathData) => {
-          const allowedIds = pathData.categoryPermissions.map((p) => p.allowed);
+          const categoryAllowedIds = pathData.categoryPermissions.map((p) => p.allowed);
 
           initialStates[pathData.path] = {
             users: mappedUsers.map((u) => ({
               ...u,
-              enabled: allowedIds.includes(u._id),
+              enabled:
+                productAllowedIds.includes(u._id) &&
+                categoryAllowedIds.includes(u._id),
             })),
             groups: mappedGroups.map((g) => ({
               ...g,
-              members: allowedIds.includes(g._id),
+              members:
+                productAllowedIds.includes(g._id) &&
+                categoryAllowedIds.includes(g._id),
             })),
             existingPermissions: pathData.categoryPermissions,
           };
@@ -153,8 +166,23 @@ const ProductPermissions: React.FC = () => {
 
         setPathStates(initialStates);
 
-        // Auto-expand first path
-        if (productPathsData.paths.length > 0) {
+        const pathToOpen = savedPreviousPath.current || previousPath;
+        if (pathToOpen && productPathsData.paths.length > 0) {
+          let matchingPath = productPathsData.paths.find(
+            (p: PathData) => p.path === pathToOpen,
+          );
+          if (!matchingPath) {
+            matchingPath = productPathsData.paths.find(
+              (p: PathData) =>
+                p.path.includes(pathToOpen) || pathToOpen.includes(p.path),
+            );
+          }
+          if (matchingPath) {
+            setExpandedPath(matchingPath.path);
+          } else {
+            setExpandedPath(productPathsData.paths[0].path);
+          }
+        } else if (productPathsData.paths.length > 0) {
           setExpandedPath(productPathsData.paths[0].path);
         }
       } catch (err) {
@@ -164,13 +192,80 @@ const ProductPermissions: React.FC = () => {
     };
 
     loadData();
-  }, [cleanId, role, navigate]);
+  }, [cleanId, role, navigate, previousPath]);
+  const isBlockedInProduct = (allowedId: string, userGroupIds?: string[]): boolean => {
+    if (productPermissions.some((p) => p.allowed === allowedId)) {
+      return false;
+    }
+    if (userGroupIds && userGroupIds.length > 0) {
+      const hasAllowedGroup = userGroupIds.some((groupId) =>
+        productPermissions.some((p) => p.allowed === groupId)
+      );
+      if (hasAllowedGroup) {
+        return false;
+      }
+    }   
+    return true;
+  };
+  const isBlockedInCategory = (
+    pathData: PathData,
+    allowedId: string,
+    userGroupIds?: string[]
+  ): boolean => {
+    const userHasPermission = pathData.categoryPermissions.some(
+      (p) => p.allowed === allowedId,
+    );  
+    const groupHasPermission =
+      userGroupIds &&
+      userGroupIds.some((groupId) =>
+        pathData.categoryPermissions.some((p) => p.allowed === groupId)
+      );
+    if (!userHasPermission && !groupHasPermission) {
+      return true;
+    }
+    for (const ancestor of pathData.ancestorCategories) {
+      const userAllowedInAncestor = ancestor.allowedIds.includes(allowedId);
+      const groupAllowedInAncestor =
+        userGroupIds &&
+        userGroupIds.some((groupId) => ancestor.allowedIds.includes(groupId));
+      if (!userAllowedInAncestor && !groupAllowedInAncestor) {
+        return true;
+      }
+    }
+    return false;
+  };
 
   const handleToggle = (
     path: string,
     targetId: string,
     toggleType: "user" | "group",
   ) => {
+    const pathState = pathStates[path];
+    if (!pathState) return;
+    const pathData = paths.find((p) => p.path === path);
+    if (!pathData) return;
+    const currentUser = pathState.users.find((u) => u._id === targetId);
+    const currentGroup = pathState.groups.find((g) => g._id === targetId);
+    const isCurrentlyEnabled =
+      toggleType === "user" ? currentUser?.enabled : currentGroup?.members;
+    if (!isCurrentlyEnabled) {
+      if (toggleType === "user") {
+        const userGroupIds = currentUser?.groupIds || [];
+        if (isBlockedInCategory(pathData, targetId, userGroupIds)) {
+          toast.error(
+            "לא ניתן לשחרר - קטגורית האב חסומה. יש לשחרר את קטגורית האב תחילה",
+          );
+          return;
+        }
+      } else {
+        if (isBlockedInCategory(pathData, targetId)) {
+          toast.error(
+            "לא ניתן לשחרר - קטגורית האב חסומה. יש לשחרר את קטגורית האב תחילה",
+          );
+          return;
+        }
+      }
+    }
     setPathStates((prev) => {
       const pathState = prev[path];
       if (!pathState) return prev;
@@ -190,7 +285,7 @@ const ProductPermissions: React.FC = () => {
         const user = usersWithGroupInfo.find(
           (u) => String(u._id) === String(targetId),
         );
-        if (user?.hasBlockedGroups) {
+        if (user?.hasBlockedGroups && !isCurrentlyEnabled) {
           toast.error("לא ניתן להעניק הרשאה כשמשתמש משויך לקבוצות חסומות");
           return prev;
         }
@@ -223,6 +318,32 @@ const ProductPermissions: React.FC = () => {
   };
 
   const handleEnableAllForPath = (path: string, enabled: boolean) => {
+    const pathData = paths.find((p) => p.path === path);
+    if (!pathData) return;
+    if (enabled) {
+      const pathState = pathStates[path];
+      if (!pathState) return;
+      const allIds = [
+        ...pathState.users.map((u) => u._id),
+        ...pathState.groups.map((g) => g._id),
+      ];
+      const blockedByCategory = allIds.filter((id) =>
+        isBlockedInCategory(pathData, id),
+      );
+      if (blockedByCategory.length > 0) {
+        toast.error(
+          "לא ניתן לשחרר לכולם - חלק מהמשתמשים/קבוצות חסומים בקטגורית האב",
+        );
+        return;
+      }
+      const blockedByProduct = allIds.filter((id) => isBlockedInProduct(id));
+      if (blockedByProduct.length > 0) {
+        toast.error(
+          "לא ניתן לשחרר לכולם - חלק מהמשתמשים/קבוצות חסומים במוצר",
+        );
+        return;
+      }
+    }
     setPathStates((prev) => {
       const pathState = prev[path];
       if (!pathState) return prev;
@@ -251,13 +372,13 @@ const ProductPermissions: React.FC = () => {
         .map((g) => g._id);
       const finalAllowedIds = [...usersToAllow, ...groupsToAllow];
 
-      const currentDbIds = pathState.existingPermissions.map((p) => p.allowed);
-      const toCreate = finalAllowedIds.filter((id) => !currentDbIds.includes(id));
-      const toDelete = pathState.existingPermissions.filter(
+      const currentProductIds = productPermissions.map((p) => p.allowed);
+      const toCreate = finalAllowedIds.filter((id) => !currentProductIds.includes(id));
+      const toDelete = productPermissions.filter(
         (p) => !finalAllowedIds.includes(p.allowed),
       );
 
-      // Validate against ancestor categories
+      const isBlocking = toDelete.length > 0 && toCreate.length === 0;
       for (const ancestor of pathData.ancestorCategories) {
         for (const allowedId of toCreate) {
           if (!ancestor.allowedIds.includes(allowedId)) {
@@ -272,11 +393,11 @@ const ProductPermissions: React.FC = () => {
       const createResults = await Promise.allSettled(
         toCreate.map((allowedId) =>
           permissionsService.createPermission(
-            "category",
-            pathData.categoryId,
+            "product",
+            cleanId!,
             allowedId,
             false,
-            previousPath??undefined
+            pathData.path,
           ),
         ),
       );
@@ -292,31 +413,48 @@ const ProductPermissions: React.FC = () => {
         toDelete.map((p) => permissionsService.deletePermission(p._id)),
       );
 
-      toast.success(`ההרשאות נשמרו בהצלחה עבור ${pathData.categoryName}`);
-
-      // Refresh data for this path
-      const updatedData = await permissionsService.getProductPathsWithPermissions(
-        cleanId!,
-      );
-      const updatedPath = updatedData.paths.find(
-        (p: PathData) => p.path === pathData.path,
-      );
-      if (updatedPath) {
-        setPathStates((prev) => ({
-          ...prev,
-          [pathData.path]: {
-            ...prev[pathData.path],
-            existingPermissions: updatedPath.categoryPermissions,
-          },
-        }));
+      if (isBlocking) {
+        toast.success(`המוצר נחסם בהצלחה בכל המיקומים`, { duration: 4000 });
+      } else {
+        toast.success(`המוצר שוחרר בהצלחה`);
       }
+      const [updatedData, updatedProductPerms] = await Promise.all([
+        permissionsService.getProductPathsWithPermissions(cleanId!),
+        permissionsService.getPermissionsByEntity(cleanId!),
+      ]);
+      setProductPermissions(updatedProductPerms);
+      setPaths(updatedData.paths);
+      const newProductAllowedIds = updatedProductPerms.map((p: any) => p.allowed);
+      const newPathStates: Record<string, PathPermissionState> = {};
+      updatedData.paths.forEach((updatedPath: PathData) => {
+        const categoryAllowedIds = updatedPath.categoryPermissions.map(
+          (p: any) => p.allowed,
+        );
+        newPathStates[updatedPath.path] = {
+          ...pathStates[updatedPath.path],
+          users: pathStates[updatedPath.path].users.map((u) => ({
+            ...u,
+            enabled:
+              newProductAllowedIds.includes(u._id) &&
+              categoryAllowedIds.includes(u._id),
+          })),
+          groups: pathStates[updatedPath.path].groups.map((g) => ({
+            ...g,
+            members:
+              newProductAllowedIds.includes(g._id) &&
+              categoryAllowedIds.includes(g._id),
+          })),
+          existingPermissions: updatedPath.categoryPermissions,
+        };
+      });
+      setPathStates(newPathStates);
     } catch (err) {
       console.error(err);
       toast.error("שגיאה בשמירה");
     }
   };
 
-  const getUsersWithGroupInfo = (path: string) => {
+  const getUsersWithGroupInfo = (path: string, pathData: PathData) => {
     const pathState = pathStates[path];
     if (!pathState) return [];
 
@@ -330,6 +468,9 @@ const ProductPermissions: React.FC = () => {
       const allGroupsEnabled =
         userGroups.length > 0 && blockedGroups.length === 0;
       const hasBlockedGroups = blockedGroups.length > 0;
+      const enabledGroupIds = enabledGroups.map(g => g._id);
+      const blockedByProduct = isBlockedInProduct(user._id, enabledGroupIds);
+      const blockedByCategory = isBlockedInCategory(pathData, user._id, enabledGroupIds);
 
       return {
         ...user,
@@ -338,6 +479,8 @@ const ProductPermissions: React.FC = () => {
         blockedGroups,
         allGroupsEnabled,
         hasBlockedGroups,
+        blockedByProduct,
+        blockedByCategory,
         effectiveEnabled: user.enabled || allGroupsEnabled,
       };
     });
@@ -354,11 +497,11 @@ const ProductPermissions: React.FC = () => {
       .filter((g) => g.members)
       .map((g) => g._id);
     const finalAllowedIds = [...usersToAllow, ...groupsToAllow];
-    const currentDbIds = pathState.existingPermissions.map((p) => p.allowed);
+    const currentProductIds = productPermissions.map((p) => p.allowed);
 
     return (
-      finalAllowedIds.length !== currentDbIds.length ||
-      finalAllowedIds.some((id) => !currentDbIds.includes(id))
+      finalAllowedIds.length !== currentProductIds.length ||
+      finalAllowedIds.some((id) => !currentProductIds.includes(id))
     );
   };
 
@@ -413,25 +556,31 @@ const ProductPermissions: React.FC = () => {
             </div>
           </div>
 
-          {/* Info Alert */}
           <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <div className="text-sm text-blue-900">
-              <strong>שים לב:</strong> מוצר זה קיים במספר קטגוריות. ניתן לערוך את
-              ההרשאות עבור כל קטגוריה בנפרד. השינויים ישפיעו על ההרשאות של
-              <strong> קטגורית האב</strong> ולא על המוצר עצמו.
+              <strong>שים לב:</strong> מוצר מאושר רק אם{" "}
+              <strong>גם המוצר וגם קטגורית האב</strong> מאושרים. חסימת מוצר
+              בנתיב אחד תחסום אותו בכל המיקומים.
             </div>
           </div>
 
           <div className="space-y-4">
-            {paths.map((pathData, index) => {
+            {paths.map((pathData) => {
               const isExpanded = expandedPath === pathData.path;
               const pathState = pathStates[pathData.path];
               const hasChanges = hasChangesForPath(pathData.path);
-              const usersWithGroupInfo = getUsersWithGroupInfo(pathData.path);
+              const usersWithGroupInfo = getUsersWithGroupInfo(pathData.path,pathData,);
 
               return (
-                <div key={pathData.path} className="border border-gray-200 rounded-lg bg-white">
+                <div
+                  key={pathData.path}
+                  className={`border-2 rounded-lg bg-white transition-all ${
+                    isExpanded
+                      ? "border-blue-300 shadow-lg"
+                      : "border-gray-200"
+                  }`}
+                >
                   <Button
                     variant="ghost"
                     onClick={() =>
@@ -464,7 +613,6 @@ const ProductPermissions: React.FC = () => {
                     </div>
                   </Button>
 
-                  {/* Accordion Content */}
                   <AnimatePresence>
                     {isExpanded && pathState && (
                       <motion.div
@@ -474,7 +622,6 @@ const ProductPermissions: React.FC = () => {
                         className="overflow-hidden"
                       >
                         <div className="p-4 border-t border-gray-200">
-                          {/* Enable All Toggle */}
                           <div className="flex justify-between items-center p-4 bg-white border rounded-lg mb-4 shadow-sm border-blue-100">
                             <Label className="font-bold text-blue-900 text-sm">
                               אפשר לכולם
@@ -529,7 +676,7 @@ const ProductPermissions: React.FC = () => {
                                       }))
                                     }
                                   />
-                                  <div className="bg-white border rounded-lg max-h-48 overflow-y-auto">
+                                  <div className="bg-white border rounded-lg max-h-48 overflow-y-auto overflow-x-hidden">
                                     {usersWithGroupInfo
                                       .filter((u) =>
                                         u.userName
@@ -540,48 +687,63 @@ const ProductPermissions: React.FC = () => {
                                             ).toLowerCase(),
                                           ),
                                       )
-                                      .map((user) => (
-                                        <div
-                                          key={user._id}
-                                          className="flex justify-between p-3 border-b hover:bg-slate-50 transition-colors"
-                                        >
-                                          <div className="flex items-center flex-wrap gap-1">
-                                            <Label className="font-medium ml-2">
-                                              {user.userName}
-                                            </Label>
+                                      .map((user) => {
+                                        const isDisabledDueToGroup = user.allGroupsEnabled && !user.enabled;
+                                        const isDisabled = user.hasBlockedGroups || user.blockedByCategory || isDisabledDueToGroup;
+                                        return (
+                                          <div
+                                            key={user._id}
+                                            className="flex justify-between p-3 border-b hover:bg-slate-50 transition-colors overflow-visible"
+                                          >
+                                            <div className="flex items-center flex-wrap gap-1 overflow-hidden">
+                                              <Label className="font-medium ml-2">
+                                                {user.userName}
+                                              </Label>
 
-                                            {user.allGroupsEnabled &&
-                                              user.userGroups.length > 0 && (
-                                                <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full whitespace-nowrap">
-                                                  מורשה משייוך לקבוצה/קבוצות:{" "}
-                                                  {user.enabledGroups
+                                              {user.blockedByProduct && !user.effectiveEnabled && (
+                                                <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full whitespace-nowrap flex items-center gap-1 flex-shrink-0">
+                                                  <Lock className="w-3 h-3" />
+                                                  חסום במוצר
+                                                </span>
+                                              )}
+                                              {user.blockedByCategory && !user.effectiveEnabled && (
+                                                <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">
+                                                  חסום בקטגוריה
+                                                </span>
+                                              )}
+                                              {!user.blockedByProduct &&
+                                                !user.blockedByCategory &&
+                                                user.allGroupsEnabled &&
+                                                user.userGroups.length > 0 && (
+                                                  <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">
+                                                    מורשה משייוך לקבוצה:{" "}
+                                                    {user.enabledGroups
+                                                      .map((g) => g.groupName)
+                                                      .join(", ")}
+                                                  </span>
+                                                )}
+
+                                              {user.hasBlockedGroups && (
+                                                <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">
+                                                  חסום בגלל קבוצה:{" "}
+                                                  {user.blockedGroups
                                                     .map((g) => g.groupName)
                                                     .join(", ")}
                                                 </span>
                                               )}
-
-                                            {user.hasBlockedGroups && (
-                                              <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full whitespace-nowrap">
-                                                חסום בגלל הקבוצה/קבוצות:{" "}
-                                                {user.blockedGroups
-                                                  .map((g) => g.groupName)
-                                                  .join(", ")}
-                                              </span>
-                                            )}
+                                            </div>
+                                            <div className="flex-shrink-0">
+                                              <Switch
+                                                checked={user.effectiveEnabled}
+                                                disabled={isDisabled}
+                                                onCheckedChange={() =>
+                                                  handleToggle(pathData.path, user._id, "user")
+                                                }
+                                              />
+                                            </div>
                                           </div>
-                                          <Switch
-                                            checked={user.effectiveEnabled}
-                                            disabled={user.hasBlockedGroups}
-                                            onCheckedChange={() =>
-                                              handleToggle(
-                                                pathData.path,
-                                                user._id,
-                                                "user",
-                                              )
-                                            }
-                                          />
-                                        </div>
-                                      ))}
+                                        );
+                                      })}
                                   </div>
                                 </motion.div>
                               )}
@@ -616,40 +778,60 @@ const ProductPermissions: React.FC = () => {
                                   className="overflow-hidden mt-2"
                                 >
                                   <div className="bg-white border rounded-lg max-h-48 overflow-y-auto">
-                                    {pathState.groups.map((group) => (
-                                      <div
-                                        key={group._id}
-                                        className="flex justify-between p-3 border-b hover:bg-slate-50 transition-colors"
-                                      >
-                                        <Label className="font-medium">
-                                          {group.groupName}
-                                        </Label>
-                                        <Switch
-                                          checked={group.members}
-                                          onCheckedChange={() =>
-                                            handleToggle(
-                                              pathData.path,
-                                              group._id,
-                                              "group",
-                                            )
-                                          }
-                                        />
-                                      </div>
-                                    ))}
+                                    {pathState.groups.map((group) => {
+                                      const blockedByProduct =
+                                        isBlockedInProduct(group._id);
+                                      const blockedByCategory =
+                                        isBlockedInCategory(pathData, group._id);
+                                      return (
+                                        <div
+                                          key={group._id}
+                                          className="flex justify-between p-3 border-b hover:bg-slate-50 transition-colors"
+                                        >
+                                          <div className="flex items-center gap-2">
+                                            <Label className="font-medium">
+                                              {group.groupName}
+                                            </Label>
+                                            {blockedByProduct && (
+                                              <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full whitespace-nowrap flex items-center gap-1">
+                                                <Lock className="w-3 h-3" />
+                                                חסום במוצר
+                                              </span>
+                                            )}
+                                            {blockedByCategory && (
+                                              <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">
+                                                חסום בקטגוריה
+                                              </span>
+                                            )}
+                                          </div>
+                                          <Switch
+                                            checked={group.members}
+                                            disabled={blockedByCategory}
+                                            onCheckedChange={() =>
+                                              handleToggle(
+                                                pathData.path,
+                                                group._id,
+                                                "group",
+                                              )
+                                            }
+                                          />
+                                        </div>
+                                      );
+                                    })}
                                   </div>
                                 </motion.div>
                               )}
                             </AnimatePresence>
                           </div>
 
-                          {/* Action Buttons */}
                           <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
                             <Button
                               variant="outline"
-                              className="px-8 py-2 border-gray-300 hover:bg-gray-300 transition-all font-medium"
                               onClick={() => {
-                                // Reset to original state
-                                const allowedIds =
+                                const productAllowedIds = productPermissions.map(
+                                  (p) => p.allowed,
+                                );
+                                const categoryAllowedIds =
                                   pathData.categoryPermissions.map(
                                     (p) => p.allowed,
                                   );
@@ -659,11 +841,15 @@ const ProductPermissions: React.FC = () => {
                                     ...prev[pathData.path],
                                     users: allUsers.map((u) => ({
                                       ...u,
-                                      enabled: allowedIds.includes(u._id),
+                                      enabled:
+                                        productAllowedIds.includes(u._id) &&
+                                        categoryAllowedIds.includes(u._id),
                                     })),
                                     groups: allGroups.map((g) => ({
                                       ...g,
-                                      members: allowedIds.includes(g._id),
+                                      members:
+                                        productAllowedIds.includes(g._id) &&
+                                        categoryAllowedIds.includes(g._id),
                                     })),
                                   },
                                 }));
@@ -673,7 +859,7 @@ const ProductPermissions: React.FC = () => {
                               ביטול
                             </Button>
                             <Button
-                              className="bg-green-600 text-white hover:bg-green-700 px-10 shadow-lg"
+                              className="bg-green-600 text-white hover:bg-green-700"
                               onClick={() => savePermissionsForPath(pathData)}
                               disabled={!hasChanges}
                             >
