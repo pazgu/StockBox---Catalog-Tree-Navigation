@@ -48,7 +48,8 @@ export class PermissionsService {
   }
 
   async createPermission(dto: CreatePermissionDto) {
-    const { entityType, entityId, allowed, inheritToChildren,contextPath } = dto;
+    const { entityType, entityId, allowed, inheritToChildren, contextPath } =
+      dto;
 
     const existingPermission = await this.permissionModel.findOne({
       entityType,
@@ -65,7 +66,6 @@ export class PermissionsService {
       entityId.toString(),
       allowed.toString(),
       contextPath,
-
     );
 
     if (!validation.canCreate) {
@@ -142,7 +142,7 @@ export class PermissionsService {
         dto.entityType,
         dto.entityId.toString(),
         dto.allowed.toString(),
-        dto.contextPath
+        dto.contextPath,
       );
       return { dto, validation };
     });
@@ -694,7 +694,7 @@ export class PermissionsService {
       permissionIdByKey,
     };
   }
-   async canCreatePermission(
+  async canCreatePermission(
     entityType: EntityType,
     entityId: string,
     allowedId: string,
@@ -703,16 +703,13 @@ export class PermissionsService {
     if (entityType === EntityType.CATEGORY) {
       const category = await this.categoryModel.findById(entityId).lean();
 
-
       if (!category) {
         return { canCreate: false, reason: 'הקטגוריה לא נמצאה' };
       }
 
-
       const parentPaths = this.extractParentCategoryPaths(
         category.categoryPath,
       );
-
 
       return this.validateParentCategoryPermissions(
         parentPaths,
@@ -722,15 +719,12 @@ export class PermissionsService {
       );
     }
 
-
     if (entityType === EntityType.PRODUCT) {
       const product = await this.productModel.findById(entityId).lean();
-
 
       if (!product) {
         return { canCreate: false, reason: 'המוצר לא נמצא' };
       }
-
 
       if (!contextPath) {
         return {
@@ -739,7 +733,6 @@ export class PermissionsService {
         };
       }
 
-
       if (!product.productPath.includes(contextPath)) {
         return {
           canCreate: false,
@@ -747,9 +740,7 @@ export class PermissionsService {
         };
       }
 
-
       const parentPaths = this.extractParentCategoryPaths(contextPath);
-
 
       return this.validateParentCategoryPermissions(
         parentPaths,
@@ -759,10 +750,8 @@ export class PermissionsService {
       );
     }
 
-
     return { canCreate: true };
   }
-
 
   async validateParentCategoryPermissions(
     categoryPaths: string[],
@@ -772,18 +761,14 @@ export class PermissionsService {
   ): Promise<{ canCreate: boolean; reason?: string }> {
     if (!categoryPaths.length) return { canCreate: true };
 
-
     const parentCategories = await categoryModel
       .find({ categoryPath: { $in: categoryPaths } })
       .select('_id categoryName')
       .lean();
 
-
     if (!parentCategories.length) return { canCreate: true };
 
-
     const parentIds = parentCategories.map((c) => c._id);
-
 
     const permissions = await permissionModel
       .find({
@@ -794,14 +779,11 @@ export class PermissionsService {
       .select('entityId')
       .lean();
 
-
     const allowedSet = new Set(permissions.map((p) => p.entityId.toString()));
-
 
     const blockedParent = parentCategories.find(
       (c) => !allowedSet.has(c._id.toString()),
     );
-
 
     if (blockedParent) {
       return {
@@ -810,28 +792,22 @@ export class PermissionsService {
       };
     }
 
-
     return { canCreate: true };
   }
-
 
   extractParentCategoryPaths(path: string): string[] {
     const parts = path.split('/').filter(Boolean);
     const normalized = parts[0] === 'categories' ? parts.slice(1) : parts;
 
-
     const parents: string[] = [];
-
 
     for (let i = 1; i < normalized.length; i++) {
       parents.push('/categories/' + normalized.slice(0, i).join('/'));
     }
 
-
     return parents;
   }
 
- 
   async getAllCategoryDescendants(
     categoryId: string,
   ): Promise<{ entityType: EntityType; entityId: string }[]> {
