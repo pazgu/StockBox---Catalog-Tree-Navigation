@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { NavLink, useLocation } from "react-router-dom";
-import { Heart, Search, User, Menu, X, ShoppingCart, Bell } from "lucide-react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Heart, User, Menu, X } from "lucide-react";
 import logo from "../../../assets/logo.png";
-import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../context/UserContext";
-import SearchBar from "../SearchBar/SearchBar/SearchBar";
 import { usePath } from "../../../context/PathContext";
+import SearchBar from "../SearchBar/SearchBar/SearchBar";
+
 interface HeaderProps {
   logoSrc?: string;
   cartItemCount?: number;
@@ -16,52 +16,21 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({
   logoSrc = logo,
   favoriteCount = 0,
-  onSearch,
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [isScrolled, setIsScrolled] = useState(false);
+  
   const location = useLocation();
   const navigate = useNavigate();
-  const {setPreviousPath} = usePath();
+  const { setPreviousPath } = usePath();
   const { role } = useUser();
-
-  useEffect(() => {
+  const handleSearchSelect = (item: any) => {
     setIsMobileMenuOpen(false);
-  }, [location]);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setIsMobileMenuOpen(false);
-      }
-    };
-    document.addEventListener("keydown", handleEscape);
-    return () => document.removeEventListener("keydown", handleEscape);
-  }, []);
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 1024 && isMobileMenuOpen) {
-        setIsMobileMenuOpen(false);
-      }
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [isMobileMenuOpen]);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim() && onSearch) {
-      onSearch(searchQuery.trim());
+    if (item.type === "product") {
+      setPreviousPath(location.pathname);
+      navigate(`/products/${item.id}`);
+    } else if (item.type === "category") {
+      navigate(`${item.paths[0]}`);
     }
   };
 
@@ -71,6 +40,24 @@ const Header: React.FC<HeaderProps> = ({
     } after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-[#BA9F71] after:transition-all after:duration-300 hover:after:w-full ${
       isActive ? "after:w-full" : ""
     }`;
+
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 10);
+    const handleResize = () => window.innerWidth >= 1024 && setIsMobileMenuOpen(false);
+    const handleEscape = (e: KeyboardEvent) => e.key === "Escape" && setIsMobileMenuOpen(false);
+
+    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("resize", handleResize);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleResize);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
+
+  useEffect(() => setIsMobileMenuOpen(false), [location]);
 
   const Badge: React.FC<{ count: number }> = ({ count }) => {
     if (count === 0) return null;
@@ -83,7 +70,6 @@ const Header: React.FC<HeaderProps> = ({
 
   return (
     <>
-      {/* Main Header */}
       <header
         className={`fixed top-0 w-full transition-all duration-300 z-50 flex items-center justify-between px-6 ${
           isScrolled
@@ -93,8 +79,9 @@ const Header: React.FC<HeaderProps> = ({
       >
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-20">
+            
             {/* Logo */}
-            <div className="hidden sm:block flex-shrink-0 transform transition-transform duration-300 hover:scale-105">
+            <div className="hidden sm:block flex-shrink-0 transform transition-transform duration-300 hover:scale-105 cursor-pointer">
               <img
                 src={logoSrc}
                 alt="StockBox Logo"
@@ -102,70 +89,46 @@ const Header: React.FC<HeaderProps> = ({
                 onClick={() => navigate("/")}
               />
             </div>
+
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center flex-1 justify-center max-w-3xl mx-8">
               <nav className="flex items-center gap-6" dir="rtl">
-                <NavLink to="/categories" className={navLinkClass}>
-                  תכולות ואמצעים
-                </NavLink>
+                <NavLink to="/categories" className={navLinkClass}>תכולות ואמצעים</NavLink>
                 <span className="text-white/30 animate-pulse">|</span>
-                <NavLink to="/" className={navLinkClass}>
-                  אודות
-                </NavLink>
+                <NavLink to="/" className={navLinkClass}>אודות</NavLink>
+                
                 {!role && (
                   <>
                     <span className="text-white/30 animate-pulse">|</span>
-                    <NavLink to="/login" className={navLinkClass}>
-                      התחברות
-                    </NavLink>
+                    <NavLink to="/login" className={navLinkClass}>התחברות</NavLink>
                   </>
                 )}
               </nav>
             </div>
-            <SearchBar
-              onSelectResult={(item) => {
-                if (item.type === "product") {
-                  setPreviousPath(location.pathname);
+            <div className={`relative flex-1 max-w-md mx-4 ${isMobileMenuOpen ? "hidden" : ""}`}>
+              <SearchBar onSelectResult={handleSearchSelect} />
+            </div>
 
-                  navigate(`/products/${item.id}`);
-                } else if (item.type === "category") {
-                  navigate(`${item.paths[0]}`);
-                }
-              }}
-            />
             {/* Action Icons */}
-            <div
-              className={`flex items-center gap-2 mr-4 ${
-                isMobileMenuOpen ? "hidden" : ""
-              }`}
-            >
-              {/* Favorites */}
-              {!isMobileMenuOpen && (
-                <button
-                  aria-label="Favorites"
-                  className="relative p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 hover:scale-110 mr-2"
-                  onClick={() => navigate("/Favorites")}
-                >
-                  <Heart size={21} className="hover:fill-current" />
-                  <Badge count={favoriteCount} />
-                </button>
-              )}
+            <div className={`flex items-center gap-2 mr-4 ${isMobileMenuOpen ? "hidden" : ""}`}>
+                            <button
+                aria-label="Favorites"
+                className="relative p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 hover:scale-110 mr-2"
+                onClick={() => navigate("/Favorites")}
+              >
+                <Heart size={21} className="hover:fill-current" />
+                <Badge count={favoriteCount} />
+              </button>
 
-              {/* All Users */}
               {role === "editor" && (
                 <div className="relative group">
-                  <button
-                    aria-label="User Profile"
-                    className="relative p-2 rounded-full text-white transition-all duration-300 hover:scale-110"
-                  >
+                  <button className="relative p-2 rounded-full text-white transition-all duration-300 hover:scale-110">
                     <img
                       src="https://img.icons8.com/?size=100&id=cykh8BZMTKkb&format=png&color=FFFFFF"
                       alt="User Avatar"
-                      className="w-10 h-10 rounded-full  hover:bg-white/10 p-1"
+                      className="w-10 h-10 rounded-full hover:bg-white/10 p-1"
                     />
                   </button>
-
-                  {/* Dropdown on hover */}
                   <div className="absolute left-1/2 ml-3 -translate-x-1/2 mt-2 w-40 bg-[#beaa88] rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
                     <button
                       onClick={() => navigate("/AllUsers")}
@@ -183,115 +146,68 @@ const Header: React.FC<HeaderProps> = ({
                 </div>
               )}
 
-              {/* Mobile Menu Toggle */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="lg:hidden p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 active:scale-95 ml-auto "
-                aria-label="Toggle menu"
-                aria-expanded={isMobileMenuOpen}
+                className="lg:hidden p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 active:scale-95 ml-auto"
               >
-                <div className="relative w-6 h-6">
-                  <Menu
-                    size={24}
-                    className={`absolute transition-all duration-300 ${
-                      isMobileMenuOpen
-                        ? "opacity-0 rotate-180"
-                        : "opacity-100 rotate-0"
-                    }`}
-                  />
-                </div>
+                <Menu size={24} className={isMobileMenuOpen ? "opacity-0" : "opacity-100"} />
               </button>
             </div>
           </div>
         </div>
 
-        {/* Mobile Menu */}
-
         <div
-          className={`lg:hidden transition-all duration-500 ease-in-out mt-32 ${
-            isMobileMenuOpen
-              ? "max-h-[600px] opacity-100"
-              : "max-h-0 opacity-0 overflow-hidden"
+          className={`lg:hidden absolute top-0 left-0 w-full transition-all duration-500 ease-in-out mt-3 ${
+            isMobileMenuOpen ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0 overflow-hidden"
           }`}
         >
           <div className="container mx-auto px-4 py-4 bg-gradient-to-b from-[#0a2644] to-[#0D305B]">
-            {/* Mobile Search */}
-            <X
-              size={24}
-              className={`transition-all duration-300 text-white ml-3 ${
-                isMobileMenuOpen
-                  ? "opacity-100 rotate-0"
-                  : "opacity-0 -rotate-180"
-              }`}
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            />
-            <form
-              onSubmit={handleSearch}
-              className="flex items-center bg-white/10 backdrop-blur-sm rounded-full px-1 py-1 mb-6"
-            >
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="חפש מוצר..."
-                className="bg-transparent text-white placeholder-white/70 px-4 py-2 outline-none flex-1 text-right"
-                dir="rtl"
-              />
-              <button
-                type="submit"
-                className="bg-gradient-to-r from-[#E8DFD2] to-[#BA9F71] text-[#0D305B] px-4 py-2 rounded-full transition-all duration-300 active:scale-95"
-              >
-                <Search size={18} />
-              </button>
-            </form>
+            <div className="flex justify-end mb-4">
+               <X size={24} className="text-white cursor-pointer" onClick={() => setIsMobileMenuOpen(false)} />
+            </div>
 
-            {/* Mobile Navigation */}
-            <nav className="flex flex-col gap-4 " dir="rtl">
-              <NavLink
-                to="/"
-                className={navLinkClass}
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                אודות
-              </NavLink>
-              <NavLink
-                to="/categories"
-                className={navLinkClass}
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                תכולות ואמצעים
-              </NavLink>
-              {role !== "editor" && (
-                <NavLink
-                  to="/login"
-                  className={navLinkClass}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  התחברות
-                </NavLink>
-              )}
+            <nav className="flex flex-col gap-4" dir="rtl">
+              <div className="relative z-[999]">
+                <SearchBar onSelectResult={handleSearchSelect} />
+              </div>
+              
+              <NavLink to="/" className={navLinkClass}>אודות</NavLink>
+              <NavLink to="/categories" className={navLinkClass}>תכולות ואמצעים</NavLink>
+              
+              {!role && <NavLink to="/login" className={navLinkClass}>התחברות</NavLink>}
             </nav>
 
             {/* Mobile Quick Actions */}
-            <div className="flex justify-around mt-6 pt-6 border-t border-white/20">
-              {
-                <button className="flex flex-col items-center gap-1 text-white/80 hover:text-white transition-colors">
-                  <Heart size={20} />
-                  <span className="text-xs">מועדפים</span>
-                </button>
-              }
+            <div className="flex justify-around mt-1 pt-6 border-t border-white/20">
+              <button 
+                onClick={() => navigate("/Favorites")}
+                className="flex flex-col items-center gap-1 text-white/80"
+              >
+                <Heart size={20} />
+                <span className="text-xs">מועדפים</span>
+              </button>
+
               {role === "editor" && (
-                <button className="flex flex-col items-center gap-1 text-white/80 hover:text-white transition-colors">
-                  <User size={20} />
-                  <span className="text-xs">כל המשתמשים</span>
-                </button>
+                <>
+                  <button onClick={() => navigate("/AllUsers")} className="flex flex-col items-center gap-1 text-white/80">
+                    <User size={20} />
+                    <span className="text-xs">כל המשתמשים</span>
+                  </button>
+                  <button onClick={() => navigate("/GroupControl")} className="flex flex-col items-center gap-1 text-white/80 mb-4">
+                     <img
+                      src="https://img.icons8.com/?size=100&id=cykh8BZMTKkb&format=png&color=FFFFFF"
+                      alt="User Avatar"
+                      className="size-6"
+                    />
+                    <span className="text-xs">ניהול קבוצות</span>
+                  </button>
+                </>
               )}
             </div>
           </div>
         </div>
       </header>
 
-      {/* Spacer to prevent content from going under fixed header */}
       <div className="h-28" />
     </>
   );
