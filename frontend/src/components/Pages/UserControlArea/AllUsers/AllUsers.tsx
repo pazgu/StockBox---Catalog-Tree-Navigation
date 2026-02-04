@@ -16,7 +16,7 @@ const ROLE_OPTIONS: Array<{ value: User["role"]; label: string }> = [
 const roleLabel = (r: User["role"]) =>
   ROLE_OPTIONS.find((o) => o.value === r)?.label ?? r;
 
-interface AllUsersProps {}
+interface AllUsersProps { }
 
 const AllUsers: FC<AllUsersProps> = () => {
   const navigate = useNavigate();
@@ -45,7 +45,7 @@ const AllUsers: FC<AllUsersProps> = () => {
     }
   }, [searchParams]);
 
-    const filteredUsers = users
+  const filteredUsers = users
     .filter(
       (user) =>
         user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -142,12 +142,12 @@ const AllUsers: FC<AllUsersProps> = () => {
 
           const userIdStr = String(userId);
 
-if (newUsersGroup && !newUsersGroup.members.includes(userIdStr)) {
-  await groupService.updateGroupMembers(newUsersGroup.id, [
-    ...newUsersGroup.members,
-    userIdStr,
-  ]);
-}
+          if (newUsersGroup && !newUsersGroup.members.includes(userIdStr)) {
+            await groupService.updateGroupMembers(newUsersGroup.id, [
+              ...newUsersGroup.members,
+              userIdStr,
+            ]);
+          }
 
         }
 
@@ -265,9 +265,8 @@ if (newUsersGroup && !newUsersGroup.members.includes(userIdStr)) {
           {currentUsers.map((user, index) => (
             <div
               key={user._id}
-              className={`rounded-xl p-4 text-center shadow-sm relative min-h-[110px] transition-transform hover:-translate-y-1 hover:shadow-md border-gray-100 ${
-                user.approved ? "bg-[#fffdf8]" : "bg-gray-100"
-              }`}
+              className={`rounded-xl p-4 text-center shadow-sm relative min-h-[110px] transition-transform hover:-translate-y-1 hover:shadow-md border-gray-100 ${user.approved ? "bg-[#fffdf8]" : "bg-gray-100"
+                }`}
             >
               {!user.approved && (
                 <div
@@ -325,11 +324,10 @@ if (newUsersGroup && !newUsersGroup.members.includes(userIdStr)) {
 
                 {user.approved && (
                   <button
-                    className={`p-1 rounded transition ${
-                      user.isBlocked
+                    className={`p-1 rounded transition ${user.isBlocked
                         ? "bg-red-600 text-white hover:bg-red-700"
                         : "hover:bg-gray-100 opacity-60 hover:opacity-100"
-                    }`}
+                      }`}
                     onClick={() => setBlockUserIndex(index)}
                   >
                     <Ban size={14} />
@@ -373,11 +371,10 @@ if (newUsersGroup && !newUsersGroup.members.includes(userIdStr)) {
                 <div className="text-sm text-gray-600">{user.email}</div>
 
                 <div
-                  className={`inline-block mt-2 text-xs px-2 py-1 rounded-full font-semibold ${
-                    user.isBlocked
+                  className={`inline-block mt-2 text-xs px-2 py-1 rounded-full font-semibold ${user.isBlocked
                       ? "bg-red-200 text-red-700"
                       : "bg-[#0D305B]/10 text-[#0D305B]"
-                  }`}
+                    }`}
                 >
                   {user.isBlocked ? "משתמש חסום" : roleLabel(user.role)}
                 </div>
@@ -425,11 +422,10 @@ if (newUsersGroup && !newUsersGroup.members.includes(userIdStr)) {
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
             <button
               key={page}
-              className={`px-3 py-1 border rounded ${
-                page === currentPage
+              className={`px-3 py-1 border rounded ${page === currentPage
                   ? "bg-[#0D305B] text-[#F0E4D0]"
                   : "text-gray-600 hover:bg-[#0D305B] hover:text-[#F0E4D0]"
-              }`}
+                }`}
               onClick={() => goToPage(page)}
             >
               {page}
@@ -492,11 +488,10 @@ if (newUsersGroup && !newUsersGroup.members.includes(userIdStr)) {
                   ביטול
                 </button>
                 <button
-                  className={`px-4 py-2 rounded text-white ${
-                    currentUsers[blockUserIndex].isBlocked
+                  className={`px-4 py-2 rounded text-white ${currentUsers[blockUserIndex].isBlocked
                       ? "bg-green-700 hover:bg-green-600"
                       : "bg-red-500 hover:bg-red-600"
-                  }`}
+                    }`}
                   onClick={() => confirmBlock()}
                 >
                   {currentUsers[blockUserIndex].isBlocked
@@ -508,67 +503,133 @@ if (newUsersGroup && !newUsersGroup.members.includes(userIdStr)) {
           </div>
         )}
 
+        {/* EDIT MODAL */}
         {showEditModal && userToEdit && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 w-96 text-right shadow-lg">
-              <h2 className="text-xl font-semibold mb-4">עריכת משתמש</h2>
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-gradient-to-br from-white via-[#fffdf8] to-[#fff9ed] rounded-2xl p-8 w-full max-w-3xl text-right shadow-2xl border border-gray-100 transform transition-all">
+              {/* Header with icon */}
+              <div className="flex justify-start w-full mb-6">
+                <h2 className="flex items-center gap-3 text-2xl font-bold text-[#0D305B]">
+                  <svg
+                    className="w-7 h-7 text-[#0D305B]"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <circle
+                      cx="12"
+                      cy="7"
+                      r="4"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
 
-              <label className="block text-sm mb-1">שם פרטי:</label>
-              <input
-                type="text"
-                value={userToEdit.firstName}
-                onChange={(e) => handleEditChange("firstName", e.target.value)}
-                className="w-full border rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-[#0D305B]"
-              />
+                  <span>עריכת משתמש</span>
+                </h2>
+              </div>
 
-              <label className="block text-sm mb-1">שם משפחה:</label>
-              <input
-                type="text"
-                value={userToEdit.lastName}
-                onChange={(e) => handleEditChange("lastName", e.target.value)}
-                className="w-full border rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-[#0D305B]"
-              />
 
-              <label className="block text-sm mb-1">שם משתמש:</label>
-              <input
-                type="text"
-                value={userToEdit.userName}
-                onChange={(e) => handleEditChange("userName", e.target.value)}
-                className="w-full border rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-[#0D305B]"
-              />
 
-              <label className="block text-sm mb-1">אימייל:</label>
-              <input
-                type="email"
-                value={userToEdit.email}
-                onChange={(e) => handleEditChange("email", e.target.value)}
-                className="w-full border rounded px-3 py-2 mb-6 focus:outline-none focus:ring-2 focus:ring-[#0D305B]"
-              />
 
-              <label className="block text-sm mb-1">תפקיד:</label>
-              <select
-                value={userToEdit.role}
-                onChange={(e) =>
-                  handleEditChange("role", e.target.value as User["role"])
-                }
-                className="w-full border rounded px-3 py-2 mb-6 focus:outline-none focus:ring-2 focus:ring-[#0D305B]"
-              >
-                {ROLE_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+              {/* Form fields in 2 columns */}
+              <div className="grid grid-cols-2 gap-x-6 gap-y-5">
+                <div className="group">
+                  <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#0D305B]"></span>
+                    שם פרטי
+                  </label>
+                  <input
+                    type="text"
+                    value={userToEdit.firstName}
+                    onChange={(e) => handleEditChange("firstName", e.target.value)}
+                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
+                  />
+                </div>
 
-              <div className="flex justify-end gap-3">
+                <div className="group">
+                  <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#0D305B]"></span>
+                    שם משפחה
+                  </label>
+                  <input
+                    type="text"
+                    value={userToEdit.lastName}
+                    onChange={(e) => handleEditChange("lastName", e.target.value)}
+                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
+                  />
+                </div>
+
+                <div className="group">
+                  <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#0D305B]"></span>
+                    שם משתמש
+                  </label>
+                  <input
+                    type="text"
+                    value={userToEdit.userName}
+                    onChange={(e) => handleEditChange("userName", e.target.value)}
+                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
+                  />
+                </div>
+
+                <div className="group">
+                  <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#0D305B]"></span>
+                    תפקיד
+                  </label>
+                  <select
+                    value={userToEdit.role}
+                    onChange={(e) =>
+                      handleEditChange("role", e.target.value as User["role"])
+                    }
+                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white cursor-pointer shadow-sm hover:shadow-md"
+                  >
+                    {ROLE_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="group col-span-2">
+                  <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#0D305B]"></span>
+                    אימייל
+                  </label>
+                  <input
+                    type="email"
+                    dir="ltr"
+                    value={userToEdit.email}
+                    onChange={(e) => handleEditChange("email", e.target.value)}
+                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 
+             focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent 
+             transition-all bg-white shadow-sm hover:shadow-md text-left"
+                  />
+
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex justify-end gap-4 mt-8 pt-6 border-t-2 border-gray-200">
                 <button
-                  className="px-4 py-2 rounded border border-gray-300 hover:bg-gray-100"
+                  className="px-6 py-3 rounded-xl border-2 border-gray-300 hover:bg-gray-50 transition-colors font-bold text-gray-700"
                   onClick={handleCancelEdit}
                 >
                   ביטול
                 </button>
                 <button
-                  className="px-4 py-2 rounded bg-[#0D305B] text-white hover:bg-[#15457a]"
+                  className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#0D305B] to-[#15457a] text-white hover:from-[#15457a] hover:to-[#1e5a9e] transition-colors font-bold shadow-lg hover:shadow-xl"
                   onClick={handleSaveEdit}
                 >
                   שמור שינויים
