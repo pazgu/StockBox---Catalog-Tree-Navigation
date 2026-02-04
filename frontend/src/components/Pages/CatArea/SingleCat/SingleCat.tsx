@@ -62,6 +62,8 @@ const SingleCat: FC = () => {
   const [itemToEdit, setItemToEdit] = useState<DisplayItem | null>(null);
   const [isSavingProduct, setIsSavingProduct] = useState(false);
   const [isDeletingItem, setIsDeletingItem] = useState(false);
+  const [hasDescendantsForDelete, setHasDescendantsForDelete] = useState<boolean | null>(null);
+
 
   const location = useLocation();
   const params = useParams();
@@ -252,35 +254,66 @@ const SingleCat: FC = () => {
   };
 
   const handleDelete = (item: DisplayItem) => {
-    setItemToDelete(item);
+  setItemToDelete(item);
 
-    if (item.type === "product" && item.path.length > 1) {
-      setShowSmartDeleteModal(true);
-    } else if (item.type === "category") {
-      setShowCategoryDeleteChoice(true);
-    } else {
-      setShowDeleteModal(true);
-    }
-  };
+  // Product with multiple paths -> smart delete modal
+  if (item.type === "product" && item.path.length > 1) {
+    setShowSmartDeleteModal(true);
+    return;
+  }
+
+  // Category -> check if it has descendants first
+  if (item.type === "category") {
+    (async () => {
+      try {
+        const hasDesc = await categoriesService.hasDescendants(item.id);
+        setHasDescendantsForDelete(hasDesc);
+
+        if (hasDesc) {
+          setShowCategoryDeleteChoice(true); // show cascade/move_up modal
+        } else {
+          setShowDeleteModal(true); // simple confirmation modal
+        }
+      } catch (e) {
+        // fallback: if we can't check, assume it has descendants so we don't delete by mistake
+        setHasDescendantsForDelete(true);
+        setShowCategoryDeleteChoice(true);
+      }
+    })();
+
+    return;
+  }
+
+  // Product with single path -> normal confirmation modal
+  setShowDeleteModal(true);
+};
+
 
   const confirmDelete = async () => {
-    if (!itemToDelete) return;
+  if (!itemToDelete) return;
 
-    try {
-      setIsDeletingItem(true);
+  try {
+    setIsDeletingItem(true);
 
+    if (itemToDelete.type === "category") {
+      // simple delete for category with no descendants
+      await categoriesService.deleteCategory(itemToDelete.id, "cascade");
+      toast.success(`הקטגוריה "${itemToDelete.name}" נמחקה בהצלחה!`);
+    } else {
       await ProductsService.deleteProduct(itemToDelete.id);
       toast.success(`המוצר "${itemToDelete.name}" נמחק מכל המיקומים!`);
-
-      setItems(items.filter((item) => item.id !== itemToDelete.id));
-    } catch (error) {
-      toast.error("שגיאה במחיקה");
-    } finally {
-      setIsDeletingItem(false);
-      setShowDeleteModal(false);
-      setItemToDelete(null);
     }
-  };
+
+    await loadAllContent();
+  } catch (error) {
+    toast.error("שגיאה במחיקה");
+  } finally {
+    setIsDeletingItem(false);
+    setShowDeleteModal(false);
+    setItemToDelete(null);
+  }
+};
+
 
   const handleDeleteFromCurrent = async () => {
     if (!itemToDelete) return;
@@ -374,6 +407,7 @@ const SingleCat: FC = () => {
       setIsDeletingItem(false);
       setCategoryDeleteStrategyLoading(null);
       setShowCategoryDeleteChoice(false);
+      setHasDescendantsForDelete(null);
       setItemToDelete(null);
     }
   };
