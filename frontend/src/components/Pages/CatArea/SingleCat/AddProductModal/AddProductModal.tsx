@@ -167,10 +167,6 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
 
     ctx.save();
     ctx.scale(canvasScale, canvasScale);
-    ctx.beginPath();
-    ctx.arc(CROP_BOX / 2, CROP_BOX / 2, CROP_BOX / 2, 0, Math.PI * 2);
-    ctx.closePath();
-    ctx.clip();
 
     ctx.translate(CROP_BOX / 2, CROP_BOX / 2);
     ctx.translate(offset.x, offset.y);
@@ -252,7 +248,6 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
               style={{
                 width: CROP_BOX,
                 height: CROP_BOX,
-                borderRadius: "50%",
                 position: "relative",
                 touchAction: "none",
                 overscrollBehavior: "contain",
@@ -372,7 +367,6 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
               <div
                 className="pointer-events-none absolute inset-0"
                 style={{
-                  borderRadius: "50%",
                   boxShadow: "0 0 0 9999px rgba(0,0,0,0.45)",
                   outline: "2px solid rgba(255,255,255,0.7)",
                   outlineOffset: "-2px",
@@ -440,7 +434,7 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
           <img
             src={committedPreview}
             alt="preview"
-            className="max-w-full mt-2.5 rounded-lg mb-4 h-40 object-cover"
+            className="max-w-full mt-2.5 mb-4 h-40 object-cover"
           />
         )}
 
