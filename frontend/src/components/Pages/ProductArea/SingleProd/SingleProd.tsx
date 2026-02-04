@@ -73,7 +73,6 @@ const SingleProd: FC<SingleProdProps> = () => {
   useEffect(() => {
     if (!productId) return;
 
-
     const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(productId);
     if (!isValidObjectId) {
       navigate("/404", { replace: true });
