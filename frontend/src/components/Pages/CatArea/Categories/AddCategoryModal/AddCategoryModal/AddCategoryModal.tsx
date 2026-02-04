@@ -162,10 +162,6 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
 
     ctx.save();
     ctx.scale(canvasScale, canvasScale);
-    ctx.beginPath();
-    ctx.arc(CROP_BOX / 2, CROP_BOX / 2, CROP_BOX / 2, 0, Math.PI * 2);
-    ctx.closePath();
-    ctx.clip();
 
     ctx.translate(CROP_BOX / 2, CROP_BOX / 2);
     ctx.translate(offset.x, offset.y);
@@ -260,7 +256,6 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
               style={{
                 width: CROP_BOX,
                 height: CROP_BOX,
-                borderRadius: "50%",
                 position: "relative",
                 touchAction: "none",
                 overscrollBehavior: "contain",
