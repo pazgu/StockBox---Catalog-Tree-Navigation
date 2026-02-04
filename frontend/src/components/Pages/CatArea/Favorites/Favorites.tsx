@@ -143,8 +143,10 @@ export const Favorites: React.FC = () => {
   const showProducts = activeFilter === "all" || activeFilter === "products";
   if (!id) {
     return (
-      <div className="pt-32 text-center">
-        <p className="text-gray-600 text-lg">יש להתחבר כדי לצפות במועדפים</p>
+       <div className="mt-12 p-4 flex items-center justify-center min-h-[400px]">
+        <div className="text-slate-700 text-xl">
+          יש להתחבר כדי לצפות במועדפים
+        </div>
       </div>
     );
   }
