@@ -14,7 +14,7 @@ export interface SearchHeaderProps {
 
 const SearchBar: React.FC<SearchHeaderProps> = ({
   placeholder = "חפש מוצר...",
-  maxVisibleResults = 1,
+  maxVisibleResults = 3,
   onSelectResult,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -243,7 +243,7 @@ const SearchBar: React.FC<SearchHeaderProps> = ({
                 ))}
               </div>
 
-              {results.length > maxVisibleResults && (
+              {results.length >= maxVisibleResults && (
                 <div className="border-t border-gray-200">
                   <button
                     onClick={handleShowAll}
