@@ -382,101 +382,172 @@ useEffect(() => {
         />
       )}
 
-      {showAddGroupModal && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
-        >
-          <div className="bg-white rounded-xl p-6 w-96 text-center shadow-lg">
-            <h3 className="text-lg font-semibold mb-3">יצירת קבוצה חדשה</h3>
-            <input
-  ref={inputRef}
-  type="text"
-  value={newGroupName}
-  maxLength={MAX_GROUP_NAME_LEN}
-  onChange={(e) => setNewGroupName(e.target.value.slice(0, MAX_GROUP_NAME_LEN))}
-  placeholder="שם הקבוצה"
-  className="w-full p-2 mb-4 border border-gray-300 rounded-lg text-right"
-  aria-label="שם הקבוצה החדשה"
-/>
+     {showAddGroupModal && (
+  <div
+    role="dialog"
+    aria-modal="true"
+    className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+    onClick={closeAddGroupModal}
+  >
+    <div
+      className="bg-gradient-to-br from-white via-[#fffdf8] to-[#fff9ed] rounded-2xl p-8 w-full max-w-md shadow-2xl border border-gray-100 text-right"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Title */}
+      <div className="flex justify-start w-full mb-6">
+        <h3 className="flex items-center gap-3 text-2xl font-bold text-[#0D305B]">
+          <Users className="w-7 h-7" />
+          <span>יצירת קבוצה חדשה</span>
+        </h3>
+      </div>
 
-            <div className="flex justify-between gap-3">
-              <button
-                onClick={closeAddGroupModal}
-                className="flex-1 p-3 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                ביטול
-              </button>
-              <button
-                onClick={saveNewGroup}
-                className="flex-1 p-3 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
-              >
-                הוסף קבוצה
-              </button>
-            </div>
-          </div>
+      {/* Input */}
+      <div className="group mb-2">
+        <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#0D305B]"></span>
+          שם הקבוצה
+        </label>
+
+        <input
+          ref={inputRef}
+          type="text"
+          value={newGroupName}
+          maxLength={MAX_GROUP_NAME_LEN}
+          onChange={(e) =>
+            setNewGroupName(e.target.value.slice(0, MAX_GROUP_NAME_LEN))
+          }
+          placeholder="שם הקבוצה"
+          className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 mb-2 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md text-right"
+          aria-label="שם הקבוצה החדשה"
+        />
+
+        <div className="text-xs text-gray-500 mb-3">
+          {newGroupName.length}/{MAX_GROUP_NAME_LEN}
         </div>
-      )}
+      </div>
+
+      {/* Buttons */}
+      <div className="flex justify-end gap-4 mt-6 pt-6 border-t-2 border-gray-200">
+        <button
+          type="button"
+          onClick={closeAddGroupModal}
+          className="px-6 h-12 rounded-xl border-2 border-gray-300 transition-colors font-bold bg-white text-gray-700 hover:bg-gray-50"
+        >
+          ביטול
+        </button>
+
+        <button
+          type="button"
+          onClick={saveNewGroup}
+          disabled={!newGroupName.trim()}
+          className={`px-8 h-12 rounded-xl text-white transition-colors font-bold shadow-lg
+            ${
+              !newGroupName.trim()
+                ? "bg-slate-400 cursor-not-allowed"
+                : "bg-gradient-to-r from-[#0D305B] to-[#15457a] hover:from-[#15457a] hover:to-[#1e5a9e] hover:shadow-xl"
+            }`}
+        >
+          הוסף קבוצה
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
 
       {groupToDelete && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-96 text-center shadow-lg">
-            <p className="text-slate-700 mb-3">
-              האם ברצונך למחוק את הקבוצה "{groupToDelete.name}"?
-            </p>
-            <small className="text-gray-500">
-              לא ניתן לבטל פעולה זו לאחר מכן
-            </small>
-            <div className="flex justify-between gap-3 mt-5">
-              <button
-                onClick={closeDeleteModal}
-                className="flex-1 p-3 border-none rounded-lg text-base font-medium cursor-pointer transition-all duration-200 bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"
-              >
-                ביטול
-              </button>
-              <button
-                onClick={confirmDeleteGroup}
-                className="flex-1 p-3 border-none rounded-lg text-base font-medium cursor-pointer transition-all duration-200 bg-red-600 text-white shadow-md hover:bg-red-700 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"
-              >
-               מחיקה
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {groupToEdit && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-96 text-center shadow-lg">
-            <h3 className="text-lg font-semibold mb-3">עריכת שם הקבוצה</h3>
-            <input
-  type="text"
-  value={editedGroupName}
-  maxLength={MAX_GROUP_NAME_LEN}
-  onChange={(e) =>
-    setEditedGroupName(e.target.value.slice(0, MAX_GROUP_NAME_LEN))
-  }
-  placeholder="שם חדש לקבוצה"
-  className="w-full p-2 mb-4 border border-gray-300 rounded-lg text-right"
-/>
+  <div
+    className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+    onClick={closeDeleteModal}
+  >
+    <div
+      className="bg-gradient-to-br from-white via-[#fffdf8] to-[#fff9ed] rounded-2xl p-8 w-full max-w-md shadow-2xl border border-gray-100 text-right"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="flex justify-start w-full mb-4">
+        <h3 className="flex items-center gap-3 text-2xl font-bold text-[#0D305B]">
+          <Users className="w-7 h-7" />
+          <span>מחיקת קבוצה</span>
+        </h3>
+      </div>
 
-            <div className="flex justify-between gap-3">
-              <button
-                onClick={() => setGroupToEdit(null)}
-                className="flex-1 p-3 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                ביטול
-              </button>
-              <button
-                onClick={saveEditedGroup}
-                className="flex-1 p-3 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
-              >
-                שמור
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <p className="text-slate-700 mb-2">
+        האם ברצונך למחוק את הקבוצה "{groupToDelete.name}"?
+      </p>
+      <small className="text-gray-500 block mb-6">
+        לא ניתן לבטל פעולה זו לאחר מכן
+      </small>
+
+      {/* aligned buttons (no jump) */}
+      <div className="flex justify-end gap-4 pt-6 border-t-2 border-gray-200">
+        <button
+          type="button"
+          onClick={closeDeleteModal}
+          className="flex-1 h-12 rounded-xl border-2 border-gray-300 font-bold bg-white text-gray-700 transition-colors hover:bg-gray-50"
+        >
+          ביטול
+        </button>
+
+        <button
+          type="button"
+          onClick={confirmDeleteGroup}
+          className="flex-1 h-12 rounded-xl font-bold text-white transition-colors shadow-lg bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 hover:shadow-xl"
+        >
+          מחיקה
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+    {groupToEdit && (
+  <div
+    className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+    onClick={() => setGroupToEdit(null)}
+  >
+    <div
+      className="bg-gradient-to-br from-white via-[#fffdf8] to-[#fff9ed] rounded-2xl p-8 w-full max-w-md shadow-2xl border border-gray-100 text-right"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="flex justify-start w-full mb-6">
+        <h3 className="flex items-center gap-3 text-2xl font-bold text-[#0D305B]">
+          <Users className="w-7 h-7" />
+          <span>עריכת שם הקבוצה</span>
+        </h3>
+      </div>
+
+      <input
+        type="text"
+        value={editedGroupName}
+        maxLength={MAX_GROUP_NAME_LEN}
+        onChange={(e) =>
+          setEditedGroupName(e.target.value.slice(0, MAX_GROUP_NAME_LEN))
+        }
+        placeholder="שם חדש לקבוצה"
+        className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 mb-5 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md text-right"
+      />
+
+      <div className="flex justify-end gap-4 mt-6 pt-6 border-t-2 border-gray-200">
+        <button
+          type="button"
+          onClick={() => setGroupToEdit(null)}
+          className="px-6 h-12 rounded-xl border-2 border-gray-300 transition-colors font-bold bg-white text-gray-700 hover:bg-gray-50"
+        >
+          ביטול
+        </button>
+
+        <button
+          type="button"
+          onClick={saveEditedGroup}
+          className="px-8 h-12 rounded-xl text-white transition-colors font-bold shadow-lg bg-gradient-to-r from-[#0D305B] to-[#15457a] hover:from-[#15457a] hover:to-[#1e5a9e] hover:shadow-xl"
+        >
+          שמור
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 };

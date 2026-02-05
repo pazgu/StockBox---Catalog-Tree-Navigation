@@ -215,278 +215,295 @@ const EditCategoryModal: React.FC<Props> = ({
 
 
 
-  return (
+ return (
+  <div
+    className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+    onClick={() => {
+      if (!isSaving) onClose();
+    }}
+  >
     <div
-      className="fixed inset-0 bg-slate-900 bg-opacity-85 backdrop-blur-xl flex items-center justify-center z-50 transition-all duration-300 p-4"
-      onClick={() => {
-  if (!isSaving) onClose();
-}}
-
+      className="bg-gradient-to-br from-white via-[#fffdf8] to-[#fff9ed] rounded-2xl p-8 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-100 text-right"
+      onClick={(e) => e.stopPropagation()}
     >
-      <div
-        className="bg-white p-8 rounded-xl w-[800px] max-w-[95%] max-h-[90vh] overflow-y-auto shadow-2xl text-center transform translate-y-[-2px]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h4 className="m-0 mb-5 text-xl text-slate-700 font-semibold tracking-tight">
-עריכת קטגוריה        </h4>
+      {/* Header */}
+      <div className="flex justify-start w-full mb-6">
+        <h2 className="flex items-center gap-3 text-2xl font-bold text-[#0D305B]">
+          <svg
+            className="w-7 h-7 text-[#0D305B]"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M11.5 2a1.9 1.9 0 0 1 2.6 2.6L4.8 13.9 1 15l1.1-3.8L11.5 2z"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <span>עריכת קטגוריה</span>
+        </h2>
+      </div>
+
+      {/* Name field */}
+      <div className="group mb-5">
+        <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#0D305B]"></span>
+          שם קטגוריה
+        </label>
 
         <input
           type="text"
           placeholder="שם קטגוריה"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full p-3 border-2 border-gray-200 rounded-lg mb-5 text-base transition-all duration-200 outline-none focus:border-slate-700 focus:ring focus:ring-slate-700 focus:ring-opacity-10"
+          className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
         />
+      </div>
 
-        {/* upload to open cropper */}
+      {/* Image upload */}
+      <div className="group mb-4">
+        <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#0D305B]"></span>
+          תמונת קטגוריה
+        </label>
+
         <input
           type="file"
           accept="image/*"
           onChange={onFileChange}
-          className="w-full mb-4"
+          className="w-full file:mr-4 file:py-2 file:px-4 file:rounded-xl
+                     file:border-0 file:text-sm file:font-bold
+                     file:bg-[#0D305B] file:text-white
+                     hover:file:bg-[#15457a]
+                     text-sm text-gray-600"
         />
+      </div>
 
-        {/* edit current image without uploading */}
-        {!isEditCropperOpen && previewImage && (
-          <button
-            type="button"
-            onClick={openCropperFromCurrent}
-            className="w-full mb-4 px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-slate-700 font-medium transition-all"
-          >
-            עריכת מיקום/זום של התמונה הנוכחית
-          </button>
-        )}
+      {/* Edit current image without uploading */}
+      {!isEditCropperOpen && previewImage && (
+        <button
+          type="button"
+          onClick={openCropperFromCurrent}
+          className="w-full mb-4 px-4 py-3 rounded-xl bg-white border-2 border-gray-200 hover:bg-gray-50 text-[#0D305B] font-bold transition-all shadow-sm hover:shadow-md"
+        >
+          עריכת מיקום/זום של התמונה הנוכחית
+        </button>
+      )}
 
-        {isEditCropperOpen && editRawImage && (
-          <div className="w-full flex flex-col items-center mb-4">
-            <div
-              ref={editCropRef}
-              className="relative overflow-hidden select-none touch-none bg-white shadow-lg ring-1 ring-gray-200"
-              style={{
-                width: CROP_BOX,
-                height: CROP_BOX,
-                borderRadius: "50%",
-                position: "relative",
-                touchAction: "none",
-                overscrollBehavior: "contain",
-              }}
-              onWheel={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const rect = (
-                  editCropRef.current as HTMLDivElement
-                ).getBoundingClientRect();
-                const cursor = {
-                  x: e.clientX - rect.left,
-                  y: e.clientY - rect.top,
-                };
-                const delta = Math.sign(e.deltaY) * -0.1;
-                const next = Math.min(
-                  4,
-                  Math.max(1, +(editZoom + delta).toFixed(3))
-                );
-                if (next === editZoom) return;
+      {/* Cropper */}
+      {isEditCropperOpen && editRawImage && (
+        <div className="w-full flex flex-col items-center mb-4">
+          <div
+            ref={editCropRef}
+            className="relative overflow-hidden select-none touch-none bg-white shadow-lg ring-1 ring-gray-200"
+            style={{
+              width: CROP_BOX,
+              height: CROP_BOX,
+              borderRadius: "50%",
+              position: "relative",
+              touchAction: "none",
+              overscrollBehavior: "contain",
+            }}
+            onWheel={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const rect = (
+                editCropRef.current as HTMLDivElement
+              ).getBoundingClientRect();
+              const cursor = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+              const delta = Math.sign(e.deltaY) * -0.1;
+              const next = Math.min(4, Math.max(1, +(editZoom + delta).toFixed(3)));
+              if (next === editZoom) return;
 
-                const newOffset = anchoredZoom(
-                  editZoom,
+              const newOffset = anchoredZoom(
+                editZoom,
+                next,
+                editOffset,
+                cursor,
+                editRawImage.naturalWidth,
+                editRawImage.naturalHeight,
+                CROP_BOX
+              );
+              setEditZoom(next);
+              setEditOffset(newOffset);
+            }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              setIsEditPanning(true);
+              setEditStartPan({
+                x: e.clientX - editOffset.x,
+                y: e.clientY - editOffset.y,
+              });
+            }}
+            onMouseMove={(e) => {
+              if (!isEditPanning) return;
+              const next = { x: e.clientX - editStartPan.x, y: e.clientY - editStartPan.y };
+              setEditOffset(
+                clampOffsetToCircle(
                   next,
-                  editOffset,
-                  cursor,
                   editRawImage.naturalWidth,
                   editRawImage.naturalHeight,
+                  editZoom,
                   CROP_BOX
-                );
-                setEditZoom(next);
-                setEditOffset(newOffset);
+                )
+              );
+            }}
+            onMouseUp={() => setIsEditPanning(false)}
+            onMouseLeave={() => setIsEditPanning(false)}
+            onTouchStart={(e) => {
+              const t = e.touches[0];
+              setIsEditPanning(true);
+              setEditStartPan({
+                x: t.clientX - editOffset.x,
+                y: t.clientX - editOffset.y,
+              });
+            }}
+            onTouchMove={(e) => {
+              if (!isEditPanning) return;
+              const t = e.touches[0];
+              const next = { x: t.clientX - editStartPan.x, y: t.clientY - editStartPan.y };
+              setEditOffset(
+                clampOffsetToCircle(
+                  next,
+                  editRawImage.naturalWidth,
+                  editRawImage.naturalHeight,
+                  editZoom,
+                  CROP_BOX
+                )
+              );
+            }}
+            onTouchEnd={() => setIsEditPanning(false)}
+          >
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  "linear-gradient(45deg, #f3f4f6 25%, transparent 25%), linear-gradient(-45deg, #f3f4f6 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f3f4f6 75%), linear-gradient(-45deg, transparent 75%, #f3f4f6 75%)",
+                backgroundSize: "20px 20px",
+                backgroundPosition: "0 0, 0 10px, 10px -10px, -10px 0",
+                zIndex: 0,
               }}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                setIsEditPanning(true);
-                setEditStartPan({
-                  x: e.clientX - editOffset.x,
-                  y: e.clientY - editOffset.y,
-                });
-              }}
-              onMouseMove={(e) => {
-                if (!isEditPanning) return;
-                const next = {
-                  x: e.clientX - editStartPan.x,
-                  y: e.clientY - editStartPan.y,
-                };
-                setEditOffset(
-                  clampOffsetToCircle(
-                    next,
-                    editRawImage.naturalWidth,
-                    editRawImage.naturalHeight,
-                    editZoom,
-                    CROP_BOX
-                  )
-                );
-              }}
-              onMouseUp={() => setIsEditPanning(false)}
-              onMouseLeave={() => setIsEditPanning(false)}
-              onTouchStart={(e) => {
-                const t = e.touches[0];
-                setIsEditPanning(true);
-                setEditStartPan({
-                  x: t.clientX - editOffset.x,
-                  y: t.clientY - editOffset.y,
-                });
-              }}
-              onTouchMove={(e) => {
-                if (!isEditPanning) return;
-                const t = e.touches[0];
-                const next = {
-                  x: t.clientX - editStartPan.x,
-                  y: t.clientY - editStartPan.y,
-                };
-                setEditOffset(
-                  clampOffsetToCircle(
-                    next,
-                    editRawImage.naturalWidth,
-                    editRawImage.naturalHeight,
-                    editZoom,
-                    CROP_BOX
-                  )
-                );
-              }}
-              onTouchEnd={() => setIsEditPanning(false)}
-            >
-              {/* checker bg */}
-              <div
-                className="absolute inset-0"
-                style={{
-                  background:
-                    "linear-gradient(45deg, #f3f4f6 25%, transparent 25%), linear-gradient(-45deg, #f3f4f6 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f3f4f6 75%), linear-gradient(-45deg, transparent 75%, #f3f4f6 75%)",
-                  backgroundSize: "20px 20px",
-                  backgroundPosition: "0 0, 0 10px, 10px -10px, -10px 0",
-                  zIndex: 0,
-                }}
-              />
+            />
 
-              {/* image layer */}
-              <img
-                src={editRawImage.src}
-                alt="edit-crop"
-                draggable={false}
-                className="absolute top-1/2 left-1/2 will-change-transform z-10"
-                style={{
-                  transform: `translate(calc(-50% + ${editOffset.x}px), calc(-50% + ${editOffset.y}px)) scale(${editZoom})`,
-                  transformOrigin: "center center",
-                  width:
-                    editRawImage.naturalWidth >= editRawImage.naturalHeight
-                      ? (CROP_BOX * editRawImage.naturalWidth) /
-                        editRawImage.naturalHeight
-                      : CROP_BOX,
-                  height:
-                    editRawImage.naturalHeight > editRawImage.naturalWidth
-                      ? (CROP_BOX * editRawImage.naturalHeight) /
-                        editRawImage.naturalWidth
-                      : CROP_BOX,
-                }}
-              />
+            <img
+              src={editRawImage.src}
+              alt="edit-crop"
+              draggable={false}
+              className="absolute top-1/2 left-1/2 will-change-transform z-10"
+              style={{
+                transform: `translate(calc(-50% + ${editOffset.x}px), calc(-50% + ${editOffset.y}px)) scale(${editZoom})`,
+                transformOrigin: "center center",
+                width:
+                  editRawImage.naturalWidth >= editRawImage.naturalHeight
+                    ? (CROP_BOX * editRawImage.naturalWidth) / editRawImage.naturalHeight
+                    : CROP_BOX,
+                height:
+                  editRawImage.naturalHeight > editRawImage.naturalWidth
+                    ? (CROP_BOX * editRawImage.naturalHeight) / editRawImage.naturalWidth
+                    : CROP_BOX,
+              }}
+            />
 
-              {/* dark mask */}
-              <div
-                className="pointer-events-none absolute inset-0"
-                style={{
-                  borderRadius: "50%",
-                  boxShadow: "0 0 0 9999px rgba(0,0,0,0.45)",
-                  outline: "2px solid rgba(255,255,255,0.7)",
-                  outlineOffset: "-2px",
-                  zIndex: 20,
-                }}
-              />
-            </div>
-
-            {/* controls */}
-            <div className="flex items-center gap-2 mt-3">
-              <button
-                type="button"
-                onClick={() =>
-                  setEditZoom((z) => Math.max(1, +(z - 0.1).toFixed(2)))
-                }
-                className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-slate-700"
-              >
-                -
-              </button>
-              <div className="px-2 text-sm text-slate-600">
-                זום: {editZoom.toFixed(2)}
-              </div>
-              <button
-                type="button"
-                onClick={() =>
-                  setEditZoom((z) => Math.min(4, +(z + 0.1).toFixed(2)))
-                }
-                className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-slate-700"
-              >
-                +
-              </button>
-              <button
-                type="button"
-                onClick={resetEditCrop}
-                className="ml-2 px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-slate-700"
-              >
-                איפוס
-              </button>
-              <button
-                type="button"
-                onClick={commitEditCrop}
-                className="ml-2 px-3 py-2 rounded-lg bg-slate-700 text-white hover:bg-slate-600"
-              >
-                השתמש בתמונה
-              </button>
-            </div>
+            <div
+              className="pointer-events-none absolute inset-0"
+              style={{
+                borderRadius: "50%",
+                boxShadow: "0 0 0 9999px rgba(0,0,0,0.45)",
+                outline: "2px solid rgba(255,255,255,0.7)",
+                outlineOffset: "-2px",
+                zIndex: 20,
+              }}
+            />
           </div>
-        )}
 
-        {/* preview */}
-        {!isEditCropperOpen && previewImage && (
-          <img
-            src={previewImage}
-            alt="preview"
-            className="max-w-full mt-2.5 rounded-lg mb-4 h-40 object-cover"
-          />
-        )}
+          {/* controls */}
+          <div className="flex items-center gap-2 mt-4">
+            <button
+              type="button"
+              onClick={() => setEditZoom((z) => Math.max(1, +(z - 0.1).toFixed(2)))}
+              className="px-3 py-2 rounded-xl bg-white border-2 border-gray-200 hover:bg-gray-50 text-[#0D305B] font-bold"
+            >
+              -
+            </button>
 
-        <div className="flex justify-between gap-3">
-          <button
-  onClick={handleSave}
-  disabled={isSaving || isEditCropperOpen}
-  className={`flex-1 p-3 rounded-lg text-base font-medium transition-all duration-200 text-white shadow-md ${
-    isSaving || isEditCropperOpen
-      ? "bg-slate-400 cursor-not-allowed"
-      : "bg-slate-700 hover:bg-slate-600 hover:-translate-y-px hover:shadow-lg"
-  }`}
->
-  {isSaving ? (
-    <span className="flex items-center justify-center gap-2">
-      <Spinner className="size-4 text-white" />
-      שומר...
-    </span>
-  ) : (
-    "שמור"
-  )}
-</button>
+            <div className="px-2 text-sm text-gray-600 font-semibold">
+              זום: {editZoom.toFixed(2)}
+            </div>
 
+            <button
+              type="button"
+              onClick={() => setEditZoom((z) => Math.min(4, +(z + 0.1).toFixed(2)))}
+              className="px-3 py-2 rounded-xl bg-white border-2 border-gray-200 hover:bg-gray-50 text-[#0D305B] font-bold"
+            >
+              +
+            </button>
 
-         <button
-  onClick={onClose}
-  disabled={isSaving}
-  className={`flex-1 p-3 border-none rounded-lg text-base font-medium transition-all duration-200 border
-    ${
-      isSaving
-        ? "bg-gray-100 text-gray-300 cursor-not-allowed border-gray-200"
-        : "bg-gray-100 text-gray-500 border border-gray-300 hover:bg-gray-300 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"
-    }`}
->
-  ביטול
-</button>
+            <button
+              type="button"
+              onClick={resetEditCrop}
+              className="ml-2 px-4 py-2 rounded-xl bg-white border-2 border-gray-200 hover:bg-gray-50 text-gray-700 font-bold"
+            >
+              איפוס
+            </button>
 
+            <button
+              type="button"
+              onClick={commitEditCrop}
+              className="ml-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#0D305B] to-[#15457a] text-white hover:from-[#15457a] hover:to-[#1e5a9e] font-bold shadow-lg hover:shadow-xl"
+            >
+              השתמש בתמונה
+            </button>
+          </div>
         </div>
+      )}
+
+      {/* Preview */}
+      {!isEditCropperOpen && previewImage && (
+        <img
+          src={previewImage}
+          alt="preview"
+          className="max-w-full mt-2.5 rounded-xl mb-4 h-40 object-cover shadow-sm"
+        />
+      )}
+
+      {/* Actions */}
+      <div className="flex justify-end gap-4 mt-8 pt-6 border-t-2 border-gray-200">
+        <button
+          onClick={onClose}
+          disabled={isSaving}
+          className={`px-6 py-3 rounded-xl border-2 border-gray-300 transition-colors font-bold
+            ${isSaving ? "bg-gray-100 text-gray-300 cursor-not-allowed" : "bg-white text-gray-700 hover:bg-gray-50"}`}
+        >
+          ביטול
+        </button>
+
+        <button
+          onClick={handleSave}
+          disabled={isSaving || isEditCropperOpen}
+          className={`px-8 py-3 rounded-xl text-white transition-colors font-bold shadow-lg
+            ${
+              isSaving || isEditCropperOpen
+                ? "bg-slate-400 cursor-not-allowed"
+                : "bg-gradient-to-r from-[#0D305B] to-[#15457a] hover:from-[#15457a] hover:to-[#1e5a9e] hover:shadow-xl"
+            }`}
+        >
+          {isSaving ? (
+            <span className="flex items-center justify-center gap-2">
+              <Spinner className="size-4 text-white" />
+              שומר...
+            </span>
+          ) : (
+            "שמור שינויים"
+          )}
+        </button>
       </div>
     </div>
-  );
+  </div>
+);
+
 };
 
 export default EditCategoryModal;
