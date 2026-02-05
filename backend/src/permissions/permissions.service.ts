@@ -1035,20 +1035,4 @@ export class PermissionsService {
       paths: pathsWithPermissions.filter((p) => p !== null),
     };
   }
-
-  async deletePermissionsForEntity(entityType: EntityType, entityId: string) {
-    const entityObjectId = new Types.ObjectId(entityId);
-
-    const result = await this.permissionModel.deleteMany({
-      entityType,
-      entityId: entityObjectId,
-    });
-
-    return {
-      success: true,
-      entityType,
-      entityId,
-      deleted: result.deletedCount ?? 0,
-    };
-  }
 }
