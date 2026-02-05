@@ -52,6 +52,19 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
   const [permissionIdByKey, setPermissionIdByKey] = useState<Record<string, string>>({});
   const [showInheritanceModal, setShowInheritanceModal] = useState(false);
   const [pendingUnblockItems, setPendingUnblockItems] = useState<BannedItem[]>([]);
+  useEffect(() => {
+  const prevBodyOverflow = document.body.style.overflow;
+  const prevHtmlOverflow = document.documentElement.style.overflow;
+
+  document.body.style.overflow = "hidden";
+  document.documentElement.style.overflow = "hidden";
+
+  return () => {
+    document.body.style.overflow = prevBodyOverflow;
+    document.documentElement.style.overflow = prevHtmlOverflow;
+  };
+}, []);
+
   const navigate = useNavigate();
   const { setPreviousPath,previousPath } = usePath();
   const location = useLocation();
