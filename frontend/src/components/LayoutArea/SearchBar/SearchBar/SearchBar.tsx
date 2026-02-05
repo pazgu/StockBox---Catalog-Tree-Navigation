@@ -14,7 +14,7 @@ export interface SearchHeaderProps {
 
 const SearchBar: React.FC<SearchHeaderProps> = ({
   placeholder = "חפש מוצר...",
-  maxVisibleResults = 1,
+  maxVisibleResults = 3,
   onSelectResult,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -139,14 +139,14 @@ const SearchBar: React.FC<SearchHeaderProps> = ({
   };
 
   return (
-    <div className="relative">
-      <div
-        className={`hidden md:flex items-center backdrop-blur-sm rounded-full px-1 py-1 transition-all duration-300 ${
-          isSearchFocused
-            ? "bg-white/20 shadow-lg"
-            : "bg-white/10 hover:bg-white/15"
-        }`}
-      >
+   <div className="relative w-full">
+    <div
+      className={`flex items-center backdrop-blur-sm rounded-full px-1 py-1 transition-all duration-300 ${
+        isSearchFocused
+          ? "bg-white/20 shadow-lg"
+          : "bg-white/10 hover:bg-white/15"
+      }`}
+    >
         <div className="relative flex-1">
           <input
             ref={searchRef}
@@ -243,7 +243,7 @@ const SearchBar: React.FC<SearchHeaderProps> = ({
                 ))}
               </div>
 
-              {results.length > maxVisibleResults && (
+              {results.length >= maxVisibleResults && (
                 <div className="border-t border-gray-200">
                   <button
                     onClick={handleShowAll}
