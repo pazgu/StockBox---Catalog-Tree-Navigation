@@ -58,7 +58,6 @@ export class CategoriesService {
   }
 
   async getCategories(user: { userId: string; role: string }) {
-
     const categories = await this.categoryModel.find({
       categoryPath: /^\/categories\/[^\/]+$/,
     });
@@ -70,7 +69,6 @@ export class CategoriesService {
     if (user.role !== 'viewer') {
       return [];
     }
-
 
     const { userGroupIds, allowedByEntityId } =
       await this.buildAllowedMapForUser(user);
@@ -178,6 +176,11 @@ export class CategoriesService {
     );
 
     if (strategy === 'cascade') {
+      await this.permissionsService.deletePermissionsForEntity(
+        EntityType.CATEGORY,
+        id,
+        { cascade: true },
+      );
       await this.categoryModel.deleteMany({
         categoryPath: new RegExp(`^${escapedCategoryPath}/`),
       });
@@ -251,15 +254,12 @@ export class CategoriesService {
       );
     }
 
-    await this.categoryModel.findByIdAndDelete(id);
+    await this.permissionsService.deletePermissionsForEntity(
+      EntityType.CATEGORY,
+      id,
+    );
     await this.categoryModel.findByIdAndDelete(id);
 
-    await this.usersService.removeItemFromAllUserFavorites(id);
-    for (const subcat of subcategoriesToDelete) {
-      await this.usersService.removeItemFromAllUserFavorites(
-        subcat._id.toString(),
-      );
-    }
     await this.usersService.removeItemFromAllUserFavorites(id);
     for (const subcat of subcategoriesToDelete) {
       await this.usersService.removeItemFromAllUserFavorites(
@@ -575,5 +575,29 @@ export class CategoriesService {
   private getParentPath(fullCategoryPath: string): string {
     const idx = fullCategoryPath.lastIndexOf('/');
     return idx === -1 ? '' : fullCategoryPath.substring(0, idx);
+  }
+
+  async hasDescendants(
+    categoryId: string,
+  ): Promise<{ hasDescendants: boolean }> {
+    const category = await this.categoryModel
+      .findById(categoryId)
+      .select('categoryPath')
+      .lean();
+
+    if (!category) throw new NotFoundException('Category not found');
+
+    const categoryPath = category.categoryPath;
+    const escaped = categoryPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    const hasSubCategories = await this.categoryModel.exists({
+      categoryPath: new RegExp(`^${escaped}/`),
+    });
+
+    const hasProducts = await this.productModel.exists({
+      productPath: { $elemMatch: { $regex: new RegExp(`^${escaped}(/|$)`) } },
+    });
+
+    return { hasDescendants: !!(hasSubCategories || hasProducts) };
   }
 }

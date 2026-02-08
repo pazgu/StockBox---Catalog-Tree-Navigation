@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { PermissionsService } from './permissions.service';
 import { Permission, PermissionSchema } from 'src/schemas/Permissions.schema';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -20,8 +20,8 @@ import { User, UserSchema } from 'src/schemas/Users.schema';
       { name: Group.name, schema: GroupSchema },
       { name: User.name, schema: UserSchema },
     ]),
-    GroupsModule,
-    UsersModule,
+    forwardRef(() => UsersModule),
+    forwardRef(() => GroupsModule),
   ],
   providers: [PermissionsService, PermissionGuard],
   controllers: [PermissionsController],

@@ -27,7 +27,6 @@ import { handleEntityRouteError } from "../../../../lib/routing/handleEntityRout
 import MoveMultipleItemsModal from "../SingleCat/MoveMultipleItemsModal/MoveMultipleItemsModal";
 import DuplicateProductModal from "../../ProductArea/DuplicateProductModal/DuplicateProductModal";
 import { usePath } from "../../../../context/PathContext";
-import { set } from "lodash";
 import ImagePreviewHover from "../../ProductArea/ImageCarousel/ImageCarousel/ImagePreviewHover";
 interface CategoriesProps {}
 
@@ -70,6 +69,10 @@ export const Categories: FC<CategoriesProps> = () => {
   const [duplicateCurrentPaths, setDuplicateCurrentPaths] = useState<string[]>(
     [],
   );
+  const [hasDescendantsForDelete, setHasDescendantsForDelete] = useState<
+  boolean | null
+>(null);
+
 
   const openDuplicateForProduct = (item: DisplayItem) => {
     setDuplicateProductId(item.id);
@@ -213,10 +216,19 @@ export const Categories: FC<CategoriesProps> = () => {
     }
   };
 
-  const handleDelete = (category: Category) => {
-    setCategoryToDelete(category);
-    setShowDeleteModal(true);
-  };
+  const handleDelete = async (category: Category) => {
+  setCategoryToDelete(category);
+
+  try {
+    const hasDesc = await categoriesService.hasDescendants(category._id);
+    setHasDescendantsForDelete(hasDesc);
+  } catch (e) {
+    setHasDescendantsForDelete(true);
+  }
+
+  setShowDeleteModal(true);
+};
+
 
   const confirmDelete = async (strategy: "cascade" | "move_up") => {
     if (!categoryToDelete) return;
@@ -256,6 +268,7 @@ export const Categories: FC<CategoriesProps> = () => {
   const closeAllModals = () => {
     setShowAddCatModal(false);
     setShowDeleteModal(false);
+    setHasDescendantsForDelete(null);
     setShowEditModal(false);
     setCategoryToDelete(null);
     setCategoryToEdit(null);
@@ -674,48 +687,73 @@ export const Categories: FC<CategoriesProps> = () => {
                   "?
                 </p>
 
-                <div className="flex flex-col gap-3 mt-5">
-                  <button
-                    onClick={() => confirmDelete("cascade")}
-                    disabled={isDeleting}
-                    className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 shadow-md
-    ${isDeleting ? "bg-red-400 cursor-not-allowed text-white" : "bg-red-600 text-white hover:bg-red-700 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"}`}
-                  >
-                    {isDeleting && deleteStrategyLoading === "cascade" ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <Spinner className="size-4 text-white" />
-                        מוחק...
-                      </span>
-                    ) : (
-                      "מחק הכל (כולל כל הצאצאים)"
-                    )}
-                  </button>
+               <div className="flex flex-col gap-3 mt-5">
+  {hasDescendantsForDelete ? (
+    <>
+      {/* If category HAS descendants -> show both strategies */}
+      <button
+        onClick={() => confirmDelete("cascade")}
+        disabled={isDeleting}
+        className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 shadow-md
+${isDeleting ? "bg-red-400 cursor-not-allowed text-white" : "bg-red-600 text-white hover:bg-red-700 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"}`}
+      >
+        {isDeleting && deleteStrategyLoading === "cascade" ? (
+          <span className="flex items-center justify-center gap-2">
+            <Spinner className="size-4 text-white" />
+            מוחק...
+          </span>
+        ) : (
+          "מחק הכל (כולל כל הצאצאים)"
+        )}
+      </button>
 
-                  <button
-                    onClick={() => confirmDelete("move_up")}
-                    disabled={isDeleting}
-                    className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 shadow-md
-    ${isDeleting ? "bg-orange-200 cursor-not-allowed text-orange-900" : "bg-orange-100 text-orange-900 hover:bg-orange-200 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"}`}
-                  >
-                    {isDeleting && deleteStrategyLoading === "move_up" ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <Spinner className="size-4 text-orange-900" />
-                        מוחק...
-                      </span>
-                    ) : (
-                      "מחק רק קטגוריה (העבר צאצאים למעלה)"
-                    )}
-                  </button>
+      <button
+        onClick={() => confirmDelete("move_up")}
+        disabled={isDeleting}
+        className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 shadow-md
+${isDeleting ? "bg-orange-200 cursor-not-allowed text-orange-900" : "bg-orange-100 text-orange-900 hover:bg-orange-200 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"}`}
+      >
+        {isDeleting && deleteStrategyLoading === "move_up" ? (
+          <span className="flex items-center justify-center gap-2">
+            <Spinner className="size-4 text-orange-900" />
+            מוחק...
+          </span>
+        ) : (
+          "מחק רק קטגוריה (העבר צאצאים למעלה)"
+        )}
+      </button>
+    </>
+  ) : (
+    <>
+      {/* If category has NO descendants -> show simple delete */}
+      <button
+        onClick={() => confirmDelete("cascade")}
+        disabled={isDeleting}
+        className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 shadow-md
+${isDeleting ? "bg-red-400 cursor-not-allowed text-white" : "bg-red-600 text-white hover:bg-red-700 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"}`}
+      >
+        {isDeleting ? (
+          <span className="flex items-center justify-center gap-2">
+            <Spinner className="size-4 text-white" />
+            מוחק...
+          </span>
+        ) : (
+          "מחיקה"
+        )}
+      </button>
+    </>
+  )}
 
-                  <button
-                    onClick={closeAllModals}
-                    disabled={isDeleting}
-                    className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200
-      ${isDeleting ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"}`}
-                  >
-                    ביטול
-                  </button>
-                </div>
+  <button
+    onClick={closeAllModals}
+    disabled={isDeleting}
+    className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200
+${isDeleting ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"}`}
+  >
+    ביטול
+  </button>
+</div>
+
               </div>
             </div>
           )}
