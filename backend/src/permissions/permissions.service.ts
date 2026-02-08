@@ -34,17 +34,10 @@ export class PermissionsService {
   ) {}
 
   async getPermissionsForUser(userId: string, userGroupIds?: string[]) {
-    console.log(
-      'Getting permissions for user:',
-      userId,
-      'with groups:',
-      userGroupIds,
-    );
     const allowedIds = [
       new Types.ObjectId(userId),
       ...(userGroupIds || []).map((id) => new Types.ObjectId(id)),
     ];
-    console.log('Allowed IDs:', allowedIds);
     return await this.permissionModel
       .find({
         allowed: { $in: allowedIds },
@@ -468,10 +461,6 @@ export class PermissionsService {
         allowed: new mongoose.Types.ObjectId(id),
       })),
     ];
-    console.log(
-      `Total permissions to assign for new entity ${entity._id} (${pathAsString}):`,
-      permissions.length,
-    );
 
     if (permissions.length) {
       await this.permissionModel.insertMany(permissions, { ordered: false });
@@ -1194,35 +1183,33 @@ export class PermissionsService {
     return { success: true, deleted: res.deletedCount ?? 0 };
   }
 
-  
-async getPermissionsByEntityId(entityId: string, entityType: EntityType) {
-  const permissions = await this.permissionModel
-    .find({
+  async getPermissionsByEntityId(entityId: string, entityType: EntityType) {
+    const permissions = await this.permissionModel
+      .find({
+        entityId: new Types.ObjectId(entityId),
+        entityType,
+      })
+      .lean()
+      .exec();
+
+    return permissions;
+  }
+
+  async deletePermissionsByEntityId(entityId: string, entityType: EntityType) {
+    await this.permissionModel.deleteMany({
       entityId: new Types.ObjectId(entityId),
       entityType,
-    })
-    .lean()
-    .exec();
-
-  return permissions;
-}
-
-async deletePermissionsByEntityId(entityId: string, entityType: EntityType) {
-  await this.permissionModel.deleteMany({
-    entityId: new Types.ObjectId(entityId),
-    entityType,
-  });
-}
-
-async restorePermissions(permissions: any[]) {
-  for (const perm of permissions) {
-    const newPermission = new this.permissionModel({
-      entityId: perm.entityId,
-      entityType: perm.entityType,
-      allowed: perm.allowed,
     });
-    await newPermission.save();
   }
-}
 
+  async restorePermissions(permissions: any[]) {
+    for (const perm of permissions) {
+      const newPermission = new this.permissionModel({
+        entityId: perm.entityId,
+        entityType: perm.entityType,
+        allowed: perm.allowed,
+      });
+      await newPermission.save();
+    }
+  }
 }
