@@ -63,6 +63,7 @@ async moveCategoryToRecycleBin(
 
   let childrenCount = 0;
   let descendants: any[] = [];
+  let movedChildren: any[] = []; 
 
   if (strategy === 'cascade') {
     const subcategories = await this.categoryModel
@@ -97,46 +98,7 @@ async moveCategoryToRecycleBin(
         uploadFolders: prod.uploadFolders,
       })),
     ];
-  }
-
-  const permissions = await this.permissionsService.getPermissionsByEntityId(
-    categoryId,
-    EntityType.CATEGORY,
-  );
-
-  const recycleBinEntry = new this.recycleBinModel({
-    itemId: new Types.ObjectId(categoryId),
-    itemType: 'category',
-    itemName: category.categoryName,
-    itemImage: category.categoryImage,
-    originalPath: categoryPath,
-    deletedAt: new Date(),
-    deletedBy: userId ? new Types.ObjectId(userId) : undefined,
-    childrenCount,
-    categoryPath: category.categoryPath,
-    permissionsInheritedToChildren: (category as any).permissionsInheritedToChildren,
-    descendants,
-    storedPermissions: permissions,
-  });
-
-  await recycleBinEntry.save();
-
-  if (strategy === 'cascade') {
-    await this.categoryModel.deleteMany({
-      categoryPath: new RegExp(`^${escapedPath}/`),
-    });
-
-    await this.productModel.deleteMany({
-      productPath: { $elemMatch: { $regex: new RegExp(`^${escapedPath}(/|$)`) } },
-    });
-
-    for (const desc of descendants) {
-      await this.permissionsService.deletePermissionsByEntityId(
-        desc.itemId.toString(),
-        desc.itemType === 'category' ? EntityType.CATEGORY : EntityType.PRODUCT,
-      );
-    }
-  } else {
+  } else if (strategy === 'move_up') {
     const parentPath = this.getParentPath(categoryPath);
     
     if (!parentPath || parentPath === '') {
@@ -150,10 +112,15 @@ async moveCategoryToRecycleBin(
     });
 
     for (const subcat of subcategories) {
-      const newPath = subcat.categoryPath.replace(
-        categoryPath,
-        parentPath
-      );
+      const previousPath = subcat.categoryPath;
+      const newPath = subcat.categoryPath.replace(categoryPath, parentPath);
+      
+      movedChildren.push({
+        itemId: subcat._id,
+        itemType: 'category',
+        previousPath: previousPath,
+        newPath: newPath
+      });
       
       await this.categoryModel.updateOne(
         { _id: subcat._id },
@@ -178,6 +145,13 @@ async moveCategoryToRecycleBin(
         return p;
       });
 
+      movedChildren.push({
+        itemId: product._id,
+        itemType: 'product',
+        previousPath: product.productPath, 
+        newPath: updatedPaths 
+      });
+
       await this.productModel.updateOne(
         { _id: product._id },
         { $set: { productPath: updatedPaths } },
@@ -185,9 +159,49 @@ async moveCategoryToRecycleBin(
     }
   }
 
-  const deleteResult = await this.categoryModel.findByIdAndDelete(categoryId);
-  
+  const permissions = await this.permissionsService.getPermissionsByEntityId(
+    categoryId,
+    EntityType.CATEGORY,
+  );
 
+  const recycleBinEntry = new this.recycleBinModel({
+    itemId: new Types.ObjectId(categoryId),
+    itemType: 'category',
+    itemName: category.categoryName,
+    itemImage: category.categoryImage,
+    originalPath: categoryPath,
+    deletedAt: new Date(),
+    deletedBy: userId ? new Types.ObjectId(userId) : undefined,
+    childrenCount,
+    categoryPath: category.categoryPath,
+    permissionsInheritedToChildren: (category as any).permissionsInheritedToChildren,
+    descendants,
+    storedPermissions: permissions,
+    movedChildren: movedChildren, 
+    movedChildrenCount: movedChildren.length,
+
+  });
+
+  await recycleBinEntry.save();
+
+  if (strategy === 'cascade') {
+    await this.categoryModel.deleteMany({
+      categoryPath: new RegExp(`^${escapedPath}/`),
+    });
+
+    await this.productModel.deleteMany({
+      productPath: { $elemMatch: { $regex: new RegExp(`^${escapedPath}(/|$)`) } },
+    });
+
+    for (const desc of descendants) {
+      await this.permissionsService.deletePermissionsByEntityId(
+        desc.itemId.toString(),
+        desc.itemType === 'category' ? EntityType.CATEGORY : EntityType.PRODUCT,
+      );
+    }
+  }
+
+  await this.categoryModel.findByIdAndDelete(categoryId);
   await this.permissionsService.deletePermissionsByEntityId(
     categoryId,
     EntityType.CATEGORY,
@@ -304,79 +318,140 @@ async restoreItem(itemId: string, restoreChildren: boolean = false) {
   }
 }
 
-  private async restoreCategory(recycleBinItem: RecycleBin, restoreChildren: boolean) {
-    const parentPath = this.getParentPath(recycleBinItem.categoryPath!);
-    if (parentPath && parentPath !== '/categories') {
-      const parentExists = await this.categoryModel.findOne({
-        categoryPath: parentPath,
-      });
-      if (!parentExists) {
-        throw new BadRequestException(
-          'Cannot restore: parent category no longer exists',
-        );
-      }
-    }
 
-    const existing = await this.categoryModel.findOne({
-      categoryPath: recycleBinItem.categoryPath,
+private async restoreCategory(recycleBinItem: RecycleBin, restoreChildren: boolean) {
+  const parentPath = this.getParentPath(recycleBinItem.categoryPath!);
+  if (parentPath && parentPath !== '/categories') {
+    const parentExists = await this.categoryModel.findOne({
+      categoryPath: parentPath,
     });
-    if (existing) {
+    if (!parentExists) {
       throw new BadRequestException(
-        'Cannot restore: a category already exists at this path',
+        'Cannot restore: parent category no longer exists',
       );
     }
+  }
 
-    const restoredCategory = new this.categoryModel({
-      _id: recycleBinItem.itemId,
-      categoryName: recycleBinItem.itemName,
-      categoryPath: recycleBinItem.categoryPath,
-      categoryImage: recycleBinItem.itemImage,
-      permissionsInheritedToChildren:
-        recycleBinItem.permissionsInheritedToChildren,
-    });
+  const existing = await this.categoryModel.findOne({
+    categoryPath: recycleBinItem.categoryPath,
+  });
+  if (existing) {
+    throw new BadRequestException(
+      'Cannot restore: a category already exists at this path',
+    );
+  }
 
-    await restoredCategory.save();
+  const restoredCategory = new this.categoryModel({
+    _id: recycleBinItem.itemId,
+    categoryName: recycleBinItem.itemName,
+    categoryPath: recycleBinItem.categoryPath,
+    categoryImage: recycleBinItem.itemImage,
+    permissionsInheritedToChildren:
+      recycleBinItem.permissionsInheritedToChildren,
+  });
 
-    if (recycleBinItem.storedPermissions) {
-      await this.permissionsService.restorePermissions(
-        recycleBinItem.storedPermissions,
-      );
-    }
+  await restoredCategory.save();
 
-    if (restoreChildren && recycleBinItem.descendants) {
-      for (const desc of recycleBinItem.descendants) {
-        if (desc.itemType === 'category') {
-          const descCategory = new this.categoryModel({
-            _id: desc.itemId,
-            categoryName: desc.itemName,
-            categoryPath: desc.categoryPath,
-            categoryImage: desc.itemImage,
-            permissionsInheritedToChildren: desc.permissionsInheritedToChildren,
-          });
-          await descCategory.save();
-        } else {
-          const descProduct = new this.productModel({
-            _id: desc.itemId,
-            productName: desc.itemName,
-            productImages: desc.itemImages,
-            productDescription: desc.productDescription,
-            productPath: desc.productPath,
-            customFields: desc.customFields,
-            uploadFolders: desc.uploadFolders,
-          });
-          await descProduct.save();
+  if (recycleBinItem.storedPermissions) {
+    await this.permissionsService.restorePermissions(
+      recycleBinItem.storedPermissions,
+    );
+  }
+
+  if (recycleBinItem.movedChildren && recycleBinItem.movedChildren.length > 0) {
+    for (const movedChild of recycleBinItem.movedChildren) {
+      if (movedChild.itemType === 'category') {
+        const oldCategoryPath = movedChild.newPath as string;
+        const newCategoryPath = movedChild.previousPath as string;
+        
+        await this.categoryModel.findByIdAndUpdate(movedChild.itemId, {
+          categoryPath: newCategoryPath
+        });
+
+        const escapedOldPath = oldCategoryPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+        const subCategoriesToUpdate = await this.categoryModel.find({
+          categoryPath: new RegExp(`^${escapedOldPath}/`)
+        });
+
+        for (const subcat of subCategoriesToUpdate) {
+          const updatedPath = subcat.categoryPath.replace(oldCategoryPath, newCategoryPath);
+          await this.categoryModel.updateOne(
+            { _id: subcat._id },
+            { $set: { categoryPath: updatedPath } }
+          );
         }
+
+        const productsToUpdate = await this.productModel.find({
+          productPath: {
+            $elemMatch: { $regex: new RegExp(`^${escapedOldPath}(/|$)`) }
+          }
+        });
+
+        for (const product of productsToUpdate) {
+          const updatedPaths = product.productPath.map((p) => {
+            if (p.startsWith(oldCategoryPath + '/')) {
+              return p.replace(oldCategoryPath, newCategoryPath);
+            }
+            if (p === oldCategoryPath) {
+              return newCategoryPath;
+            }
+            return p;
+          });
+
+          await this.productModel.updateOne(
+            { _id: product._id },
+            { $set: { productPath: updatedPaths } }
+          );
+        }
+
+      } else if (movedChild.itemType === 'product') {
+        const previousPaths = Array.isArray(movedChild.previousPath) 
+          ? movedChild.previousPath 
+          : [movedChild.previousPath];
+          
+        await this.productModel.findByIdAndUpdate(movedChild.itemId, {
+          productPath: previousPaths
+        });
       }
     }
-
-    await this.recycleBinModel.findByIdAndDelete(recycleBinItem._id);
-
-    return {
-      success: true,
-      message: `Category "${recycleBinItem.itemName}" restored successfully`,
-      item: restoredCategory,
-    };
   }
+
+  if (restoreChildren && recycleBinItem.descendants) {
+    for (const desc of recycleBinItem.descendants) {
+      if (desc.itemType === 'category') {
+        const descCategory = new this.categoryModel({
+          _id: desc.itemId,
+          categoryName: desc.itemName,
+          categoryPath: desc.categoryPath,
+          categoryImage: desc.categoryImage,
+          permissionsInheritedToChildren: desc.permissionsInheritedToChildren,
+        });
+        await descCategory.save();
+      } else {
+        const descProduct = new this.productModel({
+          _id: desc.itemId,
+          productName: desc.itemName,
+          productImages: desc.itemImages,
+          productDescription: desc.productDescription,
+          productPath: desc.productPath,
+          customFields: desc.customFields,
+          uploadFolders: desc.uploadFolders,
+        });
+        await descProduct.save();
+      }
+    }
+  }
+
+  await this.recycleBinModel.findByIdAndDelete(recycleBinItem._id);
+
+  return {
+    success: true,
+    message: `Category "${recycleBinItem.itemName}" restored successfully`,
+    item: restoredCategory,
+  };
+}
+
 
   private async restoreProduct(recycleBinItem: RecycleBin) {
     const pathsToRestore = recycleBinItem.allProductPaths || [
