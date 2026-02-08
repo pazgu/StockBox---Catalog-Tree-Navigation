@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
 /* eslint-disable @typescript-eslint/no-duplicate-type-constituents */
 /* eslint-disable @typescript-eslint/no-redundant-type-constituents */
@@ -137,6 +138,7 @@ export class PermissionsService {
       const key = `${dto.entityType}:${dto.entityId}:${dto.allowed}`;
       return !existingKeys.has(key);
     });
+
     const validationPromises = dtosToProcess.map(async (dto) => {
       const validation = await this.canCreatePermission(
         dto.entityType,
@@ -146,16 +148,20 @@ export class PermissionsService {
       );
       return { dto, validation };
     });
+
     const validationResults = await Promise.all(validationPromises);
+
     const validDtos = validationResults
       .filter((r) => r.validation.canCreate)
       .map((r) => r.dto);
+
     const failedDtos = validationResults
       .filter((r) => !r.validation.canCreate)
       .map((r) => ({
         dto: r.dto,
         reason: r.validation.reason || 'לא ניתן ליצור הרשאה זו',
       }));
+
     let createdPermissions: any[] = [];
     if (validDtos.length > 0) {
       createdPermissions = await this.permissionModel.insertMany(
@@ -166,6 +172,7 @@ export class PermissionsService {
         })),
         { ordered: false },
       );
+
       for (const dto of validDtos) {
         if (dto.entityType === EntityType.CATEGORY && dto.inheritToChildren) {
           const descendants = await this.getAllCategoryDescendants(
@@ -190,7 +197,8 @@ export class PermissionsService {
         }
       }
     }
-    return {
+
+    const result = {
       success: true,
       total: dtos.length,
       created: createdPermissions.length,
@@ -213,6 +221,8 @@ export class PermissionsService {
         failed: failedDtos,
       },
     };
+
+    return result;
   }
   async deletePermissionsBatch(ids: string[]) {
     const permissions = await this.permissionModel
@@ -494,49 +504,119 @@ export class PermissionsService {
 
     return directChildren;
   }
-  private async isProductUnderBlockedCategory(
-    product: any,
-    allowedGroupId: string,
-  ): Promise<boolean> {
-    const pathToString = (path: string | string[] | Array<string>): string => {
-      if (!path) return '';
-      if (Array.isArray(path)) {
-        return path.length > 0 ? path[0] : '';
+
+  private buildHierarchicalTree(items: any[]): any[] {
+    const categories = items.filter((i) => i.type === 'category');
+    const products = items.filter((i) => i.type === 'product');
+    const categoryByPath = new Map<string, any>();
+    const categoryById = new Map<string, any>();
+
+    for (const c of categories) {
+      const path = Array.isArray(c.categoryPath)
+        ? c.categoryPath[0]
+        : c.categoryPath;
+      const node = {
+        ...c,
+        categoryPath: path,
+        children: [],
+        products: [],
+        isExpanded: false,
+      };
+      categoryByPath.set(path, node);
+      categoryById.set(c.id, node);
+    }
+
+    const roots: any[] = [];
+
+    for (const node of categoryById.values()) {
+      if (!node.categoryPath) {
+        roots.push(node);
+        continue;
       }
-      return path;
-    };
-    const productPathStr = pathToString(product.productPath);
-    if (!productPathStr) return false;
-    const pathParts = productPathStr.split('/').filter(Boolean);
-    const categoryParts =
-      pathParts[0] === 'categories'
-        ? pathParts.slice(1, -1)
-        : pathParts.slice(0, -1);
-    for (let i = 1; i <= categoryParts.length; i++) {
-      const parentCategoryPath =
-        '/categories/' + categoryParts.slice(0, i).join('/');
-      const parentCategory = await this.categoryModel
-        .findOne({ categoryPath: parentCategoryPath })
-        .select('_id')
-        .lean();
-      if (parentCategory) {
-        const hasPermission = await this.permissionModel.findOne({
-          entityType: EntityType.CATEGORY,
-          entityId: parentCategory._id,
-          allowed: new mongoose.Types.ObjectId(allowedGroupId),
-        });
-        if (!hasPermission) {
-          return true;
-        }
+
+      const parts = node.categoryPath.split('/').filter(Boolean);
+      const parentPath =
+        parts.length > 2 ? '/categories/' + parts.slice(1, -1).join('/') : null;
+
+      if (parentPath && categoryByPath.has(parentPath)) {
+        categoryByPath.get(parentPath).children.push(node);
+      } else {
+        roots.push(node);
       }
     }
-    return false;
+    const orphanProducts: any[] = [];
+
+    for (const p of products) {
+      const paths = Array.isArray(p.productPath)
+        ? p.productPath
+        : [p.productPath];
+      let attached = false;
+
+      for (const rawPath of paths) {
+        if (!rawPath) continue;
+
+        const parts = rawPath.split('/').filter(Boolean);
+        const categoryPath =
+          parts.length > 1
+            ? '/categories/' + parts.slice(1, -1).join('/')
+            : null;
+
+        if (categoryPath && categoryByPath.has(categoryPath)) {
+          const categoryNode = categoryByPath.get(categoryPath);
+          categoryNode.products.push({
+            ...p,
+            contextPath: categoryPath,
+          });
+          attached = true;
+        }
+      }
+
+      if (!attached) {
+        orphanProducts.push({
+          ...p,
+          contextPath: undefined,
+        });
+      }
+    }
+    roots.push(...orphanProducts);
+    const sortTree = (nodes: any[]) => {
+      nodes.sort((a, b) => {
+        if (a.type === 'category' && b.type === 'product') return -1;
+        if (a.type === 'product' && b.type === 'category') return 1;
+        return a.name.localeCompare(b.name, 'he');
+      });
+
+      for (const n of nodes) {
+        if (n.children?.length) sortTree(n.children);
+        if (n.products?.length) {
+          n.products.sort((a: any, b: any) =>
+            a.name.localeCompare(b.name, 'he'),
+          );
+        }
+      }
+    };
+
+    sortTree(roots);
+    return roots;
   }
   async getBlockedItemsForGroup(groupId: string) {
-    const permissions = await this.permissionModel
-      .find({ allowed: new Types.ObjectId(groupId) })
-      .lean()
-      .exec();
+    const [permissions, allProducts, allCategories] = await Promise.all([
+      this.permissionModel
+        .find({ allowed: new Types.ObjectId(groupId) })
+        .select('entityType entityId')
+        .lean()
+        .exec(),
+      this.productModel
+        .find()
+        .select('_id productName productImages productPath')
+        .lean()
+        .exec(),
+      this.categoryModel
+        .find()
+        .select('_id categoryName categoryImage categoryPath')
+        .lean()
+        .exec(),
+    ]);
     const allowedProductIds = new Set(
       permissions
         .filter((p) => String(p.entityType).toLowerCase() === 'product')
@@ -547,142 +627,99 @@ export class PermissionsService {
         .filter((p) => String(p.entityType).toLowerCase() === 'category')
         .map((p) => String(p.entityId)),
     );
-    const [allProducts, allCategories] = await Promise.all([
-      this.productModel.find().lean().exec(),
-      this.categoryModel.find().lean().exec(),
-    ]);
-    const existingProductIds = new Set(allProducts.map((p) => String(p._id)));
-    const existingCategoryIds = new Set(
-      allCategories.map((c) => String(c._id)),
-    );
-    const orphanPermissions = permissions.filter((p) => {
-      const entityId = String(p.entityId);
-      const entityType = String(p.entityType).toLowerCase();
-      if (entityType === 'product') {
-        return !existingProductIds.has(entityId);
-      } else if (entityType === 'category') {
-        return !existingCategoryIds.has(entityId);
+
+    const categoryById = new Map<string, any>();
+    const categoryByPath = new Map<string, string>();
+
+    for (const c of allCategories) {
+      const path = Array.isArray(c.categoryPath)
+        ? c.categoryPath[0]
+        : c.categoryPath;
+      categoryById.set(String(c._id), { ...c, path });
+      categoryByPath.set(path, String(c._id));
+    }
+    const categoryAccess = new Map<string, boolean>();
+    const isCategoryAllowed = (categoryId: string): boolean => {
+      if (categoryAccess.has(categoryId))
+        return categoryAccess.get(categoryId)!;
+
+      const category = categoryById.get(categoryId);
+      if (!category) return false;
+
+      if (!allowedCategoryIds.has(categoryId)) {
+        categoryAccess.set(categoryId, false);
+        return false;
       }
-      return false;
-    });
-    if (orphanPermissions.length > 0) {
-      await this.permissionModel.deleteMany({
-        _id: { $in: orphanPermissions.map((p) => p._id) },
+
+      const parts = category.path.split('/').filter(Boolean);
+      if (parts.length <= 2) {
+        categoryAccess.set(categoryId, true);
+        return true;
+      }
+
+      const parentPath = '/categories/' + parts.slice(1, -1).join('/');
+      const parentId = categoryByPath.get(parentPath);
+      const allowed = parentId ? isCategoryAllowed(parentId) : true;
+      categoryAccess.set(categoryId, allowed);
+      return allowed;
+    };
+    const blockedProducts: any[] = [];
+    const availableProducts: any[] = [];
+
+    for (const p of allProducts) {
+      const productId = String(p._id);
+      const paths = Array.isArray(p.productPath)
+        ? p.productPath
+        : [p.productPath];
+
+      let allowed = allowedProductIds.has(productId);
+
+      for (const path of paths) {
+        if (!path) continue;
+
+        const parts = path.split('/').filter(Boolean);
+        const categoryPath =
+          parts.length > 1
+            ? '/categories/' + parts.slice(1, -1).join('/')
+            : null;
+
+        const categoryId = categoryPath && categoryByPath.get(categoryPath);
+        if (categoryId && isCategoryAllowed(categoryId)) {
+          allowed = true;
+          break;
+        }
+      }
+
+      const target = allowed ? availableProducts : blockedProducts;
+      target.push({
+        id: productId,
+        name: p.productName,
+        type: 'product' as const,
+        image: p.productImages?.[0] ?? null,
+        groupId,
+        productPath: p.productPath,
       });
     }
-    const validAllowedProductIds = new Set(
-      Array.from(allowedProductIds).filter((id) => existingProductIds.has(id)),
-    );
-    const validAllowedCategoryIds = new Set(
-      Array.from(allowedCategoryIds).filter((id) =>
-        existingCategoryIds.has(id),
-      ),
-    );
-    const pathToString = (path: string | string[] | Array<string>): string => {
-      if (!path) return '';
-      if (Array.isArray(path)) {
-        return path.length > 0 ? path[0] : '';
-      }
-      return path;
-    };
-    const blockedCategoryPaths = allCategories
-      .filter((c) => !validAllowedCategoryIds.has(String(c._id)))
-      .map((c) => pathToString(c.categoryPath));
-    const isUnderBlockedCategory = (itemPath: string | string[]): boolean => {
-      const pathStr = pathToString(itemPath);
-      if (!pathStr) return false;
+    const blockedCategories: any[] = [];
+    const availableCategories: any[] = [];
 
-      return blockedCategoryPaths.some((blockedPath) => {
-        if (!blockedPath) return false;
-        return (
-          pathStr.startsWith(blockedPath + '/') ||
-          pathStr.startsWith(blockedPath)
-        );
+    for (const c of allCategories) {
+      const id = String(c._id);
+      const allowed = isCategoryAllowed(id);
+
+      const target = allowed ? availableCategories : blockedCategories;
+      target.push({
+        id,
+        name: c.categoryName,
+        type: 'category' as const,
+        image: c.categoryImage ?? null,
+        groupId,
+        categoryPath: c.categoryPath,
       });
-    };
-    const blockedProductsPromises = allProducts.map(async (p) => {
-      const productId = String(p._id);
-      const underBlockedCategory = await this.isProductUnderBlockedCategory(
-        p,
-        groupId,
-      );
-      const isBlocked = underBlockedCategory;
-
-      return isBlocked
-        ? {
-            id: productId,
-            name: p.productName,
-            type: 'product' as const,
-            image: p.productImages?.[0] || null,
-            groupId,
-          }
-        : null;
-    });
-    const blockedProductsResults = await Promise.all(blockedProductsPromises);
-    const blockedProducts = blockedProductsResults.filter((p) => p !== null);
-    const blockedCategories = allCategories
-      .filter(
-        (c) =>
-          !validAllowedCategoryIds.has(String(c._id)) ||
-          isUnderBlockedCategory(c.categoryPath),
-      )
-      .map((c) => ({
-        id: String(c._id),
-        name: c.categoryName,
-        type: 'category' as const,
-        image: c.categoryImage || null,
-        groupId,
-      }));
-    const availableProductsPromises = allProducts.map(async (p) => {
-      const productId = String(p._id);
-      const underBlockedCategory = await this.isProductUnderBlockedCategory(
-        p,
-        groupId,
-      );
-      const isAvailable = !underBlockedCategory;
-      return isAvailable
-        ? {
-            id: productId,
-            name: p.productName,
-            type: 'product' as const,
-            image: p.productImages?.[0] || null,
-            groupId,
-          }
-        : null;
-    });
-    const availableProductsResults = await Promise.all(
-      availableProductsPromises,
-    );
-    const availableProducts = availableProductsResults.filter(
-      (p) => p !== null,
-    );
-    const availableCategories = allCategories
-      .filter(
-        (c) =>
-          validAllowedCategoryIds.has(String(c._id)) &&
-          !isUnderBlockedCategory(c.categoryPath),
-      )
-      .map((c) => ({
-        id: String(c._id),
-        name: c.categoryName,
-        type: 'category' as const,
-        image: c.categoryImage || null,
-        groupId,
-      }));
-    const validPermissions = permissions.filter((p) => {
-      const entityId = String(p.entityId);
-      const entityType = String(p.entityType).toLowerCase();
-      if (entityType === 'product') {
-        return existingProductIds.has(entityId);
-      } else if (entityType === 'category') {
-        return existingCategoryIds.has(entityId);
-      }
-      return false;
-    });
-    const permissionIdByKey = validPermissions.reduce(
+    }
+    const permissionIdByKey = permissions.reduce(
       (acc, p) => {
-        const typeStr = String(p.entityType).toLowerCase();
-        const key = `${typeStr}:${String(p.entityId)}`;
+        const key = `${String(p.entityType).toLowerCase()}:${String(p.entityId)}`;
         acc[key] = String(p._id);
         return acc;
       },
@@ -692,6 +729,14 @@ export class PermissionsService {
       blocked: [...blockedProducts, ...blockedCategories],
       available: [...availableProducts, ...availableCategories],
       permissionIdByKey,
+      blockedTree: this.buildHierarchicalTree([
+        ...blockedProducts,
+        ...blockedCategories,
+      ]),
+      availableTree: this.buildHierarchicalTree([
+        ...availableProducts,
+        ...availableCategories,
+      ]),
     };
   }
   async canCreatePermission(
@@ -726,28 +771,43 @@ export class PermissionsService {
         return { canCreate: false, reason: 'המוצר לא נמצא' };
       }
 
-      if (!contextPath) {
+      let effectiveContextPath = contextPath;
+
+      if (!effectiveContextPath) {
+        const pathArray = Array.isArray(product.productPath)
+          ? product.productPath
+          : [product.productPath];
+
+        if (pathArray.length > 0) {
+          const firstPath = pathArray[0];
+          const pathParts = firstPath.split('/').filter(Boolean);
+          const categoryParts =
+            pathParts[0] === 'categories'
+              ? pathParts.slice(1, -1)
+              : pathParts.slice(0, -1);
+
+          effectiveContextPath = '/categories/' + categoryParts.join('/');
+        }
+      }
+
+      if (!effectiveContextPath) {
         return {
           canCreate: false,
           reason: 'חסר נתיב הקשר לבדיקת הרשאות',
         };
       }
 
-      if (!product.productPath.includes(contextPath)) {
-        return {
-          canCreate: false,
-          reason: 'המוצר אינו שייך לקטגוריה זו',
-        };
-      }
+      const parentPaths = this.extractParentCategoryPaths(effectiveContextPath);
 
-      const parentPaths = this.extractParentCategoryPaths(contextPath);
+      const allPathsToCheck = [effectiveContextPath, ...parentPaths];
 
-      return this.validateParentCategoryPermissions(
-        parentPaths,
+      const validation = await this.validateParentCategoryPermissions(
+        allPathsToCheck,
         allowedId,
         this.categoryModel,
         this.permissionModel,
       );
+      return validation;
     }
 
     return { canCreate: true };
