@@ -64,7 +64,6 @@ if (role !== "editor") {
   return;
 }
 
-    console.log(`path from previos page permissions.tsx ${previousPath}`);
     const loadData = async () => {
       try {
         if (!cleanId) return;
