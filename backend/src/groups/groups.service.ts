@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import mongoose from 'mongoose';
 import { Group, GroupDocument } from './../schemas/Groups.schema';
 import { CreateGroupDto } from './dto/createGroup.dto';
 import { UpdateGroupDto } from './dto/updateGroup.dto';
@@ -115,4 +116,9 @@ export class GroupsService {
 
     return group;
   }
+  
+ async getAllGroupIds(): Promise<mongoose.Types.ObjectId[]> {
+  return this.groupModel.distinct('_id');
+}
+
 }
