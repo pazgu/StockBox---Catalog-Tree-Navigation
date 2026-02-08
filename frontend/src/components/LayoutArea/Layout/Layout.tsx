@@ -18,6 +18,7 @@ import Footer from "../Footer/Footer";
 import SearchResultsPage from "../SearchBar/SearchBar/SearchAllPage";
 import { useNavigate } from "react-router-dom";
 import Page403 from "../../Pages/Page403/Page403";
+import { RecycleBin } from "../../Pages/CatArea/RecycleBin/RecycleBin";
 
 interface LayoutProps {}
 
@@ -53,7 +54,12 @@ const Layout: FC<LayoutProps> = () => {
           <Route path="/404" element={<Page404 />} />
           <Route path="*" element={<Page404 />} />
 
-          <Route path="/search-all" element={<SearchResultsPage></SearchResultsPage>} />
+          <Route
+            path="/search-all"
+            element={<SearchResultsPage></SearchResultsPage>}
+          />
+
+          <Route path="/recycle-bin" element={<RecycleBin></RecycleBin>} />
         </Routes>
       </main>
       <Toaster richColors />
