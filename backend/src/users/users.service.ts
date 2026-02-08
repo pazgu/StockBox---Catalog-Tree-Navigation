@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import {
+  Inject,
   Injectable,
   BadRequestException,
   NotFoundException,
@@ -13,12 +14,15 @@ import { User, FavoriteType, UserRole } from 'src/schemas/Users.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { CreateUserDto } from './dto/createUser.dto';
 import { GroupsService } from 'src/groups/groups.service';
-
+import { PermissionsService } from 'src/permissions/permissions.service';
+import { forwardRef } from '@nestjs/common';
 @Injectable()
 export class UsersService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     private groupsService: GroupsService,
+    @Inject(forwardRef(() => PermissionsService))
+    private permissionsService: PermissionsService,
   ) {}
 
   async getAllUsers(role?: string) {
@@ -50,6 +54,7 @@ export class UsersService {
   }
 
   async deleteUser(id: string) {
+    await this.permissionsService.deletePermissionsForAllowed(id);
     return this.userModel.findByIdAndDelete(id).exec();
   }
 

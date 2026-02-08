@@ -26,7 +26,7 @@ import MoveCategoryModal from "../../CatArea/Categories/MoveCategoryModal/MoveCa
 import EditCategoryModal from "../../CatArea/Categories/EditCategoryModal/EditCategoryModal/EditCategoryModal";
 import { userService } from "../../../../services/UserService";
 import { Spinner } from "../../../../components/ui/spinner";
-
+import { recycleBinService } from "../../../../services/RecycleBinService";
 import AddProductModal from "./AddProductModal/AddProductModal";
 import AddSubCategoryModal from "./AddSubCategoryModal/AddSubCategoryModal";
 import { handleEntityRouteError } from "../../../../lib/routing/handleEntityRouteError";
@@ -35,16 +35,17 @@ import DuplicateProductModal from "../../ProductArea/DuplicateProductModal/Dupli
 import MoveMultipleItemsModal from "./MoveMultipleItemsModal/MoveMultipleItemsModal";
 import { usePath } from "../../../../context/PathContext";
 import ImagePreviewHover from "../../ProductArea/ImageCarousel/ImageCarousel/ImagePreviewHover";
+
 const SingleCat: FC = () => {
   const [items, setItems] = useState<DisplayItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [categoryInfo, setCategoryInfo] = useState<CategoryDTO | null>(null);
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [showAddSubCategoryModal, setShowAddSubCategoryModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showCategoryDeleteChoice, setShowCategoryDeleteChoice] =
+  const [showMoveToRecycleBinModal, setShowMoveToRecycleBinModal] = useState(false);
+  const [showCategoryMoveChoice, setShowCategoryMoveChoice] =
     useState(false);
-  const [categoryDeleteStrategyLoading, setCategoryDeleteStrategyLoading] =
+  const [categoryMoveStrategyLoading, setCategoryMoveStrategyLoading] =
     useState<"cascade" | "move_up" | null>(null);
   const [showSmartDeleteModal, setShowSmartDeleteModal] = useState(false);
   const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
@@ -61,8 +62,8 @@ const SingleCat: FC = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [itemToEdit, setItemToEdit] = useState<DisplayItem | null>(null);
   const [isSavingProduct, setIsSavingProduct] = useState(false);
-  const [isDeletingItem, setIsDeletingItem] = useState(false);
-  const [hasDescendantsForDelete, setHasDescendantsForDelete] = useState<boolean | null>(null);
+  const [isMovingToRecycleBin, setIsMovingToRecycleBin] = useState(false);
+  const [hasDescendantsForMove, setHasDescendantsForMove] = useState<boolean | null>(null);
 
 
   const location = useLocation();
@@ -253,100 +254,114 @@ const SingleCat: FC = () => {
     }
   };
 
-  const handleDelete = (item: DisplayItem) => {
+  const handleMoveToRecycleBin = (item: DisplayItem) => {
   setItemToDelete(item);
 
-  // Product with multiple paths -> smart delete modal
   if (item.type === "product" && item.path.length > 1) {
     setShowSmartDeleteModal(true);
     return;
   }
 
-  // Category -> check if it has descendants first
   if (item.type === "category") {
     (async () => {
       try {
         const hasDesc = await categoriesService.hasDescendants(item.id);
-        setHasDescendantsForDelete(hasDesc);
+        setHasDescendantsForMove(hasDesc);
 
         if (hasDesc) {
-          setShowCategoryDeleteChoice(true); // show cascade/move_up modal
+          setShowCategoryMoveChoice(true); 
         } else {
-          setShowDeleteModal(true); // simple confirmation modal
+          setShowMoveToRecycleBinModal(true);
         }
       } catch (e) {
-        setHasDescendantsForDelete(true);
-        setShowCategoryDeleteChoice(true);
+        setHasDescendantsForMove(true);
+        setShowCategoryMoveChoice(true);
       }
     })();
 
     return;
   }
-  setShowDeleteModal(true);
+  setShowMoveToRecycleBinModal(true);
 };
 
 
-  const confirmDelete = async () => {
+const confirmMoveToRecycleBin = async () => {
   if (!itemToDelete) return;
 
   try {
-    setIsDeletingItem(true);
+    setIsMovingToRecycleBin(true);
 
     if (itemToDelete.type === "category") {
-      await categoriesService.deleteCategory(itemToDelete.id, "cascade");
-      toast.success(`הקטגוריה "${itemToDelete.name}" נמחקה בהצלחה!`);
+      await recycleBinService.moveCategoryToRecycleBin(
+        itemToDelete.id,
+        "cascade"
+      );
+      toast.success(`הקטגוריה "${itemToDelete.name}" הועברה לסל המחזור!`);
+      navigate('/recycle-bin');
     } else {
-      await ProductsService.deleteProduct(itemToDelete.id);
-      toast.success(`המוצר "${itemToDelete.name}" נמחק מכל המיקומים!`);
+      await recycleBinService.moveProductToRecycleBin(itemToDelete.id);
+      toast.success(`המוצר "${itemToDelete.name}" הועבר לסל המחזור!`);
+      navigate('/recycle-bin');
     }
 
     await loadAllContent();
   } catch (error) {
-    toast.error("שגיאה במחיקה");
+    toast.error("שגיאה בהעברה לסל המחזור");
   } finally {
-    setIsDeletingItem(false);
-    setShowDeleteModal(false);
+    setIsMovingToRecycleBin(false);
+    setShowMoveToRecycleBinModal(false);
     setItemToDelete(null);
   }
 };
 
 
-  const handleDeleteFromCurrent = async () => {
-    if (!itemToDelete) return;
-    try {
-      setIsDeletingItem(true);
-      await ProductsService.deleteProduct(itemToDelete.id, categoryPath);
-      toast.success(`המוצר "${itemToDelete.name}" הוסר מקטגוריה זו!`);
-      setItems(items.filter((item) => item.id !== itemToDelete.id));
-    } catch (error) {
-      toast.error("שגיאה במחיקה מקטגוריה זו");
-    } finally {
-      setIsDeletingItem(false);
-      setShowSmartDeleteModal(false);
-      setItemToDelete(null);
-    }
-  };
 
-  const handleDeleteFromAll = async () => {
-    if (!itemToDelete) return;
-    try {
-      setIsDeletingItem(true);
-      await ProductsService.deleteProduct(itemToDelete.id);
-      toast.success(`המוצר "${itemToDelete.name}" נמחק מכל המיקומים!`);
-      setItems(items.filter((item) => item.id !== itemToDelete.id));
-    } catch (error) {
-      toast.error("שגיאה במחיקה מכל המיקומים");
-    } finally {
-      setIsDeletingItem(false);
-      setShowSmartDeleteModal(false);
-      setItemToDelete(null);
-    }
-  };
+const handleRemoveFromCurrent = async () => {
+  if (!itemToDelete) return;
+  try {
+    setIsMovingToRecycleBin(true);
+    
+    await recycleBinService.moveProductToRecycleBin(
+      itemToDelete.id,
+      categoryPath
+    );
+    
+    toast.success(`המוצר "${itemToDelete.name}" הוסר מקטגוריה זו!`);
+    setItems(items.filter((item) => item.id !== itemToDelete.id));
+  } catch (error) {
+    toast.error("שגיאה בהסרה מקטגוריה זו");
+  } finally {
+    setIsMovingToRecycleBin(false);
+    setShowSmartDeleteModal(false);
+    setItemToDelete(null);
+  }
+};
 
-  const handleDeleteFromSpecificPaths = async (paths: string[]) => {
+const handleMoveAllToRecycleBin = async () => {
+  if (!itemToDelete) return;
+  try {
+    setIsMovingToRecycleBin(true);
+    
+    await recycleBinService.moveProductToRecycleBin(itemToDelete.id);
+    
+    toast.success(`המוצר "${itemToDelete.name}" הועבר לסל המחזור!`);
+    setItems(items.filter((item) => item.id !== itemToDelete.id));
+    
+    navigate('/recycle-bin');
+  } catch (error) {
+    toast.error("שגיאה בהעברה לסל המחזור");
+  } finally {
+    setIsMovingToRecycleBin(false);
+    setShowSmartDeleteModal(false);
+    setItemToDelete(null);
+  }
+};
+
+
+  const handleRemoveFromSpecificPaths = async (paths: string[]) => {
     if (!itemToDelete) return;
     try {
-      setIsDeletingItem(true);
+      setIsMovingToRecycleBin(true);
       await ProductsService.deleteFromSpecificPaths(itemToDelete.id, paths);
 
       const stillInCurrentCategory = paths.every(
@@ -361,9 +376,9 @@ const SingleCat: FC = () => {
         `המוצר "${itemToDelete.name}" הוסר מ-${paths.length} מיקום${paths.length > 1 ? "ים" : ""}!`,
       );
     } catch (error) {
-      toast.error("שגיאה במחיקה מהמיקומים הנבחרים");
+      toast.error("שגיאה בהסרה מהמיקומים הנבחרים");
     } finally {
-      setIsDeletingItem(false);
+      setIsMovingToRecycleBin(false);
       setShowSmartDeleteModal(false);
       setItemToDelete(null);
     }
@@ -381,32 +396,38 @@ const SingleCat: FC = () => {
     setItemToMove(null);
   };
 
-  const confirmCategoryDelete = async (strategy: "cascade" | "move_up") => {
-    if (!itemToDelete) return;
+const confirmCategoryMove = async (strategy: "cascade" | "move_up") => {
+  if (!itemToDelete) return;
 
-    try {
-      setIsDeletingItem(true);
-      setCategoryDeleteStrategyLoading(strategy);
+  try {
+    setIsMovingToRecycleBin(true);
+    setCategoryMoveStrategyLoading(strategy);
 
-      await categoriesService.deleteCategory(itemToDelete.id, strategy);
+    await recycleBinService.moveCategoryToRecycleBin(
+      itemToDelete.id,
+      strategy
+    );
 
-      await loadAllContent();
+    await loadAllContent();
 
-      toast.success(
-        strategy === "cascade"
-          ? `הקטגוריה "${itemToDelete.name}" וכל התכנים שבה נמחקו בהצלחה!`
-          : `הקטגוריה "${itemToDelete.name}" נמחקה והתכנים הועברו שכבה אחת למעלה!`,
-      );
-    } catch (error) {
-      toast.error("שגיאה במחיקת הקטגוריה");
-    } finally {
-      setIsDeletingItem(false);
-      setCategoryDeleteStrategyLoading(null);
-      setShowCategoryDeleteChoice(false);
-      setHasDescendantsForDelete(null);
-      setItemToDelete(null);
-    }
-  };
+    toast.success(
+      strategy === "cascade"
+        ? `הקטגוריה "${itemToDelete.name}" הועברה לסל המחזור!`
+        : `הקטגוריה "${itemToDelete.name}" הועברה לסל המחזור והתכנים הועברו שכבה אחת למעלה!`,
+    );
+    
+    navigate('/recycle-bin');
+  } catch (error) {
+    toast.error("שגיאה בהעברת הקטגוריה לסל המחזור");
+  } finally {
+    setIsMovingToRecycleBin(false);
+    setCategoryMoveStrategyLoading(null);
+    setShowCategoryMoveChoice(false);
+    setHasDescendantsForMove(null);
+    setItemToDelete(null);
+  }
+};
+
 
   const handleDuplicate = (item: DisplayItem) => {
     setItemToDuplicate(item);
@@ -486,7 +507,7 @@ const SingleCat: FC = () => {
   };
 
   const closeAllModals = () => {
-    setShowDeleteModal(false);
+    setShowMoveToRecycleBinModal(false);
     setShowSmartDeleteModal(false);
     setItemToDelete(null);
     setShowAddProductModal(false);
@@ -499,7 +520,7 @@ const SingleCat: FC = () => {
     setShowEditModal(false);
     setItemToEdit(null);
     setShowMoveMultipleModal(false);
-    setShowCategoryDeleteChoice(false);
+    setShowCategoryMoveChoice(false);
   };
 
   const handleManagePermissions = (id: string, type: string) => {
@@ -528,17 +549,17 @@ const SingleCat: FC = () => {
     }
   };
 
-  const handleDeleteSelected = () => {
+  const handleMoveSelectedToRecycleBin = () => {
     if (selectedItems.length === 0) {
-      toast.error("אנא בחר לפחות פריט אחד למחיקה");
+      toast.error("אנא בחר לפחות פריט אחד להעברה לסל מחזור");
       return;
     }
     setShowDeleteAllModal(true);
   };
 
-  const confirmDeleteSelected = () => {
+  const confirmMoveSelectedToRecycleBin = () => {
     setItems((prev) => prev.filter((item) => !selectedItems.includes(item.id)));
-    toast.success(`${selectedItems.length} פריטים נמחקו בהצלחה!`);
+    toast.success(`${selectedItems.length} פריטים הועברו לסל המחזור בהצלחה!`);
     setSelectedItems([]);
     setIsSelectionMode(false);
     setShowDeleteAllModal(false);
@@ -616,10 +637,10 @@ const SingleCat: FC = () => {
                 <>
                   <span className="text-gray-400">|</span>
                   <button
-                    onClick={handleDeleteSelected}
-                    className="text-base hover:underline text-red-600 hover:text-red-700 transition-colors"
+                    onClick={handleMoveSelectedToRecycleBin}
+                    className="text-base hover:underline text-orange-600 hover:text-orange-700 transition-colors"
                   >
-                    מחיקת ({selectedItems.length})
+                    העבר לסל ({selectedItems.length})
                   </button>
                   <span className="text-gray-400">|</span>
                   <button
@@ -708,12 +729,12 @@ const SingleCat: FC = () => {
                   <FolderInput size={18} />
                 </button>
                 <button
-                  title="מחיקה"
+                  title="העבר לסל מחזור"
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleDelete(item);
+                    handleMoveToRecycleBin(item);
                   }}
-                  className="absolute bottom-3 left-3 group-hover:opacity-100 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-red-500 hover:scale-110"
+                  className="absolute bottom-3 left-3 group-hover:opacity-100 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-orange-500 hover:scale-110"
                 >
                   <Trash size={18} />
                 </button>
@@ -761,7 +782,6 @@ const SingleCat: FC = () => {
               className="h-[140px] w-full flex justify-center items-center p-2 cursor-pointer"
               onClick={() => {
                 if (item.type === "product") {
-                  // Save current path before navigating
                   setPreviousPath(location.pathname);
                   navigate(`/products/${item.id}`);
                 } else {
@@ -874,46 +894,46 @@ const SingleCat: FC = () => {
         </>
       )}
 
-      {role === "editor" && showDeleteModal && itemToDelete && (
+      {role === "editor" && showMoveToRecycleBinModal && itemToDelete && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
           onClick={closeAllModals}
         >
           <div
-            className="bg-white p-6 w-full max-w-md"
+            className="bg-white p-6 w-full max-w-md rounded-lg"
             onClick={(e) => e.stopPropagation()}
           >
             <h4 className="text-lg font-semibold mb-2">
-              מחיקת {itemToDelete.type === "category" ? "קטגוריה" : "מוצר"}
+              העברה לסל מחזור
             </h4>
             <p className="mb-1">
-              האם ברצונך למחוק את{" "}
+              האם ברצונך להעביר את{" "}
               {itemToDelete.type === "category" ? "הקטגוריה" : "המוצר"} "
-              {itemToDelete.name}"?
+              {itemToDelete.name}" לסל המחזור?
             </p>
-            <small className="text-gray-500">לא יהיה ניתן לבטל פעולה זו</small>
+            <small className="text-blue-600">ניתן יהיה לשחזר את הפריט מסל המחזור</small>
             <div className="flex justify-end gap-3 mt-4">
               <button
-                onClick={confirmDelete}
-                disabled={isDeletingItem}
-                className={`bg-red-600 text-white px-4 py-2 rounded transition-colors
-    ${isDeletingItem ? "opacity-70 cursor-not-allowed" : "hover:bg-red-700"}`}
+                onClick={confirmMoveToRecycleBin}
+                disabled={isMovingToRecycleBin}
+                className={`bg-orange-600 text-white px-4 py-2 rounded transition-colors
+    ${isMovingToRecycleBin ? "opacity-70 cursor-not-allowed" : "hover:bg-orange-700"}`}
               >
-                {isDeletingItem ? (
+                {isMovingToRecycleBin ? (
                   <span className="flex items-center gap-2">
                     <Spinner className="size-4 text-white" />
-                    מוחק...
+                    מעביר לסל...
                   </span>
                 ) : (
-                  "מחיקה"
+                  "העבר לסל מחזור"
                 )}
               </button>
 
               <button
                 onClick={closeAllModals}
-                disabled={isDeletingItem}
+                disabled={isMovingToRecycleBin}
                 className={`bg-gray-300 px-4 py-2 rounded transition-colors
-    ${isDeletingItem ? "opacity-70 cursor-not-allowed" : "hover:bg-gray-400"}`}
+    ${isMovingToRecycleBin ? "opacity-70 cursor-not-allowed" : "hover:bg-gray-400"}`}
               >
                 ביטול
               </button>
@@ -922,7 +942,7 @@ const SingleCat: FC = () => {
         </div>
       )}
 
-      {role === "editor" && showCategoryDeleteChoice && itemToDelete && (
+      {role === "editor" && showCategoryMoveChoice && itemToDelete && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
           onClick={closeAllModals}
@@ -931,7 +951,7 @@ const SingleCat: FC = () => {
             className="bg-white p-6 rounded-lg w-full max-w-md"
             onClick={(e) => e.stopPropagation()}
           >
-            <h4 className="text-lg font-semibold mb-2">מחיקת קטגוריה</h4>
+            <h4 className="text-lg font-semibold mb-2">העברה לסל מחזור</h4>
 
             <p className="mb-2">
               מה ברצונך לעשות עם התוכן שבתוך "{itemToDelete.name}"?
@@ -939,44 +959,44 @@ const SingleCat: FC = () => {
 
             <div className="flex flex-col gap-3 mt-4">
               <button
-                onClick={() => confirmCategoryDelete("cascade")}
-                disabled={isDeletingItem}
-                className={`bg-red-600 text-white px-4 py-2 rounded transition-colors
-            ${isDeletingItem ? "opacity-70 cursor-not-allowed" : "hover:bg-red-700"}`}
+                onClick={() => confirmCategoryMove("cascade")}
+                disabled={isMovingToRecycleBin}
+                className={`bg-orange-600 text-white px-4 py-2 rounded transition-colors
+            ${isMovingToRecycleBin ? "opacity-70 cursor-not-allowed" : "hover:bg-orange-700"}`}
               >
-                {isDeletingItem &&
-                categoryDeleteStrategyLoading === "cascade" ? (
+                {isMovingToRecycleBin &&
+                categoryMoveStrategyLoading === "cascade" ? (
                   <span className="flex items-center justify-center gap-2">
                     <Spinner className="size-4 text-white" />
-                    מוחק...
+                    מעביר לסל...
                   </span>
                 ) : (
-                  "מחק הכל (כולל תכנים)"
+                  "העבר הכל לסל (כולל תכנים)"
                 )}
               </button>
 
               <button
-                onClick={() => confirmCategoryDelete("move_up")}
-                disabled={isDeletingItem}
-                className={`bg-orange-100 text-orange-900 px-4 py-2 rounded transition-colors
-    ${isDeletingItem ? "opacity-70 cursor-not-allowed" : "hover:bg-orange-200"}`}
+                onClick={() => confirmCategoryMove("move_up")}
+                disabled={isMovingToRecycleBin}
+                className={`bg-blue-100 text-blue-900 px-4 py-2 rounded transition-colors
+    ${isMovingToRecycleBin ? "opacity-70 cursor-not-allowed" : "hover:bg-blue-200"}`}
               >
-                {isDeletingItem &&
-                categoryDeleteStrategyLoading === "move_up" ? (
+                {isMovingToRecycleBin &&
+                categoryMoveStrategyLoading === "move_up" ? (
                   <span className="flex items-center justify-center gap-2">
-                    <Spinner className="size-4 text-orange-900" />
-                    מוחק...
+                    <Spinner className="size-4 text-blue-900" />
+                    מעביר לסל...
                   </span>
                 ) : (
-                  "מחק רק קטגוריה (העבר תכנים למעלה)"
+                  "העבר רק קטגוריה (העבר תכנים למעלה)"
                 )}
               </button>
 
               <button
                 onClick={closeAllModals}
-                disabled={isDeletingItem}
+                disabled={isMovingToRecycleBin}
                 className={`bg-gray-300 px-4 py-2 rounded transition-colors
-            ${isDeletingItem ? "opacity-70 cursor-not-allowed" : "hover:bg-gray-400"}`}
+            ${isMovingToRecycleBin ? "opacity-70 cursor-not-allowed" : "hover:bg-gray-400"}`}
               >
                 ביטול
               </button>
@@ -992,10 +1012,10 @@ const SingleCat: FC = () => {
           currentPaths={itemToDelete.path}
           currentCategoryPath={categoryPath}
           onClose={closeAllModals}
-          onDeleteFromCurrent={handleDeleteFromCurrent}
-          onDeleteFromAll={handleDeleteFromAll}
-          onDeleteSelected={handleDeleteFromSpecificPaths}
-          isDeleting={isDeletingItem}
+          onDeleteFromCurrent={handleRemoveFromCurrent}
+          onDeleteFromAll={handleMoveAllToRecycleBin}
+          onDeleteSelected={handleRemoveFromSpecificPaths}
+          isDeleting={isMovingToRecycleBin}
         />
       )}
 
@@ -1008,20 +1028,19 @@ const SingleCat: FC = () => {
             className="bg-white p-6 rounded-lg w-full max-w-md"
             onClick={(e) => e.stopPropagation()}
           >
-            <h4 className="text-lg font-semibold mb-2">מחיקת פריטים נבחרים</h4>
+            <h4 className="text-lg font-semibold mb-2">העברת פריטים לסל מחזור</h4>
             <p className="mb-1">
-              האם ברצונך למחוק {selectedItems.length} פריטים?
+              האם ברצונך להעביר {selectedItems.length} פריטים לסל המחזור?
             </p>
-            <small className="text-red-600 font-medium block">
-              אזהרה: פעולה זו תמחק את כל הפריטים הנבחרים ולא ניתן יהיה לשחזר
-              אותם!
+            <small className="text-blue-600 font-medium block">
+              הפריטים הנבחרים יועברו לסל המחזור וניתן יהיה לשחזר אותם
             </small>
             <div className="flex justify-end gap-3 mt-4">
               <button
-                onClick={confirmDeleteSelected}
-                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors"
+                onClick={confirmMoveSelectedToRecycleBin}
+                className="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 transition-colors"
               >
-                מחיקת הכל{" "}
+                העבר לסל מחזור
               </button>
               <button
                 onClick={closeAllModals}
@@ -1106,7 +1125,9 @@ const SingleCat: FC = () => {
             _id: itemToEdit.id,
             categoryName: itemToEdit.name,
             categoryPath: itemToEdit.path[0],
-            categoryImage: itemToEdit.images[0],
+            categoryImage: Array.isArray(itemToEdit.images) 
+            ? itemToEdit.images[0] 
+            : itemToEdit.images,
           }}
           onClose={() => {
             setShowEditModal(false);

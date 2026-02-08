@@ -152,30 +152,41 @@ export const Favorites: React.FC = () => {
   }
   if (loading) {
     return (
-      <div className="pt-32 text-center">
-        <p className="text-gray-600 text-lg">טוען מועדפים...</p>
+      <div className="mt-12 p-4 flex items-center justify-center min-h-[400px]">
+        <div className="text-slate-700 text-xl">טוען מועדפים...</div>
       </div>
     );
   }
   if (products.length === 0 && categories.length === 0) {
     return (
-      <div className="pt-32">
-        <h1 className="mr-4 text-right text-3xl font-bold mb-6 text-blue-950">
-          מועדפים
-        </h1>
-        <p className="text-gray-600 text-center mt-40 text-lg">
-          אין מועדפים כרגע.
-        </p>
+      <div className="mt-12 p-4 font-system direction-rtl text-right overflow-x-hidden" style={{ direction: "rtl" }}>
+        <div className="text-right mt-16 mb-6">
+          <h2 className="text-5xl font-light text-slate-700 mb-2 tracking-tight">
+            מועדפים
+          </h2>
+          <p className="text-slate-500 text-lg">
+            הפריטים והקטגוריות המועדפים עליך
+          </p>
+        </div>
+        <div className="w-full h-40 flex flex-col justify-center items-center my-12 text-slate-500">
+          <Heart size={64} className="mb-4 text-slate-300" />
+          <p className="text-lg">אין מועדפים כרגע</p>
+        </div>
       </div>
     );
   }
   return (
-    <div className="pt-32">
-      <h1 className="mr-4 text-right text-3xl font-bold mb-6 text-blue-950">
-        מועדפים
-      </h1>
+    <div className="mt-12 p-4 font-system direction-rtl text-right overflow-x-hidden" style={{ direction: "rtl" }}>
+      <div className="text-right mt-16 mb-6">
+        <h2 className="text-5xl font-light text-slate-700 mb-2 tracking-tight">
+          מועדפים
+        </h2>
+        <p className="text-slate-500 text-lg">
+          הפריטים והקטגוריות המועדפים עליך
+        </p>
+      </div>
       {/* Filter Buttons */}
-      <div className="flex justify-center gap-3 mb-8 flex-wrap">
+      <div className="flex justify-center gap-3 mb-8 flex-wrap mt-8">
         <button
           onClick={() => setActiveFilter("all")}
           className={`px-6 py-2 rounded-full font-medium transition-all ${
@@ -184,7 +195,7 @@ export const Favorites: React.FC = () => {
               : "bg-gray-200 text-gray-700 hover:bg-gray-300"
           }`}
         >
-          הכל
+          הכל ({products.length + categories.length})
         </button>
         <button
           onClick={() => setActiveFilter("categories")}
@@ -194,7 +205,7 @@ export const Favorites: React.FC = () => {
               : "bg-gray-200 text-gray-700 hover:bg-gray-300"
           }`}
         >
-          קטגוריות
+          קטגוריות ({categories.length})
         </button>
         <button
           onClick={() => setActiveFilter("products")}
@@ -204,7 +215,7 @@ export const Favorites: React.FC = () => {
               : "bg-gray-200 text-gray-700 hover:bg-gray-300"
           }`}
         >
-          מוצרים
+          מוצרים ({products.length})
         </button>
       </div>
       {/* Categories Section */}

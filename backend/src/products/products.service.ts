@@ -222,6 +222,10 @@ export class ProductsService {
       }
 
       await this.productModel.findByIdAndDelete(id);
+      await this.permissionsService.deletePermissionsForEntity(
+        EntityType.PRODUCT,
+        id,
+      );
 
       await this.usersService.removeItemFromAllUserFavorites(id);
 

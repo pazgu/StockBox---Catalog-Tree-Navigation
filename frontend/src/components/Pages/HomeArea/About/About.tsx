@@ -13,6 +13,8 @@ import { aboutApi } from "../../../../services/aboutApi";
 import BulletsSection from "./BulletsSection/BulletsSection";
 import { AboutBlock } from "@/components/models/about.models";
 import { debounce } from "../../../../lib/utils";
+import AboutSkeleton from "./AboutSkeleton/AboutSkeleton";
+
 
 const uid = () => crypto.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
 type FeatureItem = {
@@ -124,6 +126,7 @@ const IconMap: { [key: string]: FC<any> } = Object.fromEntries(
 
 const iconOptions = ICONS_HE.map((i) => ({ value: i.value, label: i.label }));
 
+
 type FieldKind =
   | "sectionTitle"
   | "introContent"
@@ -138,6 +141,7 @@ type FieldKind =
 
 const mkKey = (kind: FieldKind, sectionId: string, itemId?: string) =>
   [kind, sectionId, itemId].filter(Boolean).join("::");
+
 
 const isBlank = (v?: string | null) => !v || v.trim().length === 0;
 
@@ -168,6 +172,7 @@ interface AboutProps {}
 const About: FC<AboutProps> = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
+  const [isPageLoading, setIsPageLoading] = useState(true); 
 
   const [editableImages, setEditableImages] = useState<ImageItem[]>([]);
 
@@ -194,6 +199,7 @@ const About: FC<AboutProps> = () => {
 
   const markDirty = (key: string, currentValue: string) => {
     const snap = getSnapshotValue(key);
+    
 
     setDirtyKeys((prev) => {
       const next = new Set(prev);
@@ -269,82 +275,63 @@ const About: FC<AboutProps> = () => {
   const touchStartXRef = React.useRef<number | null>(null);
 
   React.useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      const el = imageWrapRef.current;
-      if (!el) return;
-      const within =
-        el.contains(document.activeElement) ||
-        document.activeElement === document.body;
-      if (!within) return;
+  (async () => {
+    try {
+      setIsPageLoading(true); // ✅ ADD
+      const res = await aboutApi.get();
 
-      if (e.key === "ArrowLeft") {
-        e.preventDefault();
-        goPrev();
-      } else if (e.key === "ArrowRight") {
-        e.preventDefault();
-        goNext();
-      }
-    };
+      const loadedSections = blocksToSections(res.blocks ?? []);
+      setSections(loadedSections);
 
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [goPrev, goNext]);
+      const loadedImages: ImageItem[] = (res.images ?? []).map((url) => ({
+        url,
+      }));
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await aboutApi.get();
+      setEditableImages(loadedImages);
 
-        const loadedSections = blocksToSections(res.blocks ?? []);
-        setSections(loadedSections);
+      setOriginalData({
+        sections: loadedSections,
+        images: loadedImages,
+      });
 
-        const loadedImages: ImageItem[] = (res.images ?? []).map((url) => ({
-          url,
-        }));
+      const snap: Record<string, string> = {};
 
-        setEditableImages(loadedImages);
+      loadedSections.forEach((s) => {
+        snap[mkKey("sectionTitle", s.id)] = s.title ?? "";
 
-        setOriginalData({
-          sections: loadedSections,
-          images: loadedImages,
-        });
+        if (s.type === "intro") snap[mkKey("introContent", s.id)] = s.content ?? "";
+        if (s.type === "paragraph") snap[mkKey("paragraphContent", s.id)] = s.content ?? "";
 
-        const snap: Record<string, string> = {};
-
-        loadedSections.forEach((s) => {
-          snap[mkKey("sectionTitle", s.id)] = s.title ?? "";
-
-          if (s.type === "intro")
-            snap[mkKey("introContent", s.id)] = s.content ?? "";
-          if (s.type === "paragraph")
-            snap[mkKey("paragraphContent", s.id)] = s.content ?? "";
-
-          if (s.type === "features") {
-            snap[mkKey("featuresTitle", s.id)] = s.title ?? "";
-            (s.features ?? []).forEach((f) => {
-              snap[mkKey("featureCard", s.id, f.id)] = JSON.stringify({
-                title: f.title ?? "",
-                description: f.description ?? "",
-                icon: f.icon ?? "",
-              });
+        if (s.type === "features") {
+          snap[mkKey("featuresTitle", s.id)] = s.title ?? "";
+          (s.features ?? []).forEach((f) => {
+            snap[mkKey("featureCard", s.id, f.id)] = JSON.stringify({
+              title: f.title ?? "",
+              description: f.description ?? "",
+              icon: f.icon ?? "",
             });
-          }
+          });
+        }
 
-          if (s.type === "bullets") {
-            snap[mkKey("bulletsTitle", s.id)] = s.title ?? "";
-            (s.bullets ?? []).forEach((b) => {
-              snap[mkKey("bulletText", s.id, b.id)] = b.text ?? "";
-            });
-          }
-        });
+        if (s.type === "bullets") {
+          snap[mkKey("bulletsTitle", s.id)] = s.title ?? "";
+          (s.bullets ?? []).forEach((b) => {
+            snap[mkKey("bulletText", s.id, b.id)] = b.text ?? "";
+          });
+        }
+      });
 
-        setConfirmedSnapshot(snap);
-        setDirtyKeys(new Set());
-      } catch (e) {
-        toast.error(TOAST.loadError);
-      }
-    })();
-  }, []);
+      setConfirmedSnapshot(snap);
+      setDirtyKeys(new Set());
+    } catch (e) {
+      toast.error(TOAST.loadError);
+    } finally {
+      setIsPageLoading(false); 
+    }
+  })();
+}, []);
+
+
 
   const handleAddSection = (
     afterIndex: number,
@@ -823,6 +810,15 @@ const debouncedRemoveImage = useMemo(
       window.scrollBy({ top: scrollAmount, behavior: "auto" });
     }
   };
+
+  if (isPageLoading) {
+  return (
+    <div className="pt-8 min-h-screen font-['Arial'] direction-rtl" dir="rtl">
+      <AboutSkeleton />
+    </div>
+  );
+}
+
 
   return (
     <div

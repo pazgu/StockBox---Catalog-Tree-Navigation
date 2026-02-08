@@ -44,13 +44,14 @@ const BannedItems: React.FC<BannedItemsProps> = ({
               <li key={item.id} className="text-sm">
                 <span className="font-medium text-red-600 ml-1">חסום: </span>
                 <a
-                  href={`/Permissions?id=${item.id}&type=${item.type}`}
-                  onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
-                    e.preventDefault();
-                    navigate(`/Permissions?id=${item.id}&type=${item.type}`);
-                  }}
-                  className="text-slate-700 hover:text-slate-600 underline transition-colors cursor-pointer"
-                >
+  href={`/permissions/${item.type}/${item.id}`}
+  onClick={(e) => {
+    e.preventDefault();
+    navigate(`/permissions/${item.type}/${item.id}`);
+  }}
+  className="text-slate-700 hover:text-slate-600 underline transition-colors cursor-pointer"
+>
+
                   {item.name}
                 </a>
                 <span className="text-gray-500 text-xs mr-2">

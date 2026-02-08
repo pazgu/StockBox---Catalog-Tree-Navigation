@@ -18,6 +18,7 @@ import Footer from "../Footer/Footer";
 import SearchResultsPage from "../SearchBar/SearchBar/SearchAllPage";
 import { useNavigate } from "react-router-dom";
 import Page403 from "../../Pages/Page403/Page403";
+import { RecycleBin } from "../../Pages/CatArea/RecycleBin/RecycleBin";
 
 interface LayoutProps {}
 
@@ -40,6 +41,7 @@ const Layout: FC<LayoutProps> = () => {
           <Route path="/new-user" element={<NewUser></NewUser>} />
           <Route path="/allUsers" element={<AllUsers></AllUsers>} />
           <Route path="/Favorites" element={<Favorites></Favorites>} />
+          <Route path="/permissions/:type/:id" element={<Permissions />} />
           <Route
             path="/permissions/product/:id"
             element={<ProductPermissions></ProductPermissions>}
@@ -53,7 +55,12 @@ const Layout: FC<LayoutProps> = () => {
           <Route path="/404" element={<Page404 />} />
           <Route path="*" element={<Page404 />} />
 
-          <Route path="/search-all" element={<SearchResultsPage></SearchResultsPage>} />
+          <Route
+            path="/search-all"
+            element={<SearchResultsPage></SearchResultsPage>}
+          />
+
+          <Route path="/recycle-bin" element={<RecycleBin></RecycleBin>} />
         </Routes>
       </main>
       <Toaster richColors />

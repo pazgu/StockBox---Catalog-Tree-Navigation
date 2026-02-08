@@ -18,6 +18,8 @@ import { Product, ProductDocument } from 'src/schemas/Products.schema';
 import { Category, CategoryDocument } from 'src/schemas/Categories.schema';
 import { UsersService } from 'src/users/users.service';
 import { Group } from 'src/schemas/Groups.schema';
+import { GroupsService } from 'src/groups/groups.service';
+import { User } from 'src/schemas/Users.schema';
 
 @Injectable()
 export class PermissionsService {
@@ -26,7 +28,10 @@ export class PermissionsService {
     @InjectModel(Category.name) private categoryModel: Model<Category>,
     @InjectModel(Product.name) private productModel: Model<Product>,
     @InjectModel(Group.name) private groupModel: Model<Group>,
+    @InjectModel(User.name) private userModel: Model<User>,
+
     private usersService: UsersService,
+    private groupsService: GroupsService,
   ) {}
 
   async getPermissionsForUser(userId: string, userGroupIds?: string[]) {
@@ -323,6 +328,83 @@ export class PermissionsService {
       .exec();
   }
 
+  async resolveAllowedSubjectsForPath(
+    parentEntityIds: mongoose.Types.ObjectId[],
+  ): Promise<{
+    allowedGroupIds: string[];
+    allowedUserIds: string[];
+  }> {
+    const parentCount = parentEntityIds.length;
+    if (!parentCount) {
+      return { allowedGroupIds: [], allowedUserIds: [] };
+    }
+
+    const permissions = await this.permissionModel
+      .find({
+        entityType: EntityType.CATEGORY,
+        entityId: { $in: parentEntityIds },
+      })
+      .select('entityId allowed')
+      .lean();
+
+    if (permissions.length < parentCount) {
+      return { allowedGroupIds: [], allowedUserIds: [] };
+    }
+
+    const subjectCount = new Map<string, number>();
+
+    for (const perm of permissions) {
+      const key = perm.allowed.toString();
+      subjectCount.set(key, (subjectCount.get(key) || 0) + 1);
+    }
+
+    const groups = await this.groupModel.find().select('_id members').lean();
+
+    const allowedGroupIds: string[] = [];
+    const groupIdSet = new Set<string>();
+
+    for (const group of groups) {
+      const gid = group._id.toString();
+      if (subjectCount.get(gid) === parentCount) {
+        allowedGroupIds.push(gid);
+        groupIdSet.add(gid);
+      }
+    }
+
+    const userToGroups = new Map<string, string[]>();
+
+    for (const group of groups) {
+      const gid = group._id.toString();
+      for (const member of group.members) {
+        const uid = member.toString();
+        if (!userToGroups.has(uid)) {
+          userToGroups.set(uid, []);
+        }
+        userToGroups.get(uid)!.push(gid);
+      }
+    }
+
+    const users = await this.userModel.find().select('_id').lean();
+
+    const allowedUserIds: string[] = [];
+
+    for (const user of users) {
+      const uid = user._id.toString();
+      const userGroups = userToGroups.get(uid);
+
+      if (userGroups?.length) continue;
+
+      if (subjectCount.get(uid) === parentCount) {
+        allowedUserIds.push(uid);
+      }
+    }
+
+    return {
+      allowedGroupIds,
+      allowedUserIds,
+    };
+  }
+
   async getAllowedUsersForEntity(
     entityId: string,
     entityType: EntityType,
@@ -349,46 +431,63 @@ export class PermissionsService {
       rawParts[0] === 'categories' ? rawParts.slice(1) : rawParts;
 
     if (!isProduct && normalizedParts.length === 1) {
-      const allUsers = await this.usersService.getAllUserIds();
+      const [userIds, groupIds] = await Promise.all([
+        this.usersService.getAllUserIds(),
+        this.groupsService.getAllGroupIds(),
+      ]);
 
-      const permissions = allUsers.map((userId) => ({
+      const permissions = [...userIds, ...groupIds].map((id) => ({
         entityType: EntityType.CATEGORY,
         entityId: entity._id,
-        allowed: userId,
+        allowed: id,
       }));
 
       if (permissions.length) {
-        await this.permissionModel.insertMany(permissions);
+        await this.permissionModel.insertMany(permissions, { ordered: false });
       }
+
       return;
     }
 
-    const parentName = normalizedParts[normalizedParts.length - 2];
-    if (!parentName) return;
+    const parentPaths: string[] = [];
+    for (let i = 1; i < normalizedParts.length; i++) {
+      parentPaths.push('/categories/' + normalizedParts.slice(0, i).join('/'));
+    }
 
-    const parentPath = '/categories/' + normalizedParts.slice(0, -1).join('/');
-    const parentCategory = await this.categoryModel
-      .findOne({ categoryPath: parentPath })
+    const parents = await this.categoryModel
+      .find({ categoryPath: { $in: parentPaths } })
       .select('_id')
       .lean();
 
-    if (!parentCategory) return;
+    if (!parents.length) return;
 
-    const allowedUsers = await this.getAllowedUsersForEntity(
-      parentCategory._id.toString(),
-      EntityType.CATEGORY,
+    const parentIds = parents.map((p) => p._id);
+
+    const { allowedGroupIds, allowedUserIds } =
+      await this.resolveAllowedSubjectsForPath(parentIds);
+
+    const permissions = [
+      ...allowedGroupIds.map((id) => ({
+        entityType: isProduct ? EntityType.PRODUCT : EntityType.CATEGORY,
+        entityId: entity._id,
+        allowed: new mongoose.Types.ObjectId(id),
+      })),
+      ...allowedUserIds.map((id) => ({
+        entityType: isProduct ? EntityType.PRODUCT : EntityType.CATEGORY,
+        entityId: entity._id,
+        allowed: new mongoose.Types.ObjectId(id),
+      })),
+    ];
+    console.log(
+      `Total permissions to assign for new entity ${entity._id} (${pathAsString}):`,
+      permissions.length,
     );
 
-    const permissions = allowedUsers.map((userId) => ({
-      entityType: isProduct ? EntityType.PRODUCT : EntityType.CATEGORY,
-      entityId: entity._id,
-      allowed: userId,
-    }));
-
     if (permissions.length) {
-      await this.permissionModel.insertMany(permissions);
+      await this.permissionModel.insertMany(permissions, { ordered: false });
     }
   }
+
   async updatePermissionsOnMove(
     entityId: string,
     entityType: EntityType,
@@ -1107,5 +1206,94 @@ export class PermissionsService {
       },
       paths: pathsWithPermissions.filter((p) => p !== null),
     };
+  }
+  async deletePermissionsForEntity(
+    entityType: EntityType,
+    entityId: string,
+    opts?: { cascade?: boolean },
+  ) {
+    const entityObjectId = new Types.ObjectId(entityId);
+    if (entityType !== EntityType.CATEGORY || !opts?.cascade) {
+      const res = await this.permissionModel.deleteMany({
+        entityType,
+        entityId: entityObjectId,
+      });
+
+      return { success: true, deleted: res.deletedCount ?? 0 };
+    }
+
+    const descendants = await this.getAllCategoryDescendants(entityId);
+
+    const categoryIds = [
+      entityId,
+      ...descendants
+        .filter((d) => d.entityType === EntityType.CATEGORY)
+        .map((d) => d.entityId),
+    ].map((id) => new Types.ObjectId(id));
+
+    const productIds = descendants
+      .filter((d) => d.entityType === EntityType.PRODUCT)
+      .map((d) => new Types.ObjectId(d.entityId));
+
+    const or: any[] = [];
+    if (categoryIds.length)
+      or.push({
+        entityType: EntityType.CATEGORY,
+        entityId: { $in: categoryIds },
+      });
+    if (productIds.length)
+      or.push({
+        entityType: EntityType.PRODUCT,
+        entityId: { $in: productIds },
+      });
+    const res = await this.permissionModel.deleteMany({ $or: or });
+
+    return {
+      success: true,
+      deleted: res.deletedCount ?? 0,
+      cascade: true,
+      deletedEntities: {
+        categories: categoryIds.length,
+        products: productIds.length,
+      },
+    };
+  }
+
+  async deletePermissionsForAllowed(allowedId: string) {
+    const res = await this.permissionModel.deleteMany({
+      allowed: new Types.ObjectId(allowedId),
+    });
+
+    return { success: true, deleted: res.deletedCount ?? 0 };
+  }
+
+  async getPermissionsByEntityId(entityId: string, entityType: EntityType) {
+    const permissions = await this.permissionModel
+      .find({
+        entityId: new Types.ObjectId(entityId),
+        entityType,
+      })
+      .lean()
+      .exec();
+
+    return permissions;
+  }
+
+  async deletePermissionsByEntityId(entityId: string, entityType: EntityType) {
+    await this.permissionModel.deleteMany({
+      entityId: new Types.ObjectId(entityId),
+      entityType,
+    });
+  }
+
+  async restorePermissions(permissions: any[]) {
+    for (const perm of permissions) {
+      const newPermission = new this.permissionModel({
+        entityId: perm.entityId,
+        entityType: perm.entityType,
+        allowed: perm.allowed,
+      });
+      await newPermission.save();
+    }
   }
 }

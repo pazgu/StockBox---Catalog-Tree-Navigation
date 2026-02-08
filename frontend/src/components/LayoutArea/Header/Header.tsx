@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Heart, User, Menu, X } from "lucide-react";
+import { Heart, User, Menu, X, Trash2 } from "lucide-react";
 import logo from "../../../assets/logo.png";
 import { useUser } from "../../../context/UserContext";
 import { usePath } from "../../../context/PathContext";
@@ -19,7 +19,7 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  
+
   const location = useLocation();
   const navigate = useNavigate();
   const { setPreviousPath } = usePath();
@@ -43,8 +43,10 @@ const Header: React.FC<HeaderProps> = ({
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
-    const handleResize = () => window.innerWidth >= 1024 && setIsMobileMenuOpen(false);
-    const handleEscape = (e: KeyboardEvent) => e.key === "Escape" && setIsMobileMenuOpen(false);
+    const handleResize = () =>
+      window.innerWidth >= 1024 && setIsMobileMenuOpen(false);
+    const handleEscape = (e: KeyboardEvent) =>
+      e.key === "Escape" && setIsMobileMenuOpen(false);
 
     window.addEventListener("scroll", handleScroll);
     window.addEventListener("resize", handleResize);
@@ -79,7 +81,6 @@ const Header: React.FC<HeaderProps> = ({
       >
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-20">
-            
             {/* Logo */}
             <div className="hidden sm:block flex-shrink-0 transform transition-transform duration-300 hover:scale-105 cursor-pointer">
               <img
@@ -93,64 +94,98 @@ const Header: React.FC<HeaderProps> = ({
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center flex-1 justify-center max-w-3xl mx-8">
               <nav className="flex items-center gap-6" dir="rtl">
-                <NavLink to="/categories" className={navLinkClass}>תכולות ואמצעים</NavLink>
+                <NavLink to="/categories" className={navLinkClass}>
+                  תכולות ואמצעים
+                </NavLink>
                 <span className="text-white/30 animate-pulse">|</span>
-                <NavLink to="/" className={navLinkClass}>אודות</NavLink>
-                
+                <NavLink to="/" className={navLinkClass}>
+                  אודות
+                </NavLink>
+
                 {!role && (
                   <>
                     <span className="text-white/30 animate-pulse">|</span>
-                    <NavLink to="/login" className={navLinkClass}>התחברות</NavLink>
+                    <NavLink to="/login" className={navLinkClass}>
+                      התחברות
+                    </NavLink>
                   </>
                 )}
               </nav>
             </div>
-            <div className={`relative flex-1 max-w-md mx-4 ${isMobileMenuOpen ? "hidden" : ""}`}>
+            <div
+              className={`relative flex-1 max-w-md mx-4 ${isMobileMenuOpen ? "hidden" : ""}`}
+            >
               <SearchBar onSelectResult={handleSearchSelect} />
             </div>
 
             {/* Action Icons */}
-            <div className={`flex items-center gap-2 mr-4 ${isMobileMenuOpen ? "hidden" : ""}`}>
-                            <button
+            <div
+              className={`flex items-center gap-2 mr-4 ${isMobileMenuOpen ? "hidden" : ""}`}
+            >
+              <button
                 aria-label="Favorites"
-                className="relative p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 hover:scale-110 mr-2"
+                className="relative p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 group mr-2"
                 onClick={() => navigate("/Favorites")}
               >
-                <Heart size={21} className="hover:fill-current" />
-                <Badge count={favoriteCount} />
+                <Heart
+                  size={21}
+                  className="transition-all duration-300 group-hover:fill-current group-hover:scale-110"
+                />
+                <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-3 py-2 rounded opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                  מועדפים
+                </span>
               </button>
 
               {role === "editor" && (
-                <div className="relative group">
-                  <button className="relative p-2 rounded-full text-white transition-all duration-300 hover:scale-110">
-                    <img
-                      src="https://img.icons8.com/?size=100&id=cykh8BZMTKkb&format=png&color=FFFFFF"
-                      alt="User Avatar"
-                      className="w-10 h-10 rounded-full hover:bg-white/10 p-1"
+                <>
+                  <button
+                    aria-label="Recycle Bin"
+                    className="relative p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 group mr-2"
+                    onClick={() => navigate("/recycle-bin")}
+                  >
+                    <Trash2
+                      size={21}
+                      className="transition-all duration-300 group-hover:text-red-400 group-hover:scale-110"
                     />
+                    <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-3 py-2 rounded opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                      סל מיחזור
+                    </span>
                   </button>
-                  <div className="absolute left-1/2 ml-3 -translate-x-1/2 mt-2 w-40 bg-[#beaa88] rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
-                    <button
-                      onClick={() => navigate("/AllUsers")}
-                      className="w-full px-4 py-2 text-right text-sm text-white hover:bg-[#e7cc9c] transition-colors rounded-t-lg"
-                    >
-                      כל המשתמשים
+
+                  <div className="relative group">
+                    <button className="relative p-2 rounded-full text-white transition-all duration-300 hover:scale-110">
+                      <img
+                        src="https://img.icons8.com/?size=100&id=cykh8BZMTKkb&format=png&color=FFFFFF"
+                        alt="User Avatar"
+                        className="w-10 h-10 rounded-full hover:bg-white/10 p-1"
+                      />
                     </button>
-                    <button
-                      onClick={() => navigate("/GroupControl")}
-                      className="w-full px-4 py-2 text-right text-sm text-white hover:bg-[#e7cc9c] transition-colors border-t border-gray-700 rounded-b-lg"
-                    >
-                      ניהול קבוצות
-                    </button>
+                    <div className="absolute left-1/2 ml-3 -translate-x-1/2 mt-2 w-40 bg-[#beaa88] rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                      <button
+                        onClick={() => navigate("/AllUsers")}
+                        className="w-full px-4 py-2 text-right text-sm text-white hover:bg-[#e7cc9c] transition-colors rounded-t-lg"
+                      >
+                        כל המשתמשים
+                      </button>
+                      <button
+                        onClick={() => navigate("/GroupControl")}
+                        className="w-full px-4 py-2 text-right text-sm text-white hover:bg-[#e7cc9c] transition-colors border-t border-gray-700 rounded-b-lg"
+                      >
+                        ניהול קבוצות
+                      </button>
+                    </div>
                   </div>
-                </div>
+                </>
               )}
 
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className="lg:hidden p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 active:scale-95 ml-auto"
               >
-                <Menu size={24} className={isMobileMenuOpen ? "opacity-0" : "opacity-100"} />
+                <Menu
+                  size={24}
+                  className={isMobileMenuOpen ? "opacity-0" : "opacity-100"}
+                />
               </button>
             </div>
           </div>
@@ -158,28 +193,42 @@ const Header: React.FC<HeaderProps> = ({
 
         <div
           className={`lg:hidden absolute top-0 left-0 w-full transition-all duration-500 ease-in-out mt-3 ${
-            isMobileMenuOpen ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0 overflow-hidden"
+            isMobileMenuOpen
+              ? "max-h-[600px] opacity-100"
+              : "max-h-0 opacity-0 overflow-hidden"
           }`}
         >
           <div className="container mx-auto px-4 py-4 bg-gradient-to-b from-[#0a2644] to-[#0D305B]">
             <div className="flex justify-end mb-4">
-               <X size={24} className="text-white cursor-pointer" onClick={() => setIsMobileMenuOpen(false)} />
+              <X
+                size={24}
+                className="text-white cursor-pointer"
+                onClick={() => setIsMobileMenuOpen(false)}
+              />
             </div>
 
             <nav className="flex flex-col gap-4" dir="rtl">
               <div className="relative z-[999]">
                 <SearchBar onSelectResult={handleSearchSelect} />
               </div>
-              
-              <NavLink to="/" className={navLinkClass}>אודות</NavLink>
-              <NavLink to="/categories" className={navLinkClass}>תכולות ואמצעים</NavLink>
-              
-              {!role && <NavLink to="/login" className={navLinkClass}>התחברות</NavLink>}
+
+              <NavLink to="/" className={navLinkClass}>
+                אודות
+              </NavLink>
+              <NavLink to="/categories" className={navLinkClass}>
+                תכולות ואמצעים
+              </NavLink>
+
+              {!role && (
+                <NavLink to="/login" className={navLinkClass}>
+                  התחברות
+                </NavLink>
+              )}
             </nav>
 
             {/* Mobile Quick Actions */}
             <div className="flex justify-around mt-1 pt-6 border-t border-white/20">
-              <button 
+              <button
                 onClick={() => navigate("/Favorites")}
                 className="flex flex-col items-center gap-1 text-white/80"
               >
@@ -189,12 +238,26 @@ const Header: React.FC<HeaderProps> = ({
 
               {role === "editor" && (
                 <>
-                  <button onClick={() => navigate("/AllUsers")} className="flex flex-col items-center gap-1 text-white/80">
+                  <button
+                    onClick={() => navigate("/recycle-bin")}
+                    className="flex flex-col items-center gap-1 text-white/80"
+                  >
+                    <Trash2 size={20} />
+                    <span className="text-xs">סל מחזור</span>
+                  </button>
+
+                  <button
+                    onClick={() => navigate("/AllUsers")}
+                    className="flex flex-col items-center gap-1 text-white/80"
+                  >
                     <User size={20} />
                     <span className="text-xs">כל המשתמשים</span>
                   </button>
-                  <button onClick={() => navigate("/GroupControl")} className="flex flex-col items-center gap-1 text-white/80 mb-4">
-                     <img
+                  <button
+                    onClick={() => navigate("/GroupControl")}
+                    className="flex flex-col items-center gap-1 text-white/80 mb-4"
+                  >
+                    <img
                       src="https://img.icons8.com/?size=100&id=cykh8BZMTKkb&format=png&color=FFFFFF"
                       alt="User Avatar"
                       className="size-6"

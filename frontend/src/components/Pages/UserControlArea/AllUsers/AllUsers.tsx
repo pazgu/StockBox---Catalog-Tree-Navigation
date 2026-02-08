@@ -16,6 +16,28 @@ const ROLE_OPTIONS: Array<{ value: User["role"]; label: string }> = [
 const roleLabel = (r: User["role"]) =>
   ROLE_OPTIONS.find((o) => o.value === r)?.label ?? r;
 
+const MODAL_OVERLAY =
+  "fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4";
+
+const MODAL_CARD =
+  "bg-gradient-to-br from-white via-[#fffdf8] to-[#fff9ed] rounded-2xl p-8 w-full max-w-md shadow-2xl border border-gray-100 text-right";
+
+const MODAL_FOOTER =
+  "flex justify-end gap-4 mt-6 pt-6 border-t-2 border-gray-200";
+
+const BTN_CANCEL =
+  "px-6 h-12 rounded-xl border-2 border-gray-300 transition-colors font-bold bg-white text-gray-700 hover:bg-gray-50";
+
+const BTN_PRIMARY =
+  "px-8 h-12 rounded-xl text-white transition-colors font-bold shadow-lg bg-gradient-to-r from-[#0D305B] to-[#15457a] hover:from-[#15457a] hover:to-[#1e5a9e] hover:shadow-xl";
+
+const BTN_DANGER =
+  "px-8 h-12 rounded-xl font-bold text-white transition-colors shadow-lg bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 hover:shadow-xl";
+
+const BTN_SUCCESS =
+  "px-8 h-12 rounded-xl font-bold text-white transition-colors shadow-lg bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 hover:shadow-xl";
+
+
 interface AllUsersProps { }
 
 const AllUsers: FC<AllUsersProps> = () => {
@@ -385,29 +407,33 @@ const AllUsers: FC<AllUsersProps> = () => {
 
         {/* Approval Dialog */}
         {approveUserIndex !== null && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 w-80 text-right shadow-lg">
-              <h2 className="text-xl font-semibold mb-4">לאשר משתמש זה?</h2>
-              <p className="mb-6 text-gray-600">
-                האם אתה רוצה להכניס את המשתמש למערכת ולאפשר לו גישה לאתר?
-              </p>
-              <div className="flex justify-end gap-3">
-                <button
-                  className="px-4 py-2 rounded border border-gray-300 hover:bg-gray-100"
-                  onClick={() => setApproveUserIndex(null)}
-                >
-                  ביטול
-                </button>
-                <button
-                  className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700"
-                  onClick={confirmApprove}
-                >
-                  כן, אשר
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+  <div className={MODAL_OVERLAY}>
+    <div className={MODAL_CARD}>
+      <div className="flex justify-start w-full mb-4">
+        <h3 className="text-2xl font-bold text-[#0D305B]">
+          לאשר משתמש זה?
+        </h3>
+      </div>
+
+      <p className="text-slate-700 mb-2">
+        האם אתה רוצה להכניס את המשתמש למערכת ולאפשר לו גישה לאתר?
+      </p>
+      <small className="text-gray-500 block mb-6">
+        המשתמש יתווסף למערכת ויוכל להתחבר
+      </small>
+
+      <div className={MODAL_FOOTER}>
+        <button className={BTN_CANCEL} onClick={() => setApproveUserIndex(null)}>
+          ביטול
+        </button>
+        <button className={BTN_SUCCESS} onClick={confirmApprove}>
+          כן, אשר
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
         <div className="flex justify-center items-center gap-2 mt-8">
           {currentPage > 1 && (
             <button
@@ -444,64 +470,74 @@ const AllUsers: FC<AllUsersProps> = () => {
         </div>
 
         {deleteUserIndex !== null && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 w-80 text-right shadow-lg">
-              <h2 className="text-xl font-semibold mb-4">למחוק משתמש זה?</h2>
-              <p className="mb-6 text-gray-600">
-                פעולה זו לא ניתנת לביטול. האם ברצונך למחוק את המשתמש?
-              </p>
-              <div className="flex justify-end gap-3">
-                <button
-                  className="px-4 py-2 rounded border border-gray-300 hover:bg-gray-100"
-                  onClick={cancelDelete}
-                >
-                  ביטול
-                </button>
-                <button
-                  className="px-4 py-2 rounded bg-red-500 text-white hover:bg-red-600"
-                  onClick={confirmDelete}
-                >
-                  מחיקה
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+  <div className={MODAL_OVERLAY}>
+    <div className={MODAL_CARD}>
+      <div className="flex justify-start w-full mb-4">
+        <h3 className="text-2xl font-bold text-[#0D305B]">
+          למחוק משתמש זה?
+        </h3>
+      </div>
+
+      <p className="text-slate-700 mb-2">
+        פעולה זו לא ניתנת לביטול. האם ברצונך למחוק את המשתמש?
+      </p>
+      <small className="text-gray-500 block mb-6">
+        כל המידע המשויך למשתמש יוסר
+      </small>
+
+      <div className={MODAL_FOOTER}>
+        <button className={BTN_CANCEL} onClick={cancelDelete}>
+          ביטול
+        </button>
+        <button className={BTN_DANGER} onClick={confirmDelete}>
+          מחיקה
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
         {blockUserIndex !== null && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 w-80 text-right shadow-lg">
-              <h2 className="text-xl font-semibold mb-4">
-                {currentUsers[blockUserIndex].isBlocked
-                  ? "לבטל חסימת משתמש זה?"
-                  : "לחסום משתמש זה?"}
-              </h2>
-              <p className="mb-6 text-gray-600">
-                {currentUsers[blockUserIndex].isBlocked
-                  ? "האם אתה בטוח שברצונך לבטל את חסימת המשתמש ולאפשר לו גישה מחדש לאתר?"
-                  : "האם אתה בטוח שברצונך לחסום משתמש זה מצפייה במוצרים?"}
-              </p>
-              <div className="flex justify-end gap-3">
-                <button
-                  className="px-4 py-2 rounded border border-gray-300 hover:bg-gray-100"
-                  onClick={() => setBlockUserIndex(null)}
-                >
-                  ביטול
-                </button>
-                <button
-                  className={`px-4 py-2 rounded text-white ${currentUsers[blockUserIndex].isBlocked
-                      ? "bg-green-700 hover:bg-green-600"
-                      : "bg-red-500 hover:bg-red-600"
-                    }`}
-                  onClick={() => confirmBlock()}
-                >
-                  {currentUsers[blockUserIndex].isBlocked
-                    ? "בטל חסימה"
-                    : "חסום"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+  <div className={MODAL_OVERLAY}>
+    <div className={MODAL_CARD}>
+      <div className="flex justify-start w-full mb-4">
+        <h3 className="text-2xl font-bold text-[#0D305B]">
+          {currentUsers[blockUserIndex].isBlocked
+            ? "לבטל חסימת משתמש זה?"
+            : "לחסום משתמש זה?"}
+        </h3>
+      </div>
+
+      <p className="text-slate-700 mb-2">
+        {currentUsers[blockUserIndex].isBlocked
+          ? "האם אתה בטוח שברצונך לבטל את חסימת המשתמש ולאפשר לו גישה מחדש לאתר?"
+          : "האם אתה בטוח שברצונך לחסום משתמש זה מצפייה במוצרים?"}
+      </p>
+      <small className="text-gray-500 block mb-6">
+        ניתן לשנות זאת בכל עת
+      </small>
+
+      <div className={MODAL_FOOTER}>
+        <button
+          className={BTN_CANCEL}
+          onClick={() => setBlockUserIndex(null)}
+        >
+          ביטול
+        </button>
+
+        <button
+          className={
+            currentUsers[blockUserIndex].isBlocked ? BTN_SUCCESS : BTN_DANGER
+          }
+          onClick={confirmBlock}
+        >
+          {currentUsers[blockUserIndex].isBlocked ? "בטל חסימה" : "חסום"}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
 
         {/* EDIT MODAL */}
         {showEditModal && userToEdit && (
