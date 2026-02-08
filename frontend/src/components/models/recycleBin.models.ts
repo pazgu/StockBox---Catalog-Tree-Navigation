@@ -14,6 +14,8 @@ export interface RecycleBinItemDTO {
   categoryData?: {
     permissionsInheritedToChildren?: boolean;
   };
+  movedChildrenCount?: number;
+
 }
 
 export interface RecycledCategory extends RecycleBinItemDTO {
