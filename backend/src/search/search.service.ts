@@ -201,9 +201,18 @@ export class SearchService {
       {
         $match: {
           ...(searchTerm ? { $text: { $search: searchTerm } } : {}),
+          ...(isSpecificSearch
+            ? {
+                categoryName: {
+                  $regex: fuzzyRegex,
+                  $options: 'i',
+                },
+              }
+            : {}),
           categoryPath: { $in: allowedCategoryPaths },
         },
       },
+
       {
         $addFields: {
           type: 'category',
@@ -225,18 +234,14 @@ export class SearchService {
               },
             },
 
-            ...(isSpecificSearch
-              ? [
-                  {
-                    $match: {
-                      productName: {
-                        $regex: fuzzyRegex,
-                        $options: 'i',
-                      },
-                    },
-                  },
-                ]
-              : []),
+            {
+              $match: {
+                productName: {
+                  $regex: isSpecificSearch ? fuzzyRegex : tokens[0],
+                  $options: 'i',
+                },
+              },
+            },
 
             {
               $match: {
