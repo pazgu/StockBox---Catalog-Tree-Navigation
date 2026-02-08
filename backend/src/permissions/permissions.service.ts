@@ -663,16 +663,14 @@ export class PermissionsService {
       categoryAccess.set(categoryId, allowed);
       return allowed;
     };
-    const blockedProducts: any[] = [];
-    const availableProducts: any[] = [];
+    const productsWithDirectPermission = new Set(allowedProductIds);
+    const productsInAllowedCategories = new Set<string>();
 
     for (const p of allProducts) {
       const productId = String(p._id);
       const paths = Array.isArray(p.productPath)
         ? p.productPath
         : [p.productPath];
-
-      let allowed = allowedProductIds.has(productId);
 
       for (const path of paths) {
         if (!path) continue;
@@ -685,9 +683,24 @@ export class PermissionsService {
 
         const categoryId = categoryPath && categoryByPath.get(categoryPath);
         if (categoryId && isCategoryAllowed(categoryId)) {
-          allowed = true;
+          productsInAllowedCategories.add(productId);
           break;
         }
+      }
+    }
+    const blockedProducts: any[] = [];
+    const availableProducts: any[] = [];
+
+    for (const p of allProducts) {
+      const productId = String(p._id);
+      const hasDirectPermission = productsWithDirectPermission.has(productId);
+      const inAllowedCategory = productsInAllowedCategories.has(productId);
+      let allowed: boolean;
+
+      if (inAllowedCategory) {
+        allowed = hasDirectPermission;
+      } else {
+        allowed = hasDirectPermission;
       }
 
       const target = allowed ? availableProducts : blockedProducts;
