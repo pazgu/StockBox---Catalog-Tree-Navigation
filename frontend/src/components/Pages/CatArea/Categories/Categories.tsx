@@ -28,6 +28,7 @@ import MoveMultipleItemsModal from "../SingleCat/MoveMultipleItemsModal/MoveMult
 import DuplicateProductModal from "../../ProductArea/DuplicateProductModal/DuplicateProductModal";
 import { usePath } from "../../../../context/PathContext";
 import ImagePreviewHover from "../../ProductArea/ImageCarousel/ImageCarousel/ImagePreviewHover";
+import { recycleBinService } from "../../../../services/RecycleBinService";
 interface CategoriesProps {}
 
 export interface Category {
@@ -42,25 +43,25 @@ type FilterType = "all" | "categories" | "products";
 
 export const Categories: FC<CategoriesProps> = () => {
   const [showAddCatModal, setShowAddCatModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showMoveToRecycleBinModal, setShowMoveToRecycleBinModal] =
+    useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(
-    null,
-  );
+  const [categoryToMoveToRecycleBin, setCategoryToMoveToRecycleBin] =
+    useState<Category | null>(null);
   const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { role, id } = useUser();
   const navigate = useNavigate();
   const path: string[] = ["categories"];
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [deleteStrategyLoading, setDeleteStrategyLoading] = useState<
+  const [isMovingToRecycleBin, setIsMovingToRecycleBin] = useState(false);
+  const [moveStrategyLoading, setMoveStrategyLoading] = useState<
     "cascade" | "move_up" | null
   >(null);
   const [items, setItems] = useState<DisplayItem[]>([]);
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const { setPreviousPath } = usePath();
-  const location= useLocation();
+  const location = useLocation();
   const [showMoveModal, setShowMoveModal] = useState(false);
   const [moveSelectedItems, setMoveSelectedItems] = useState<DisplayItem[]>([]);
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
@@ -69,15 +70,14 @@ export const Categories: FC<CategoriesProps> = () => {
   const [duplicateCurrentPaths, setDuplicateCurrentPaths] = useState<string[]>(
     [],
   );
-  const [hasDescendantsForDelete, setHasDescendantsForDelete] = useState<
-  boolean | null
->(null);
-
+  const [hasDescendantsForMove, setHasDescendantsForMove] = useState<
+    boolean | null
+  >(null);
 
   const openDuplicateForProduct = (item: DisplayItem) => {
     setDuplicateProductId(item.id);
     setDuplicateProductName(item.name);
-    setDuplicateCurrentPaths(item.path); // product paths (array)
+    setDuplicateCurrentPaths(item.path);
     setShowDuplicateModal(true);
   };
 
@@ -89,7 +89,7 @@ export const Categories: FC<CategoriesProps> = () => {
   };
 
   const openMoveForItem = (item: DisplayItem) => {
-    setMoveSelectedItems([item]); // move single product from this page
+    setMoveSelectedItems([item]);
     setShowMoveModal(true);
   };
 
@@ -112,11 +112,9 @@ export const Categories: FC<CategoriesProps> = () => {
     try {
       setIsLoading(true);
 
-      // 1) fetch categories
       const categoriesData = await categoriesService.getCategories();
       setCategories(categoriesData);
 
-      // 2) fetch products that are under /categories
       let products: ProductDto[] = [];
       try {
         products = await ProductsService.getProductsByPath("/categories");
@@ -127,7 +125,6 @@ export const Categories: FC<CategoriesProps> = () => {
         products = [];
       }
 
-      // 3) favorites (both product + category)
       let userFavorites: { id: string; type: string }[] = [];
       if (id) {
         try {
@@ -193,7 +190,6 @@ export const Categories: FC<CategoriesProps> = () => {
     const wasFavorite = items.find((x) => x.id === itemId)?.favorite ?? false;
 
     try {
-      // optimistic UI update
       setItems((prev) =>
         prev.map((x) =>
           x.id === itemId ? { ...x, favorite: !wasFavorite } : x,
@@ -207,7 +203,6 @@ export const Categories: FC<CategoriesProps> = () => {
     } catch (error) {
       toast.error("שגיאה בעדכון המועדפים");
 
-      // rollback
       setItems((prev) =>
         prev.map((x) =>
           x.id === itemId ? { ...x, favorite: wasFavorite } : x,
@@ -216,47 +211,51 @@ export const Categories: FC<CategoriesProps> = () => {
     }
   };
 
-  const handleDelete = async (category: Category) => {
-  setCategoryToDelete(category);
-
-  try {
-    const hasDesc = await categoriesService.hasDescendants(category._id);
-    setHasDescendantsForDelete(hasDesc);
-  } catch (e) {
-    setHasDescendantsForDelete(true);
-  }
-
-  setShowDeleteModal(true);
-};
-
-
-  const confirmDelete = async (strategy: "cascade" | "move_up") => {
-    if (!categoryToDelete) return;
+  const handleMoveToRecycleBin = async (category: Category) => {
+    setCategoryToMoveToRecycleBin(category);
 
     try {
-      setIsDeleting(true);
-      setDeleteStrategyLoading(strategy);
+      const hasDesc = await categoriesService.hasDescendants(category._id);
+      setHasDescendantsForMove(hasDesc);
+    } catch (e) {
+      setHasDescendantsForMove(true);
+    }
+
+    setShowMoveToRecycleBinModal(true);
+  };
+
+  const confirmMoveToRecycleBin = async (strategy: "cascade" | "move_up") => {
+    if (!categoryToMoveToRecycleBin) return;
+
+    try {
+      setIsMovingToRecycleBin(true);
+      setMoveStrategyLoading(strategy);
 
       await new Promise((r) => setTimeout(r, 800));
 
-      await categoriesService.deleteCategory(categoryToDelete._id, strategy);
+      await recycleBinService.moveCategoryToRecycleBin(
+        categoryToMoveToRecycleBin._id,
+        strategy,
+      );
 
       await loadCategoriesAndFavorites();
 
       toast.success(
         strategy === "cascade"
-          ? `הקטגוריה "${categoryToDelete.categoryName}" וכל התכנים שבה נמחקו בהצלחה!`
-          : `הקטגוריה "${categoryToDelete.categoryName}" נמחקה והתכנים הועברו שכבה אחת למעלה!`,
+          ? `הקטגוריה "${categoryToMoveToRecycleBin.categoryName}" הועברה לסל המחזור!`
+          : `הקטגוריה "${categoryToMoveToRecycleBin.categoryName}" הועברה לסל המחזור והתכנים הועברו שכבה אחת למעלה!`,
       );
 
-      setShowDeleteModal(false);
-      setCategoryToDelete(null);
+      setShowMoveToRecycleBinModal(false);
+      setCategoryToMoveToRecycleBin(null);
+
+      navigate("/recycle-bin");
     } catch (error) {
-      toast.error("שגיאה במחיקת הקטגוריה");
-      console.error("Error deleting category:", error);
+      toast.error("שגיאה בהעברה לסל המחזור");
+      console.error("Error moving to recycle bin:", error);
     } finally {
-      setIsDeleting(false);
-      setDeleteStrategyLoading(null);
+      setIsMovingToRecycleBin(false);
+      setMoveStrategyLoading(null);
     }
   };
 
@@ -267,10 +266,10 @@ export const Categories: FC<CategoriesProps> = () => {
 
   const closeAllModals = () => {
     setShowAddCatModal(false);
-    setShowDeleteModal(false);
-    setHasDescendantsForDelete(null);
+    setShowMoveToRecycleBinModal(false);
+    setHasDescendantsForMove(null);
     setShowEditModal(false);
-    setCategoryToDelete(null);
+    setCategoryToMoveToRecycleBin(null);
     setCategoryToEdit(null);
   };
 
@@ -356,8 +355,6 @@ export const Categories: FC<CategoriesProps> = () => {
   const showProducts =
     (activeFilter === "all" || activeFilter === "products") && hasProducts;
 
-  
-
   return (
     <div
       className="mt-12 p-4 font-system direction-rtl text-right overflow-x-hidden"
@@ -418,7 +415,6 @@ export const Categories: FC<CategoriesProps> = () => {
           {showCategories && categoryItems.length > 0 && (
             <div className="mx-auto flex justify-center flex-wrap gap-10 my-12 px-4 sm:px-8">
               {categoryItems.map((item) => {
-                // find the real category object so delete/edit can use the old functions
                 const category = categories.find((c) => c._id === item.id);
 
                 return (
@@ -473,13 +469,13 @@ export const Categories: FC<CategoriesProps> = () => {
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  handleDelete(category);
+                                  handleMoveToRecycleBin(category);
                                 }}
                               >
                                 <Trash size={18} />
                               </button>
                               <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap">
-                                מחיקת קטגוריה
+                                העבר לסל מחזור
                               </span>
                             </div>
 
@@ -541,12 +537,12 @@ export const Categories: FC<CategoriesProps> = () => {
 
               <main className="grid grid-cols-[repeat(auto-fill,minmax(290px,1fr))] gap-24 my-12">
                 {productItems.map((item) => (
-                 <div
+                  <div
                     key={item.id}
                     className="flex flex-col items-center p-5 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 border-gray-200 cursor-pointer"
                     onClick={() => {
                       setPreviousPath(location.pathname); // or location.pathname if you have useLocation()
-                      
+
                       navigate(`/products/${item.id}`);
                     }}
                   >
@@ -669,7 +665,7 @@ export const Categories: FC<CategoriesProps> = () => {
             onSave={handleAddCategory}
           />
 
-          {showDeleteModal && categoryToDelete && (
+          {showMoveToRecycleBinModal && categoryToMoveToRecycleBin && (
             <div
               className="fixed inset-0 bg-slate-800 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 transition-all duration-300"
               onClick={closeAllModals}
@@ -679,81 +675,80 @@ export const Categories: FC<CategoriesProps> = () => {
                 onClick={(e) => e.stopPropagation()}
               >
                 <h4 className="m-0 mb-5 text-xl text-slate-700 font-semibold tracking-tight">
-                  מחיקת קטגוריה
+                  העברה לסל מחזור
                 </h4>
 
                 <p className="text-slate-700 mb-3">
-                  האם ברצונך למחוק את הקטגוריה "{categoryToDelete.categoryName}
-                  "?
+                  האם ברצונך להעביר את הקטגוריה "
+                  {categoryToMoveToRecycleBin.categoryName}" לסל המחזור?
                 </p>
 
-               <div className="flex flex-col gap-3 mt-5">
-  {hasDescendantsForDelete ? (
-    <>
-      {/* If category HAS descendants -> show both strategies */}
-      <button
-        onClick={() => confirmDelete("cascade")}
-        disabled={isDeleting}
-        className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 shadow-md
-${isDeleting ? "bg-red-400 cursor-not-allowed text-white" : "bg-red-600 text-white hover:bg-red-700 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"}`}
-      >
-        {isDeleting && deleteStrategyLoading === "cascade" ? (
-          <span className="flex items-center justify-center gap-2">
-            <Spinner className="size-4 text-white" />
-            מוחק...
-          </span>
-        ) : (
-          "מחק הכל (כולל כל הצאצאים)"
-        )}
-      </button>
+                <div className="flex flex-col gap-3 mt-5">
+                  {hasDescendantsForMove ? (
+                    <>
+                      <button
+                        onClick={() => confirmMoveToRecycleBin("cascade")}
+                        disabled={isMovingToRecycleBin}
+                        className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 shadow-md
+${isMovingToRecycleBin ? "bg-orange-400 cursor-not-allowed text-white" : "bg-orange-600 text-white hover:bg-orange-700 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"}`}
+                      >
+                        {isMovingToRecycleBin &&
+                        moveStrategyLoading === "cascade" ? (
+                          <span className="flex items-center justify-center gap-2">
+                            <Spinner className="size-4 text-white" />
+                            מעביר לסל...
+                          </span>
+                        ) : (
+                          "העבר הכל לסל (כולל כל הצאצאים)"
+                        )}
+                      </button>
 
-      <button
-        onClick={() => confirmDelete("move_up")}
-        disabled={isDeleting}
-        className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 shadow-md
-${isDeleting ? "bg-orange-200 cursor-not-allowed text-orange-900" : "bg-orange-100 text-orange-900 hover:bg-orange-200 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"}`}
-      >
-        {isDeleting && deleteStrategyLoading === "move_up" ? (
-          <span className="flex items-center justify-center gap-2">
-            <Spinner className="size-4 text-orange-900" />
-            מוחק...
-          </span>
-        ) : (
-          "מחק רק קטגוריה (העבר צאצאים למעלה)"
-        )}
-      </button>
-    </>
-  ) : (
-    <>
-      {/* If category has NO descendants -> show simple delete */}
-      <button
-        onClick={() => confirmDelete("cascade")}
-        disabled={isDeleting}
-        className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 shadow-md
-${isDeleting ? "bg-red-400 cursor-not-allowed text-white" : "bg-red-600 text-white hover:bg-red-700 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"}`}
-      >
-        {isDeleting ? (
-          <span className="flex items-center justify-center gap-2">
-            <Spinner className="size-4 text-white" />
-            מוחק...
-          </span>
-        ) : (
-          "מחיקה"
-        )}
-      </button>
-    </>
-  )}
+                      <button
+                        onClick={() => confirmMoveToRecycleBin("move_up")}
+                        disabled={isMovingToRecycleBin}
+                        className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 shadow-md
+${isMovingToRecycleBin ? "bg-blue-200 cursor-not-allowed text-blue-900" : "bg-blue-100 text-blue-900 hover:bg-blue-200 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"}`}
+                      >
+                        {isMovingToRecycleBin &&
+                        moveStrategyLoading === "move_up" ? (
+                          <span className="flex items-center justify-center gap-2">
+                            <Spinner className="size-4 text-blue-900" />
+                            מעביר לסל...
+                          </span>
+                        ) : (
+                          "העבר רק קטגוריה (העבר צאצאים למעלה)"
+                        )}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => confirmMoveToRecycleBin("cascade")}
+                        disabled={isMovingToRecycleBin}
+                        className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 shadow-md
+${isMovingToRecycleBin ? "bg-orange-400 cursor-not-allowed text-white" : "bg-orange-600 text-white hover:bg-orange-700 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"}`}
+                      >
+                        {isMovingToRecycleBin ? (
+                          <span className="flex items-center justify-center gap-2">
+                            <Spinner className="size-4 text-white" />
+                            מעביר לסל...
+                          </span>
+                        ) : (
+                          "העבר לסל מחזור"
+                        )}
+                      </button>
+                    </>
+                  )}
 
-  <button
-    onClick={closeAllModals}
-    disabled={isDeleting}
-    className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200
-${isDeleting ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"}`}
-  >
-    ביטול
-  </button>
-</div>
-
+                  <button
+                    onClick={closeAllModals}
+                    disabled={isMovingToRecycleBin}
+                    className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200
+${isMovingToRecycleBin ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"}`}
+                  >
+                    ביטול
+                  </button>
+                </div>
               </div>
             </div>
           )}
