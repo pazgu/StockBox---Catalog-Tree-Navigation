@@ -1106,7 +1106,9 @@ const SingleCat: FC = () => {
             _id: itemToEdit.id,
             categoryName: itemToEdit.name,
             categoryPath: itemToEdit.path[0],
-            categoryImage: itemToEdit.images[0],
+            categoryImage: Array.isArray(itemToEdit.images) 
+            ? itemToEdit.images[0] 
+            : itemToEdit.images,
           }}
           onClose={() => {
             setShowEditModal(false);
