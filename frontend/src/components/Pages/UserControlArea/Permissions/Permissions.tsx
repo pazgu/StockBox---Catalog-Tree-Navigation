@@ -33,7 +33,8 @@ interface Permission {
 const Permissions: React.FC = () => {
   const navigate = useNavigate();
   const { role } = useUser();
-  const { id } = useParams<{ id: string }>();
+  const { type, id } = useParams<{ type: "product" | "category"; id: string }>();
+  const entityType = type ?? "category";
   const cleanId = useMemo(() => id?.replace(/^:/, ""), [id]);
   const [showInheritanceModal, setShowInheritanceModal] = useState(false);
   const [isExpandedUsers, setIsExpandedUsers] = useState(false);
@@ -56,10 +57,13 @@ const Permissions: React.FC = () => {
   
 
   useEffect(() => {
-    if (role !== "editor") {
-      navigate("/");
-      return;
-    }
+    if (!role) return; 
+
+if (role !== "editor") {
+  navigate("/");
+  return;
+}
+
     console.log(`path from previos page permissions.tsx ${previousPath}`);
     const loadData = async () => {
       try {
@@ -68,7 +72,7 @@ const Permissions: React.FC = () => {
         const [permsRaw, viewersData, entity] = await Promise.all([
           permissionsService.getPermissionsByEntity(cleanId),
           permissionsService.getPotentialViewers(),
-          permissionsService.getEntityDetails("category", cleanId),
+          permissionsService.getEntityDetails(entityType, cleanId),
         ]);
 
         const perms: Permission[] = permsRaw;
@@ -111,7 +115,8 @@ const Permissions: React.FC = () => {
     };
 
     loadData();
-  }, [cleanId, role, navigate]);
+  }, [cleanId, entityType, role, navigate, previousPath]);
+
 
   const enabledGroupIds = useMemo(() => {
     return new Set(groups.filter((g) => g.memebers).map((g) => g._id));
@@ -180,21 +185,25 @@ const Permissions: React.FC = () => {
   }, [users, groups, existingPermissions]);
 
   const handleSyncToChildren = async () => {
-    if (!cleanId) return;
+  if (!cleanId) return;
 
-    try {
-      setIsSyncingChildren(true);
+  if (entityType !== "category") {
+    toast.info("החלת הרשאות לצאצאים זמינה רק עבור קטגוריות");
+    return;
+  }
 
-      await permissionsService.syncCategoryPermissionsToChildren(cleanId);
+  try {
+    setIsSyncingChildren(true);
+    await permissionsService.syncCategoryPermissionsToChildren(cleanId);
+    toast.success("הרשאות הוחלו בהצלחה על כל הצאצאים");
+    setInheritanceApplied(true);
+  } catch (err) {
+    toast.error("שגיאה בהחלת הרשאות על הצאצאים");
+  } finally {
+    setIsSyncingChildren(false);
+  }
+};
 
-      toast.success("הרשאות הוחלו בהצלחה על כל הצאצאים");
-      setInheritanceApplied(true);
-    } catch (err) {
-      toast.error("שגיאה בהחלת הרשאות על הצאצאים");
-    } finally {
-      setIsSyncingChildren(false);
-    }
-  };
   const hasLocalChanges = useMemo(() => {
   const usersToAllow = users.filter(u => u.enabled).map(u => u._id);
   const groupsToAllow = groups.filter(g => g.memebers).map(g => g._id);
@@ -227,12 +236,13 @@ const Permissions: React.FC = () => {
       const createResults = await Promise.allSettled(
         toCreate.map((allowedId) =>
           permissionsService.createPermission(
-            "category",
-            cleanId,
-            allowedId,
-            inheritToChildren,
-            previousPath ?? undefined
-          ),
+  entityType,
+  cleanId,
+  allowedId,
+  inheritToChildren,
+  previousPath ?? undefined
+),
+
         ),
       );
 
