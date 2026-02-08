@@ -1035,8 +1035,67 @@ export class PermissionsService {
       paths: pathsWithPermissions.filter((p) => p !== null),
     };
   }
+  async deletePermissionsForEntity(
+    entityType: EntityType,
+    entityId: string,
+    opts?: { cascade?: boolean },
+  ) {
+    const entityObjectId = new Types.ObjectId(entityId);
+    if (entityType !== EntityType.CATEGORY || !opts?.cascade) {
+      const res = await this.permissionModel.deleteMany({
+        entityType,
+        entityId: entityObjectId,
+      });
 
+      return { success: true, deleted: res.deletedCount ?? 0 };
+    }
 
+    const descendants = await this.getAllCategoryDescendants(entityId);
+
+    const categoryIds = [
+      entityId,
+      ...descendants
+        .filter((d) => d.entityType === EntityType.CATEGORY)
+        .map((d) => d.entityId),
+    ].map((id) => new Types.ObjectId(id));
+
+    const productIds = descendants
+      .filter((d) => d.entityType === EntityType.PRODUCT)
+      .map((d) => new Types.ObjectId(d.entityId));
+
+    const or: any[] = [];
+    if (categoryIds.length)
+      or.push({
+        entityType: EntityType.CATEGORY,
+        entityId: { $in: categoryIds },
+      });
+    if (productIds.length)
+      or.push({
+        entityType: EntityType.PRODUCT,
+        entityId: { $in: productIds },
+      });
+    const res = await this.permissionModel.deleteMany({ $or: or });
+
+    return {
+      success: true,
+      deleted: res.deletedCount ?? 0,
+      cascade: true,
+      deletedEntities: {
+        categories: categoryIds.length,
+        products: productIds.length,
+      },
+    };
+  }
+
+  async deletePermissionsForAllowed(allowedId: string) {
+    const res = await this.permissionModel.deleteMany({
+      allowed: new Types.ObjectId(allowedId),
+    });
+
+    return { success: true, deleted: res.deletedCount ?? 0 };
+  }
+
+  
 async getPermissionsByEntityId(entityId: string, entityType: EntityType) {
   const permissions = await this.permissionModel
     .find({
@@ -1066,4 +1125,5 @@ async restorePermissions(permissions: any[]) {
     await newPermission.save();
   }
 }
+
 }

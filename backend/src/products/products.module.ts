@@ -19,7 +19,7 @@ import { UsersModule } from 'src/users/users.module';
       { name: Group.name, schema: GroupSchema },
     ]),
     PermissionsModule,
-    UsersModule,  
+    UsersModule,
   ],
   controllers: [ProductsController],
   providers: [ProductsService],

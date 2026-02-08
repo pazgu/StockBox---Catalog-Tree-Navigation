@@ -176,6 +176,11 @@ export class CategoriesService {
     );
 
     if (strategy === 'cascade') {
+      await this.permissionsService.deletePermissionsForEntity(
+        EntityType.CATEGORY,
+        id,
+        { cascade: true },
+      );
       await this.categoryModel.deleteMany({
         categoryPath: new RegExp(`^${escapedCategoryPath}/`),
       });
@@ -249,15 +254,13 @@ export class CategoriesService {
       );
     }
 
-    await this.categoryModel.findByIdAndDelete(id);
+    await this.permissionsService.deletePermissionsForEntity(
+      EntityType.CATEGORY,
+      id,
+    );
     await this.categoryModel.findByIdAndDelete(id);
 
     await this.usersService.removeItemFromAllUserFavorites(id);
-    for (const subcat of subcategoriesToDelete) {
-      await this.usersService.removeItemFromAllUserFavorites(
-        subcat._id.toString(),
-      );
-    }
     for (const subcat of subcategoriesToDelete) {
       await this.usersService.removeItemFromAllUserFavorites(
         subcat._id.toString(),

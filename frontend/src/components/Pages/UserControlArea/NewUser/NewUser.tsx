@@ -144,7 +144,16 @@ const NewUser: React.FC = () => {
   return (
     <div className="flex justify-center items-start pt-36 w-full box-border top-16">
       <motion.div
-        className="bg-white scale-90 origin-top transform-gpu border border-gray-200 rounded-lg shadow-2xl px-5 py-3 h-auto w-[90%] flex flex-col relative max-w-4xl"
+       className="
+  bg-gradient-to-br from-white via-[#fffdf8] to-[#fff9ed]
+  border border-gray-100 rounded-2xl shadow-2xl
+  px-6 py-6
+  h-auto w-[90%] max-w-4xl
+  flex flex-col relative
+  transform-gpu
+  scale-[0.85] origin-center
+"
+
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
