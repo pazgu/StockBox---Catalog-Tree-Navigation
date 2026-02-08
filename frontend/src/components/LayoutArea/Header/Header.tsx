@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Heart, User, Menu, X } from "lucide-react";
+import { Heart, User, Menu, X, Trash2 } from "lucide-react";
 import logo from "../../../assets/logo.png";
 import { useUser } from "../../../context/UserContext";
 import { usePath } from "../../../context/PathContext";
@@ -111,7 +111,7 @@ const Header: React.FC<HeaderProps> = ({
 
             {/* Action Icons */}
             <div className={`flex items-center gap-2 mr-4 ${isMobileMenuOpen ? "hidden" : ""}`}>
-                            <button
+              <button
                 aria-label="Favorites"
                 className="relative p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 hover:scale-110 mr-2"
                 onClick={() => navigate("/Favorites")}
@@ -121,7 +121,16 @@ const Header: React.FC<HeaderProps> = ({
               </button>
 
               {role === "editor" && (
-                <div className="relative group">
+                <>
+                  <button
+                    aria-label="Recycle Bin"
+                    className="relative p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 hover:scale-110 mr-2"
+                    onClick={() => navigate("/recycle-bin")}
+                  >
+                    <Trash2 size={21} className="hover:text-red-400" />
+                  </button>
+
+                  <div className="relative group">
                   <button className="relative p-2 rounded-full text-white transition-all duration-300 hover:scale-110">
                     <img
                       src="https://img.icons8.com/?size=100&id=cykh8BZMTKkb&format=png&color=FFFFFF"
@@ -144,6 +153,7 @@ const Header: React.FC<HeaderProps> = ({
                     </button>
                   </div>
                 </div>
+                </>
               )}
 
               <button
@@ -189,6 +199,14 @@ const Header: React.FC<HeaderProps> = ({
 
               {role === "editor" && (
                 <>
+                  <button 
+                    onClick={() => navigate("/recycle-bin")}
+                    className="flex flex-col items-center gap-1 text-white/80"
+                  >
+                    <Trash2 size={20} />
+                    <span className="text-xs">סל מחזור</span>
+                  </button>
+
                   <button onClick={() => navigate("/AllUsers")} className="flex flex-col items-center gap-1 text-white/80">
                     <User size={20} />
                     <span className="text-xs">כל המשתמשים</span>
