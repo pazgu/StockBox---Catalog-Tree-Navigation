@@ -1035,4 +1035,35 @@ export class PermissionsService {
       paths: pathsWithPermissions.filter((p) => p !== null),
     };
   }
+
+
+async getPermissionsByEntityId(entityId: string, entityType: EntityType) {
+  const permissions = await this.permissionModel
+    .find({
+      entityId: new Types.ObjectId(entityId),
+      entityType,
+    })
+    .lean()
+    .exec();
+
+  return permissions;
+}
+
+async deletePermissionsByEntityId(entityId: string, entityType: EntityType) {
+  await this.permissionModel.deleteMany({
+    entityId: new Types.ObjectId(entityId),
+    entityType,
+  });
+}
+
+async restorePermissions(permissions: any[]) {
+  for (const perm of permissions) {
+    const newPermission = new this.permissionModel({
+      entityId: perm.entityId,
+      entityType: perm.entityType,
+      allowed: perm.allowed,
+    });
+    await newPermission.save();
+  }
+}
 }
