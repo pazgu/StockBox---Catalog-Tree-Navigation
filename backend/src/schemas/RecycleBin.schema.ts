@@ -1,6 +1,13 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 
+export interface MovedChild {
+  itemId: Types.ObjectId;
+  itemType: 'category' | 'product';
+  previousPath: string | string[]; 
+  newPath: string | string[];     
+}
+
 @Schema({ timestamps: true })
 export class RecycleBin {
   _id?: Types.ObjectId;
@@ -58,6 +65,13 @@ export class RecycleBin {
 
   @Prop({ type: Array, default: [] })
   storedPermissions?: any[];
+
+  @Prop({ type: Array, default: [] })
+  movedChildren?: MovedChild[];
+
+  @Prop({ required: false, type: Number, default: 0 })
+  movedChildrenCount?: number; 
+
 }
 
 export const RecycleBinSchema = SchemaFactory.createForClass(RecycleBin);
