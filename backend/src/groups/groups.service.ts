@@ -1,4 +1,5 @@
 import {
+  Inject,
   Injectable,
   NotFoundException,
   ConflictException,
@@ -8,12 +9,15 @@ import { Model } from 'mongoose';
 import { Group, GroupDocument } from './../schemas/Groups.schema';
 import { CreateGroupDto } from './dto/createGroup.dto';
 import { UpdateGroupDto } from './dto/updateGroup.dto';
-
+import { PermissionsService } from 'src/permissions/permissions.service';
+import { forwardRef } from '@nestjs/common';
 @Injectable()
 export class GroupsService {
   constructor(
     @InjectModel(Group.name)
     private readonly groupModel: Model<GroupDocument>,
+    @Inject(forwardRef(() => PermissionsService))
+    private permissionsService: PermissionsService,
   ) {}
 
   async findAll(): Promise<GroupDocument[]> {
@@ -89,7 +93,7 @@ export class GroupsService {
 
   async delete(id: string): Promise<void> {
     const result = await this.groupModel.findByIdAndDelete(id).exec();
-
+    await this.permissionsService.deletePermissionsForAllowed(id);
     if (!result) {
       throw new NotFoundException(`Group with ID ${id} not found`);
     }
