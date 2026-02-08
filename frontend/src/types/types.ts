@@ -7,6 +7,9 @@ export interface BannedItem {
   type: BannedEntityType;
   groupId?: string;
   image?: string; 
+  categoryPath?: string | string[];
+  productPath?: string | string[]; 
+  contextPath?: string;
 }
 
 export interface SearchResult {
