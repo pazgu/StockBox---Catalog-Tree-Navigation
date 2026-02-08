@@ -7,7 +7,10 @@ interface UserContextType {
   user: User | null;
   role: UserRole | null;
   id: string | null;
+  isAuthReady: boolean;
+
   setUser: (user: User | null) => void;
+
   users: User[];
   setUsers: React.Dispatch<React.SetStateAction<User[]>>;
   refreshUsers: () => Promise<void>;
@@ -23,28 +26,35 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [user, setUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
-  const [role, setRole] = useState<UserRole | null>(null);
   const [id, setId] = useState<string | null>(null);
 
+  const [isAuthReady, setIsAuthReady] = useState(false);
+
+  // ✅ Load user from localStorage ONCE on app start
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
+
     if (storedUser) {
       try {
         const parsed = JSON.parse(storedUser);
         setUser(parsed);
-        setId(parsed.id);
+        setId(parsed.id ?? parsed._id ?? null);
       } catch {
         localStorage.removeItem("user");
         setUser(null);
         setId(null);
       }
     }
+
+    // ✅ important: mark auth as ready AFTER we tried loading
+    setIsAuthReady(true);
   }, []);
 
+  // ✅ Keep localStorage in sync
   useEffect(() => {
     if (user) {
       localStorage.setItem("user", JSON.stringify(user));
-      setId((user as any).id);
+      setId((user as any).id ?? (user as any)._id ?? null);
     } else {
       localStorage.removeItem("user");
       setId(null);
@@ -59,54 +69,31 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       console.error("Error fetching users:", err);
     }
   };
-  useEffect(() => {
-  const storedUser = localStorage.getItem("user");
-
-  if (storedUser) {
-    try {
-      setUser(JSON.parse(storedUser));
-    } catch {
-      localStorage.removeItem("user");
-      setUser(null);
-    }
-  }
-}, []);
 
   const blockUser = async (id: string, isBlocked: boolean) => {
-  try {
-    const response = await api.patch<User>(`${API_URL}/${id}/block`, { 
-      isBlocked 
-    });
-    setUsers((prev) => prev.map((u) => (u._id === id ? response.data : u)));
-  } catch (err) {
-    console.error("Error blocking user:", err);
-    throw err;
-  }
-};
+    try {
+      const response = await api.patch<User>(`${API_URL}/${id}/block`, {
+        isBlocked,
+      });
+      setUsers((prev) => prev.map((u) => (u._id === id ? response.data : u)));
+    } catch (err) {
+      console.error("Error blocking user:", err);
+      throw err;
+    }
+  };
 
   useEffect(() => {
     refreshUsers();
   }, []);
 
-
-  useEffect(() => {
-    const storedRole = localStorage.getItem("role");
-    if (storedRole === "editor" || storedRole === "viewer") {
-      setRole(storedRole as UserRole);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (role) localStorage.setItem("role", role);
-    else localStorage.removeItem("role");
-  }, [role]);
-
   return (
     <UserContext.Provider
       value={{
         user,
-        role: user?.role ?? null,
+        role: (user?.role as UserRole) ?? null,
         id,
+        isAuthReady,
+
         setUser,
         users,
         setUsers,
@@ -121,8 +108,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
 export const useUser = () => {
   const context = useContext(UserContext);
-  if (!context) {
-    throw new Error("useUser must be used within UserProvider");
-  }
+  if (!context) throw new Error("useUser must be used within UserProvider");
   return context;
 };

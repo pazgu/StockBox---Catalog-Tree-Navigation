@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
 interface PathContextType {
   previousPath: string | null;
@@ -8,7 +8,19 @@ interface PathContextType {
 const PathContext = createContext<PathContextType | undefined>(undefined);
 
 export const PathProvider = ({ children }: { children: ReactNode }) => {
-  const [previousPath, setPreviousPath] = useState<string | null>(null);
+  const [previousPath, setPreviousPathState] = useState<string | null>(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("previousPath");
+    if (saved) setPreviousPathState(saved);
+  }, []);
+
+  const setPreviousPath = (path: string | null) => {
+    setPreviousPathState(path);
+
+    if (path) localStorage.setItem("previousPath", path);
+    else localStorage.removeItem("previousPath");
+  };
 
   return (
     <PathContext.Provider value={{ previousPath, setPreviousPath }}>
@@ -16,6 +28,7 @@ export const PathProvider = ({ children }: { children: ReactNode }) => {
     </PathContext.Provider>
   );
 };
+
 
 export const usePath = () => {
   const ctx = useContext(PathContext);

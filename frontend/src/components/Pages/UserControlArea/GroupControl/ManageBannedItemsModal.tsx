@@ -520,9 +520,15 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
                           onClick={(e) => {
                             e.stopPropagation();
 
-                            setPreviousPath(location.pathname);
+                            const from = location.pathname + location.search;
 
-                            navigate(`/permissions/${item.type}/${item.id}`);
+setPreviousPath(from);
+localStorage.setItem("previousPath", from);
+
+navigate(`/permissions/${item.type}/${item.id}`, {
+  state: { from },
+});
+
                           }}
                           className="absolute bottom-1 left-1 px-1 py-1 bg-green-600 hover:bg-green-700 text-white text-[8px] font-bold rounded transition-all opacity-0 group-hover:opacity-100 flex items-center gap-0.5 cursor-pointer"
                           title="נהל הרשאות"
