@@ -40,6 +40,7 @@ const Layout: FC<LayoutProps> = () => {
           <Route path="/new-user" element={<NewUser></NewUser>} />
           <Route path="/allUsers" element={<AllUsers></AllUsers>} />
           <Route path="/Favorites" element={<Favorites></Favorites>} />
+          <Route path="/permissions/:type/:id" element={<Permissions />} />
           <Route
             path="/permissions/product/:id"
             element={<ProductPermissions></ProductPermissions>}

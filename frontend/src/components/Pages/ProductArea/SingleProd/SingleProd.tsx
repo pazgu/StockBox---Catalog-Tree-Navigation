@@ -836,12 +836,14 @@ ${isEditing ? "cursor-pointer" : "cursor-not-allowed opacity-80"}`}
                 </div>
               ) : role === "editor" ? (
                 <div className="relative z-10">
-                  <Link
-                    to={`/permissions/product/${product?._id}`}
-                    className="block w-full text-center py-3 px-4 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-800 shadow-md transition-all duration-300"
-                  >
-                    נהל הרשאות
-                  </Link>
+                 <Link
+  to={`/permissions/product/${product?._id}`}
+  state={{ from: location.pathname + location.search }}
+  className="block w-full text-center py-3 px-4 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-800 shadow-md transition-all duration-300"
+>
+  נהל הרשאות
+</Link>
+
                 </div>
               ) : null}
             </div>

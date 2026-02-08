@@ -43,7 +43,7 @@ const userSchema = z.object({
 type UserFormData = z.infer<typeof userSchema>;
 
 const NewUser: React.FC = () => {
-  const { role, refreshUsers } = useUser();
+  const { role, refreshUsers, isAuthReady } = useUser();
   const navigate = useNavigate();
   const [groups, setGroups] = useState<Group[]>([]);
   const [isLoadingGroups, setIsLoadingGroups] = useState(false);
@@ -52,11 +52,12 @@ const NewUser: React.FC = () => {
     navigate("/AllUsers");
   };
 
-  useEffect(() => {
-    if (role !== "editor") {
-      navigate("/");
-    }
-  }, [navigate, role]);
+
+useEffect(() => {
+  if (!isAuthReady) return; 
+  if (role !== "editor") navigate("/", { replace: true });
+}, [isAuthReady, role, navigate]);
+
 
   useEffect(() => {
     fetchGroups();

@@ -87,112 +87,119 @@ const ProductPermissions: React.FC = () => {
   }
 
   useEffect(() => {
-    if (role !== "editor") {
-      navigate("/");
-      return;
-    }
+  // ✅ 1) WAIT for role to exist (prevents refresh redirect)
+  if (!role) return;
 
-    const loadData = async () => {
-      try {
-        if (!cleanId) return;
+  // ✅ 2) ONLY after role is loaded, enforce access
+  if (role !== "editor") {
+    navigate("/");
+    return;
+  }
 
-        const [productPathsData, viewersData, productPerms] = await Promise.all([
-          permissionsService.getProductPathsWithPermissions(cleanId),
-          permissionsService.getPotentialViewers(),
-          permissionsService.getPermissionsByEntity(cleanId),
-        ]);
+  const loadData = async () => {
+    try {
+      if (!cleanId) return;
 
-        setProductData({
-          _id: productPathsData.product._id,
-          name: productPathsData.product.name,
-          image: productPathsData.product.image,
+      const [productPathsData, viewersData, productPerms] = await Promise.all([
+        permissionsService.getProductPathsWithPermissions(cleanId),
+        permissionsService.getPotentialViewers(),
+        permissionsService.getPermissionsByEntity(cleanId),
+      ]);
+
+      setProductData({
+        _id: productPathsData.product._id,
+        name: productPathsData.product.name,
+        image: productPathsData.product.image,
+      });
+      setPaths(productPathsData.paths);
+      setProductPermissions(productPerms);
+
+      const { users: rawUsers, groups: rawGroups } = viewersData;
+      const userToGroupsMap = new Map<string, string[]>();
+      rawGroups.forEach((group: any) => {
+        const groupId = group.id || group._id;
+        (group.members || []).forEach((member: any) => {
+          const userId = member._id || member.id;
+          if (!userId) return;
+          if (!userToGroupsMap.has(userId)) userToGroupsMap.set(userId, []);
+          userToGroupsMap.get(userId)!.push(groupId);
         });
-        setPaths(productPathsData.paths);
-        setProductPermissions(productPerms);
+      });
 
-        const { users: rawUsers, groups: rawGroups } = viewersData;
-        const userToGroupsMap = new Map<string, string[]>();
-        rawGroups.forEach((group: any) => {
-          const groupId = group.id || group._id;
-          (group.members || []).forEach((member: any) => {
-            const userId = member._id || member.id;
-            if (!userId) return;
-            if (!userToGroupsMap.has(userId)) userToGroupsMap.set(userId, []);
-            userToGroupsMap.get(userId)!.push(groupId);
-          });
-        });
+      const mappedUsers: ViewerUser[] = rawUsers.map((u: any) => {
+        const userId = u._id || u.id;
+        return {
+          _id: userId,
+          userName: u.userName,
+          groupIds: userToGroupsMap.get(userId) || [],
+          enabled: false,
+        };
+      });
 
-        const mappedUsers: ViewerUser[] = rawUsers.map((u: any) => {
-          const userId = u._id || u.id;
-          return {
-            _id: userId,
-            userName: u.userName,
-            groupIds: userToGroupsMap.get(userId) || [],
-            enabled: false,
-          };
-        });
+      const mappedGroups: Group[] = rawGroups.map((g: any) => ({
+        _id: g.id || g._id,
+        groupName: g.groupName,
+        members: false,
+      }));
 
-        const mappedGroups: Group[] = rawGroups.map((g: any) => ({
-          _id: g.id || g._id,
-          groupName: g.groupName,
-          members: false,
-        }));
+      setAllUsers(mappedUsers);
+      setAllGroups(mappedGroups);
 
-        setAllUsers(mappedUsers);
-        setAllGroups(mappedGroups);
+      const initialStates: Record<string, PathPermissionState> = {};
+      const productAllowedIds = productPerms.map((p: any) => p.allowed);
 
-        const initialStates: Record<string, PathPermissionState> = {};
-        const productAllowedIds = productPerms.map((p: any) => p.allowed);
+      productPathsData.paths.forEach((pathData: PathData) => {
+        const categoryAllowedIds = pathData.categoryPermissions.map(
+          (p) => p.allowed,
+        );
 
-        productPathsData.paths.forEach((pathData: PathData) => {
-          const categoryAllowedIds = pathData.categoryPermissions.map((p) => p.allowed);
+        initialStates[pathData.path] = {
+          users: mappedUsers.map((u) => ({
+            ...u,
+            enabled:
+              productAllowedIds.includes(u._id) &&
+              categoryAllowedIds.includes(u._id),
+          })),
+          groups: mappedGroups.map((g) => ({
+            ...g,
+            members:
+              productAllowedIds.includes(g._id) &&
+              categoryAllowedIds.includes(g._id),
+          })),
+          existingPermissions: pathData.categoryPermissions,
+        };
+      });
 
-          initialStates[pathData.path] = {
-            users: mappedUsers.map((u) => ({
-              ...u,
-              enabled:
-                productAllowedIds.includes(u._id) &&
-                categoryAllowedIds.includes(u._id),
-            })),
-            groups: mappedGroups.map((g) => ({
-              ...g,
-              members:
-                productAllowedIds.includes(g._id) &&
-                categoryAllowedIds.includes(g._id),
-            })),
-            existingPermissions: pathData.categoryPermissions,
-          };
-        });
+      setPathStates(initialStates);
 
-        setPathStates(initialStates);
-
-        const pathToOpen = savedPreviousPath.current || previousPath;
-        if (pathToOpen && productPathsData.paths.length > 0) {
-          let matchingPath = productPathsData.paths.find(
-            (p: PathData) => p.path === pathToOpen,
+      const pathToOpen = savedPreviousPath.current || previousPath;
+      if (pathToOpen && productPathsData.paths.length > 0) {
+        let matchingPath = productPathsData.paths.find(
+          (p: PathData) => p.path === pathToOpen,
+        );
+        if (!matchingPath) {
+          matchingPath = productPathsData.paths.find(
+            (p: PathData) =>
+              p.path.includes(pathToOpen) || pathToOpen.includes(p.path),
           );
-          if (!matchingPath) {
-            matchingPath = productPathsData.paths.find(
-              (p: PathData) =>
-                p.path.includes(pathToOpen) || pathToOpen.includes(p.path),
-            );
-          }
-          if (matchingPath) {
-            setExpandedPath(matchingPath.path);
-          } else {
-            setExpandedPath(productPathsData.paths[0].path);
-          }
-        } else if (productPathsData.paths.length > 0) {
+        }
+        if (matchingPath) {
+          setExpandedPath(matchingPath.path);
+        } else {
           setExpandedPath(productPathsData.paths[0].path);
         }
-      } catch (err) {
-        console.error("Load Error:", err);
-        toast.error("שגיאה בטעינת הנתונים");
+      } else if (productPathsData.paths.length > 0) {
+        setExpandedPath(productPathsData.paths[0].path);
       }
-    };
+    } catch (err) {
+      console.error("Load Error:", err);
+      toast.error("שגיאה בטעינת הנתונים");
+    }
+  };
 
-    loadData();
-  }, [cleanId, role, navigate, previousPath]);
+  loadData();
+}, [cleanId, role, navigate, previousPath]);
+
   const isBlockedInProduct = (allowedId: string, userGroupIds?: string[]): boolean => {
     if (productPermissions.some((p) => p.allowed === allowedId)) {
       return false;
@@ -549,9 +556,9 @@ const ProductPermissions: React.FC = () => {
               <div className="flex items-center gap-2 mt-2 text-sm text-gray-600">
                 <MapPin className="w-4 h-4" />
                 <span>
-                  המוצר נמצא ב-{paths.length} מיקום
-                  {paths.length === 1 ? "" : "ים"}
-                </span>
+  המוצר נמצא ב-{paths.length} {paths.length === 1 ? "מיקום" : "מיקומים"}
+</span>
+
               </div>
             </div>
           </div>
