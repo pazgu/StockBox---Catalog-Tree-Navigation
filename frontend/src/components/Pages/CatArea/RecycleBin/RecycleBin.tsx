@@ -289,8 +289,8 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
                   <span className="text-xs text-slate-500">
                     {new Date(item.deletedAt).toLocaleDateString("he-IL")}
                   </span>
-                  {item.childrenCount && item.childrenCount > 0 && (
-                    <span className="text-xs text-orange-600 mt-1">
+                  {item.childrenCount != null && item.childrenCount > 0 && (
+                      <span className="text-xs text-orange-600 mt-1">
                       כולל {item.childrenCount} פריטי צאצא
                     </span>
                   )}
@@ -391,11 +391,15 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
             </p>
 
             {selectedItem.itemType === "category" &&
-              selectedItem.childrenCount &&
-              selectedItem.childrenCount > 0 && (
-                <p className="text-orange-600 text-sm mb-4">
-                  <AlertTriangle size={16} className="inline mr-1" />
-                  כולל {selectedItem.childrenCount} פריטי צאצא
+              (selectedItem.childrenCount! > 0 || selectedItem.movedChildrenCount! > 0) && (
+                
+                <p className="text-blue-600 text-sm mb-4">
+                  {selectedItem.childrenCount! > 0 
+                    ? `כולל ${selectedItem.childrenCount} פריטים בתוכה`
+                    : `${selectedItem.movedChildrenCount} פריטים יוחזרו פנימה`
+                  }
+                                    <AlertTriangle size={16} className="inline mr-1" />
+
                 </p>
               )}
 
@@ -473,11 +477,14 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
             </p>
 
             {selectedItem.itemType === "category" &&
-              selectedItem.childrenCount &&
-              selectedItem.childrenCount > 0 && (
+              (selectedItem.childrenCount! > 0 || selectedItem.movedChildrenCount! > 0) && (
                 <p className="text-red-600 text-sm mb-4 font-semibold">
-                  <AlertTriangle size={16} className="inline mr-1" />
-                  גם {selectedItem.childrenCount} פריטי הצאצא יימחקו לצמיתות!
+                  {selectedItem.childrenCount! > 0
+                    ? `גם ${selectedItem.childrenCount} הפריטים שבתוכה יימחקו לצמיתות!`
+                    : `אזהרה: ${selectedItem.movedChildrenCount} פריטים נמצאים כעת מחוץ לקטגוריה זו`
+                  }
+                   <AlertTriangle size={16} className="inline mr-1" />
+
                 </p>
               )}
 
