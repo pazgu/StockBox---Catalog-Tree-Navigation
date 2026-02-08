@@ -35,17 +35,10 @@ export class PermissionsService {
   ) {}
 
   async getPermissionsForUser(userId: string, userGroupIds?: string[]) {
-    console.log(
-      'Getting permissions for user:',
-      userId,
-      'with groups:',
-      userGroupIds,
-    );
     const allowedIds = [
       new Types.ObjectId(userId),
       ...(userGroupIds || []).map((id) => new Types.ObjectId(id)),
     ];
-    console.log('Allowed IDs:', allowedIds);
     return await this.permissionModel
       .find({
         allowed: { $in: allowedIds },
@@ -478,10 +471,6 @@ export class PermissionsService {
         allowed: new mongoose.Types.ObjectId(id),
       })),
     ];
-    console.log(
-      `Total permissions to assign for new entity ${entity._id} (${pathAsString}):`,
-      permissions.length,
-    );
 
     if (permissions.length) {
       await this.permissionModel.insertMany(permissions, { ordered: false });
