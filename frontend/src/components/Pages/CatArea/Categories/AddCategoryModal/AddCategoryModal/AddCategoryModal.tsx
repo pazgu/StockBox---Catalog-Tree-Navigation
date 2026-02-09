@@ -81,7 +81,6 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   const [isPanning, setIsPanning] = React.useState(false);
   const [startPan, setStartPan] = React.useState({ x: 0, y: 0 });
   const [isCropperOpen, setIsCropperOpen] = React.useState(false);
-  const [committedPreview, setCommittedPreview] = React.useState<string | null>(null);
   const [isSaving, setIsSaving] = React.useState(false);
 
 
@@ -91,14 +90,12 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
 
   React.useEffect(() => {
     if (!isOpen) {
-      // reset when closing
       setNewCatName("");
       setRawImage(null);
       setZoom(1);
       setOffset({ x: 0, y: 0 });
       setIsPanning(false);
       setIsCropperOpen(false);
-      setCommittedPreview(null);
     }
   }, [isOpen]);
 
@@ -170,9 +167,6 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     ctx.restore();
 
     const dataUrl = out.toDataURL("image/jpeg", 0.92);
-    setCommittedPreview(dataUrl);
-    setIsCropperOpen(false);
-    toast.success("התמונה נשמרה לפי המסגור שבחרת");
     return dataUrl;
   };
 
@@ -182,14 +176,15 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     return;
   }
 
-  let finalImage = committedPreview;
-
-  if (!finalImage && (isCropperOpen || rawImage)) {
-    finalImage = commitCrop();
+  if (!rawImage) {
+    toast.error("נא לבחור תמונה");
+    return;
   }
 
+  const finalImage = commitCrop();
+
   if (!finalImage) {
-    toast.error("נא לבחור תמונה ולהחיל את החיתוך");
+    toast.error("שגיאה ביצירת התמונה");
     return;
   }
 
@@ -464,13 +459,6 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
                 className="ml-2 px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-slate-700"
               >
                 איפוס
-              </button>
-              <button
-                type="button"
-                onClick={commitCrop}
-                className="ml-2 px-3 py-2 rounded-lg bg-slate-700 text-white hover:bg-slate-600"
-              >
-                השתמש בתמונה
               </button>
             </div>
           </div>
