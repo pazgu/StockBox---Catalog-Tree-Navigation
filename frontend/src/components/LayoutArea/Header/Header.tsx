@@ -243,7 +243,7 @@ const Header: React.FC<HeaderProps> = ({
                     className="flex flex-col items-center gap-1 text-white/80"
                   >
                     <Trash2 size={20} />
-                    <span className="text-xs">סל מחזור</span>
+                    <span className="text-xs">סל מיחזור</span>
                   </button>
 
                   <button

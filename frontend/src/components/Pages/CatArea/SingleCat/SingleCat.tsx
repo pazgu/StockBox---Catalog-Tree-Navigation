@@ -309,17 +309,17 @@ const SingleCat: FC = () => {
           itemToDelete.id,
           "cascade",
         );
-        toast.success(`הקטגוריה "${itemToDelete.name}" הועברה לסל המחזור!`);
+        toast.success(`הקטגוריה "${itemToDelete.name}" הועברה לסל המיחזור!`);
         navigate("/recycle-bin");
       } else {
         await recycleBinService.moveProductToRecycleBin(itemToDelete.id);
-        toast.success(`המוצר "${itemToDelete.name}" הועבר לסל המחזור!`);
+        toast.success(`המוצר "${itemToDelete.name}" הועבר לסל המיחזור!`);
         navigate("/recycle-bin");
       }
 
       await loadAllContent();
     } catch (error) {
-      toast.error("שגיאה בהעברה לסל המחזור");
+      toast.error("שגיאה בהעברה לסל המיחזור");
     } finally {
       setIsMovingToRecycleBin(false);
       setShowMoveToRecycleBinModal(false);
@@ -355,12 +355,12 @@ const SingleCat: FC = () => {
 
       await recycleBinService.moveProductToRecycleBin(itemToDelete.id);
 
-      toast.success(`המוצר "${itemToDelete.name}" הועבר לסל המחזור!`);
+      toast.success(`המוצר "${itemToDelete.name}" הועבר לסל המיחזור!`);
       setItems(items.filter((item) => item.id !== itemToDelete.id));
 
       navigate("/recycle-bin");
     } catch (error) {
-      toast.error("שגיאה בהעברה לסל המחזור");
+      toast.error("שגיאה בהעברה לסל המיחזור");
     } finally {
       setIsMovingToRecycleBin(false);
       setShowSmartDeleteModal(false);
@@ -422,13 +422,13 @@ const SingleCat: FC = () => {
 
       toast.success(
         strategy === "cascade"
-          ? `הקטגוריה "${itemToDelete.name}" הועברה לסל המחזור!`
-          : `הקטגוריה "${itemToDelete.name}" הועברה לסל המחזור והתכנים הועברו שכבה אחת למעלה!`,
+          ? `הקטגוריה "${itemToDelete.name}" הועברה לסל המיחזור!`
+          : `הקטגוריה "${itemToDelete.name}" הועברה לסל המיחזור והתכנים הועברו שכבה אחת למעלה!`,
       );
 
       navigate("/recycle-bin");
     } catch (error) {
-      toast.error("שגיאה בהעברת הקטגוריה לסל המחזור");
+      toast.error("שגיאה בהעברת הקטגוריה לסל המיחזור");
     } finally {
       setIsMovingToRecycleBin(false);
       setCategoryMoveStrategyLoading(null);
@@ -560,7 +560,7 @@ const SingleCat: FC = () => {
 
   const handleMoveSelectedToRecycleBin = () => {
     if (selectedItems.length === 0) {
-      toast.error("אנא בחר לפחות פריט אחד להעברה לסל מחזור");
+      toast.error("אנא בחר לפחות פריט אחד להעברה לסל מיחזור");
       return;
     }
     setShowDeleteAllModal(true);
@@ -568,7 +568,7 @@ const SingleCat: FC = () => {
 
   const confirmMoveSelectedToRecycleBin = () => {
     setItems((prev) => prev.filter((item) => !selectedItems.includes(item.id)));
-    toast.success(`${selectedItems.length} פריטים הועברו לסל המחזור בהצלחה!`);
+    toast.success(`${selectedItems.length} פריטים הועברו לסל המיחזור בהצלחה!`);
     setSelectedItems([]);
     setIsSelectionMode(false);
     setShowDeleteAllModal(false);
@@ -738,7 +738,7 @@ const SingleCat: FC = () => {
                   <FolderInput size={18} />
                 </button>
                 <button
-                  title="העבר לסל מחזור"
+                  title="העבר לסל מיחזור"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleMoveToRecycleBin(item);
@@ -912,14 +912,14 @@ const SingleCat: FC = () => {
             className="bg-white p-6 w-full max-w-md rounded-lg"
             onClick={(e) => e.stopPropagation()}
           >
-            <h4 className="text-lg font-semibold mb-2">העברה לסל מחזור</h4>
+            <h4 className="text-lg font-semibold mb-2">העברה לסל מיחזור</h4>
             <p className="mb-1">
               האם ברצונך להעביר את{" "}
               {itemToDelete.type === "category" ? "הקטגוריה" : "המוצר"} "
-              {itemToDelete.name}" לסל המחזור?
+              {itemToDelete.name}" לסל המיחזור?
             </p>
             <small className="text-blue-600">
-              ניתן יהיה לשחזר את הפריט מסל המחזור
+              ניתן יהיה לשחזר את הפריט מסל המיחזור
             </small>
             <div className="flex justify-end gap-3 mt-4">
               <button
@@ -934,7 +934,7 @@ const SingleCat: FC = () => {
                     מעביר לסל...
                   </span>
                 ) : (
-                  "העבר לסל מחזור"
+                  "העבר לסל מיחזור"
                 )}
               </button>
 
@@ -960,7 +960,7 @@ const SingleCat: FC = () => {
             className="bg-white p-6 rounded-lg w-full max-w-md"
             onClick={(e) => e.stopPropagation()}
           >
-            <h4 className="text-lg font-semibold mb-2">העברה לסל מחזור</h4>
+            <h4 className="text-lg font-semibold mb-2">העברה לסל מיחזור</h4>
 
             <p className="mb-2">
               מה ברצונך לעשות עם התוכן שבתוך "{itemToDelete.name}"?
@@ -1038,20 +1038,20 @@ const SingleCat: FC = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <h4 className="text-lg font-semibold mb-2">
-              העברת פריטים לסל מחזור
+              העברת פריטים לסל מיחזור
             </h4>
             <p className="mb-1">
-              האם ברצונך להעביר {selectedItems.length} פריטים לסל המחזור?
+              האם ברצונך להעביר {selectedItems.length} פריטים לסל המיחזור?
             </p>
             <small className="text-blue-600 font-medium block">
-              הפריטים הנבחרים יועברו לסל המחזור וניתן יהיה לשחזר אותם
+              הפריטים הנבחרים יועברו לסל המיחזור וניתן יהיה לשחזר אותם
             </small>
             <div className="flex justify-end gap-3 mt-4">
               <button
                 onClick={confirmMoveSelectedToRecycleBin}
                 className="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 transition-colors"
               >
-                העבר לסל מחזור
+                העבר לסל מיחזור
               </button>
               <button
                 onClick={closeAllModals}
