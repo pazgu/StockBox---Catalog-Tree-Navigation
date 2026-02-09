@@ -1,11 +1,12 @@
 import React from "react";
 import { toast } from "sonner";
 import useBlockBrowserZoom from "../../Categories/useBlockBrowserZoom";
+import { Spinner } from "../../../../ui/spinner";
 
 type Props = {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (result: { name: string; imageFile: File }) => void;
+  onSave: (result: { name: string; imageFile: File }) => Promise<void>;
 };
 
 const CROP_BOX = 256;
@@ -85,6 +86,8 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   const [committedPreview, setCommittedPreview] = React.useState<string | null>(
     null,
   );
+  const [isSaving, setIsSaving] = React.useState(false);
+
 
   const cropRef = React.useRef<HTMLDivElement>(null!);
   useBlockBrowserZoom(cropRef);
@@ -175,29 +178,53 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     return dataUrl;
   };
 
-  const handleSave = () => {
-    if (!categoryName.trim()) {
-      toast.error("שם תת-קטגוריה חובה");
-      return;
-    }
-    let finalImage = committedPreview;
-    if (!finalImage && (isCropperOpen || rawImage)) {
-      finalImage = commitCrop();
-    }
-    if (!finalImage) {
-      toast.error("נא לבחור תמונה ולהחיל את החיתוך");
-      return;
-    }
-    const safeName = categoryName.trim().toLowerCase().replace(/\s+/g, "-");
-    const file = dataURLtoFile(finalImage, `${safeName}.jpg`);
+  const handleSave = async () => {
+  if (!categoryName.trim()) {
+    toast.error("שם תת-קטגוריה חובה");
+    return;
+  }
 
-    onSave({ name: categoryName.trim(), imageFile: file });
-  };
+  let finalImage = committedPreview;
+
+  if (!finalImage && (isCropperOpen || rawImage)) {
+    finalImage = commitCrop();
+  }
+
+  if (!finalImage) {
+    toast.error("נא לבחור תמונה ולהחיל את החיתוך");
+    return;
+  }
+
+  const safeName = categoryName.trim().toLowerCase().replace(/\s+/g, "-");
+  const file = dataURLtoFile(finalImage, `${safeName}.jpg`);
+
+  try {
+    setIsSaving(true);
+    await onSave({ name: categoryName.trim(), imageFile: file });
+  } catch (error: any) {
+    const serverMessage =
+      error?.response?.data?.message || error?.response?.data?.error;
+
+    if (typeof serverMessage === "string" && serverMessage.trim()) {
+      toast.error(serverMessage);
+    } else {
+      toast.error("שגיאה בהוספת תת-קטגוריה");
+    }
+
+    console.error("Add sub category failed:", error);
+  } finally {
+    setIsSaving(false);
+  }
+};
+
 
   return (
     <div
       className="fixed inset-0 bg-slate-900 bg-opacity-85 backdrop-blur-xl flex items-center justify-center z-50 transition-all duration-300 p-4"
-      onClick={onClose}
+      onClick={() => {
+  if (!isSaving) onClose();
+}}
+
     >
       <div
         className="bg-white p-8 rounded-xl w-[800px] max-w-[95%] max-h-[90vh] overflow-y-auto shadow-2xl text-center transform translate-y-[-2px]"
@@ -422,20 +449,39 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
 
         <div className="flex justify-between gap-3">
           <button
-            onClick={handleSave}
-            disabled={isCropperOpen && !committedPreview}
-            className={`flex-1 p-3 rounded-lg text-base font-medium transition-all duration-200 text-white shadow-md
-              ${isCropperOpen && !committedPreview ? "bg-slate-400 cursor-not-allowed" : "bg-slate-700 hover:bg-slate-600 hover:-translate-y-px hover:shadow-lg"}`}
-          >
-            שמור
-          </button>
+  onClick={handleSave}
+  disabled={isSaving || (isCropperOpen && !committedPreview)}
+  className={`flex-1 p-3 rounded-lg text-base font-medium transition-all duration-200 text-white shadow-md
+    ${
+      isSaving || (isCropperOpen && !committedPreview)
+        ? "bg-slate-400 cursor-not-allowed"
+        : "bg-slate-700 hover:bg-slate-600 hover:-translate-y-px hover:shadow-lg"
+    }`}
+>
+  {isSaving ? (
+    <span className="flex items-center justify-center gap-2">
+      <Spinner className="size-4 text-white" />
+      מוסיף...
+    </span>
+  ) : (
+    "שמור"
+  )}
+</button>
+
 
           <button
-            onClick={onClose}
-            className="flex-1 p-3 border-none rounded-lg text-base font-medium cursor-pointer transition-all duration-200 bg-gray-100 text-gray-500 border border-gray-300 hover:bg-gray-300 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"
-          >
-            ביטול
-          </button>
+  onClick={onClose}
+  disabled={isSaving}
+  className={`flex-1 p-3 border-none rounded-lg text-base font-medium transition-all duration-200 border
+    ${
+      isSaving
+        ? "bg-gray-100 text-gray-300 cursor-not-allowed border-gray-200"
+        : "bg-gray-100 text-gray-500 border border-gray-300 hover:bg-gray-300 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"
+    }`}
+>
+  ביטול
+</button>
+
         </div>
       </div>
     </div>

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import {
   Controller,
   Get,
@@ -64,17 +66,14 @@ export class RecycleBinController {
   @Post('restore')
   @HttpCode(HttpStatus.OK)
   async restoreItem(@Body() dto: RestoreItemDto) {
-    return this.recycleBinService.restoreItem(
-      dto.itemId,  
-      dto.restoreChildren,
-    );
+    return this.recycleBinService.restoreItem(dto.itemId, dto.restoreChildren);
   }
 
   @Delete('permanent')
   @HttpCode(HttpStatus.OK)
   async permanentlyDelete(@Body() dto: DeletePermanentlyDto) {
     return this.recycleBinService.permanentlyDelete(
-      dto.itemId, 
+      dto.itemId,
       dto.deleteChildren,
     );
   }
