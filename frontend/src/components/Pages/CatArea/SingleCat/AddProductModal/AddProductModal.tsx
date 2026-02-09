@@ -91,6 +91,9 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   const [startPan, setStartPan] = React.useState({ x: 0, y: 0 });
   const [isCropperOpen, setIsCropperOpen] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
+  const [committedPreview, setCommittedPreview] = React.useState<string | null>(null);
+
+
 
 
   const cropRef = React.useRef<HTMLDivElement>(null!);
@@ -105,6 +108,7 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
       setOffset({ x: 0, y: 0 });
       setIsPanning(false);
       setIsCropperOpen(false);
+      setCommittedPreview(null);
     }
   }, [isOpen]);
 
@@ -147,37 +151,44 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   };
 
   const commitCrop = () => {
-    if (!rawImage) return null;
+  if (!rawImage) return null;
 
-    const OUT = 512;
-    const out = document.createElement("canvas");
-    out.width = OUT;
-    out.height = OUT;
-    const ctx = out.getContext("2d");
-    if (!ctx) return null;
+  const OUT = 512;
+  const out = document.createElement("canvas");
+  out.width = OUT;
+  out.height = OUT;
+  const ctx = out.getContext("2d");
+  if (!ctx) return null;
 
-    const iw = rawImage.naturalWidth;
-    const ih = rawImage.naturalHeight;
-    const baseScale = getBaseCoverScale(iw, ih, CROP_BOX);
-    const displayScale = baseScale * zoom;
-    const canvasScale = OUT / CROP_BOX;
+  const iw = rawImage.naturalWidth;
+  const ih = rawImage.naturalHeight;
+  const baseScale = getBaseCoverScale(iw, ih, CROP_BOX);
+  const displayScale = baseScale * zoom;
+  const canvasScale = OUT / CROP_BOX;
 
-    ctx.clearRect(0, 0, OUT, OUT);
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, OUT, OUT);
+  ctx.clearRect(0, 0, OUT, OUT);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, OUT, OUT);
 
-    ctx.save();
-    ctx.scale(canvasScale, canvasScale);
+  ctx.save();
+  ctx.scale(canvasScale, canvasScale);
 
-    ctx.translate(CROP_BOX / 2, CROP_BOX / 2);
-    ctx.translate(offset.x, offset.y);
-    ctx.scale(displayScale, displayScale);
-    ctx.drawImage(rawImage, -iw / 2, -ih / 2);
-    ctx.restore();
+  ctx.translate(CROP_BOX / 2, CROP_BOX / 2);
+  ctx.translate(offset.x, offset.y);
+  ctx.scale(displayScale, displayScale);
+  ctx.drawImage(rawImage, -iw / 2, -ih / 2);
+  ctx.restore();
 
-    const dataUrl = out.toDataURL("image/jpeg", 0.92);
-    return dataUrl;
-  };
+  const dataUrl = out.toDataURL("image/jpeg", 0.92);
+
+  // ✅ THE MISSING PART
+  setCommittedPreview(dataUrl);
+  setIsCropperOpen(false);
+  toast.success("התמונה נשמרה לפי המסגור שבחרת");
+
+  return dataUrl;
+};
+
 
   const handleSave = async () => {
   if (!productName.trim()) {

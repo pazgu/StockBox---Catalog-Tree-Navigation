@@ -257,12 +257,24 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
 </div>
 
 
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleImageUpload}
-          className="w-full mb-4"
-        />
+        <div className="group mb-4">
+  <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
+    <span className="w-1.5 h-1.5 rounded-full bg-[#0D305B]" />
+    תמונת תת-קטגוריה
+  </label>
+
+  <input
+    type="file"
+    accept="image/*"
+    onChange={handleImageUpload}
+    className="w-full file:mr-4 file:py-2 file:px-4 file:rounded-xl
+               file:border-0 file:text-sm file:font-bold
+               file:bg-[#0D305B] file:text-white
+               hover:file:bg-[#15457a]
+               text-sm text-gray-600"
+  />
+</div>
+
 
         {isCropperOpen && rawImage && (
           <div className="w-full flex flex-col items-center mb-4">
