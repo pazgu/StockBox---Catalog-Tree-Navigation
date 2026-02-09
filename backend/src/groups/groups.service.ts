@@ -51,7 +51,7 @@ export class GroupsService {
 
     if (existingGroup) {
       throw new ConflictException(
-        `Group with name "${createGroupDto.groupName}" already exists`,
+        `שם זה כבר קיים. אנא בחר שם ייחודי אחר.`,
       );
     }
 
@@ -75,7 +75,7 @@ export class GroupsService {
 
       if (existingGroup) {
         throw new ConflictException(
-          `Group with name "${updateGroupDto.groupName}" already exists`,
+          `שם זה כבר קיים. אנא בחר שם ייחודי אחר.`,
         );
       }
     }

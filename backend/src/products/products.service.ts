@@ -171,7 +171,7 @@ export class ProductsService {
       console.error('Mongoose Save Error:', error);
 
       if (error?.code === 11000) {
-        throw new ConflictException('כבר קיים מוצר עם שם זה');
+        throw new ConflictException('שם זה כבר קיים. אנא בחר שם ייחודי אחר.');
       }
 
       if (error?.name === 'ValidationError') {
@@ -270,9 +270,7 @@ export class ProductsService {
       });
 
       if (dup) {
-        throw new BadRequestException(
-          'A product with this name already exists in this category',
-        );
+        throw new BadRequestException('שם זה כבר קיים. אנא בחר שם ייחודי אחר.');
       }
 
       dto.productPath = [newPath];
@@ -321,9 +319,7 @@ export class ProductsService {
       });
 
       if (existingProduct) {
-        throw new BadRequestException(
-          `A product with this name already exists at: ${newPath}`,
-        );
+        throw new BadRequestException('שם זה כבר קיים. אנא בחר שם ייחודי אחר.');
       }
     }
 
@@ -369,7 +365,7 @@ export class ProductsService {
 
     for (const newPath of newPaths) {
       if (product.productPath.includes(newPath)) {
-        throw new BadRequestException(`Product already exists at: ${newPath}`);
+        throw new BadRequestException('שם זה כבר קיים. אנא בחר שם ייחודי אחר.');
       }
 
       const existingProduct = await this.productModel.findOne({
@@ -378,9 +374,7 @@ export class ProductsService {
       });
 
       if (existingProduct) {
-        throw new BadRequestException(
-          `A product with this name already exists at: ${newPath}`,
-        );
+        throw new BadRequestException('שם זה כבר קיים. אנא בחר שם ייחודי אחר.');
       }
     }
 

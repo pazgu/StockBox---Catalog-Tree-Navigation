@@ -482,7 +482,16 @@ const SingleCat: FC = () => {
       setShowAddProductModal(false);
     } catch (error: any) {
       console.error("Save Error:", error);
-      toast.error(error.message || "שגיאה בהוספת המוצר");
+      const serverMessage =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message;
+
+      if (typeof serverMessage === "string" && serverMessage.trim()) {
+        toast.error(serverMessage);
+      } else {
+        toast.error("שגיאה בהוספת המוצר");
+      }
     }
   };
 
@@ -511,7 +520,15 @@ const SingleCat: FC = () => {
       toast.success(`הקטגוריה "${data.name}" נוספה בהצלחה!`);
       setShowAddSubCategoryModal(false);
     } catch (error) {
-      toast.error("שגיאה בהוספת קטגוריה");
+      const serverMessage =
+        (error as any)?.response?.data?.message ||
+        (error as any)?.response?.data?.error;
+
+      if (typeof serverMessage === "string" && serverMessage.trim()) {
+        toast.error(serverMessage);
+      } else {
+        toast.error("שגיאה בהוספת קטגוריה");
+      }
     }
   };
 
