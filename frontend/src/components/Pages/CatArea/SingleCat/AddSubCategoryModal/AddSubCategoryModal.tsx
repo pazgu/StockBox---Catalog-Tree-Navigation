@@ -83,9 +83,6 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   const [isPanning, setIsPanning] = React.useState(false);
   const [startPan, setStartPan] = React.useState({ x: 0, y: 0 });
   const [isCropperOpen, setIsCropperOpen] = React.useState(false);
-  const [committedPreview, setCommittedPreview] = React.useState<string | null>(
-    null,
-  );
   const [isSaving, setIsSaving] = React.useState(false);
 
 
@@ -100,7 +97,6 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
       setOffset({ x: 0, y: 0 });
       setIsPanning(false);
       setIsCropperOpen(false);
-      setCommittedPreview(null);
     }
   }, [isOpen]);
 
@@ -172,9 +168,6 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     ctx.restore();
 
     const dataUrl = out.toDataURL("image/jpeg", 0.92);
-    setCommittedPreview(dataUrl);
-    setIsCropperOpen(false);
-    toast.success("התמונה נשמרה לפי המסגור שבחרת");
     return dataUrl;
   };
 
@@ -184,14 +177,15 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     return;
   }
 
-  let finalImage = committedPreview;
-
-  if (!finalImage && (isCropperOpen || rawImage)) {
-    finalImage = commitCrop();
+  if (!rawImage) {
+    toast.error("נא לבחור תמונה");
+    return;
   }
 
+  const finalImage = commitCrop();
+
   if (!finalImage) {
-    toast.error("נא לבחור תמונה ולהחיל את החיתוך");
+    toast.error("שגיאה ביצירת התמונה");
     return;
   }
 
@@ -220,34 +214,67 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
 
   return (
     <div
-      className="fixed inset-0 bg-slate-900 bg-opacity-85 backdrop-blur-xl flex items-center justify-center z-50 transition-all duration-300 p-4"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       onClick={() => {
   if (!isSaving) onClose();
 }}
 
     >
       <div
-        className="bg-white p-8 rounded-xl w-[800px] max-w-[95%] max-h-[90vh] overflow-y-auto shadow-2xl text-center transform translate-y-[-2px]"
+        className="bg-gradient-to-br from-white via-[#fffdf8] to-[#fff9ed] rounded-2xl w-full max-w-3xl max-h-[90vh] shadow-2xl border border-gray-100 text-right overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <h4 className="m-0 mb-5 text-xl text-slate-700 font-semibold tracking-tight">
-          הוסף תת-קטגוריה חדשה
-        </h4>
+          <div className="overflow-y-auto max-h-[90vh] p-8">
+        <div className="flex justify-start w-full mb-6">
+  <h2 className="flex items-center gap-3 text-2xl font-bold text-[#0D305B]">
+    <svg className="w-7 h-7 text-[#0D305B]" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M12 5v14M5 12h14"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+    <span>הוספת תת-קטגוריה חדשה</span>
+  </h2>
+</div>
 
-        <input
-          type="text"
-          placeholder="שם תת-קטגוריה"
-          value={categoryName}
-          onChange={(e) => setCategoryName(e.target.value)}
-          className="w-full p-3 border-2 border-gray-200 rounded-lg mb-5 text-base transition-all duration-200 outline-none focus:border-slate-700 focus:ring focus:ring-slate-700 focus:ring-opacity-10"
-        />
 
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleImageUpload}
-          className="w-full mb-4"
-        />
+        <div className="group mb-5">
+  <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
+    <span className="w-1.5 h-1.5 rounded-full bg-[#0D305B]" />
+    שם תת-קטגוריה
+  </label>
+
+  <input
+    type="text"
+    placeholder="שם תת-קטגוריה"
+    value={categoryName}
+    onChange={(e) => setCategoryName(e.target.value)}
+    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
+  />
+</div>
+
+
+        <div className="group mb-4">
+  <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
+    <span className="w-1.5 h-1.5 rounded-full bg-[#0D305B]" />
+    תמונת תת-קטגוריה
+  </label>
+
+  <input
+    type="file"
+    accept="image/*"
+    onChange={handleImageUpload}
+    className="w-full file:mr-4 file:py-2 file:px-4 file:rounded-xl
+               file:border-0 file:text-sm file:font-bold
+               file:bg-[#0D305B] file:text-white
+               hover:file:bg-[#15457a]
+               text-sm text-gray-600"
+  />
+</div>
+
 
         {isCropperOpen && rawImage && (
           <div className="w-full flex flex-col items-center mb-4">
@@ -428,32 +455,17 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
               >
                 איפוס
               </button>
-              <button
-                type="button"
-                onClick={commitCrop}
-                className="ml-2 px-3 py-2 rounded-lg bg-slate-700 text-white hover:bg-slate-600"
-              >
-                השתמש בתמונה
-              </button>
             </div>
           </div>
-        )}
-
-        {!isCropperOpen && committedPreview && (
-          <img
-            src={committedPreview}
-            alt="preview"
-            className="max-w-full mt-2.5 mb-4 h-40 object-cover"
-          />
         )}
 
         <div className="flex justify-between gap-3">
           <button
   onClick={handleSave}
-  disabled={isSaving || (isCropperOpen && !committedPreview)}
+  disabled={isSaving}
   className={`flex-1 p-3 rounded-lg text-base font-medium transition-all duration-200 text-white shadow-md
     ${
-      isSaving || (isCropperOpen && !committedPreview)
+      isSaving
         ? "bg-slate-400 cursor-not-allowed"
         : "bg-slate-700 hover:bg-slate-600 hover:-translate-y-px hover:shadow-lg"
     }`}
@@ -485,6 +497,9 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
         </div>
       </div>
     </div>
+        </div>
+
+
   );
 };
 

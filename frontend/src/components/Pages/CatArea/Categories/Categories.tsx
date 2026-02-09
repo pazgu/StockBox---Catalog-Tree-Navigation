@@ -473,7 +473,7 @@ export const Categories: FC<CategoriesProps> = () => {
                               >
                                 <Trash size={18} />
                               </button>
-                              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap">
+                              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
                                 העבר לסל מיחזור
                               </span>
                             </div>
@@ -489,7 +489,7 @@ export const Categories: FC<CategoriesProps> = () => {
                               >
                                 <Pen size={18} />
                               </button>
-                              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap">
+                              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
                                 עריכת קטגוריה
                               </span>
                             </div>
@@ -508,7 +508,7 @@ export const Categories: FC<CategoriesProps> = () => {
                               >
                                 <Lock size={18} />
                               </button>
-                              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap">
+                              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
                                 ניהול הרשאות
                               </span>
                             </div>
@@ -540,8 +540,7 @@ export const Categories: FC<CategoriesProps> = () => {
                     key={item.id}
                     className="flex flex-col items-center p-5 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 border-gray-200 cursor-pointer"
                     onClick={() => {
-                      setPreviousPath(location.pathname); // or location.pathname if you have useLocation()
-
+                      setPreviousPath(location.pathname);
                       navigate(`/products/${item.id}`);
                     }}
                   >
@@ -552,49 +551,62 @@ export const Categories: FC<CategoriesProps> = () => {
                       </div>
                     </div>
 
-                    <div className="absolute right-3 top-3 flex gap-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleFavorite(item.id, item.name, "product");
-                        }}
-                        className="h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110 transition-all duration-200"
-                      >
-                        <Heart
-                          size={22}
-                          strokeWidth={2}
-                          className={
-                            item.favorite
-                              ? "fill-red-500 text-red-500"
-                              : "text-gray-700"
-                          }
-                        />
-                      </button>
-
-                      {role === "editor" && (
+                    <div className="absolute right-3 top-3 flex flex-col gap-2">
+                      <div className="relative">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            openMoveForItem(item);
+                            toggleFavorite(item.id, item.name, "product");
                           }}
-                          className="h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110 transition-all duration-200 text-gray-700"
-                          title="העבר מוצר"
+                          className="peer h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110 transition-all duration-200"
                         >
-                          <FolderInput size={20} />
+                          <Heart
+                            size={22}
+                            strokeWidth={2}
+                            className={
+                              item.favorite
+                                ? "fill-red-500 text-red-500"
+                                : "text-gray-700"
+                            }
+                          />
                         </button>
+                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                          {item.favorite ? "הסר ממועדפים" : "הוסף למועדפים"}
+                        </span>
+                      </div>
+
+                      {role === "editor" && (
+                        <div className="relative">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openMoveForItem(item);
+                            }}
+                            className="peer h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110 transition-all duration-200 text-gray-700"
+                          >
+                            <FolderInput size={20} />
+                          </button>
+                          <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                            העבר מוצר
+                          </span>
+                        </div>
                       )}
 
                       {role === "editor" && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openDuplicateForProduct(item);
-                          }}
-                          className="mt-20 mr-48 h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110 transition-all duration-200 text-gray-700"
-                          title="שכפל מוצר"
-                        >
-                          <Copy size={20} />
-                        </button>
+                        <div className="relative">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openDuplicateForProduct(item);
+                            }}
+                            className="peer h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110 transition-all duration-200 text-gray-700"
+                          >
+                            <Copy size={20} />
+                          </button>
+                          <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                            שכפל מוצר
+                          </span>
+                        </div>
                       )}
                     </div>
 
@@ -634,12 +646,16 @@ export const Categories: FC<CategoriesProps> = () => {
         onClose={closeDuplicateModal}
         onSuccess={loadCategoriesAndFavorites}
       />
-
       {role === "editor" && (
         <div
-          className="fixed bottom-8 right-8 w-16 h-16 bg-slate-700 rounded-full flex items-center justify-center text-3xl text-white cursor-pointer transition-all duration-200 hover:scale-105 hover:bg-slate-600"
+          className="fixed bottom-8 right-8 w-16 h-16 bg-slate-700 rounded-full flex items-center justify-center text-3xl text-white cursor-pointer transition-all duration-200 hover:scale-105 hover:bg-slate-600 group z-50 shadow-lg"
           onClick={() => setShowAddCatModal(true)}
         >
+          {/* Tooltip - positioned to the left of the button */}
+          <span className="absolute right-full mr-4 bg-gray-800 text-white text-xs px-3 py-2 rounded opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none shadow-xl">
+            הוספת קטגוריה חדשה
+          </span>
+
           <svg
             width="24"
             height="24"
