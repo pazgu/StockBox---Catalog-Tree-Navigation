@@ -242,9 +242,10 @@ const EditCategoryModal: React.FC<Props> = ({
     }}
   >
     <div
-      className="bg-gradient-to-br from-white via-[#fffdf8] to-[#fff9ed] rounded-2xl p-8 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-100 text-right"
-      onClick={(e) => e.stopPropagation()}
-    >
+  className="bg-gradient-to-br from-white via-[#fffdf8] to-[#fff9ed] rounded-2xl w-full max-w-3xl max-h-[90vh] shadow-2xl border border-gray-100 text-right overflow-hidden"
+  onClick={(e) => e.stopPropagation()}
+>
+  <div className="overflow-y-auto max-h-[90vh] p-8">
       {/* Header */}
       <div className="flex justify-start w-full mb-6">
         <h2 className="flex items-center gap-3 text-2xl font-bold text-[#0D305B]">
@@ -505,6 +506,7 @@ const EditCategoryModal: React.FC<Props> = ({
       </div>
     </div>
   </div>
+    </div>
 );
 
 };
