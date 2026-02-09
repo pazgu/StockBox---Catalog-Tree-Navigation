@@ -739,7 +739,7 @@ const SingleCat: FC = () => {
                       e.stopPropagation();
                       handleDuplicate(item);
                     }}
-                    className="absolute bottom-3 right-12 group-hover:opacity-100 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-purple-500"
+                    className="absolute bottom-5 right-12 group-hover:opacity-100 h-9 w-9 text-gray-700 flex items-center hover:text-purple-500"
                   >
                     <Copy size={18} />
                   </button>
@@ -750,7 +750,7 @@ const SingleCat: FC = () => {
                     e.stopPropagation();
                     handleMove(item);
                   }}
-                  className="absolute bottom-3 right-3 group-hover:opacity-100 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-blue-500"
+                  className="absolute bottom-5 right-3 group-hover:opacity-100 h-9 w-9 text-gray-700 flex items-center hover:text-blue-500"
                 >
                   <FolderInput size={18} />
                 </button>
@@ -760,7 +760,7 @@ const SingleCat: FC = () => {
                     e.stopPropagation();
                     handleMoveToRecycleBin(item);
                   }}
-                  className="absolute bottom-3 left-3 group-hover:opacity-100 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-orange-500"
+                  className="absolute bottom-5 left-3 group-hover:opacity-100 h-9 w-9 text-gray-700 flex items-center hover:text-orange-500"
                 >
                   <Trash size={18} />
                 </button>
