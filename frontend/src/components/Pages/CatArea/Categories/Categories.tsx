@@ -242,8 +242,8 @@ export const Categories: FC<CategoriesProps> = () => {
 
       toast.success(
         strategy === "cascade"
-          ? `הקטגוריה "${categoryToMoveToRecycleBin.categoryName}" הועברה לסל המחזור!`
-          : `הקטגוריה "${categoryToMoveToRecycleBin.categoryName}" הועברה לסל המחזור והתכנים הועברו שכבה אחת למעלה!`,
+          ? `הקטגוריה "${categoryToMoveToRecycleBin.categoryName}" הועברה לסל המיחזור!`
+          : `הקטגוריה "${categoryToMoveToRecycleBin.categoryName}" הועברה לסל המיחזור והתכנים הועברו שכבה אחת למעלה!`,
       );
 
       setShowMoveToRecycleBinModal(false);
@@ -251,7 +251,7 @@ export const Categories: FC<CategoriesProps> = () => {
 
       navigate("/recycle-bin");
     } catch (error) {
-      toast.error("שגיאה בהעברה לסל המחזור");
+      toast.error("שגיאה בהעברה לסל המיחזור");
       console.error("Error moving to recycle bin:", error);
     } finally {
       setIsMovingToRecycleBin(false);
@@ -475,7 +475,7 @@ export const Categories: FC<CategoriesProps> = () => {
                                 <Trash size={18} />
                               </button>
                               <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap">
-                                העבר לסל מחזור
+                                העבר לסל מיחזור
                               </span>
                             </div>
 
@@ -675,12 +675,12 @@ export const Categories: FC<CategoriesProps> = () => {
                 onClick={(e) => e.stopPropagation()}
               >
                 <h4 className="m-0 mb-5 text-xl text-slate-700 font-semibold tracking-tight">
-                  העברה לסל מחזור
+                  העברה לסל מיחזור
                 </h4>
 
                 <p className="text-slate-700 mb-3">
                   האם ברצונך להעביר את הקטגוריה "
-                  {categoryToMoveToRecycleBin.categoryName}" לסל המחזור?
+                  {categoryToMoveToRecycleBin.categoryName}" לסל המיחזור?
                 </p>
 
                 <div className="flex flex-col gap-3 mt-5">
@@ -734,7 +734,7 @@ ${isMovingToRecycleBin ? "bg-orange-400 cursor-not-allowed text-white" : "bg-ora
                             מעביר לסל...
                           </span>
                         ) : (
-                          "העבר לסל מחזור"
+                          "העבר לסל מיחזור"
                         )}
                       </button>
                     </>

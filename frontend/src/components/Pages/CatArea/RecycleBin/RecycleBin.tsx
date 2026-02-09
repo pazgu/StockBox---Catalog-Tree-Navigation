@@ -53,7 +53,7 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
       const data = await recycleBinService.getRecycleBinItems();
       setItems(data);
     } catch (error) {
-      toast.error("שגיאה בטעינת סל המחזור");
+      toast.error("שגיאה בטעינת סל המיחזור");
       console.error("Error loading recycle bin:", error);
     } finally {
       setIsLoading(false);
@@ -72,7 +72,6 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
 
   const confirmRestore = async () => {
     if (!selectedItem) return;
-
 
     try {
       setIsRestoring(true);
@@ -125,11 +124,11 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
       const result = await recycleBinService.emptyRecycleBin();
       await loadRecycleBinItems();
       toast.success(
-        `סל המחזור רוקן - ${result.deletedCount} פריטים נמחקו לצמיתות`,
+        `סל המיחזור רוקן - ${result.deletedCount} פריטים נמחקו לצמיתות`,
       );
       setShowEmptyBinModal(false);
     } catch (error) {
-      toast.error("שגיאה בריקון סל המחזור");
+      toast.error("שגיאה בריקון סל המיחזור");
       console.error("Error emptying recycle bin:", error);
     } finally {
       setIsEmptying(false);
@@ -146,7 +145,7 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
   if (isLoading) {
     return (
       <div className="mt-12 p-4 flex items-center justify-center min-h-[400px]">
-        <div className="text-slate-700 text-xl">טוען סל מחזור...</div>
+        <div className="text-slate-700 text-xl">טוען סל מיחזור...</div>
       </div>
     );
   }
@@ -155,7 +154,7 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
     return (
       <div className="mt-12 p-4 flex items-center justify-center min-h-[400px]">
         <div className="text-slate-700 text-xl">
-          רק עורכים יכולים לגשת לסל המחזור
+          רק עורכים יכולים לגשת לסל המיחזור
         </div>
       </div>
     );
@@ -175,7 +174,7 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
     >
       <div className="text-right mt-16 mb-6">
         <h2 className="text-5xl font-light text-slate-700 mb-2 tracking-tight">
-          סל מחזור
+          סל מיחזור
         </h2>
         <p className="text-slate-500 text-lg">
           פריטים שנמחקו - ניתן לשחזר או למחוק לצמיתות
@@ -223,7 +222,7 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
               onClick={handleEmptyBin}
               className="px-6 py-2 rounded-full font-medium transition-all bg-red-600 text-white hover:bg-red-700 shadow-md"
             >
-              רוקן סל מחזור
+              רוקן סל מיחזור
             </button>
           )}
         </div>
@@ -232,7 +231,7 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
       {!hasItems ? (
         <div className="w-full h-40 flex flex-col justify-center items-center my-12 text-slate-500">
           <Trash2 size={64} className="mb-4 text-slate-300" />
-          <p className="text-lg">סל המחזור ריק</p>
+          <p className="text-lg">סל המיחזור ריק</p>
         </div>
       ) : (
         <>
@@ -290,7 +289,7 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
                     {new Date(item.deletedAt).toLocaleDateString("he-IL")}
                   </span>
                   {item.childrenCount != null && item.childrenCount > 0 && (
-                      <span className="text-xs text-orange-600 mt-1">
+                    <span className="text-xs text-orange-600 mt-1">
                       כולל {item.childrenCount} פריטי צאצא
                     </span>
                   )}
@@ -391,15 +390,13 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
             </p>
 
             {selectedItem.itemType === "category" &&
-              (selectedItem.childrenCount! > 0 || selectedItem.movedChildrenCount! > 0) && (
-                
+              (selectedItem.childrenCount! > 0 ||
+                selectedItem.movedChildrenCount! > 0) && (
                 <p className="text-blue-600 text-sm mb-4">
-                  {selectedItem.childrenCount! > 0 
+                  {selectedItem.childrenCount! > 0
                     ? `כולל ${selectedItem.childrenCount} פריטים בתוכה`
-                    : `${selectedItem.movedChildrenCount} פריטים יוחזרו פנימה`
-                  }
-                                    <AlertTriangle size={16} className="inline mr-1" />
-
+                    : `${selectedItem.movedChildrenCount} פריטים יוחזרו פנימה`}
+                  <AlertTriangle size={16} className="inline mr-1" />
                 </p>
               )}
 
@@ -477,14 +474,13 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
             </p>
 
             {selectedItem.itemType === "category" &&
-              (selectedItem.childrenCount! > 0 || selectedItem.movedChildrenCount! > 0) && (
+              (selectedItem.childrenCount! > 0 ||
+                selectedItem.movedChildrenCount! > 0) && (
                 <p className="text-red-600 text-sm mb-4 font-semibold">
                   {selectedItem.childrenCount! > 0
                     ? `גם ${selectedItem.childrenCount} הפריטים שבתוכה יימחקו לצמיתות!`
-                    : `אזהרה: ${selectedItem.movedChildrenCount} פריטים נמצאים כעת מחוץ לקטגוריה זו`
-                  }
-                   <AlertTriangle size={16} className="inline mr-1" />
-
+                    : `אזהרה: ${selectedItem.movedChildrenCount} פריטים נמצאים כעת מחוץ לקטגוריה זו`}
+                  <AlertTriangle size={16} className="inline mr-1" />
                 </p>
               )}
 
@@ -541,7 +537,7 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
             </div>
 
             <h4 className="m-0 mb-3 text-xl text-slate-700 font-semibold tracking-tight">
-              ריקון סל המחזור
+              ריקון סל המיחזור
             </h4>
 
             <p className="text-slate-700 mb-3 font-semibold">
@@ -550,7 +546,7 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
 
             <p className="text-slate-700 mb-5">
               האם אתה בטוח שברצונך למחוק לצמיתות את כל {items.length} הפריטים
-              בסל המחזור?
+              בסל המיחזור?
             </p>
 
             <div className="flex flex-col gap-3 mt-5">
@@ -569,7 +565,7 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
                     מרוקן...
                   </span>
                 ) : (
-                  "רוקן סל מחזור"
+                  "רוקן סל מיחזור"
                 )}
               </button>
 
