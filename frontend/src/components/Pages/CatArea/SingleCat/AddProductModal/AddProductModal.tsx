@@ -90,9 +90,6 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   const [isPanning, setIsPanning] = React.useState(false);
   const [startPan, setStartPan] = React.useState({ x: 0, y: 0 });
   const [isCropperOpen, setIsCropperOpen] = React.useState(false);
-  const [committedPreview, setCommittedPreview] = React.useState<string | null>(
-    null,
-  );
   const [isSaving, setIsSaving] = React.useState(false);
 
 
@@ -108,7 +105,6 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
       setOffset({ x: 0, y: 0 });
       setIsPanning(false);
       setIsCropperOpen(false);
-      setCommittedPreview(null);
     }
   }, [isOpen]);
 
@@ -180,9 +176,6 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     ctx.restore();
 
     const dataUrl = out.toDataURL("image/jpeg", 0.92);
-    setCommittedPreview(dataUrl);
-    setIsCropperOpen(false);
-    toast.success("התמונה נשמרה לפי המסגור שבחרת");
     return dataUrl;
   };
 
@@ -192,14 +185,15 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     return;
   }
 
-  let finalImage = committedPreview;
-
-  if (!finalImage && (isCropperOpen || rawImage)) {
-    finalImage = commitCrop();
+  if (!rawImage) {
+    toast.error("נא לבחור תמונה");
+    return;
   }
 
+  const finalImage = commitCrop();
+
   if (!finalImage) {
-    toast.error("נא לבחור תמונה ולהחיל את החיתוך");
+    toast.error("שגיאה ביצירת התמונה");
     return;
   }
 
@@ -449,32 +443,17 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
               >
                 איפוס
               </button>
-              <button
-                type="button"
-                onClick={commitCrop}
-                className="ml-2 px-3 py-2 rounded-lg bg-slate-700 text-white hover:bg-slate-600"
-              >
-                השתמש בתמונה
-              </button>
             </div>
           </div>
-        )}
-
-        {!isCropperOpen && committedPreview && (
-          <img
-            src={committedPreview}
-            alt="preview"
-            className="max-w-full mt-2.5 mb-4 h-40 object-cover"
-          />
         )}
 
         <div className="flex justify-between gap-3">
           <button
   onClick={handleSave}
-  disabled={isSaving || (isCropperOpen && !committedPreview)}
+  disabled={isSaving}
   className={`flex-1 p-3 rounded-lg text-base font-medium transition-all duration-200 text-white shadow-md
     ${
-      isSaving || (isCropperOpen && !committedPreview)
+      isSaving
         ? "bg-slate-400 cursor-not-allowed"
         : "bg-slate-700 hover:bg-slate-600 hover:-translate-y-px hover:shadow-lg"
     }`}
