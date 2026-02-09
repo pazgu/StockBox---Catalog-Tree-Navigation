@@ -249,7 +249,6 @@ export const Categories: FC<CategoriesProps> = () => {
       setShowMoveToRecycleBinModal(false);
       setCategoryToMoveToRecycleBin(null);
 
-      navigate("/recycle-bin");
     } catch (error) {
       toast.error("שגיאה בהעברה לסל המיחזור");
       console.error("Error moving to recycle bin:", error);
