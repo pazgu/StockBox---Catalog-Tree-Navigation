@@ -739,7 +739,7 @@ const SingleCat: FC = () => {
                       e.stopPropagation();
                       handleDuplicate(item);
                     }}
-                    className="absolute bottom-3 right-12 group-hover:opacity-100 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-purple-500 hover:scale-110"
+                    className="absolute bottom-5 right-12 group-hover:opacity-100 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center hover:text-purple-500 hover:scale-110 mr-3"
                   >
                     <Copy size={18} />
                   </button>
@@ -750,7 +750,7 @@ const SingleCat: FC = () => {
                     e.stopPropagation();
                     handleMove(item);
                   }}
-                  className="absolute bottom-3 right-3 group-hover:opacity-100 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-blue-500 hover:scale-110"
+                  className="absolute bottom-5 right-3 group-hover:opacity-100 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center  hover:text-blue-500 hover:scale-110"
                 >
                   <FolderInput size={18} />
                 </button>
@@ -771,7 +771,7 @@ const SingleCat: FC = () => {
                       e.stopPropagation();
                       handleEdit(item);
                     }}
-                    className="absolute bottom-3 left-12 group-hover:opacity-100 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-green-500 hover:scale-110"
+                    className="absolute bottom-3 left-12 group-hover:opacity-100 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-green-500 hover:scale-110 "
                   >
                     <Pen size={18} />
                   </button>
@@ -842,7 +842,7 @@ const SingleCat: FC = () => {
                       e.stopPropagation();
                       handleManagePermissions(item.id, item.type);
                     }}
-                    className="flex items-center gap-2 text-sm font-medium text-white bg-[#0D305B] px-4 py-2 shadow-md transition-all duration-300 hover:bg-[#16447A] hover:shadow-lg focus:ring-2 focus:ring-[#0D305B]/40"
+                    className="flex items-center gap-2 text-sm font-medium text-white bg-[#0D305B] px-4 py-2 shadow-md transition-all duration-300 hover:bg-[#16447A] hover:shadow-lg focus:ring-2 focus:ring-[#0D305B]/40 border-none rounded"
                   >
                     <Lock size={16} className="text-white" />
                     ניהול הרשאות
