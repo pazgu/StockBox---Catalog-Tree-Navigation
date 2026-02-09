@@ -310,11 +310,9 @@ const SingleCat: FC = () => {
           "cascade",
         );
         toast.success(`הקטגוריה "${itemToDelete.name}" הועברה לסל המיחזור!`);
-        navigate("/recycle-bin");
       } else {
         await recycleBinService.moveProductToRecycleBin(itemToDelete.id);
         toast.success(`המוצר "${itemToDelete.name}" הועבר לסל המיחזור!`);
-        navigate("/recycle-bin");
       }
 
       await loadAllContent();
@@ -358,7 +356,6 @@ const SingleCat: FC = () => {
       toast.success(`המוצר "${itemToDelete.name}" הועבר לסל המיחזור!`);
       setItems(items.filter((item) => item.id !== itemToDelete.id));
 
-      navigate("/recycle-bin");
     } catch (error) {
       toast.error("שגיאה בהעברה לסל המיחזור");
     } finally {
@@ -426,7 +423,6 @@ const SingleCat: FC = () => {
           : `הקטגוריה "${itemToDelete.name}" הועברה לסל המיחזור והתכנים הועברו שכבה אחת למעלה!`,
       );
 
-      navigate("/recycle-bin");
     } catch (error) {
       toast.error("שגיאה בהעברת הקטגוריה לסל המיחזור");
     } finally {
