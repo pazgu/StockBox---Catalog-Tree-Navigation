@@ -309,17 +309,17 @@ const SingleCat: FC = () => {
           itemToDelete.id,
           "cascade",
         );
-        toast.success(`הקטגוריה "${itemToDelete.name}" הועברה לסל המחזור!`);
+        toast.success(`הקטגוריה "${itemToDelete.name}" הועברה לסל המיחזור!`);
         navigate("/recycle-bin");
       } else {
         await recycleBinService.moveProductToRecycleBin(itemToDelete.id);
-        toast.success(`המוצר "${itemToDelete.name}" הועבר לסל המחזור!`);
+        toast.success(`המוצר "${itemToDelete.name}" הועבר לסל המיחזור!`);
         navigate("/recycle-bin");
       }
 
       await loadAllContent();
     } catch (error) {
-      toast.error("שגיאה בהעברה לסל המחזור");
+      toast.error("שגיאה בהעברה לסל המיחזור");
     } finally {
       setIsMovingToRecycleBin(false);
       setShowMoveToRecycleBinModal(false);
@@ -355,12 +355,12 @@ const SingleCat: FC = () => {
 
       await recycleBinService.moveProductToRecycleBin(itemToDelete.id);
 
-      toast.success(`המוצר "${itemToDelete.name}" הועבר לסל המחזור!`);
+      toast.success(`המוצר "${itemToDelete.name}" הועבר לסל המיחזור!`);
       setItems(items.filter((item) => item.id !== itemToDelete.id));
 
       navigate("/recycle-bin");
     } catch (error) {
-      toast.error("שגיאה בהעברה לסל המחזור");
+      toast.error("שגיאה בהעברה לסל המיחזור");
     } finally {
       setIsMovingToRecycleBin(false);
       setShowSmartDeleteModal(false);
@@ -422,13 +422,13 @@ const SingleCat: FC = () => {
 
       toast.success(
         strategy === "cascade"
-          ? `הקטגוריה "${itemToDelete.name}" הועברה לסל המחזור!`
-          : `הקטגוריה "${itemToDelete.name}" הועברה לסל המחזור והתכנים הועברו שכבה אחת למעלה!`,
+          ? `הקטגוריה "${itemToDelete.name}" הועברה לסל המיחזור!`
+          : `הקטגוריה "${itemToDelete.name}" הועברה לסל המיחזור והתכנים הועברו שכבה אחת למעלה!`,
       );
 
       navigate("/recycle-bin");
     } catch (error) {
-      toast.error("שגיאה בהעברת הקטגוריה לסל המחזור");
+      toast.error("שגיאה בהעברת הקטגוריה לסל המיחזור");
     } finally {
       setIsMovingToRecycleBin(false);
       setCategoryMoveStrategyLoading(null);
@@ -577,7 +577,7 @@ const SingleCat: FC = () => {
 
   const handleMoveSelectedToRecycleBin = () => {
     if (selectedItems.length === 0) {
-      toast.error("אנא בחר לפחות פריט אחד להעברה לסל מחזור");
+      toast.error("אנא בחר לפחות פריט אחד להעברה לסל מיחזור");
       return;
     }
     setShowDeleteAllModal(true);
@@ -585,7 +585,7 @@ const SingleCat: FC = () => {
 
   const confirmMoveSelectedToRecycleBin = () => {
     setItems((prev) => prev.filter((item) => !selectedItems.includes(item.id)));
-    toast.success(`${selectedItems.length} פריטים הועברו לסל המחזור בהצלחה!`);
+    toast.success(`${selectedItems.length} פריטים הועברו לסל המיחזור בהצלחה!`);
     setSelectedItems([]);
     setIsSelectionMode(false);
     setShowDeleteAllModal(false);
@@ -755,7 +755,7 @@ const SingleCat: FC = () => {
                   <FolderInput size={18} />
                 </button>
                 <button
-                  title="העבר לסל מחזור"
+                  title="העבר לסל מיחזור"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleMoveToRecycleBin(item);
@@ -855,72 +855,54 @@ const SingleCat: FC = () => {
       </main>
 
       {role === "editor" && !isSelectionMode && (
-        <div className="fixed bottom-10 left-4 flex flex-col-reverse gap-1">
-          <button
-            className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 z-10"
-            title="הוסף"
-            onMouseEnter={() => setShowFabButtons(true)}
-            onMouseLeave={() => {
-              setTimeout(() => {
-                setShowFabButtons(false);
-              }, 1500);
-            }}
-          >
-            <span
-              className={`text-3xl font-light transition-transform duration-300 ${showFabButtons ? "rotate-45" : ""}`}
+        <div className="fixed bottom-10 left-4 flex flex-col-reverse gap-3">
+          {/* Main Trigger Button - with its own hover group */}
+          <div className="group">
+            <button
+              className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 z-10"
+              title="הוסף"
             >
-              +
-            </span>
-          </button>
+              <span className="text-3xl font-light p-7">+</span>
+            </button>
 
-          <button
-            onClick={() => {
-              setShowAddProductModal(true);
-            }}
-            onMouseEnter={() => setShowFabButtons(true)}
-            className={`w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 ease-in-out relative ${
-              showFabButtons
-                ? "scale-100 translate-y-0 pointer-events-auto"
-                : "scale-0 -translate-y-14 pointer-events-none"
-            }`}
-            title="הוסף מוצר"
-          >
-            <FilePlus2Icon size={24} />
-            <span className="absolute left-16 bg-gray-800 text-white text-xs px-3 py-1 rounded opacity-0 hover:opacity-100 transition-all duration-200 whitespace-nowrap">
-              הוסף מוצר
-            </span>
-          </button>
+            {/* Popup buttons container */}
+            <div className="absolute bottom-full left-0 mb-3 flex flex-col-reverse gap-3 opacity-0 scale-0 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 pointer-events-none group-hover:pointer-events-auto">
+              {/* Product Button */}
+              <button
+                onClick={() => setShowAddProductModal(true)}
+                className="group/btn w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 relative"
+              >
+                <FilePlus2Icon size={24} />
+                <span className="absolute left-16 bg-gray-800 text-white text-xs px-3 py-1 rounded opacity-0 group-hover/btn:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none">
+                  הוסף מוצר
+                </span>
+              </button>
 
-          <button
-            onClick={() => {
-              setShowAddSubCategoryModal(true);
-            }}
-            onMouseEnter={() => setShowFabButtons(true)}
-            className={`w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 ease-in-out relative ${
-              showFabButtons
-                ? "scale-100 translate-y-0 pointer-events-auto"
-                : "scale-0 -translate-y-14 pointer-events-none"
-            }`}
-            title="הוסף תת-קטגוריה"
-          >
-            <svg
-              color="white"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              width="24"
-              height="24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2zm-10-8v6m-3-3h6" />
-            </svg>
-            <span className="absolute left-16 bg-gray-800 text-white text-xs px-3 py-1 rounded opacity-0 hover:opacity-100 transition-all duration-200 whitespace-nowrap">
-              הוסף תת-קטגוריה
-            </span>
-          </button>
+              {/* Sub-Category Button */}
+              <button
+                onClick={() => setShowAddSubCategoryModal(true)}
+                className="group/btn w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 relative"
+              >
+                <svg
+                  color="white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  width="24"
+                  height="24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2zm-10-8v6m-3-3h6" />
+                </svg>
+                <span className="absolute left-16 bg-gray-800 text-white text-xs px-3 py-1 rounded opacity-0 group-hover/btn:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none">
+                  הוסף תת-קטגוריה
+                </span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
       {role === "editor" && (
@@ -947,14 +929,14 @@ const SingleCat: FC = () => {
             className="bg-white p-6 w-full max-w-md rounded-lg"
             onClick={(e) => e.stopPropagation()}
           >
-            <h4 className="text-lg font-semibold mb-2">העברה לסל מחזור</h4>
+            <h4 className="text-lg font-semibold mb-2">העברה לסל מיחזור</h4>
             <p className="mb-1">
               האם ברצונך להעביר את{" "}
               {itemToDelete.type === "category" ? "הקטגוריה" : "המוצר"} "
-              {itemToDelete.name}" לסל המחזור?
+              {itemToDelete.name}" לסל המיחזור?
             </p>
             <small className="text-blue-600">
-              ניתן יהיה לשחזר את הפריט מסל המחזור
+              ניתן יהיה לשחזר את הפריט מסל המיחזור
             </small>
             <div className="flex justify-end gap-3 mt-4">
               <button
@@ -969,7 +951,7 @@ const SingleCat: FC = () => {
                     מעביר לסל...
                   </span>
                 ) : (
-                  "העבר לסל מחזור"
+                  "העבר לסל מיחזור"
                 )}
               </button>
 
@@ -995,7 +977,7 @@ const SingleCat: FC = () => {
             className="bg-white p-6 rounded-lg w-full max-w-md"
             onClick={(e) => e.stopPropagation()}
           >
-            <h4 className="text-lg font-semibold mb-2">העברה לסל מחזור</h4>
+            <h4 className="text-lg font-semibold mb-2">העברה לסל מיחזור</h4>
 
             <p className="mb-2">
               מה ברצונך לעשות עם התוכן שבתוך "{itemToDelete.name}"?
@@ -1073,20 +1055,20 @@ const SingleCat: FC = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <h4 className="text-lg font-semibold mb-2">
-              העברת פריטים לסל מחזור
+              העברת פריטים לסל מיחזור
             </h4>
             <p className="mb-1">
-              האם ברצונך להעביר {selectedItems.length} פריטים לסל המחזור?
+              האם ברצונך להעביר {selectedItems.length} פריטים לסל המיחזור?
             </p>
             <small className="text-blue-600 font-medium block">
-              הפריטים הנבחרים יועברו לסל המחזור וניתן יהיה לשחזר אותם
+              הפריטים הנבחרים יועברו לסל המיחזור וניתן יהיה לשחזר אותם
             </small>
             <div className="flex justify-end gap-3 mt-4">
               <button
                 onClick={confirmMoveSelectedToRecycleBin}
                 className="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 transition-colors"
               >
-                העבר לסל מחזור
+                העבר לסל מיחזור
               </button>
               <button
                 onClick={closeAllModals}
