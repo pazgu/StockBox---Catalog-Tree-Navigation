@@ -116,9 +116,8 @@ export class GroupsService {
 
     return group;
   }
-  
- async getAllGroupIds(): Promise<mongoose.Types.ObjectId[]> {
-  return this.groupModel.distinct('_id');
-}
 
+  async getAllGroupIds(): Promise<mongoose.Types.ObjectId[]> {
+    return this.groupModel.distinct('_id');
+  }
 }

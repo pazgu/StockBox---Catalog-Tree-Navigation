@@ -64,6 +64,7 @@ const SingleCat: FC = () => {
   const [isSavingProduct, setIsSavingProduct] = useState(false);
   const [isMovingToRecycleBin, setIsMovingToRecycleBin] = useState(false);
   const [hasDescendantsForMove, setHasDescendantsForMove] = useState<boolean | null>(null);
+  const [showFabButtons, setShowFabButtons] = useState(false);
 
 
   const location = useLocation();
@@ -113,6 +114,19 @@ const SingleCat: FC = () => {
   };
 }, []);
 
+useEffect(() => {
+  let timer: NodeJS.Timeout;
+  
+  if (showFabButtons) {
+    timer = setTimeout(() => {
+      setShowFabButtons(false);
+    }, 5000);
+  }
+  
+  return () => {
+    if (timer) clearTimeout(timer);
+  };
+}, [showFabButtons]);
 
   const loadAllContent = async () => {
     try {
@@ -829,21 +843,30 @@ const confirmCategoryMove = async (strategy: "cascade" | "move_up") => {
       </main>
 
       {role === "editor" && !isSelectionMode && (
-        <div className="fixed bottom-10 left-4 flex flex-col-reverse gap-3 group">
-          <button
-            className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 z-10"
-            title="הוסף"
-          >
-            <span className="text-3xl font-light transition-transform duration-300 group-hover:rotate-45">
+              <div className="fixed bottom-10 left-4 flex flex-col-reverse gap-1">
+            <button
+              className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 z-10"
+              title="הוסף"
+              onMouseEnter={() => setShowFabButtons(true)}
+              onMouseLeave={() => {
+                setTimeout(() => {
+                  setShowFabButtons(false);
+                }, 1500);
+              }}
+      >
+            <span className={`text-3xl font-light transition-transform duration-300 ${showFabButtons ? 'rotate-45' : ''}`}>
               +
-            </span>
+            </span> 
           </button>
 
           <button
             onClick={() => {
               setShowAddProductModal(true);
             }}
-            className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 ease-in-out scale-0 group-hover:scale-100 -translate-y-14 group-hover:translate-y-0 pointer-events-none group-hover:pointer-events-auto relative"
+            onMouseEnter={() => setShowFabButtons(true)}
+      className={`w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 ease-in-out relative ${
+        showFabButtons ? 'scale-100 translate-y-0 pointer-events-auto' : 'scale-0 -translate-y-14 pointer-events-none'
+      }`}
             title="הוסף מוצר"
           >
             <FilePlus2Icon size={24} />
@@ -856,7 +879,10 @@ const confirmCategoryMove = async (strategy: "cascade" | "move_up") => {
             onClick={() => {
               setShowAddSubCategoryModal(true);
             }}
-            className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 ease-in-out scale-0 group-hover:scale-100 -translate-y-14 group-hover:translate-y-0 pointer-events-none group-hover:pointer-events-auto relative"
+            onMouseEnter={() => setShowFabButtons(true)}
+      className={`w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 ease-in-out relative ${
+        showFabButtons ? 'scale-100 translate-y-0 pointer-events-auto' : 'scale-0 -translate-y-14 pointer-events-none'
+      }`}
             title="הוסף תת-קטגוריה"
           >
             <svg
