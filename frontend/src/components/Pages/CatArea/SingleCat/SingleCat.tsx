@@ -42,9 +42,9 @@ const SingleCat: FC = () => {
   const [categoryInfo, setCategoryInfo] = useState<CategoryDTO | null>(null);
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [showAddSubCategoryModal, setShowAddSubCategoryModal] = useState(false);
-  const [showMoveToRecycleBinModal, setShowMoveToRecycleBinModal] = useState(false);
-  const [showCategoryMoveChoice, setShowCategoryMoveChoice] =
+  const [showMoveToRecycleBinModal, setShowMoveToRecycleBinModal] =
     useState(false);
+  const [showCategoryMoveChoice, setShowCategoryMoveChoice] = useState(false);
   const [categoryMoveStrategyLoading, setCategoryMoveStrategyLoading] =
     useState<"cascade" | "move_up" | null>(null);
   const [showSmartDeleteModal, setShowSmartDeleteModal] = useState(false);
@@ -63,9 +63,10 @@ const SingleCat: FC = () => {
   const [itemToEdit, setItemToEdit] = useState<DisplayItem | null>(null);
   const [isSavingProduct, setIsSavingProduct] = useState(false);
   const [isMovingToRecycleBin, setIsMovingToRecycleBin] = useState(false);
-  const [hasDescendantsForMove, setHasDescendantsForMove] = useState<boolean | null>(null);
+  const [hasDescendantsForMove, setHasDescendantsForMove] = useState<
+    boolean | null
+  >(null);
   const [showFabButtons, setShowFabButtons] = useState(false);
-
 
   const location = useLocation();
   const params = useParams();
@@ -89,13 +90,13 @@ const SingleCat: FC = () => {
 
     return "";
   };
-  const categoryPath = getCategoryPathFromUrl(); 
+  const categoryPath = getCategoryPathFromUrl();
 
   const breadcrumbPathParts = categoryPath
     .replace("/categories/", "")
     .split("/")
     .filter(Boolean)
-    .map((part) => part.replace(/-/g, " ")); 
+    .map((part) => part.replace(/-/g, " "));
   const categoryPathSegments = categoryPath
     .replace("/categories/", "")
     .split("/")
@@ -107,26 +108,25 @@ const SingleCat: FC = () => {
     loadAllContent();
   }, [categoryPath, id]);
 
-  
   useEffect(() => {
-  return () => {
-    setPreviousPath(null);
-  };
-}, []);
+    return () => {
+      setPreviousPath(null);
+    };
+  }, []);
 
-useEffect(() => {
-  let timer: NodeJS.Timeout;
-  
-  if (showFabButtons) {
-    timer = setTimeout(() => {
-      setShowFabButtons(false);
-    }, 5000);
-  }
-  
-  return () => {
-    if (timer) clearTimeout(timer);
-  };
-}, [showFabButtons]);
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+
+    if (showFabButtons) {
+      timer = setTimeout(() => {
+        setShowFabButtons(false);
+      }, 5000);
+    }
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [showFabButtons]);
 
   const loadAllContent = async () => {
     try {
@@ -269,108 +269,104 @@ useEffect(() => {
   };
 
   const handleMoveToRecycleBin = (item: DisplayItem) => {
-  setItemToDelete(item);
+    setItemToDelete(item);
 
-  if (item.type === "product" && item.path.length > 1) {
-    setShowSmartDeleteModal(true);
-    return;
-  }
-
-  if (item.type === "category") {
-    (async () => {
-      try {
-        const hasDesc = await categoriesService.hasDescendants(item.id);
-        setHasDescendantsForMove(hasDesc);
-
-        if (hasDesc) {
-          setShowCategoryMoveChoice(true); 
-        } else {
-          setShowMoveToRecycleBinModal(true);
-        }
-      } catch (e) {
-        setHasDescendantsForMove(true);
-        setShowCategoryMoveChoice(true);
-      }
-    })();
-
-    return;
-  }
-  setShowMoveToRecycleBinModal(true);
-};
-
-
-const confirmMoveToRecycleBin = async () => {
-  if (!itemToDelete) return;
-
-  try {
-    setIsMovingToRecycleBin(true);
-
-    if (itemToDelete.type === "category") {
-      await recycleBinService.moveCategoryToRecycleBin(
-        itemToDelete.id,
-        "cascade"
-      );
-      toast.success(`הקטגוריה "${itemToDelete.name}" הועברה לסל המחזור!`);
-      navigate('/recycle-bin');
-    } else {
-      await recycleBinService.moveProductToRecycleBin(itemToDelete.id);
-      toast.success(`המוצר "${itemToDelete.name}" הועבר לסל המחזור!`);
-      navigate('/recycle-bin');
+    if (item.type === "product" && item.path.length > 1) {
+      setShowSmartDeleteModal(true);
+      return;
     }
 
-    await loadAllContent();
-  } catch (error) {
-    toast.error("שגיאה בהעברה לסל המחזור");
-  } finally {
-    setIsMovingToRecycleBin(false);
-    setShowMoveToRecycleBinModal(false);
-    setItemToDelete(null);
-  }
-};
+    if (item.type === "category") {
+      (async () => {
+        try {
+          const hasDesc = await categoriesService.hasDescendants(item.id);
+          setHasDescendantsForMove(hasDesc);
 
+          if (hasDesc) {
+            setShowCategoryMoveChoice(true);
+          } else {
+            setShowMoveToRecycleBinModal(true);
+          }
+        } catch (e) {
+          setHasDescendantsForMove(true);
+          setShowCategoryMoveChoice(true);
+        }
+      })();
 
+      return;
+    }
+    setShowMoveToRecycleBinModal(true);
+  };
 
-const handleRemoveFromCurrent = async () => {
-  if (!itemToDelete) return;
-  try {
-    setIsMovingToRecycleBin(true);
-    
-    await recycleBinService.moveProductToRecycleBin(
-      itemToDelete.id,
-      categoryPath
-    );
-    
-    toast.success(`המוצר "${itemToDelete.name}" הוסר מקטגוריה זו!`);
-    setItems(items.filter((item) => item.id !== itemToDelete.id));
-  } catch (error) {
-    toast.error("שגיאה בהסרה מקטגוריה זו");
-  } finally {
-    setIsMovingToRecycleBin(false);
-    setShowSmartDeleteModal(false);
-    setItemToDelete(null);
-  }
-};
+  const confirmMoveToRecycleBin = async () => {
+    if (!itemToDelete) return;
 
-const handleMoveAllToRecycleBin = async () => {
-  if (!itemToDelete) return;
-  try {
-    setIsMovingToRecycleBin(true);
-    
-    await recycleBinService.moveProductToRecycleBin(itemToDelete.id);
-    
-    toast.success(`המוצר "${itemToDelete.name}" הועבר לסל המחזור!`);
-    setItems(items.filter((item) => item.id !== itemToDelete.id));
-    
-    navigate('/recycle-bin');
-  } catch (error) {
-    toast.error("שגיאה בהעברה לסל המחזור");
-  } finally {
-    setIsMovingToRecycleBin(false);
-    setShowSmartDeleteModal(false);
-    setItemToDelete(null);
-  }
-};
+    try {
+      setIsMovingToRecycleBin(true);
 
+      if (itemToDelete.type === "category") {
+        await recycleBinService.moveCategoryToRecycleBin(
+          itemToDelete.id,
+          "cascade",
+        );
+        toast.success(`הקטגוריה "${itemToDelete.name}" הועברה לסל המחזור!`);
+        navigate("/recycle-bin");
+      } else {
+        await recycleBinService.moveProductToRecycleBin(itemToDelete.id);
+        toast.success(`המוצר "${itemToDelete.name}" הועבר לסל המחזור!`);
+        navigate("/recycle-bin");
+      }
+
+      await loadAllContent();
+    } catch (error) {
+      toast.error("שגיאה בהעברה לסל המחזור");
+    } finally {
+      setIsMovingToRecycleBin(false);
+      setShowMoveToRecycleBinModal(false);
+      setItemToDelete(null);
+    }
+  };
+
+  const handleRemoveFromCurrent = async () => {
+    if (!itemToDelete) return;
+    try {
+      setIsMovingToRecycleBin(true);
+
+      await recycleBinService.moveProductToRecycleBin(
+        itemToDelete.id,
+        categoryPath,
+      );
+
+      toast.success(`המוצר "${itemToDelete.name}" הוסר מקטגוריה זו!`);
+      setItems(items.filter((item) => item.id !== itemToDelete.id));
+    } catch (error) {
+      toast.error("שגיאה בהסרה מקטגוריה זו");
+    } finally {
+      setIsMovingToRecycleBin(false);
+      setShowSmartDeleteModal(false);
+      setItemToDelete(null);
+    }
+  };
+
+  const handleMoveAllToRecycleBin = async () => {
+    if (!itemToDelete) return;
+    try {
+      setIsMovingToRecycleBin(true);
+
+      await recycleBinService.moveProductToRecycleBin(itemToDelete.id);
+
+      toast.success(`המוצר "${itemToDelete.name}" הועבר לסל המחזור!`);
+      setItems(items.filter((item) => item.id !== itemToDelete.id));
+
+      navigate("/recycle-bin");
+    } catch (error) {
+      toast.error("שגיאה בהעברה לסל המחזור");
+    } finally {
+      setIsMovingToRecycleBin(false);
+      setShowSmartDeleteModal(false);
+      setItemToDelete(null);
+    }
+  };
 
   const handleRemoveFromSpecificPaths = async (paths: string[]) => {
     if (!itemToDelete) return;
@@ -410,38 +406,37 @@ const handleMoveAllToRecycleBin = async () => {
     setItemToMove(null);
   };
 
-const confirmCategoryMove = async (strategy: "cascade" | "move_up") => {
-  if (!itemToDelete) return;
+  const confirmCategoryMove = async (strategy: "cascade" | "move_up") => {
+    if (!itemToDelete) return;
 
-  try {
-    setIsMovingToRecycleBin(true);
-    setCategoryMoveStrategyLoading(strategy);
+    try {
+      setIsMovingToRecycleBin(true);
+      setCategoryMoveStrategyLoading(strategy);
 
-    await recycleBinService.moveCategoryToRecycleBin(
-      itemToDelete.id,
-      strategy
-    );
+      await recycleBinService.moveCategoryToRecycleBin(
+        itemToDelete.id,
+        strategy,
+      );
 
-    await loadAllContent();
+      await loadAllContent();
 
-    toast.success(
-      strategy === "cascade"
-        ? `הקטגוריה "${itemToDelete.name}" הועברה לסל המחזור!`
-        : `הקטגוריה "${itemToDelete.name}" הועברה לסל המחזור והתכנים הועברו שכבה אחת למעלה!`,
-    );
-    
-    navigate('/recycle-bin');
-  } catch (error) {
-    toast.error("שגיאה בהעברת הקטגוריה לסל המחזור");
-  } finally {
-    setIsMovingToRecycleBin(false);
-    setCategoryMoveStrategyLoading(null);
-    setShowCategoryMoveChoice(false);
-    setHasDescendantsForMove(null);
-    setItemToDelete(null);
-  }
-};
+      toast.success(
+        strategy === "cascade"
+          ? `הקטגוריה "${itemToDelete.name}" הועברה לסל המחזור!`
+          : `הקטגוריה "${itemToDelete.name}" הועברה לסל המחזור והתכנים הועברו שכבה אחת למעלה!`,
+      );
 
+      navigate("/recycle-bin");
+    } catch (error) {
+      toast.error("שגיאה בהעברת הקטגוריה לסל המחזור");
+    } finally {
+      setIsMovingToRecycleBin(false);
+      setCategoryMoveStrategyLoading(null);
+      setShowCategoryMoveChoice(false);
+      setHasDescendantsForMove(null);
+      setItemToDelete(null);
+    }
+  };
 
   const handleDuplicate = (item: DisplayItem) => {
     setItemToDuplicate(item);
@@ -487,7 +482,16 @@ const confirmCategoryMove = async (strategy: "cascade" | "move_up") => {
       setShowAddProductModal(false);
     } catch (error: any) {
       console.error("Save Error:", error);
-      toast.error(error.message || "שגיאה בהוספת המוצר");
+      const serverMessage =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message;
+
+      if (typeof serverMessage === "string" && serverMessage.trim()) {
+        toast.error(serverMessage);
+      } else {
+        toast.error("שגיאה בהוספת המוצר");
+      }
     }
   };
 
@@ -516,7 +520,15 @@ const confirmCategoryMove = async (strategy: "cascade" | "move_up") => {
       toast.success(`הקטגוריה "${data.name}" נוספה בהצלחה!`);
       setShowAddSubCategoryModal(false);
     } catch (error) {
-      toast.error("שגיאה בהוספת קטגוריה");
+      const serverMessage =
+        (error as any)?.response?.data?.message ||
+        (error as any)?.response?.data?.error;
+
+      if (typeof serverMessage === "string" && serverMessage.trim()) {
+        toast.error(serverMessage);
+      } else {
+        toast.error("שגיאה בהוספת קטגוריה");
+      }
     }
   };
 
@@ -843,20 +855,22 @@ const confirmCategoryMove = async (strategy: "cascade" | "move_up") => {
       </main>
 
       {role === "editor" && !isSelectionMode && (
-              <div className="fixed bottom-10 left-4 flex flex-col-reverse gap-1">
-            <button
-              className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 z-10"
-              title="הוסף"
-              onMouseEnter={() => setShowFabButtons(true)}
-              onMouseLeave={() => {
-                setTimeout(() => {
-                  setShowFabButtons(false);
-                }, 1500);
-              }}
-      >
-            <span className={`text-3xl font-light transition-transform duration-300 ${showFabButtons ? 'rotate-45' : ''}`}>
+        <div className="fixed bottom-10 left-4 flex flex-col-reverse gap-1">
+          <button
+            className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 z-10"
+            title="הוסף"
+            onMouseEnter={() => setShowFabButtons(true)}
+            onMouseLeave={() => {
+              setTimeout(() => {
+                setShowFabButtons(false);
+              }, 1500);
+            }}
+          >
+            <span
+              className={`text-3xl font-light transition-transform duration-300 ${showFabButtons ? "rotate-45" : ""}`}
+            >
               +
-            </span> 
+            </span>
           </button>
 
           <button
@@ -864,9 +878,11 @@ const confirmCategoryMove = async (strategy: "cascade" | "move_up") => {
               setShowAddProductModal(true);
             }}
             onMouseEnter={() => setShowFabButtons(true)}
-      className={`w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 ease-in-out relative ${
-        showFabButtons ? 'scale-100 translate-y-0 pointer-events-auto' : 'scale-0 -translate-y-14 pointer-events-none'
-      }`}
+            className={`w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 ease-in-out relative ${
+              showFabButtons
+                ? "scale-100 translate-y-0 pointer-events-auto"
+                : "scale-0 -translate-y-14 pointer-events-none"
+            }`}
             title="הוסף מוצר"
           >
             <FilePlus2Icon size={24} />
@@ -880,9 +896,11 @@ const confirmCategoryMove = async (strategy: "cascade" | "move_up") => {
               setShowAddSubCategoryModal(true);
             }}
             onMouseEnter={() => setShowFabButtons(true)}
-      className={`w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 ease-in-out relative ${
-        showFabButtons ? 'scale-100 translate-y-0 pointer-events-auto' : 'scale-0 -translate-y-14 pointer-events-none'
-      }`}
+            className={`w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 ease-in-out relative ${
+              showFabButtons
+                ? "scale-100 translate-y-0 pointer-events-auto"
+                : "scale-0 -translate-y-14 pointer-events-none"
+            }`}
             title="הוסף תת-קטגוריה"
           >
             <svg
@@ -929,15 +947,15 @@ const confirmCategoryMove = async (strategy: "cascade" | "move_up") => {
             className="bg-white p-6 w-full max-w-md rounded-lg"
             onClick={(e) => e.stopPropagation()}
           >
-            <h4 className="text-lg font-semibold mb-2">
-              העברה לסל מחזור
-            </h4>
+            <h4 className="text-lg font-semibold mb-2">העברה לסל מחזור</h4>
             <p className="mb-1">
               האם ברצונך להעביר את{" "}
               {itemToDelete.type === "category" ? "הקטגוריה" : "המוצר"} "
               {itemToDelete.name}" לסל המחזור?
             </p>
-            <small className="text-blue-600">ניתן יהיה לשחזר את הפריט מסל המחזור</small>
+            <small className="text-blue-600">
+              ניתן יהיה לשחזר את הפריט מסל המחזור
+            </small>
             <div className="flex justify-end gap-3 mt-4">
               <button
                 onClick={confirmMoveToRecycleBin}
@@ -1054,7 +1072,9 @@ const confirmCategoryMove = async (strategy: "cascade" | "move_up") => {
             className="bg-white p-6 rounded-lg w-full max-w-md"
             onClick={(e) => e.stopPropagation()}
           >
-            <h4 className="text-lg font-semibold mb-2">העברת פריטים לסל מחזור</h4>
+            <h4 className="text-lg font-semibold mb-2">
+              העברת פריטים לסל מחזור
+            </h4>
             <p className="mb-1">
               האם ברצונך להעביר {selectedItems.length} פריטים לסל המחזור?
             </p>
@@ -1151,9 +1171,9 @@ const confirmCategoryMove = async (strategy: "cascade" | "move_up") => {
             _id: itemToEdit.id,
             categoryName: itemToEdit.name,
             categoryPath: itemToEdit.path[0],
-            categoryImage: Array.isArray(itemToEdit.images) 
-            ? itemToEdit.images[0] 
-            : itemToEdit.images,
+            categoryImage: Array.isArray(itemToEdit.images)
+              ? itemToEdit.images[0]
+              : itemToEdit.images,
           }}
           onClose={() => {
             setShowEditModal(false);
