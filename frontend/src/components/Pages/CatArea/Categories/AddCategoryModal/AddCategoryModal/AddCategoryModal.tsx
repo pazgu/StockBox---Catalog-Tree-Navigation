@@ -125,6 +125,7 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
       const img = new Image();
       img.onload = () => {
         setRawImage(img);
+        setCommittedPreview(null);
         setZoom(1);
 
         const clamped = clampOffsetToCircle(
@@ -193,15 +194,15 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     return;
   }
 
-  const finalImage = commitCrop();
+  if (!committedPreview) {
+  toast.error("נא לבחור תמונה וללחוץ 'השתמש בתמונה'");
+  return;
+}
 
-  if (!finalImage) {
-    toast.error("שגיאה ביצירת התמונה");
-    return;
-  }
+const safeName = newCatName.trim().toLowerCase().replace(/\s+/g, "-");
+const file = dataURLtoFile(committedPreview, `${safeName}.jpg`);
 
-  const safeName = newCatName.trim().toLowerCase().replace(/\s+/g, "-");
-  const file = dataURLtoFile(finalImage, `${safeName}.jpg`);
+
 
   try {
   setIsSaving(true);
@@ -472,6 +473,18 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
               >
                 איפוס
               </button>
+
+              <button
+  type="button"
+  onClick={commitCrop}
+  disabled={isSaving}
+  className={`ml-2 px-5 py-2 rounded-xl text-white font-bold shadow-md transition-all
+    ${isSaving ? "bg-slate-400 cursor-not-allowed" : "bg-[#0D305B] hover:bg-[#15457a]"}
+  `}
+>
+  השתמש בתמונה
+</button>
+
             </div>
           </div>
         )}
