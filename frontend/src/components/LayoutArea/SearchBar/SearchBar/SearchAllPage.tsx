@@ -79,6 +79,15 @@ const SearchResultsPage = () => {
     return () => observer.disconnect();
   }, [hasMore, isFetchingMore, loadMore]);
 
+  if (!role) {
+    return (
+      <div className="mt-12 p-4 flex items-center justify-center min-h-[400px]">
+        <div className="text-slate-700 text-xl">
+          יש להתחבר כדי לצפות בתוצאות החיפוש
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen py-10 px-4 md:px-20 font-sans mt-20" dir="rtl">
       <div className="max-w-3xl">
