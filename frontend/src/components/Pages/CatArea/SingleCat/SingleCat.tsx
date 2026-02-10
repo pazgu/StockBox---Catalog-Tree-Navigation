@@ -148,6 +148,14 @@ const SingleCat: FC = () => {
     try {
       setLoading(true);
 
+      try {
+        const currentCategory = await categoriesService.getCategoryByPath(categoryPath);
+        setCategoryInfo(currentCategory);
+      } catch (err) {
+        console.error("Error fetching category info:", err);
+        setCategoryInfo(null);
+      }
+
       let subCategories: CategoryDTO[] = [];
       try {
         subCategories = await categoriesService.getDirectChildren(categoryPath);
@@ -630,22 +638,34 @@ const SingleCat: FC = () => {
   return (
     <div className="max-w-290 mx-auto rtl mt-28 mr-4">
       <Breadcrumbs path={breadcrumbPath} />
-      <header className="flex flex-col items-start mb-10">
-        <h1 className="text-[48px] font-light font-alef text-[#0D305B] border-b-4 border-gray-400 pb-1 mb-5 tracking-tight">
-          {categoryInfo
-            ? categoryInfo.categoryName
-            : breadcrumbPathParts[breadcrumbPathParts.length - 1] || "קטגוריה"}
-        </h1>
-        <div className="flex items-center gap-4">
-          <span className="text-base">סך הכל פריטים: {items.length}</span>
-          <span className="text-gray-400">|</span>
-          <span className="text-base">
-            קטגוריות: {items.filter((i) => i.type === "category").length}
-          </span>
-          <span className="text-gray-400">|</span>
-          <span className="text-base">
-            מוצרים: {items.filter((i) => i.type === "product").length}
-          </span>
+      <header className="flex items-center gap-6 mb-10">
+        {/* Category Image */}
+        {categoryInfo && categoryInfo.categoryImage && (
+          <img
+            src={categoryInfo.categoryImage}
+            alt={categoryInfo.categoryName}
+            className="w-24 h-24 rounded-full object-cover shadow-md border-2 border-gray-200"
+          />
+        )}
+        
+        {/* Category Title and Stats */}
+        <div className="flex flex-col">
+          <h1 className="text-[48px] font-light font-alef text-[#0D305B] border-b-4 border-gray-400 pb-1 mb-3 tracking-tight">
+            {categoryInfo
+              ? categoryInfo.categoryName
+              : breadcrumbPathParts[breadcrumbPathParts.length - 1] || "קטגוריה"}
+          </h1>
+          <div className="flex items-center gap-4">
+            <span className="text-base">סך הכל פריטים: {items.length}</span>
+            <span className="text-gray-400">|</span>
+            <span className="text-base">
+              קטגוריות: {items.filter((i) => i.type === "category").length}
+            </span>
+            <span className="text-gray-400">|</span>
+            <span className="text-base">
+              מוצרים: {items.filter((i) => i.type === "product").length}
+            </span>
+          </div>
         </div>
       </header>
 
