@@ -644,7 +644,7 @@ const SingleCat: FC = () => {
           <img
             src={categoryInfo.categoryImage}
             alt={categoryInfo.categoryName}
-            className="w-24 h-24 rounded-full object-cover shadow-md border-2 border-gray-200"
+            className="w-32 h-32 rounded-full object-cover shadow-md border-2 border-gray-200"
           />
         )}
         
