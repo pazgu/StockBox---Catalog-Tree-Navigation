@@ -513,7 +513,7 @@ height: rawImage.naturalHeight * getBaseCoverScale(rawImage.naturalWidth, rawIma
       ${
         isSaving
           ? "bg-slate-400 cursor-not-allowed"
-          : "bg-gradient-to-r from-[#0D305B] to-[#15457a] hover:from-[#15457a] hover:to-[#1e5a9e] hover:shadow-xl"
+          : "bg-[#0D305B] hover:from-[#15457a] hover:to-[#1e5a9e] hover:shadow-xl"
       }`}
   >
     השתמש בתמונה
@@ -555,7 +555,7 @@ height: rawImage.naturalHeight * getBaseCoverScale(rawImage.naturalWidth, rawIma
       ${
         isSaving || (isCropperOpen && !committedPreview)
           ? "bg-slate-400 cursor-not-allowed"
-          : "bg-gradient-to-r from-[#0D305B] to-[#15457a] hover:from-[#15457a] hover:to-[#1e5a9e] hover:shadow-xl"
+          : "bg-[#0D305B] hover:from-[#15457a] hover:to-[#1e5a9e] hover:shadow-xl"
       }`}
   >
     {isSaving ? (

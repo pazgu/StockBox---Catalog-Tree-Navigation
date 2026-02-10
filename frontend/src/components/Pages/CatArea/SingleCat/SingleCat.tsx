@@ -52,7 +52,6 @@ const NoImageCard: React.FC<{ label?: string }> = ({ label = "אין תמונה"
   );
 };
 
-
 const SingleCat: FC = () => {
   const [items, setItems] = useState<DisplayItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -148,6 +147,14 @@ const SingleCat: FC = () => {
   const loadAllContent = async () => {
     try {
       setLoading(true);
+
+      try {
+        const currentCategory = await categoriesService.getCategoryByPath(categoryPath);
+        setCategoryInfo(currentCategory);
+      } catch (err) {
+        console.error("Error fetching category info:", err);
+        setCategoryInfo(null);
+      }
 
       let subCategories: CategoryDTO[] = [];
       try {
@@ -372,7 +379,6 @@ const SingleCat: FC = () => {
 
       toast.success(`המוצר "${itemToDelete.name}" הועבר לסל המיחזור!`);
       setItems(items.filter((item) => item.id !== itemToDelete.id));
-
     } catch (error) {
       toast.error("שגיאה בהעברה לסל המיחזור");
     } finally {
@@ -439,7 +445,6 @@ const SingleCat: FC = () => {
           ? `הקטגוריה "${itemToDelete.name}" הועברה לסל המיחזור!`
           : `הקטגוריה "${itemToDelete.name}" הועברה לסל המיחזור והתכנים הועברו שכבה אחת למעלה!`,
       );
-
     } catch (error) {
       toast.error("שגיאה בהעברת הקטגוריה לסל המיחזור");
     } finally {
@@ -458,7 +463,6 @@ const SingleCat: FC = () => {
 
   const handleDuplicateSuccess = async () => {
     await loadAllContent();
-    toast.success("המוצר שוכפל בהצלחה!");
     setShowDuplicateModal(false);
     setItemToDuplicate(null);
   };
@@ -634,22 +638,34 @@ const SingleCat: FC = () => {
   return (
     <div className="max-w-290 mx-auto rtl mt-28 mr-4">
       <Breadcrumbs path={breadcrumbPath} />
-      <header className="flex flex-col items-start mb-10">
-        <h1 className="text-[48px] font-light font-alef text-[#0D305B] border-b-4 border-gray-400 pb-1 mb-5 tracking-tight">
-          {categoryInfo
-            ? categoryInfo.categoryName
-            : breadcrumbPathParts[breadcrumbPathParts.length - 1] || "קטגוריה"}
-        </h1>
-        <div className="flex items-center gap-4">
-          <span className="text-base">סך הכל פריטים: {items.length}</span>
-          <span className="text-gray-400">|</span>
-          <span className="text-base">
-            קטגוריות: {items.filter((i) => i.type === "category").length}
-          </span>
-          <span className="text-gray-400">|</span>
-          <span className="text-base">
-            מוצרים: {items.filter((i) => i.type === "product").length}
-          </span>
+      <header className="flex items-center gap-6 mb-10">
+        {/* Category Image */}
+        {categoryInfo && categoryInfo.categoryImage && (
+          <img
+            src={categoryInfo.categoryImage}
+            alt={categoryInfo.categoryName}
+            className="w-32 h-32 rounded-full object-cover shadow-md border-2 border-gray-200"
+          />
+        )}
+        
+        {/* Category Title and Stats */}
+        <div className="flex flex-col">
+          <h1 className="text-[48px] font-light font-alef text-[#0D305B] border-b-4 border-gray-400 pb-1 mb-3 tracking-tight">
+            {categoryInfo
+              ? categoryInfo.categoryName
+              : breadcrumbPathParts[breadcrumbPathParts.length - 1] || "קטגוריה"}
+          </h1>
+          <div className="flex items-center gap-4">
+            <span className="text-base">סך הכל פריטים: {items.length}</span>
+            <span className="text-gray-400">|</span>
+            <span className="text-base">
+              קטגוריות: {items.filter((i) => i.type === "category").length}
+            </span>
+            <span className="text-gray-400">|</span>
+            <span className="text-base">
+              מוצרים: {items.filter((i) => i.type === "product").length}
+            </span>
+          </div>
         </div>
       </header>
 
@@ -844,32 +860,31 @@ const SingleCat: FC = () => {
                 }
               }}
             >
-             {item.type === "category" ? (
-  hasImage(item.images) ? (
-    <img
-      src={item.images as string}
-      alt={item.name}
-      className="max-h-full max-w-full object-contain"
-      onError={(e) => {
-        // if URL exists but fails to load, fallback to placeholder
-        (e.currentTarget as HTMLImageElement).style.display = "none";
-      }}
-    />
-  ) : (
-    <NoImageCard label="אין תמונה לקטגוריה" />
-  )
-) : hasImage(item.images) ? (
-  <div className="h-full w-full flex justify-center items-center">
-    <ImagePreviewHover
-      images={item.images}
-      alt={item.name}
-      className="w-full h-full"
-    />
-  </div>
-) : (
-  <NoImageCard label="אין תמונה למוצר" />
-)}
-
+              {item.type === "category" ? (
+                hasImage(item.images) ? (
+                  <img
+                    src={item.images as string}
+                    alt={item.name}
+                    className="max-h-full max-w-full object-contain"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).style.display =
+                        "none";
+                    }}
+                  />
+                ) : (
+                  <NoImageCard label="אין תמונה לקטגוריה" />
+                )
+              ) : hasImage(item.images) ? (
+                <div className="h-full w-full flex justify-center items-center">
+                  <ImagePreviewHover
+                    images={item.images}
+                    alt={item.name}
+                    className="w-full h-full"
+                  />
+                </div>
+              ) : (
+                <NoImageCard label="אין תמונה למוצר" />
+              )}
             </div>
 
             <div className="w-full text-center pt-4 border-t border-gray-200">
@@ -898,55 +913,60 @@ const SingleCat: FC = () => {
         <div className="fixed bottom-10 left-4 flex flex-col-reverse gap-3">
           {/* Main Trigger Button - with its own hover group */}
           <div className="group">
-            <button
-              className="peer w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 z-10"
-            >
-              <span className="text-3xl font-light p-7">+</span>
-            </button>
-            <span className="absolute -top-2 left-16 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-              הוסף
-            </span>
+            <div className="relative group/main">
+              <button className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 z-10">
+                <span className="text-3xl font-light p-7">+</span>
+              </button>
+              <span className="absolute top-1/2 -translate-y-1/2 left-16 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/main:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                הוסף
+              </span>
+            </div>
 
             {/* Popup buttons container */}
             <div className="absolute bottom-full left-0 mb-3 flex flex-col-reverse gap-3 opacity-0 scale-0 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 pointer-events-none group-hover:pointer-events-auto">
               {/* Product Button */}
-              <button
-                onClick={() => setShowAddProductModal(true)}
-                className="peer/btn w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 relative"
-              >
-                <FilePlus2Icon size={24} />
-                <span className="absolute left-16 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover/btn:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+              <div className="relative group/product">
+                <button
+                  onClick={() => setShowAddProductModal(true)}
+                  className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300"
+                >
+                  <FilePlus2Icon size={24} />
+                </button>
+                <span className="absolute top-1/2 -translate-y-1/2 left-16 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/product:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
                   הוסף מוצר
                 </span>
-              </button>
+              </div>
 
               {/* Sub-Category Button */}
-              <button
-                onClick={() => setShowAddSubCategoryModal(true)}
-                className="peer/btn w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 relative"
-              >
-                <svg
-                  color="white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  width="24"
-                  height="24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+              <div className="relative group/subcat">
+                <button
+                  onClick={() => setShowAddSubCategoryModal(true)}
+                  className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300"
                 >
-                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2zm-10-8v6m-3-3h6" />
-                </svg>
-                <span className="absolute left-16 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover/btn:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                  <svg
+                    color="white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    width="24"
+                    height="24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2zm-10-8v6m-3-3h6" />
+                  </svg>
+                </button>
+                <span className="absolute top-1/2 -translate-y-1/2 left-16 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/subcat:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
                   הוסף תת-קטגוריה
                 </span>
-              </button>
+              </div>
             </div>
           </div>
         </div>
       )}
+
       {role === "editor" && (
         <>
           <AddProductModal
