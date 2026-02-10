@@ -196,20 +196,13 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     return;
   }
 
-  if (!rawImage) {
-    toast.error("נא לבחור תמונה");
-    return;
-  }
-
-  const finalImage = commitCrop();
-
-  if (!finalImage) {
-    toast.error("שגיאה ביצירת התמונה");
+  if (!committedPreview) {
+    toast.error("נא לבחור תמונה וללחוץ 'השתמש בתמונה'");
     return;
   }
 
   const safeName = productName.trim().toLowerCase().replace(/\s+/g, "-");
-  const file = dataURLtoFile(finalImage, `${safeName}.jpg`);
+  const file = dataURLtoFile(committedPreview, `${safeName}.jpg`);
 
   try {
     setIsSaving(true);
@@ -234,6 +227,7 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     setIsSaving(false);
   }
 };
+
 
 
   return (
@@ -326,7 +320,7 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
                 width: CROP_BOX,
                 height: CROP_BOX,
                 position: "relative",
-                borderRadius: "50%",
+                borderRadius: "16px", 
                 touchAction: "none",
                 overscrollBehavior: "contain",
               }}
@@ -439,58 +433,71 @@ height: rawImage.naturalHeight * getBaseCoverScale(rawImage.naturalWidth, rawIma
                 style={{
                   boxShadow: "0 0 0 9999px rgba(0,0,0,0.45)",
                   outline: "2px solid rgba(255,255,255,0.7)",
-                  borderRadius: "50%",
+                  borderRadius: "16px",
                   outlineOffset: "-2px",
                   zIndex: 20,
                 }}
               />
             </div>
 
-            <div className="flex items-center gap-2 mt-3">
-              <button
-                type="button"
-                onClick={() =>
-                  setZoom((z) => Math.max(1, +(z - 0.1).toFixed(2)))
-                }
-                className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-slate-700"
-              >
-                -
-              </button>
-              <div className="px-2 text-sm text-slate-600">
-                זום: {zoom.toFixed(2)}
-              </div>
-              <button
-                type="button"
-                onClick={() =>
-                  setZoom((z) => Math.min(4, +(z + 0.1).toFixed(2)))
-                }
-                className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-slate-700"
-              >
-                +
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setZoom(1);
-                  if (rawImage) {
-                    setOffset(
-                      clampOffsetToCircle(
-                        { x: 0, y: 0 },
-                        rawImage.naturalWidth,
-                        rawImage.naturalHeight,
-                        1,
-                        CROP_BOX,
-                      ),
-                    );
-                  } else {
-                    setOffset({ x: 0, y: 0 });
-                  }
-                }}
-                className="ml-2 px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-slate-700"
-              >
-                איפוס
-              </button>
-            </div>
+           <div className="flex items-center gap-2 mt-3 flex-wrap">
+  <button
+    type="button"
+    onClick={() => setZoom((z) => Math.max(1, +(z - 0.1).toFixed(2)))}
+    className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-slate-700"
+  >
+    -
+  </button>
+
+  <div className="px-2 text-sm text-slate-600">זום: {zoom.toFixed(2)}</div>
+
+  <button
+    type="button"
+    onClick={() => setZoom((z) => Math.min(4, +(z + 0.1).toFixed(2)))}
+    className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-slate-700"
+  >
+    +
+  </button>
+
+  <button
+    type="button"
+    onClick={() => {
+      setZoom(1);
+      if (rawImage) {
+        setOffset(
+          clampOffsetToCircle(
+            { x: 0, y: 0 },
+            rawImage.naturalWidth,
+            rawImage.naturalHeight,
+            1,
+            CROP_BOX,
+          ),
+        );
+      } else {
+        setOffset({ x: 0, y: 0 });
+      }
+    }}
+    className="ml-2 px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-slate-700"
+  >
+    איפוס
+  </button>
+
+  <button
+    type="button"
+    onClick={commitCrop}
+    disabled={isSaving}
+    className={`ml-2 px-5 py-2 rounded-xl text-white font-bold shadow-md transition-all
+      ${
+        isSaving
+          ? "bg-slate-400 cursor-not-allowed"
+          : "bg-gradient-to-r from-[#0D305B] to-[#15457a] hover:from-[#15457a] hover:to-[#1e5a9e] hover:shadow-xl"
+      }`}
+  >
+    השתמש בתמונה
+  </button>
+</div>
+
+
           </div>
         )}
 
@@ -498,7 +505,7 @@ height: rawImage.naturalHeight * getBaseCoverScale(rawImage.naturalWidth, rawIma
           <img
             src={committedPreview}
             alt="preview"
-            className="w-40 h-40 rounded-full object-cover shadow-sm mx-auto mt-2.5 mb-4 border border-gray-200"
+            className="w-40 h-40 rounded-xl object-cover shadow-sm mx-auto mt-2.5 mb-4 border border-gray-200"
           />
         )}
 

@@ -84,6 +84,8 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   const [startPan, setStartPan] = React.useState({ x: 0, y: 0 });
   const [isCropperOpen, setIsCropperOpen] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
+  const [committedPreview, setCommittedPreview] = React.useState<string | null>(null);
+
 
 
   const cropRef = React.useRef<HTMLDivElement>(null!);
@@ -97,6 +99,8 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
       setOffset({ x: 0, y: 0 });
       setIsPanning(false);
       setIsCropperOpen(false);
+      setCommittedPreview(null);
+
     }
   }, [isOpen]);
 
@@ -120,7 +124,8 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     reader.onload = () => {
       const img = new Image();
       img.onload = () => {
-        setRawImage(img);
+        setRawImage(img);    
+        setCommittedPreview(null);
         setZoom(1);
 
         const clamped = clampOffsetToCircle(
@@ -168,336 +173,370 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     ctx.restore();
 
     const dataUrl = out.toDataURL("image/jpeg", 0.92);
+
+    setCommittedPreview(dataUrl);
+    setIsCropperOpen(false);
+    toast.success("התמונה נשמרה לפי המסגור שבחרת");
+
     return dataUrl;
+
   };
 
   const handleSave = async () => {
-  if (!categoryName.trim()) {
-    toast.error("שם תת-קטגוריה חובה");
-    return;
-  }
-
-  if (!rawImage) {
-    toast.error("נא לבחור תמונה");
-    return;
-  }
-
-  const finalImage = commitCrop();
-
-  if (!finalImage) {
-    toast.error("שגיאה ביצירת התמונה");
-    return;
-  }
-
-  const safeName = categoryName.trim().toLowerCase().replace(/\s+/g, "-");
-  const file = dataURLtoFile(finalImage, `${safeName}.jpg`);
-
-  try {
-    setIsSaving(true);
-    await onSave({ name: categoryName.trim(), imageFile: file });
-  } catch (error: any) {
-    const serverMessage =
-      error?.response?.data?.message || error?.response?.data?.error;
-
-    if (typeof serverMessage === "string" && serverMessage.trim()) {
-      toast.error(serverMessage);
-    } else {
-      toast.error("שגיאה בהוספת תת-קטגוריה");
+    if (!categoryName.trim()) {
+      toast.error("שם תת-קטגוריה חובה");
+      return;
     }
 
-    console.error("Add sub category failed:", error);
-  } finally {
-    setIsSaving(false);
-  }
-};
+    if (!rawImage) {
+      toast.error("נא לבחור תמונה");
+      return;
+    }
+
+    if (isCropperOpen && !committedPreview) {
+      toast.error("נא ללחוץ על 'שמור תמונה' לפני שמירה");
+      return;
+    }
+
+
+    if (!committedPreview) {
+      toast.error("נא לשמור את התמונה לפי המסגור שבחרת");
+      return;
+    }
+
+    const finalImage = committedPreview;
+
+
+    const safeName = categoryName.trim().toLowerCase().replace(/\s+/g, "-");
+    const file = dataURLtoFile(finalImage, `${safeName}.jpg`);
+
+    try {
+      setIsSaving(true);
+      await onSave({ name: categoryName.trim(), imageFile: file });
+    } catch (error: any) {
+      const serverMessage =
+        error?.response?.data?.message || error?.response?.data?.error;
+
+      if (typeof serverMessage === "string" && serverMessage.trim()) {
+        toast.error(serverMessage);
+      } else {
+        toast.error("שגיאה בהוספת תת-קטגוריה");
+      }
+
+      console.error("Add sub category failed:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
 
   return (
     <div
       className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       onClick={() => {
-  if (!isSaving) onClose();
-}}
+        if (!isSaving) onClose();
+      }}
 
     >
       <div
         className="bg-gradient-to-br from-white via-[#fffdf8] to-[#fff9ed] rounded-2xl w-full max-w-3xl max-h-[90vh] shadow-2xl border border-gray-100 text-right overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-          <div className="overflow-y-auto max-h-[90vh] p-8">
-        <div className="flex justify-start w-full mb-6">
-  <h2 className="flex items-center gap-3 text-2xl font-bold text-[#0D305B]">
-    <svg className="w-7 h-7 text-[#0D305B]" viewBox="0 0 24 24" fill="none">
-      <path
-        d="M12 5v14M5 12h14"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-    <span>הוספת תת-קטגוריה חדשה</span>
-  </h2>
-</div>
+        <div className="overflow-y-auto max-h-[90vh] p-8">
+          <div className="flex justify-start w-full mb-6">
+            <h2 className="flex items-center gap-3 text-2xl font-bold text-[#0D305B]">
+              <svg className="w-7 h-7 text-[#0D305B]" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M12 5v14M5 12h14"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <span>הוספת תת-קטגוריה חדשה</span>
+            </h2>
+          </div>
 
 
-        <div className="group mb-5">
-  <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
-    <span className="w-1.5 h-1.5 rounded-full bg-[#0D305B]" />
-    שם תת-קטגוריה
-  </label>
+          <div className="group mb-5">
+            <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#0D305B]" />
+              שם תת-קטגוריה
+            </label>
 
-  <input
-    type="text"
-    placeholder="שם תת-קטגוריה"
-    value={categoryName}
-    onChange={(e) => setCategoryName(e.target.value)}
-    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
-  />
-</div>
+            <input
+              type="text"
+              placeholder="שם תת-קטגוריה"
+              value={categoryName}
+              onChange={(e) => setCategoryName(e.target.value)}
+              className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
+            />
+          </div>
 
 
-        <div className="group mb-4">
-  <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
-    <span className="w-1.5 h-1.5 rounded-full bg-[#0D305B]" />
-    תמונת תת-קטגוריה
-  </label>
+          <div className="group mb-4">
+            <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#0D305B]" />
+              תמונת תת-קטגוריה
+            </label>
 
-  <input
-    type="file"
-    accept="image/*"
-    onChange={handleImageUpload}
-    className="w-full file:mr-4 file:py-2 file:px-4 file:rounded-xl
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="w-full file:mr-4 file:py-2 file:px-4 file:rounded-xl
                file:border-0 file:text-sm file:font-bold
                file:bg-[#0D305B] file:text-white
                hover:file:bg-[#15457a]
                text-sm text-gray-600"
-  />
+            />
+          </div>
+
+
+          {isCropperOpen && rawImage && (
+            <div className="w-full flex flex-col items-center mb-4">
+              <div
+                ref={cropRef}
+                className="relative overflow-hidden select-none touch-none bg-white shadow-lg ring-1 ring-gray-200"
+                style={{
+                  width: CROP_BOX,
+                  height: CROP_BOX,
+                  position: "relative",
+                  touchAction: "none",
+                  overscrollBehavior: "contain",
+                }}
+                onWheel={(e) => {
+                  if (!rawImage) return;
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const rect = (
+                    cropRef.current as HTMLDivElement
+                  ).getBoundingClientRect();
+                  const cursor = {
+                    x: e.clientX - rect.left,
+                    y: e.clientY - rect.top,
+                  };
+                  const delta = Math.sign(e.deltaY) * -0.1;
+                  const next = Math.min(
+                    4,
+                    Math.max(1, +(zoom + delta).toFixed(3)),
+                  );
+                  if (next === zoom) return;
+                  const newOff = anchoredZoom(
+                    zoom,
+                    next,
+                    offset,
+                    cursor,
+                    rawImage.naturalWidth,
+                    rawImage.naturalHeight,
+                    CROP_BOX,
+                  );
+                  setZoom(next);
+                  setOffset(newOff);
+                }}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  setIsPanning(true);
+                  setStartPan({
+                    x: e.clientX - offset.x,
+                    y: e.clientY - offset.y,
+                  });
+                }}
+                onMouseMove={(e) => {
+                  if (!isPanning || !rawImage) return;
+                  const next = {
+                    x: e.clientX - startPan.x,
+                    y: e.clientY - startPan.y,
+                  };
+                  setOffset(
+                    clampOffsetToCircle(
+                      next,
+                      rawImage.naturalWidth,
+                      rawImage.naturalHeight,
+                      zoom,
+                      CROP_BOX,
+                    ),
+                  );
+                }}
+                onMouseUp={() => setIsPanning(false)}
+                onMouseLeave={() => setIsPanning(false)}
+                onTouchStart={(e) => {
+                  const t = e.touches[0];
+                  setIsPanning(true);
+                  setStartPan({
+                    x: t.clientX - offset.x,
+                    y: t.clientY - offset.y,
+                  });
+                }}
+                onTouchMove={(e) => {
+                  if (!isPanning || !rawImage) return;
+                  const t = e.touches[0];
+                  const next = {
+                    x: t.clientX - startPan.x,
+                    y: t.clientY - startPan.y,
+                  };
+                  setOffset(
+                    clampOffsetToCircle(
+                      next,
+                      rawImage.naturalWidth,
+                      rawImage.naturalHeight,
+                      zoom,
+                      CROP_BOX,
+                    ),
+                  );
+                }}
+                onTouchEnd={() => setIsPanning(false)}
+              >
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background:
+                      "linear-gradient(45deg, #f3f4f6 25%, transparent 25%), linear-gradient(-45deg, #f3f4f6 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f3f4f6 75%), linear-gradient(-45deg, transparent 75%, #f3f4f6 75%)",
+                    backgroundSize: "20px 20px",
+                    backgroundPosition: "0 0, 0 10px, 10px -10px, -10px 0",
+                    zIndex: 0,
+                  }}
+                />
+                <img
+                  src={rawImage.src}
+                  alt="to-crop"
+                  draggable={false}
+                  className="absolute top-1/2 left-1/2 will-change-transform z-10"
+                  style={{
+                    transform: `translate(calc(-50% + ${offset.x}px), calc(-50% + ${offset.y}px)) scale(${zoom})`,
+                    transformOrigin: "center center",
+                    width:
+                      rawImage.naturalWidth >= rawImage.naturalHeight
+                        ? (CROP_BOX * rawImage.naturalWidth) /
+                        rawImage.naturalHeight
+                        : CROP_BOX,
+                    height:
+                      rawImage.naturalHeight > rawImage.naturalWidth
+                        ? (CROP_BOX * rawImage.naturalHeight) /
+                        rawImage.naturalWidth
+                        : CROP_BOX,
+                  }}
+                />
+                <div
+                  className="pointer-events-none absolute inset-0"
+                  style={{
+                    boxShadow: "0 0 0 9999px rgba(0,0,0,0.45)",
+                    outline: "2px solid rgba(255,255,255,0.7)",
+                    outlineOffset: "-2px",
+                    zIndex: 20,
+                  }}
+                />
+              </div>
+
+              <div className="flex items-center gap-2 mt-3 flex-wrap">
+  <button
+    type="button"
+    onClick={() => setZoom((z) => Math.max(1, +(z - 0.1).toFixed(2)))}
+    className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-slate-700"
+  >
+    -
+  </button>
+
+  <div className="px-2 text-sm text-slate-600">זום: {zoom.toFixed(2)}</div>
+
+  <button
+    type="button"
+    onClick={() => setZoom((z) => Math.min(4, +(z + 0.1).toFixed(2)))}
+    className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-slate-700"
+  >
+    +
+  </button>
+
+  <button
+    type="button"
+    onClick={() => {
+      setZoom(1);
+      if (rawImage) {
+        setOffset(
+          clampOffsetToCircle(
+            { x: 0, y: 0 },
+            rawImage.naturalWidth,
+            rawImage.naturalHeight,
+            1,
+            CROP_BOX,
+          ),
+        );
+      } else {
+        setOffset({ x: 0, y: 0 });
+      }
+    }}
+    className="ml-2 px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-slate-700"
+  >
+    איפוס
+  </button>
+
+  {/* ✅ moved here */}
+  <button
+    type="button"
+    onClick={commitCrop}
+    disabled={isSaving}
+    className={`ml-2 px-5 py-2 rounded-xl text-white font-bold shadow-md transition-all
+      ${isSaving ? "bg-slate-400 cursor-not-allowed" : "bg-[#0D305B] hover:bg-[#15457a]"}
+    `}
+  >
+    השתמש בתמונה
+  </button>
 </div>
 
 
-        {isCropperOpen && rawImage && (
-          <div className="w-full flex flex-col items-center mb-4">
-            <div
-              ref={cropRef}
-              className="relative overflow-hidden select-none touch-none bg-white shadow-lg ring-1 ring-gray-200"
-              style={{
-                width: CROP_BOX,
-                height: CROP_BOX,
-                position: "relative",
-                touchAction: "none",
-                overscrollBehavior: "contain",
-              }}
-              onWheel={(e) => {
-                if (!rawImage) return;
-                e.preventDefault();
-                e.stopPropagation();
-                const rect = (
-                  cropRef.current as HTMLDivElement
-                ).getBoundingClientRect();
-                const cursor = {
-                  x: e.clientX - rect.left,
-                  y: e.clientY - rect.top,
-                };
-                const delta = Math.sign(e.deltaY) * -0.1;
-                const next = Math.min(
-                  4,
-                  Math.max(1, +(zoom + delta).toFixed(3)),
-                );
-                if (next === zoom) return;
-                const newOff = anchoredZoom(
-                  zoom,
-                  next,
-                  offset,
-                  cursor,
-                  rawImage.naturalWidth,
-                  rawImage.naturalHeight,
-                  CROP_BOX,
-                );
-                setZoom(next);
-                setOffset(newOff);
-              }}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                setIsPanning(true);
-                setStartPan({
-                  x: e.clientX - offset.x,
-                  y: e.clientY - offset.y,
-                });
-              }}
-              onMouseMove={(e) => {
-                if (!isPanning || !rawImage) return;
-                const next = {
-                  x: e.clientX - startPan.x,
-                  y: e.clientY - startPan.y,
-                };
-                setOffset(
-                  clampOffsetToCircle(
-                    next,
-                    rawImage.naturalWidth,
-                    rawImage.naturalHeight,
-                    zoom,
-                    CROP_BOX,
-                  ),
-                );
-              }}
-              onMouseUp={() => setIsPanning(false)}
-              onMouseLeave={() => setIsPanning(false)}
-              onTouchStart={(e) => {
-                const t = e.touches[0];
-                setIsPanning(true);
-                setStartPan({
-                  x: t.clientX - offset.x,
-                  y: t.clientY - offset.y,
-                });
-              }}
-              onTouchMove={(e) => {
-                if (!isPanning || !rawImage) return;
-                const t = e.touches[0];
-                const next = {
-                  x: t.clientX - startPan.x,
-                  y: t.clientY - startPan.y,
-                };
-                setOffset(
-                  clampOffsetToCircle(
-                    next,
-                    rawImage.naturalWidth,
-                    rawImage.naturalHeight,
-                    zoom,
-                    CROP_BOX,
-                  ),
-                );
-              }}
-              onTouchEnd={() => setIsPanning(false)}
-            >
-              <div
-                className="absolute inset-0"
-                style={{
-                  background:
-                    "linear-gradient(45deg, #f3f4f6 25%, transparent 25%), linear-gradient(-45deg, #f3f4f6 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f3f4f6 75%), linear-gradient(-45deg, transparent 75%, #f3f4f6 75%)",
-                  backgroundSize: "20px 20px",
-                  backgroundPosition: "0 0, 0 10px, 10px -10px, -10px 0",
-                  zIndex: 0,
-                }}
-              />
-              <img
-                src={rawImage.src}
-                alt="to-crop"
-                draggable={false}
-                className="absolute top-1/2 left-1/2 will-change-transform z-10"
-                style={{
-                  transform: `translate(calc(-50% + ${offset.x}px), calc(-50% + ${offset.y}px)) scale(${zoom})`,
-                  transformOrigin: "center center",
-                  width:
-                    rawImage.naturalWidth >= rawImage.naturalHeight
-                      ? (CROP_BOX * rawImage.naturalWidth) /
-                        rawImage.naturalHeight
-                      : CROP_BOX,
-                  height:
-                    rawImage.naturalHeight > rawImage.naturalWidth
-                      ? (CROP_BOX * rawImage.naturalHeight) /
-                        rawImage.naturalWidth
-                      : CROP_BOX,
-                }}
-              />
-              <div
-                className="pointer-events-none absolute inset-0"
-                style={{
-                  boxShadow: "0 0 0 9999px rgba(0,0,0,0.45)",
-                  outline: "2px solid rgba(255,255,255,0.7)",
-                  outlineOffset: "-2px",
-                  zIndex: 20,
-                }}
-              />
-            </div>
 
-            <div className="flex items-center gap-2 mt-3">
-              <button
-                type="button"
-                onClick={() =>
-                  setZoom((z) => Math.max(1, +(z - 0.1).toFixed(2)))
-                }
-                className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-slate-700"
-              >
-                -
-              </button>
-              <div className="px-2 text-sm text-slate-600">
-                זום: {zoom.toFixed(2)}
-              </div>
-              <button
-                type="button"
-                onClick={() =>
-                  setZoom((z) => Math.min(4, +(z + 0.1).toFixed(2)))
-                }
-                className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-slate-700"
-              >
-                +
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setZoom(1);
-                  if (rawImage) {
-                    setOffset(
-                      clampOffsetToCircle(
-                        { x: 0, y: 0 },
-                        rawImage.naturalWidth,
-                        rawImage.naturalHeight,
-                        1,
-                        CROP_BOX,
-                      ),
-                    );
-                  } else {
-                    setOffset({ x: 0, y: 0 });
-                  }
-                }}
-                className="ml-2 px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-slate-700"
-              >
-                איפוס
-              </button>
             </div>
-          </div>
-        )}
+          )}
 
-        <div className="flex justify-between gap-3">
-          <button
+          {!isCropperOpen && committedPreview && (
+  <img
+    src={committedPreview}
+    alt="preview"
+    className="max-w-full mt-2.5 rounded-xl mb-4 h-40 object-cover shadow-sm"
+  />
+)}
+
+
+          <div className="flex justify-between gap-3">
+            <button
   onClick={handleSave}
-  disabled={isSaving}
+  disabled={isSaving || (isCropperOpen && !committedPreview)}
   className={`flex-1 p-3 rounded-lg text-base font-medium transition-all duration-200 text-white shadow-md
     ${
-      isSaving
+      isSaving || (isCropperOpen && !committedPreview)
         ? "bg-slate-400 cursor-not-allowed"
         : "bg-slate-700 hover:bg-slate-600 hover:-translate-y-px hover:shadow-lg"
     }`}
 >
-  {isSaving ? (
-    <span className="flex items-center justify-center gap-2">
-      <Spinner className="size-4 text-white" />
-      מוסיף...
-    </span>
-  ) : (
-    "שמור"
-  )}
-</button>
+
+              {isSaving ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Spinner className="size-4 text-white" />
+                  מוסיף...
+                </span>
+              ) : (
+                "שמור"
+              )}
+            </button>
 
 
-          <button
-  onClick={onClose}
-  disabled={isSaving}
-  className={`flex-1 p-3 border-none rounded-lg text-base font-medium transition-all duration-200 border
-    ${
-      isSaving
-        ? "bg-gray-100 text-gray-300 cursor-not-allowed border-gray-200"
-        : "bg-gray-100 text-gray-500 border border-gray-300 hover:bg-gray-300 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"
-    }`}
->
-  ביטול
-</button>
+            <button
+              onClick={onClose}
+              disabled={isSaving}
+              className={`flex-1 p-3 border-none rounded-lg text-base font-medium transition-all duration-200 border
+    ${isSaving
+                  ? "bg-gray-100 text-gray-300 cursor-not-allowed border-gray-200"
+                  : "bg-gray-100 text-gray-500 border border-gray-300 hover:bg-gray-300 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"
+                }`}
+            >
+              ביטול
+            </button>
 
+          </div>
         </div>
       </div>
     </div>
-        </div>
 
 
   );
