@@ -455,7 +455,6 @@ const SingleCat: FC = () => {
 
   const handleDuplicateSuccess = async () => {
     await loadAllContent();
-    toast.success("המוצר שוכפל בהצלחה!");
     setShowDuplicateModal(false);
     setItemToDuplicate(null);
   };
