@@ -187,7 +187,7 @@ const AddUsersModal: React.FC<AddUsersModalProps> = ({ group, allUsers, onClose,
   ${
     selectedUserIds.length === 0
       ? "bg-slate-400 cursor-not-allowed"
-      : "bg-[#0D305B] hover:bg-[#15457a] hover:from-[#15457a] hover:to-[#1e5a9e] hover:shadow-xl"
+      : "bg-[#0D305B] hover:from-[#15457a] hover:to-[#1e5a9e] hover:shadow-xl"
   }`}
 
           >

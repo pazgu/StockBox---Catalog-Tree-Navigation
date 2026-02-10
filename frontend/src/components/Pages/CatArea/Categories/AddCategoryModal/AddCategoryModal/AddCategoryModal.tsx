@@ -518,7 +518,7 @@ const file = dataURLtoFile(committedPreview, `${safeName}.jpg`);
       ${
         isSaving || (isCropperOpen && !committedPreview)
           ? "bg-slate-400 cursor-not-allowed"
-          : "bg-[#0D305B] hover:bg-[#15457a] hover:from-[#15457a] hover:to-[#1e5a9e] hover:shadow-xl"
+          : "bg-[#0D305B] hover:bg-[#15457a] hover:to-[#1e5a9e] hover:shadow-xl"
       }`}
   >
     {isSaving ? (
