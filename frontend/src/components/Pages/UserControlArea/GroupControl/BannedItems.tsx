@@ -60,7 +60,9 @@ const BannedItems: React.FC<BannedItemsProps> = ({
       <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
         <p className="text-sm text-gray-600 mb-4">
           קבוצה:{" "}
-          <span className="font-semibold text-gray-800">{currentGroupName}</span>
+          <span className="font-semibold text-gray-800">
+            {currentGroupName}
+          </span>
         </p>
 
         {bannedItems.length === 0 ? (
@@ -92,7 +94,7 @@ const BannedItems: React.FC<BannedItemsProps> = ({
 
         <div className="mt-4 pt-4 border-t border-gray-200">
           <div className="flex justify-between items-center text-sm text-gray-600">
-            <span>סה״כ פריטים חסומים:</span>
+            <span>סה״כ :</span>
             <span className="font-semibold text-red-600">
               {bannedItems.length}
             </span>
