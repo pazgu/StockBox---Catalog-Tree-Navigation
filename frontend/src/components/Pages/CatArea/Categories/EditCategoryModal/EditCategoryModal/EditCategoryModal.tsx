@@ -475,35 +475,39 @@ const EditCategoryModal: React.FC<Props> = ({
 
       {/* Actions */}
       <div className="flex justify-end gap-4 mt-8 pt-6 border-t-2 border-gray-200">
-        <button
-          onClick={onClose}
-          disabled={isSaving}
-          className={`px-6 py-3 rounded-xl border-2 border-gray-300 transition-colors font-bold
-            ${isSaving ? "bg-gray-100 text-gray-300 cursor-not-allowed" : "bg-white text-gray-700 hover:bg-gray-50"}`}
-        >
-          ביטול
-        </button>
+      <button
+        onClick={handleSave}
+        disabled={isSaving}
+        className={`px-8 py-3 rounded-xl text-white transition-colors font-bold shadow-lg
+          ${
+            isSaving
+              ? "bg-slate-400 cursor-not-allowed"
+              : "bg-[#0D305B] hover:bg-[#15457a] hover:to-[#1e5a9e] hover:shadow-xl"
+          }`}
+      >
+        {isSaving ? (
+          <span className="flex items-center justify-center gap-2">
+            <Spinner className="size-4 text-white" />
+            שומר...
+          </span>
+        ) : (
+          "שמור שינויים"
+        )}
+      </button>
+      <button
+        onClick={onClose}
+        disabled={isSaving}
+        className={`px-6 py-3 rounded-xl border-2 border-gray-300 transition-colors font-bold
+          ${
+            isSaving
+              ? "bg-gray-100 text-gray-300 cursor-not-allowed"
+              : "bg-white text-gray-700 hover:bg-gray-50"
+          }`}
+      >
+        ביטול
+      </button>
+    </div>
 
-        <button
-          onClick={handleSave}
-          disabled={isSaving}
-          className={`px-8 py-3 rounded-xl text-white transition-colors font-bold shadow-lg
-            ${
-              isSaving
-                ? "bg-slate-400 cursor-not-allowed"
-                : "bg-[#0D305B] hover:bg-[#15457a] hover:from-[#15457a] hover:to-[#1e5a9e] hover:shadow-xl"
-            }`}
-        >
-          {isSaving ? (
-            <span className="flex items-center justify-center gap-2">
-              <Spinner className="size-4 text-white" />
-              שומר...
-            </span>
-          ) : (
-            "שמור שינויים"
-          )}
-        </button>
-      </div>
     </div>
   </div>
     </div>
