@@ -256,7 +256,6 @@ const EditCategoryModal: React.FC<Props> = ({
           <span>עריכת קטגוריה</span>
         </h2>
       </div>
-
       {/* Name field */}
       <div className="group mb-5">
         <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
