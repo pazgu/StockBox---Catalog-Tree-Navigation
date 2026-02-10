@@ -131,6 +131,8 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
     const isExpanded = expandedCategories.has(cat.categoryPath);
     const isLoading = loadingSubcats.has(cat.categoryPath);
     const isCurrentPath = currentCategoryPaths.includes(cat.categoryPath);
+    
+    const productExistsHere = currentCategoryPaths.includes(cat.categoryPath);
 
     const isSelected = isSourceSelection
       ? sourceCategoryPath === cat.categoryPath
@@ -143,10 +145,12 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
     return (
       <div key={cat._id} style={{ marginRight: `${level * 20}px` }}>
         <label
-          className={`flex items-center gap-2 p-3 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-all mb-2 ${
+             className={`flex items-center gap-2 p-3 border-2 rounded-lg ${
+     (isCurrentPath && !isSourceSelection) ? "" : "cursor-pointer hover:bg-gray-50"
+   } transition-all mb-2 ${
             isSelected
               ? "border-slate-700 bg-slate-50"
-              : isCurrentPath && !isSourceSelection
+              : productExistsHere && !isSourceSelection
                 ? "border-amber-400 bg-amber-50"
                 : "border-gray-200"
           }`}
@@ -172,21 +176,23 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
             </button>
           )}
 
-          <input
-            type="radio"
-            name={isSourceSelection ? "source" : "destination"}
-            value={cat.categoryPath}
-            checked={isSelected}
-            onChange={(e) => {
-              if (isSourceSelection) {
-                setSourceCategoryPath(e.target.value);
-              } else {
-                setDestinationCategoryPath(e.target.value);
-              }
-            }}
-            className="w-4 h-4"
-            disabled={loading}
-          />
+            {!(isCurrentPath && !isSourceSelection) && (
+                <input
+                  type="radio"
+                  name={isSourceSelection ? "source" : "destination"}
+                  value={cat.categoryPath}
+                  checked={isSelected}
+                  onChange={(e) => {
+                    if (isSourceSelection) {
+                      setSourceCategoryPath(e.target.value);
+                    } else {
+                      setDestinationCategoryPath(e.target.value);
+                    }
+                  }}
+                  className="w-4 h-4"
+                  disabled={loading}
+                />
+              )}
 
           <div className="flex items-center gap-2 flex-1">
             {cat.categoryImage && (
@@ -199,7 +205,7 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
             <div className="text-right">
               <p className="font-medium">
                 {cat.categoryName}
-                {isCurrentPath && !isSourceSelection && (
+                {productExistsHere && !isSourceSelection && (
                   <span className="mr-2 text-xs text-amber-600 font-semibold">
                     (קיים כאן)
                   </span>
