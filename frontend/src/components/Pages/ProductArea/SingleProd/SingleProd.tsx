@@ -31,11 +31,12 @@ import contentIcon from "../../../../assets/font.png";
 import { Spinner } from "../../../../components/ui/spinner";
 import { useNavigate } from "react-router-dom";
 import { handleEntityRouteError } from "../../../../lib/routing/handleEntityRouteError";
-
 import { useLocation } from "react-router-dom";
 import { userService } from "../../../../services/UserService";
 import { User } from "@/components/models/user.models";
 import { usePath } from "../../../../context/PathContext";
+import { Skeleton } from "../../../ui/skeleton"; 
+
 
 interface SingleProdProps {}
 
@@ -69,10 +70,14 @@ const SingleProd: FC<SingleProdProps> = () => {
   const { productId } = useParams<{ productId: string }>();
   const [user, setUser] = useState<User | null>(null);
   const { previousPath } = usePath();
+  const [isLoading, setIsLoading] = useState(true);
+
 
   useEffect(() => {
-    if (!productId) return;
-
+      if (!productId) {
+    setIsLoading(false);
+    return;
+  }
     const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(productId);
     if (!isValidObjectId) {
       navigate("/404", { replace: true });
@@ -80,6 +85,7 @@ const SingleProd: FC<SingleProdProps> = () => {
     }
 
     const loadProduct = async () => {
+      setIsLoading(true);
       try {
         const product = await ProductsService.getById(productId);
 
@@ -135,7 +141,9 @@ const SingleProd: FC<SingleProdProps> = () => {
 
         console.error(err);
         toast.error("שגיאה בטעינת המוצר");
-      }
+      } finally {
+    setIsLoading(false);
+  }
     };
 
     loadProduct();
@@ -605,9 +613,14 @@ const SingleProd: FC<SingleProdProps> = () => {
       console.error(err);
     }
   };
-  const isFavorite = useMemo(() => {
-    return user?.favorites?.some((fav) => fav.id === product?._id) ?? false;
-  }, [user?.favorites, product?._id]);
+ const isFavorite = useMemo(() => {
+  return user?.favorites?.some((fav) => fav.id === product?._id) ?? false;
+}, [user?.favorites, product?._id]);
+
+if (isLoading) {
+  return <SingleProdSkeleton />;
+}
+
   return (
     <div className="pt-16 px-6 pb-10 font-sans-['Noto_Sans_Hebrew'] rtl">
       <Breadcrumbs path={breadcrumbPath} />
@@ -887,5 +900,131 @@ ${isEditing ? "cursor-pointer" : "cursor-not-allowed opacity-80"}`}
     </div>
   );
 };
+
+const SingleProdSkeleton: FC = () => {
+  return (
+    <div className="pt-16 px-6 pb-10 font-sans-['Noto_Sans_Hebrew'] rtl">
+      {/* Breadcrumbs placeholder */}
+      <div className="mb-6">
+        <Skeleton className="h-4 w-72 rounded-md" />
+      </div>
+
+      <div className="max-w-6xl mx-auto">
+        {/* Title row (like your h1 + floating buttons area space) */}
+        <div className="flex justify-between items-center mb-4 text-right">
+          <div className="flex-1">
+            <Skeleton className="h-10 w-72 rounded-lg" />
+          </div>
+        </div>
+
+        {/* Description */}
+        <div className="text-right mb-12">
+          <Skeleton className="h-5 w-[520px] max-w-full rounded-md" />
+          <Skeleton className="h-5 w-[420px] max-w-full mt-3 rounded-md" />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
+          {/* LEFT: image card */}
+          <div className="lg:col-span-1 order-2 lg:order-1">
+            <div className="group relative bg-white p-4 rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-stockblue to-stockblue" />
+
+              {/* Image area */}
+              <div className="relative mb-4">
+                <Skeleton className="h-[320px] w-full rounded-[28px]" />
+              </div>
+
+              {/* Buttons area (viewer icons / editor button) */}
+              <div className="space-y-2 relative z-10 flex flex-row justify-center gap-12">
+                <Skeleton className="h-12 w-14 rounded-lg" />
+                <Skeleton className="h-6 w-6 rounded-md" />
+                <Skeleton className="h-12 w-14 rounded-lg" />
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT: accordion + files */}
+          <div className="lg:col-span-2 order-1 lg:order-2">
+            {/* Accordion skeleton */}
+            <div className="w-full space-y-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="border-b border-gray-200/70 rounded-lg"
+                >
+                  <div className="py-4 px-2 flex items-center justify-between">
+                    <Skeleton className="h-6 w-64 rounded-md" />
+                    <Skeleton className="h-6 w-6 rounded-md" />
+                  </div>
+                  {/* Content preview area (like open accordion content) */}
+                  <div className="px-2 pb-6">
+                    <Skeleton className="h-4 w-full rounded-md" />
+                    <Skeleton className="h-4 w-[90%] rounded-md mt-2" />
+                    <Skeleton className="h-4 w-[75%] rounded-md mt-2" />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Files section skeleton */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 mt-6">
+              <div className="flex items-center justify-between mb-6">
+                <Skeleton className="h-8 w-56 rounded-md" />
+                <Skeleton className="h-10 w-32 rounded-lg" />
+              </div>
+
+              {/* Folder blocks */}
+              <div className="space-y-4">
+                {Array.from({ length: 2 }).map((_, idx) => (
+                  <div
+                    key={idx}
+                    className="border border-gray-200 rounded-lg bg-gray-50 overflow-hidden"
+                  >
+                    <div className="flex items-center justify-between p-4">
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="h-6 w-6 rounded-md" />
+                        <Skeleton className="h-5 w-48 rounded-md" />
+                        <Skeleton className="h-4 w-16 rounded-md" />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="h-8 w-24 rounded-lg" />
+                        <Skeleton className="h-8 w-8 rounded-lg" />
+                      </div>
+                    </div>
+
+                    <div className="p-4 pt-0 border-t border-gray-200">
+                      {/* file row skeleton */}
+                      <div className="space-y-2 mt-3">
+                        {Array.from({ length: 2 }).map((__, j) => (
+                          <div
+                            key={j}
+                            className="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200"
+                          >
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              <Skeleton className="h-5 w-5 rounded-md" />
+                              <div className="flex-1">
+                                <Skeleton className="h-4 w-56 rounded-md" />
+                                <Skeleton className="h-3 w-20 rounded-md mt-2" />
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 mr-2">
+                              <Skeleton className="h-9 w-9 rounded-lg" />
+                              <Skeleton className="h-9 w-9 rounded-lg" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 
 export default SingleProd;

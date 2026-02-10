@@ -2,6 +2,8 @@ import React from "react";
 import { toast } from "sonner";
 import useBlockBrowserZoom from "../../Categories/useBlockBrowserZoom";
 import { Spinner } from "../../../../ui/spinner";
+import { Asterisk } from "lucide-react";
+
 
 
 type Props = {
@@ -80,6 +82,17 @@ function anchoredZoom(
     box,
   );
 }
+
+const RequiredStar = () => (
+  <Asterisk
+    size={14}
+    className="text-red-600 relative -top-[1px]"
+    aria-hidden="true"
+  />
+);
+
+
+
 
 const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   const [productName, setProductName] = React.useState("");
@@ -231,62 +244,75 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
       >
         <div className="overflow-y-auto max-h-[90vh] p-8">
 
-          <div className="flex justify-start w-full mb-6">
-            <h2 className="flex items-center gap-3 text-2xl font-bold text-[#0D305B]">
-              <svg className="w-7 h-7 text-[#0D305B]" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M12 5v14M5 12h14"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <span>הוספת מוצר חדש</span>
-            </h2>
-          </div>
+        <div className="flex justify-start w-full mb-6">
+  <h2 className="flex items-center gap-3 text-2xl font-bold text-[#0D305B]">
+    <svg className="w-7 h-7 text-[#0D305B]" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M12 5v14M5 12h14"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+    <span>הוספת מוצר חדש</span>
+  </h2>
+</div>
 
-          <div className="group mb-5">
-            <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#0D305B]" />
-              שם מוצר
-            </label>
 
-            <input
-              type="text"
-              placeholder="שם מוצר"
-              value={productName}
-              onChange={(e) => setProductName(e.target.value)}
-              className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
-            />
-          </div>
+        <div className="group mb-5">
+  <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center">
+  <span className="inline-flex items-center gap-1 flex-row-reverse">
+    <span>שם מוצר</span>
+    <RequiredStar />
+  </span>
+</label>
 
-          <div className="group mb-5">
-            <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#0D305B]" />
-              תיאור מוצר
-            </label>
 
-            <input
-              type="text"
-              placeholder="תיאור מוצר"
-              value={productDesc}
-              onChange={(e) => setProductDesc(e.target.value)}
-              className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
-            />
-          </div>
 
-          <div className="group mb-4">
-            <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#0D305B]" />
-              תמונת מוצר
-            </label>
 
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="w-full file:mr-4 file:py-2 file:px-4 file:rounded-xl
+  <input
+    type="text"
+    placeholder="שם מוצר"
+    value={productName}
+    onChange={(e) => setProductName(e.target.value)}
+    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
+  />
+</div>
+
+
+        <div className="group mb-5">
+<label className="block text-sm font-bold mb-2 text-gray-700">
+  תיאור מוצר
+</label>
+
+
+  <input
+    type="text"
+    placeholder="תיאור מוצר"
+    value={productDesc}
+    onChange={(e) => setProductDesc(e.target.value)}
+    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
+  />
+</div>
+
+
+        <div className="group mb-4">
+<label className="block text-sm font-bold mb-2 text-gray-700 flex items-center">
+  <span className="inline-flex items-center gap-1 flex-row-reverse">
+    <span>תמונת מוצר</span>
+    <RequiredStar />
+  </span>
+</label>
+
+
+
+
+  <input
+    type="file"
+    accept="image/*"
+    onChange={handleImageUpload}
+    className="w-full file:mr-4 file:py-2 file:px-4 file:rounded-xl
                file:border-0 file:text-sm file:font-bold
                file:bg-[#0D305B] file:text-white
                hover:file:bg-[#15457a]
@@ -482,10 +508,33 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
               ביטול
             </button>
 
-            <button
-              onClick={handleSave}
-              disabled={isSaving}
-              className={`px-8 py-3 rounded-xl text-white transition-colors font-bold shadow-lg
+</div>
+        )}
+        {!isCropperOpen && committedPreview && (
+          <img
+            src={committedPreview}
+            alt="preview"
+            className="w-40 h-40 rounded-xl object-cover shadow-sm mx-auto mt-2.5 mb-4 border border-gray-200"
+          />
+        )}
+
+        <div className="flex justify-end gap-4 mt-8 pt-6 border-t-2 border-gray-200">
+          <button
+            onClick={onClose}
+            disabled={isSaving}
+            className="px-6 py-3 rounded-xl border-2 border-gray-300 transition-colors font-bold text-gray-700 hover:bg-gray-50"
+          >
+            ביטול
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="px-8 py-3 rounded-xl text-white transition-colors font-bold shadow-lg bg-[#0D305B] hover:bg-[#0A2647]"
+          >
+            שמירה
+          </button>
+
+        </div>
       ${
                 isSaving
                   ? "bg-slate-400 cursor-not-allowed"
