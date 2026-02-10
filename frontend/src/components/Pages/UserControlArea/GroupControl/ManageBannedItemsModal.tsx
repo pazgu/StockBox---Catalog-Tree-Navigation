@@ -45,35 +45,47 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
   onClose,
   onUpdateBannedItems,
 }) => {
-  const [localBannedItems, setLocalBannedItems] = useState<BannedItem[]>(bannedItems);
+  const [localBannedItems, setLocalBannedItems] =
+    useState<BannedItem[]>(bannedItems);
   const [allItems, setAllItems] = useState<BannedItem[]>([]);
-  const [blockedTree, setBlockedTree] = useState<TreeItem[]>([]);
-  const [availableTree, setAvailableTree] = useState<TreeItem[]>([]);
+  const [unifiedTree, setUnifiedTree] = useState<TreeItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"banned" | "available">("banned");
   const [viewMode, setViewMode] = useState<"tree" | "grid">("tree");
-  const [filterType, setFilterType] = useState<"all" | "product" | "category">("all");
-  const [selectedItems, setSelectedItems] = useState<Map<string | number, string | undefined>>(new Map());
-  const [selectedWithChildren, setSelectedWithChildren] = useState<Set<string | number>>(new Set());
-  const [expandedNodes, setExpandedNodes] = useState<Set<string | number>>(new Set());
+  const [filterType, setFilterType] = useState<"all" | "product" | "category">(
+    "all",
+  );
+  const [selectedItems, setSelectedItems] = useState<
+    Map<string | number, string | undefined>
+  >(new Map());
+  const [selectedWithChildren, setSelectedWithChildren] = useState<
+    Set<string | number>
+  >(new Set());
+  const [expandedNodes, setExpandedNodes] = useState<Set<string | number>>(
+    new Set(),
+  );
   const [isLoading, setIsLoading] = useState(false);
-  const [permissionIdByKey, setPermissionIdByKey] = useState<Record<string, string>>({});
+  const [permissionIdByKey, setPermissionIdByKey] = useState<
+    Record<string, string>
+  >({});
   const [showInheritanceModal, setShowInheritanceModal] = useState(false);
-  const [pendingUnblockItems, setPendingUnblockItems] = useState<BannedItem[]>([]);
+  const [pendingUnblockItems, setPendingUnblockItems] = useState<BannedItem[]>(
+    [],
+  );
   useEffect(() => {
-  const prevBodyOverflow = document.body.style.overflow;
-  const prevHtmlOverflow = document.documentElement.style.overflow;
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
 
-  document.body.style.overflow = "hidden";
-  document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
 
-  return () => {
-    document.body.style.overflow = prevBodyOverflow;
-    document.documentElement.style.overflow = prevHtmlOverflow;
-  };
-}, []);
+    return () => {
+      document.body.style.overflow = prevBodyOverflow;
+      document.documentElement.style.overflow = prevHtmlOverflow;
+    };
+  }, []);
 
-  const { setPreviousPath,previousPath } = usePath();
+  const { setPreviousPath, previousPath } = usePath();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const keyOf = (type: "product" | "category", id: string | number) =>
     `${type}:${String(id)}`;
@@ -83,35 +95,54 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
       try {
         setIsLoading(true);
         const data = await permissionsService.getBlockedItemsForGroup(groupId);
-        
+        const addStatusToTree = (nodes: any[], status: boolean): any[] => {
+          return nodes.map((node) => ({
+            ...node,
+            isBlocked: status,
+            children: node.children
+              ? addStatusToTree(node.children, status)
+              : [],
+            products: node.products
+              ? node.products.map((p: any) => ({ ...p, isBlocked: status }))
+              : [],
+          }));
+        };
+        const taggedBlockedTree = addStatusToTree(data.blockedTree || [], true);
+        const taggedAvailableTree = addStatusToTree(
+          data.availableTree || [],
+          false,
+        );
+        const unifiedTree = [...taggedBlockedTree, ...taggedAvailableTree];
+        setUnifiedTree(unifiedTree);
         setPermissionIdByKey(data.permissionIdByKey);
         const enrichWithContextPath = (items: BannedItem[]): BannedItem[] => {
-          return items.map(item => {
-            if (item.type === 'product' && item.productPath) {
-              const pathStr = Array.isArray(item.productPath) 
-                ? item.productPath[0] 
-                : item.productPath;            
-              if (!pathStr) return item;             
-              const pathParts = pathStr.split('/').filter(Boolean);
-              const categoryParts = pathParts[0] === 'categories'
-                ? pathParts.slice(1, -1)
-                : pathParts.slice(0, -1);             
-              const contextPath = '/categories/' + categoryParts.join('/');
+          return items.map((item) => {
+            if (item.type === "product" && item.productPath) {
+              const pathStr = Array.isArray(item.productPath)
+                ? item.productPath[0]
+                : item.productPath;
+              if (!pathStr) return item;
+              const pathParts = pathStr.split("/").filter(Boolean);
+              const categoryParts =
+                pathParts[0] === "categories"
+                  ? pathParts.slice(1, -1)
+                  : pathParts.slice(0, -1);
+              const contextPath = "/categories/" + categoryParts.join("/");
               return { ...item, contextPath };
             }
             return item;
           });
-        };    
-        const enrichedBlocked = enrichWithContextPath(data.blocked);
-        const enrichedAvailable = enrichWithContextPath(data.available);   
+        };
+
+        const enrichedBlocked = enrichWithContextPath(data.blocked).map(
+          (i) => ({ ...i, isBlocked: true }),
+        );
+        const enrichedAvailable = enrichWithContextPath(data.available).map(
+          (i) => ({ ...i, isBlocked: false }),
+        );
         setAllItems([...enrichedBlocked, ...enrichedAvailable]);
-        setLocalBannedItems(enrichedBlocked); 
-        if (data.blockedTree) {
-          setBlockedTree(data.blockedTree);
-        }
-        if (data.availableTree) {
-          setAvailableTree(data.availableTree);
-        }
+        setLocalBannedItems(enrichedBlocked);
+
         if (shouldNotify) {
           onUpdateBannedItems(enrichedBlocked);
         }
@@ -151,72 +182,79 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
     });
   }, [allItems, localBannedItems, searchQuery, filterType]);
 
-  const filterTree = useCallback((nodes: TreeItem[], query: string): TreeItem[] => {
-    if (!query) return nodes;
-    const filtered: TreeItem[] = [];   
-    nodes.forEach(node => {
-      const matchesSearch = node.name.toLowerCase().includes(query.toLowerCase());
-      const filteredChildren = node.children ? filterTree(node.children, query) : [];
-      const filteredProducts = node.products?.filter(p => 
-        p.name.toLowerCase().includes(query.toLowerCase())
-      ) || [];
-      if (matchesSearch || filteredChildren.length > 0 || filteredProducts.length > 0) {
-        filtered.push({
-          ...node,
-          children: filteredChildren,
-          products: filteredProducts,
-        });
-      }
-    });
-    return filtered;
-  }, []);
-  const filteredBlockedTree = useMemo(() => {
-    let tree = blockedTree;   
-    if (searchQuery) {
-      tree = filterTree(tree, searchQuery);
-    } 
-    return tree;
-  }, [blockedTree, searchQuery, filterTree]);
-  const filteredAvailableTree = useMemo(() => {
-    let tree = availableTree; 
-    if (searchQuery) {
-      tree = filterTree(tree, searchQuery);
-    }
-    return tree;
-  }, [availableTree, searchQuery, filterTree]);
-  const handleToggleSelection = (itemId: string | number, withChildren: boolean, contextPath?: string) => {
-  if (withChildren) {
-    setSelectedWithChildren((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(itemId)) {
-        newSet.delete(itemId);
-      } else {
-        newSet.add(itemId);
-      }
-      return newSet;
-    }); 
-    setSelectedItems((prev) => {
-      const newMap = new Map(prev);
-      newMap.set(itemId, contextPath);
-      return newMap;
-    });
-  } else {
-    setSelectedItems((prev) => {
-      const newMap = new Map(prev);
-      if (newMap.has(itemId)) {
-        newMap.delete(itemId);
-        setSelectedWithChildren((prevChildren) => {
-          const newChildren = new Set(prevChildren);
-          newChildren.delete(itemId);
-          return newChildren;
-        });
-      } else {
+  const filterTree = useCallback(
+    (nodes: TreeItem[], query: string): TreeItem[] => {
+      if (!query) return nodes;
+      const filtered: TreeItem[] = [];
+      nodes.forEach((node) => {
+        const matchesSearch = node.name
+          .toLowerCase()
+          .includes(query.toLowerCase());
+        const filteredChildren = node.children
+          ? filterTree(node.children, query)
+          : [];
+        const filteredProducts =
+          node.products?.filter((p) =>
+            p.name.toLowerCase().includes(query.toLowerCase()),
+          ) || [];
+        if (
+          matchesSearch ||
+          filteredChildren.length > 0 ||
+          filteredProducts.length > 0
+        ) {
+          filtered.push({
+            ...node,
+            children: filteredChildren,
+            products: filteredProducts,
+          });
+        }
+      });
+      return filtered;
+    },
+    [],
+  );
+  const filteredTree = useMemo(() => {
+    if (!searchQuery) return unifiedTree;
+    return filterTree(unifiedTree, searchQuery);
+  }, [unifiedTree, searchQuery, filterTree]);
+
+  const handleToggleSelection = (
+    itemId: string | number,
+    withChildren: boolean,
+    contextPath?: string,
+  ) => {
+    if (withChildren) {
+      setSelectedWithChildren((prev) => {
+        const newSet = new Set(prev);
+        if (newSet.has(itemId)) {
+          newSet.delete(itemId);
+        } else {
+          newSet.add(itemId);
+        }
+        return newSet;
+      });
+      setSelectedItems((prev) => {
+        const newMap = new Map(prev);
         newMap.set(itemId, contextPath);
-      }
-      return newMap;
-    });
-  }
-};
+        return newMap;
+      });
+    } else {
+      setSelectedItems((prev) => {
+        const newMap = new Map(prev);
+        if (newMap.has(itemId)) {
+          newMap.delete(itemId);
+          setSelectedWithChildren((prevChildren) => {
+            const newChildren = new Set(prevChildren);
+            newChildren.delete(itemId);
+            return newChildren;
+          });
+        } else {
+          newMap.set(itemId, contextPath);
+        }
+        return newMap;
+      });
+    }
+  };
   const handleToggleExpand = (nodeId: string | number) => {
     setExpandedNodes((prev) => {
       const newSet = new Set(prev);
@@ -229,26 +267,34 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
     });
   };
   const expandAll = () => {
-    const allNodeIds = new Set<string | number>(); 
+    const allNodeIds = new Set<string | number>();
     const collectIds = (nodes: TreeItem[]) => {
-      nodes.forEach(node => {
-        if ((node.children?.length ?? 0) > 0 || (node.products?.length ?? 0) > 0) {
+      nodes.forEach((node) => {
+        if (
+          (node.children?.length ?? 0) > 0 ||
+          (node.products?.length ?? 0) > 0
+        ) {
           allNodeIds.add(node.id);
         }
         if (node.children) collectIds(node.children);
       });
-    }; 
-    const currentTree = activeTab === "banned" ? filteredBlockedTree : filteredAvailableTree;
-    collectIds(currentTree);
+    };
+
+    collectIds(filteredTree);
     setExpandedNodes(allNodeIds);
   };
   const collapseAll = () => {
     setExpandedNodes(new Set());
   };
   const handleSelectAll = () => {
-    const currentItems = activeTab === "banned" ? filteredBannedItems : availableItems;
+    const currentItems =
+      viewMode === "tree"
+        ? allItems
+        : activeTab === "banned"
+          ? filteredBannedItems
+          : availableItems;
 
-    if (selectedItems.size === currentItems.length) {
+    if (selectedItems.size >= currentItems.length && selectedItems.size > 0) {
       setSelectedItems(new Map());
       setSelectedWithChildren(new Set());
     } else {
@@ -259,26 +305,30 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
       setSelectedItems(newMap);
     }
   };
-  const executeUnblock = async (items: BannedItem[], inheritToChildren: boolean) => {
+  const executeUnblock = async (
+    items: BannedItem[],
+    inheritToChildren: boolean,
+  ) => {
     try {
       setIsLoading(true);
       const itemsWithContext = items.map((item) => {
-        if (item.type === 'product') {
+        if (item.type === "product") {
           if (!item.contextPath && item.productPath) {
-            const pathStr = Array.isArray(item.productPath) 
-              ? item.productPath[0] 
+            const pathStr = Array.isArray(item.productPath)
+              ? item.productPath[0]
               : item.productPath;
             if (pathStr) {
-              const pathParts = pathStr.split('/').filter(Boolean);
-              const categoryParts = pathParts[0] === 'categories'
-                ? pathParts.slice(1, -1)
-                : pathParts.slice(0, -1);
-              item.contextPath = '/categories/' + categoryParts.join('/');
+              const pathParts = pathStr.split("/").filter(Boolean);
+              const categoryParts =
+                pathParts[0] === "categories"
+                  ? pathParts.slice(1, -1)
+                  : pathParts.slice(0, -1);
+              item.contextPath = "/categories/" + categoryParts.join("/");
             }
           }
         }
         return item;
-      });  
+      });
       const result = await permissionsService.createPermissionsBatch(
         itemsWithContext.map((item) => ({
           entityType: item.type,
@@ -286,7 +336,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
           allowed: groupId,
           inheritToChildren,
           contextPath: item.contextPath,
-        }))
+        })),
       );
       const failedItems = result.data?.details?.failed || [];
       const createdItems = result.data?.details?.created || [];
@@ -301,12 +351,12 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
       if (failedItems.length > 0) {
         const failedReasons = failedItems
           .map((f: any) => f.reason)
-          .filter(Boolean);    
-        const reason = failedReasons[0] || "חלק מהפריטים לא שוחררו";  
+          .filter(Boolean);
+        const reason = failedReasons[0] || "חלק מהפריטים לא שוחררו";
         toast.warning(
-          `${createdItems.length} פריטים שוחררו, ${failedItems.length} נכשלו: ${reason}`
+          `${createdItems.length} פריטים שוחררו, ${failedItems.length} נכשלו: ${reason}`,
         );
-        
+
         await load(true);
         setSelectedItems(new Map());
         setSelectedWithChildren(new Set());
@@ -315,13 +365,6 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
       await load(true);
       setSelectedItems(new Map());
       setSelectedWithChildren(new Set());
-      const totalCreated = result.data?.created || items.length;
-      const message =
-        inheritToChildren && totalCreated > items.length
-          ? `${items.length} פריטים שוחררו בהצלחה (כולל ${totalCreated - items.length} צאצאים)`
-          : `${items.length} פריטים שוחררו בהצלחה`;
-      toast.success(message);
-      
     } catch (e: any) {
       console.error("Bulk unblock failed:", e);
       if (e.response?.data?.message) {
@@ -335,26 +378,31 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
     }
   };
 
-  const handleBulkAction = async () => {
+  const handleBulkAction = async (forcedMode?: "banned" | "available") => {
+    const mode = forcedMode || activeTab;
+
     const items = Array.from(selectedItems.entries())
       .map(([itemId, contextPath]) => {
-        const item = activeTab === "banned"
-          ? localBannedItems.find((i) => i.id === itemId)
-          : availableItems.find((i) => i.id === itemId);      
-        if (!item) return undefined;       
+        const item =
+          mode === "banned"
+            ? localBannedItems.find((i) => i.id === itemId)
+            : availableItems.find((i) => i.id === itemId);
+
+        if (!item) return undefined;
         return {
           ...item,
-          contextPath: contextPath || item.contextPath
+          contextPath: contextPath || item.contextPath,
         } as BannedItem;
       })
       .filter((item): item is BannedItem => item !== undefined);
 
     if (items.length === 0) {
-      toast.error("לא נבחרו פריטים");
+      toast.error("לא נבחרו פריטים מתאימים");
       return;
     }
-    if (activeTab === "banned") {
-      const hasCategories = items.some(item => item.type === "category");
+
+    if (mode === "banned") {
+      const hasCategories = items.some((item) => item.type === "category");
       if (hasCategories) {
         setPendingUnblockItems(items);
         setShowInheritanceModal(true);
@@ -374,8 +422,6 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
           setIsLoading(true);
           await permissionsService.deletePermissionsBatch(permissionIds);
           await load(true);
-          setSelectedItems(new Map());
-          setSelectedWithChildren(new Set());
           toast.success(`${items.length} פריטים נחסמו בהצלחה`);
         } catch (e: any) {
           console.error("Bulk block failed:", e);
@@ -387,7 +433,8 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
     }
   };
   const renderGridView = () => {
-    const currentItems = activeTab === "banned" ? filteredBannedItems : availableItems;
+    const currentItems =
+      activeTab === "banned" ? filteredBannedItems : availableItems;
     if (currentItems.length === 0) {
       return (
         <div className="text-center py-12 text-gray-400">
@@ -453,7 +500,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
     );
   };
   const renderTreeView = () => {
-    const currentTree = activeTab === "banned" ? filteredBlockedTree : filteredAvailableTree;
+    const currentTree = filteredTree;
     if (currentTree.length === 0) {
       return (
         <div className="text-center py-12 text-gray-400">
@@ -466,43 +513,44 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
     }
     return (
       <div className="space-y-0.5">
-        {currentTree.map((node) => (
-          <TreeNode
-            key={`${node.type}-${node.id}`}
-            node={node}
-            level={0}
-            selectedItems={selectedItems}
-            selectedWithChildren={selectedWithChildren}
-            onToggleSelection={handleToggleSelection}
-            onToggleExpand={handleToggleExpand}
-            expandedNodes={expandedNodes}
-            isCategory={node.type === "category"}
-          />
-        ))}
+        <div className="space-y-1 p-4">
+          {currentTree.map((node) => (
+            <TreeNode
+              key={`${node.type}-${node.id}`}
+              node={node}
+              level={0}
+              selectedItems={selectedItems}
+              selectedWithChildren={selectedWithChildren}
+              onToggleSelection={handleToggleSelection}
+              onToggleExpand={handleToggleExpand}
+              expandedNodes={expandedNodes}
+              isCategory={node.type === "category"}
+            />
+          ))}
+        </div>
       </div>
     );
   };
 
   return (
     <div
-      className="fixed inset-0 bg-slate-900/90 backdrop-blur-sm flex items-center justify-center z-50 p-2 overflow-y-auto"
+      className="fixed inset-0  bg-slate-900/90 backdrop-blur-sm flex items-center justify-center z-50 p-2 overflow-y-auto"
       onClick={() => {
         if (showInheritanceModal) return;
         onClose();
       }}
     >
       <div
-        className="bg-white rounded-xl w-full max-w-5xl shadow-2xl text-right flex flex-col my-auto"
-        style={{ height: "570px" }}
+        className="bg-white rounded-xl w-full max-w-5xl shadow-2xl text-right flex flex-col my-auto h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-slate-700 text-white p-5 flex justify-between items-center flex-shrink-0">
+        <div className="bg-slate-700 text-white p-3 flex justify-between items-center rounded-t-xl flex-shrink-0">
           <div>
             <h3 className="text-lg font-bold flex items-center gap-2 mb-1">
               ניהול פריטים חסומים
+              <p className="text-slate-300 text-xs mt-2">קבוצה: {groupName}</p>
             </h3>
-            <p className="text-slate-300 text-xs">קבוצה: {groupName}</p>
           </div>
           <button
             onClick={onClose}
@@ -511,43 +559,74 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
             <X className="w-6 h-6" />
           </button>
         </div>
-
-        {/* Tabs */}
-        <div className="flex border-b border-gray-200 flex-shrink-0">
-          <button
-            onClick={() => {
-              setActiveTab("banned");
-              scrollContainerRef.current && (scrollContainerRef.current.scrollTop = 0);
-            }}
-            className={`flex-1 py-2.5 px-4.5 text-sm font-medium transition-all ${
-              activeTab === "banned"
-                ? "text-slate-700 bg-white border-b-2 border-red-500"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            <div className="flex items-center justify-center gap-1">
-              <Lock className="w-3 h-3" />
-              פריטים חסומים ({filteredBannedItems.length})
-            </div>
-          </button>
-
-          <button
-            onClick={() => {
-              setActiveTab("available");
-              scrollContainerRef.current && (scrollContainerRef.current.scrollTop = 0);
-            }}
-            className={`flex-1 py-2.5 px-4.5 text-sm font-medium transition-all ${
-              activeTab === "available"
-                ? "text-slate-700 bg-white border-b-2 border-green-500"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            <div className="flex items-center justify-center gap-1">
-              <LockOpen className="w-3 h-3" />
-              פריטים זמינים ({availableItems.length})
-            </div>
-          </button>
+        <div className="flex justify-center py-2">
+          <div className="flex gap-1 bg-gray-100 p-1 rounded-lg ">
+            <button
+              onClick={() => setViewMode("tree")}
+              className={`px-3 py-1 rounded text-xs font-medium transition-all ${
+                viewMode === "tree"
+                  ? "bg-white text-slate-700 shadow"
+                  : "text-gray-600 hover:text-gray-800"
+              }`}
+              title="תצוגת עץ"
+            >
+              <GitBranch className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`px-3 py-1 rounded text-xs font-medium transition-all ${
+                viewMode === "grid"
+                  ? "bg-white text-slate-700 shadow"
+                  : "text-gray-600 hover:text-gray-800"
+              }`}
+              title="תצוגת רשת"
+            >
+              <List className="w-4 h-4" />
+            </button>
+          </div>
         </div>
+        {/* Tabs */}
+        {viewMode === "grid" && (
+          <>
+            <div className="flex border-b border-gray-200 flex-shrink-0">
+              <button
+                onClick={() => {
+                  setActiveTab("banned");
+                  scrollContainerRef.current &&
+                    (scrollContainerRef.current.scrollTop = 0);
+                }}
+                className={`flex-1 py-2.5 px-4.5 text-sm font-medium transition-all ${
+                  activeTab === "banned"
+                    ? "text-slate-700 bg-white border-b-2 border-red-500"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <div className="flex items-center justify-center gap-1">
+                  <Lock className="w-3 h-3" />
+                  פריטים חסומים ({filteredBannedItems.length})
+                </div>
+              </button>
+
+              <button
+                onClick={() => {
+                  setActiveTab("available");
+                  scrollContainerRef.current &&
+                    (scrollContainerRef.current.scrollTop = 0);
+                }}
+                className={`flex-1 py-2.5 px-4.5 text-sm font-medium transition-all ${
+                  activeTab === "available"
+                    ? "text-slate-700 bg-white border-b-2 border-green-500"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <div className="flex items-center justify-center gap-1">
+                  <LockOpen className="w-3 h-3" />
+                  פריטים זמינים ({availableItems.length})
+                </div>
+              </button>
+            </div>
+          </>
+        )}
 
         <div className="p-3 flex-1 flex flex-col overflow-hidden min-h-0">
           {/* Search and View Mode Toggle */}
@@ -566,96 +645,73 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
                 className="w-full pr-7 pl-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-slate-700 focus:ring-1 focus:ring-slate-700 transition-all"
                 autoFocus
               />
-            </div>       
-            {/* View Mode Toggle */}
-            <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
-              <button
-                onClick={() => setViewMode("tree")}
-                className={`px-3 py-1 rounded text-xs font-medium transition-all ${
-                  viewMode === "tree"
-                    ? "bg-white text-slate-700 shadow"
-                    : "text-gray-600 hover:text-gray-800"
-                }`}
-                title="תצוגת עץ"
-              >
-                <GitBranch className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setViewMode("grid")}
-                className={`px-3 py-1 rounded text-xs font-medium transition-all ${
-                  viewMode === "grid"
-                    ? "bg-white text-slate-700 shadow"
-                    : "text-gray-600 hover:text-gray-800"
-                }`}
-                title="תצוגת רשת"
-              >
-                <List className="w-4 h-4" />
-              </button>
             </div>
+            {/* View Mode Toggle */}
           </div>
           {/* Filters */}
-      <div className="flex gap-3 mb-2 flex-wrap flex-shrink-0">
-        {viewMode === "grid" && (
-          <>
-            <button
-              onClick={() => setFilterType("all")}
-              className={`px-8 py-1.5 rounded-md text-[13px] font-medium transition-all ${
-                filterType === "all"
-                  ? "bg-slate-700 text-white shadow-md"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-            >
-              הכל
-            </button>
+          <div className="flex gap-3 mb-2 flex-wrap flex-shrink-0">
+            {viewMode === "grid" && (
+              <>
+                <button
+                  onClick={() => setFilterType("all")}
+                  className={`px-8 py-1.5 rounded-md text-[13px] font-medium transition-all ${
+                    filterType === "all"
+                      ? "bg-slate-700 text-white shadow-md"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  הכל
+                </button>
 
-            <button
-              onClick={() => setFilterType("product")}
-              className={`px-8 py-1.5 rounded-md text-[13px] font-medium flex items-center gap-0.5 transition-all ${
-                filterType === "product"
-                  ? "bg-blue-500 text-white shadow-md"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-            >
-              <Package className="w-2.5 h-2.5" />
-              מוצרים
-            </button>
+                <button
+                  onClick={() => setFilterType("product")}
+                  className={`px-8 py-1.5 rounded-md text-[13px] font-medium flex items-center gap-0.5 transition-all ${
+                    filterType === "product"
+                      ? "bg-blue-500 text-white shadow-md"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  <Package className="w-2.5 h-2.5" />
+                  מוצרים
+                </button>
 
-            <button
-              onClick={() => setFilterType("category")}
-              className={`px-8 py-1.5 rounded-md text-[13px] font-medium flex items-center gap-0.5 transition-all ${
-                filterType === "category"
-                  ? "bg-purple-500 text-white shadow-md"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-            >
-              <FolderTree className="w-2.5 h-2.5" />
-              קטגוריות
-            </button>
-          </>
-        )}
-        {viewMode === "tree" && (
-          <>
-            <button
-              onClick={expandAll}
-              className="px-4 py-1.5 rounded-md text-[13px] font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all flex items-center gap-1"
-            >
-              <ChevronDown className="w-3 h-3" />
-              פתח הכל
-            </button>
-            <button
-              onClick={collapseAll}
-              className="px-4 py-1.5 rounded-md text-[13px] font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all flex items-center gap-1"
-            >
-              <ChevronUp className="w-3 h-3" />
-              סגור הכל
-            </button>
-          </>
-        )}
-      </div>
+                <button
+                  onClick={() => setFilterType("category")}
+                  className={`px-8 py-1.5 rounded-md text-[13px] font-medium flex items-center gap-0.5 transition-all ${
+                    filterType === "category"
+                      ? "bg-purple-500 text-white shadow-md"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  <FolderTree className="w-2.5 h-2.5" />
+                  קטגוריות
+                </button>
+              </>
+            )}
+            {viewMode === "tree" && (
+              <>
+                <button
+                  onClick={expandAll}
+                  className="px-4 py-1.5 rounded-md text-[13px] font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all flex items-center gap-1"
+                >
+                  <ChevronDown className="w-3 h-3" />
+                  פתח הכל
+                </button>
+                <button
+                  onClick={collapseAll}
+                  className="px-4 py-1.5 rounded-md text-[13px] font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all flex items-center gap-1"
+                >
+                  <ChevronUp className="w-3 h-3" />
+                  סגור הכל
+                </button>
+              </>
+            )}
+          </div>
 
           {/* Selection Controls */}
-          {((activeTab === "banned" && filteredBannedItems.length > 0) ||
-            (activeTab === "available" && availableItems.length > 0)) && (
+          {(filteredBannedItems.length > 0 ||
+            availableItems.length > 0 ||
+            selectedItems.size > 0) && (
             <div className="flex gap-1 mb-2 items-center bg-gray-50 p-1 rounded-md flex-shrink-0">
               <button
                 onClick={handleSelectAll}
@@ -669,32 +725,51 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
                   : "בחר הכל"}
               </button>
 
-              {selectedItems.size > 0 && (
+              {(selectedItems.size > 0 ||
+                filteredBannedItems.length > 0 ||
+                availableItems.length > 0 ) && (
                 <>
                   <span className="text-[11px] text-gray-500 bg-white px-2 py-0.5 rounded">
                     {selectedItems.size} נבחרו
-                    {selectedWithChildren.size > 0 && ` (${selectedWithChildren.size} עם ילדים)`}
+                    {selectedWithChildren.size > 0 &&
+                      ` (${selectedWithChildren.size} עם ילדים)`}
                   </span>
-                  <button
-                    onClick={handleBulkAction}
-                    disabled={isLoading}
-                    className={`py-1 px-3 rounded-md text-[11px] font-medium transition-all shadow-sm hover:shadow-md ${
-                      activeTab === "banned"
-                        ? "bg-green-500 text-white hover:bg-green-600 disabled:bg-green-300"
-                        : "bg-red-500 text-white hover:bg-red-600 disabled:bg-red-300"
-                    }`}
-                    title={
-                      activeTab === "banned"
-                        ? "שחרר פריטים נבחרים"
-                        : "חסום פריטים נבחרים"
-                    }
-                  >
-                    {activeTab === "banned" ? (
-                      <LockOpen className="w-3.5 h-3.5" />
-                    ) : (
-                      <Lock className="w-3.5 h-3.5" />
-                    )}
-                  </button>
+                  {viewMode === "grid" && (
+                    <button
+                      onClick={() => handleBulkAction()}
+                      disabled={isLoading}
+                      className={`py-1 px-3 rounded-md text-[11px] font-medium transition-all shadow-sm hover:shadow-md ${
+                        activeTab === "banned"
+                          ? "bg-green-500 text-white hover:bg-green-600 disabled:bg-green-300"
+                          : "bg-red-500 text-white hover:bg-red-600 disabled:bg-red-300"
+                      }`}
+                      title={
+                        activeTab === "banned"
+                          ? "שחרר פריטים נבחרים"
+                          : "חסום פריטים נבחרים"
+                      }
+                    >
+                      {activeTab === "banned" ? (
+                        <LockOpen className="w-3.5 h-3.5" />
+                      ) : (
+                        <Lock className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  )}
+                  {viewMode === "tree" && (
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-center py-1 px-3 bg-green-500 hover:bg-green-600 rounded-md transition-colors">
+                        <button onClick={() => handleBulkAction("banned")}>
+                          <LockOpen className="w-3.5 h-3.5 text-white" />
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-center py-1 px-3 bg-red-500 hover:bg-red-600 rounded-md transition-colors">
+                        <button onClick={() => handleBulkAction("available")}>
+                          <Lock className="w-3.5 h-3.5 text-white" />
+                        </button>
+                      </div>
+                    </div>
+                  )}{" "}
                   <button
                     onClick={() => {
                       setSelectedItems(new Map());
@@ -735,7 +810,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
         onDecline={() => {
           setShowInheritanceModal(false);
           const onlyCategories = pendingUnblockItems.filter(
-            (item) => item.type === "category"
+            (item) => item.type === "category",
           );
           if (onlyCategories.length > 0) {
             executeUnblock(onlyCategories, false);

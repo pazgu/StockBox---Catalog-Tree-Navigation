@@ -82,11 +82,7 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   const [offset, setOffset] = React.useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = React.useState(false);
   const [startPan, setStartPan] = React.useState({ x: 0, y: 0 });
-  const [isCropperOpen, setIsCropperOpen] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
-  const [committedPreview, setCommittedPreview] = React.useState<string | null>(null);
-
-
 
   const cropRef = React.useRef<HTMLDivElement>(null!);
   useBlockBrowserZoom(cropRef);
@@ -98,9 +94,6 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
       setZoom(1);
       setOffset({ x: 0, y: 0 });
       setIsPanning(false);
-      setIsCropperOpen(false);
-      setCommittedPreview(null);
-
     }
   }, [isOpen]);
 
@@ -125,7 +118,6 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
       const img = new Image();
       img.onload = () => {
         setRawImage(img);    
-        setCommittedPreview(null);
         setZoom(1);
 
         const clamped = clampOffsetToCircle(
@@ -136,14 +128,13 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
           CROP_BOX,
         );
         setOffset(clamped);
-        setIsCropperOpen(true);
       };
       img.src = reader.result as string;
     };
     reader.readAsDataURL(file);
   };
 
-  const commitCrop = () => {
+  const generateCroppedImage = () => {
     if (!rawImage) return null;
 
     const OUT = 512;
@@ -172,14 +163,7 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     ctx.drawImage(rawImage, -iw / 2, -ih / 2);
     ctx.restore();
 
-    const dataUrl = out.toDataURL("image/jpeg", 0.92);
-
-    setCommittedPreview(dataUrl);
-    setIsCropperOpen(false);
-    toast.success("התמונה נשמרה לפי המסגור שבחרת");
-
-    return dataUrl;
-
+    return out.toDataURL("image/jpeg", 0.92);
   };
 
   const handleSave = async () => {
@@ -193,22 +177,14 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
       return;
     }
 
-    if (isCropperOpen && !committedPreview) {
-      toast.error("נא ללחוץ על 'שמור תמונה' לפני שמירה");
+    const croppedDataUrl = generateCroppedImage();
+    if (!croppedDataUrl) {
+      toast.error("שגיאה ביצירת התמונה");
       return;
     }
-
-
-    if (!committedPreview) {
-      toast.error("נא לשמור את התמונה לפי המסגור שבחרת");
-      return;
-    }
-
-    const finalImage = committedPreview;
-
 
     const safeName = categoryName.trim().toLowerCase().replace(/\s+/g, "-");
-    const file = dataURLtoFile(finalImage, `${safeName}.jpg`);
+    const file = dataURLtoFile(croppedDataUrl, `${safeName}.jpg`);
 
     try {
       setIsSaving(true);
@@ -229,14 +205,12 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     }
   };
 
-
   return (
     <div
       className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       onClick={() => {
         if (!isSaving) onClose();
       }}
-
     >
       <div
         className="bg-gradient-to-br from-white via-[#fffdf8] to-[#fff9ed] rounded-2xl w-full max-w-3xl max-h-[90vh] shadow-2xl border border-gray-100 text-right overflow-hidden"
@@ -258,7 +232,6 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
             </h2>
           </div>
 
-
           <div className="group mb-5">
             <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-[#0D305B]" />
@@ -273,7 +246,6 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
               className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
             />
           </div>
-
 
           <div className="group mb-4">
             <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
@@ -293,8 +265,7 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
             />
           </div>
 
-
-          {isCropperOpen && rawImage && (
+          {rawImage && (
             <div className="w-full flex flex-col items-center mb-4">
               <div
                 ref={cropRef}
@@ -430,86 +401,61 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
               </div>
 
               <div className="flex items-center gap-2 mt-3 flex-wrap">
-  <button
-    type="button"
-    onClick={() => setZoom((z) => Math.max(1, +(z - 0.1).toFixed(2)))}
-    className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-slate-700"
-  >
-    -
-  </button>
+                <button
+                  type="button"
+                  onClick={() => setZoom((z) => Math.max(1, +(z - 0.1).toFixed(2)))}
+                  className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-slate-700"
+                >
+                  -
+                </button>
 
-  <div className="px-2 text-sm text-slate-600">זום: {zoom.toFixed(2)}</div>
+                <div className="px-2 text-sm text-slate-600">זום: {zoom.toFixed(2)}</div>
 
-  <button
-    type="button"
-    onClick={() => setZoom((z) => Math.min(4, +(z + 0.1).toFixed(2)))}
-    className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-slate-700"
-  >
-    +
-  </button>
+                <button
+                  type="button"
+                  onClick={() => setZoom((z) => Math.min(4, +(z + 0.1).toFixed(2)))}
+                  className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-slate-700"
+                >
+                  +
+                </button>
 
-  <button
-    type="button"
-    onClick={() => {
-      setZoom(1);
-      if (rawImage) {
-        setOffset(
-          clampOffsetToCircle(
-            { x: 0, y: 0 },
-            rawImage.naturalWidth,
-            rawImage.naturalHeight,
-            1,
-            CROP_BOX,
-          ),
-        );
-      } else {
-        setOffset({ x: 0, y: 0 });
-      }
-    }}
-    className="ml-2 px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-slate-700"
-  >
-    איפוס
-  </button>
-
-  {/* ✅ moved here */}
-  <button
-    type="button"
-    onClick={commitCrop}
-    disabled={isSaving}
-    className={`ml-2 px-5 py-2 rounded-xl text-white font-bold shadow-md transition-all
-      ${isSaving ? "bg-slate-400 cursor-not-allowed" : "bg-[#0D305B] hover:bg-[#15457a]"}
-    `}
-  >
-    השתמש בתמונה
-  </button>
-</div>
-
-
-
+                <button
+                  type="button"
+                  onClick={() => {
+                    setZoom(1);
+                    if (rawImage) {
+                      setOffset(
+                        clampOffsetToCircle(
+                          { x: 0, y: 0 },
+                          rawImage.naturalWidth,
+                          rawImage.naturalHeight,
+                          1,
+                          CROP_BOX,
+                        ),
+                      );
+                    } else {
+                      setOffset({ x: 0, y: 0 });
+                    }
+                  }}
+                  className="ml-2 px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-slate-700"
+                >
+                  איפוס
+                </button>
+              </div>
             </div>
           )}
 
-          {!isCropperOpen && committedPreview && (
-  <img
-    src={committedPreview}
-    alt="preview"
-    className="max-w-full mt-2.5 rounded-xl mb-4 h-40 object-cover shadow-sm"
-  />
-)}
-
-
           <div className="flex justify-between gap-3">
             <button
-  onClick={handleSave}
-  disabled={isSaving || (isCropperOpen && !committedPreview)}
-  className={`flex-1 p-3 rounded-lg text-base font-medium transition-all duration-200 text-white shadow-md
+              onClick={handleSave}
+              disabled={isSaving}
+              className={`flex-1 p-3 rounded-lg text-base font-medium transition-all duration-200 text-white shadow-md
     ${
-      isSaving || (isCropperOpen && !committedPreview)
-        ? "bg-slate-400 cursor-not-allowed"
-        : "bg-slate-700 hover:bg-slate-600 hover:-translate-y-px hover:shadow-lg"
-    }`}
->
-
+                isSaving
+                  ? "bg-slate-400 cursor-not-allowed"
+                  : "bg-slate-700 hover:bg-slate-600 hover:-translate-y-px hover:shadow-lg"
+              }`}
+            >
               {isSaving ? (
                 <span className="flex items-center justify-center gap-2">
                   <Spinner className="size-4 text-white" />
@@ -519,7 +465,6 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
                 "שמור"
               )}
             </button>
-
 
             <button
               onClick={onClose}
@@ -532,13 +477,10 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
             >
               ביטול
             </button>
-
           </div>
         </div>
       </div>
     </div>
-
-
   );
 };
 
