@@ -87,10 +87,8 @@ const ProductPermissions: React.FC = () => {
   }
 
   useEffect(() => {
-  // ✅ 1) WAIT for role to exist (prevents refresh redirect)
   if (!role) return;
 
-  // ✅ 2) ONLY after role is loaded, enforce access
   if (role !== "editor") {
     navigate("/");
     return;
