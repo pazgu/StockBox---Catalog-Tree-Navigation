@@ -190,7 +190,7 @@ const EditCategoryModal: React.FC<Props> = ({
   const trimmed = name.trim();
 
   if (!trimmed) {
-    toast.error("שם קטגוריה חובה");
+     toast.error("שם קטגוריה חובה");
     return;
   }
 
@@ -213,18 +213,8 @@ const EditCategoryModal: React.FC<Props> = ({
 
   try {
     setIsSaving(true);
-    await onSave(updated);
-    toast.success("הקטגוריה עודכנה בהצלחה");
+    await onSave(updated); 
   } catch (error: any) {
-    const serverMessage =
-      error?.response?.data?.message || error?.response?.data?.error;
-
-    if (typeof serverMessage === "string" && serverMessage.trim()) {
-      toast.error(serverMessage);
-    } else {
-      toast.error("שגיאה בעדכון הקטגוריה");
-    }
-
     console.error("Edit category failed:", error);
   } finally {
     setIsSaving(false);
@@ -266,7 +256,6 @@ const EditCategoryModal: React.FC<Props> = ({
           <span>עריכת קטגוריה</span>
         </h2>
       </div>
-
       {/* Name field */}
       <div className="group mb-5">
         <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
@@ -475,35 +464,39 @@ const EditCategoryModal: React.FC<Props> = ({
 
       {/* Actions */}
       <div className="flex justify-end gap-4 mt-8 pt-6 border-t-2 border-gray-200">
-        <button
-          onClick={onClose}
-          disabled={isSaving}
-          className={`px-6 py-3 rounded-xl border-2 border-gray-300 transition-colors font-bold
-            ${isSaving ? "bg-gray-100 text-gray-300 cursor-not-allowed" : "bg-white text-gray-700 hover:bg-gray-50"}`}
-        >
-          ביטול
-        </button>
+      <button
+        onClick={handleSave}
+        disabled={isSaving}
+        className={`px-8 py-3 rounded-xl text-white transition-colors font-bold shadow-lg
+          ${
+            isSaving
+              ? "bg-slate-400 cursor-not-allowed"
+              : "bg-[#0D305B] hover:bg-[#15457a] hover:to-[#1e5a9e] hover:shadow-xl"
+          }`}
+      >
+        {isSaving ? (
+          <span className="flex items-center justify-center gap-2">
+            <Spinner className="size-4 text-white" />
+            שומר...
+          </span>
+        ) : (
+          "שמור שינויים"
+        )}
+      </button>
+      <button
+        onClick={onClose}
+        disabled={isSaving}
+        className={`px-6 py-3 rounded-xl border-2 border-gray-300 transition-colors font-bold
+          ${
+            isSaving
+              ? "bg-gray-100 text-gray-300 cursor-not-allowed"
+              : "bg-white text-gray-700 hover:bg-gray-50"
+          }`}
+      >
+        ביטול
+      </button>
+    </div>
 
-        <button
-          onClick={handleSave}
-          disabled={isSaving}
-          className={`px-8 py-3 rounded-xl text-white transition-colors font-bold shadow-lg
-            ${
-              isSaving
-                ? "bg-slate-400 cursor-not-allowed"
-                : "bg-gradient-to-r from-[#0D305B] to-[#15457a] hover:from-[#15457a] hover:to-[#1e5a9e] hover:shadow-xl"
-            }`}
-        >
-          {isSaving ? (
-            <span className="flex items-center justify-center gap-2">
-              <Spinner className="size-4 text-white" />
-              שומר...
-            </span>
-          ) : (
-            "שמור שינויים"
-          )}
-        </button>
-      </div>
     </div>
   </div>
     </div>
