@@ -17,6 +17,7 @@ import {
   UseInterceptors,
   UploadedFile,
   UseGuards,
+  NotFoundException,
 } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dtos/CreateCategory.dto';
@@ -81,6 +82,24 @@ export class CategoriesController {
   ) {
     return await this.categoriesService.moveCategory(id, moveCategoryDto);
   }
+
+
+  @Get('by-path/*path')
+async getCategoryByPath(@Req() request: any) {
+  const fullUrl = request.url;
+  const pathPart = fullUrl.split('by-path/')[1];
+
+  if (!pathPart) {
+    throw new NotFoundException('Path not provided');
+  }
+
+  const decodedPath = decodeURIComponent(pathPart);
+  
+  return await this.categoriesService.getCategoryByPath(
+    decodedPath,
+    request.user,
+  );
+}
 
   @Patch(':id')
   @UsePipes(new ValidationPipe({ transform: true }))
