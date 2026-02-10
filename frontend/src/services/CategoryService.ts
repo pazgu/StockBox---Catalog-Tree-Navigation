@@ -76,6 +76,23 @@ class CategoriesService {
     }
   }
 
+  async getCategoryByPath(path: string): Promise<CategoryDTO> {
+    try {
+      let cleanPath = path.startsWith("/") ? path.substring(1) : path;
+      if (cleanPath.startsWith("categories/")) {
+        cleanPath = cleanPath.substring("categories/".length);
+      }
+
+      const response = await api.get<CategoryDTO>(
+        `${this.baseUrl}/by-path/${cleanPath}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching category by path:", error);
+      throw error;
+    }
+  }
+
   async deleteCategory(
   id: string,
   strategy: "cascade" | "move_up" = "cascade",

@@ -385,9 +385,9 @@ const AllUsers: FC<AllUsersProps> = () => {
               </div>
 
               <div>
-                <div className="text-sm text-gray-600">שם:</div>
+                <div className="text-sm text-gray-600">{user.approved ? "שם:" : "שם משתמש:"}</div>
                 <div className="font-semibold text-[#0D305B]">
-                  {user.firstName}
+                  {user.approved ? user.firstName : user.userName}
                 </div>
 
                 <div className="text-sm text-gray-600">{user.email}</div>
@@ -486,11 +486,11 @@ const AllUsers: FC<AllUsersProps> = () => {
       </small>
 
       <div className={MODAL_FOOTER}>
-        <button className={BTN_CANCEL} onClick={cancelDelete}>
-          ביטול
-        </button>
         <button className={BTN_DANGER} onClick={confirmDelete}>
           מחיקה
+        </button>
+        <button className={BTN_CANCEL} onClick={cancelDelete}>
+          ביטול
         </button>
       </div>
     </div>
@@ -518,22 +518,22 @@ const AllUsers: FC<AllUsersProps> = () => {
       </small>
 
       <div className={MODAL_FOOTER}>
-        <button
-          className={BTN_CANCEL}
-          onClick={() => setBlockUserIndex(null)}
-        >
-          ביטול
-        </button>
+      <button
+        className={
+          currentUsers[blockUserIndex].isBlocked ? BTN_SUCCESS : BTN_DANGER
+        }
+        onClick={confirmBlock}
+      >
+        {currentUsers[blockUserIndex].isBlocked ? "בטל חסימה" : "חסום"}
+      </button>
 
-        <button
-          className={
-            currentUsers[blockUserIndex].isBlocked ? BTN_SUCCESS : BTN_DANGER
-          }
-          onClick={confirmBlock}
-        >
-          {currentUsers[blockUserIndex].isBlocked ? "בטל חסימה" : "חסום"}
-        </button>
-      </div>
+      <button
+        className={BTN_CANCEL}
+        onClick={() => setBlockUserIndex(null)}
+      >
+        ביטול
+      </button>
+    </div>
     </div>
   </div>
 )}
@@ -657,21 +657,22 @@ const AllUsers: FC<AllUsersProps> = () => {
               </div>
 
               {/* Action buttons */}
-              <div className="flex justify-end gap-4 mt-8 pt-6 border-t-2 border-gray-200">
-                <button
-                  className="px-6 py-3 rounded-xl border-2 border-gray-300 hover:bg-gray-50 transition-colors font-bold text-gray-700"
-                  onClick={handleCancelEdit}
-                >
-                  ביטול
-                </button>
-                <button
-                  className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#0D305B] to-[#15457a] text-white hover:from-[#15457a] hover:to-[#1e5a9e] transition-colors font-bold shadow-lg hover:shadow-xl"
-                  onClick={handleSaveEdit}
-                >
-                  שמור שינויים
-                </button>
-              </div>
+      <div className="flex justify-end gap-4 mt-8 pt-6 border-t-2 border-gray-200">
+              <button
+                className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#0D305B] to-[#15457a] text-white hover:from-[#15457a] hover:to-[#1e5a9e] transition-colors font-bold shadow-lg hover:shadow-xl"
+                onClick={handleSaveEdit}
+              >
+                שמור שינויים
+              </button>
+
+              <button
+                className="px-6 py-3 rounded-xl border-2 border-gray-300 hover:bg-gray-50 transition-colors font-bold text-gray-700"
+                onClick={handleCancelEdit}
+              >
+                ביטול
+              </button>
             </div>
+             </div>
           </div>
         )}
       </main>

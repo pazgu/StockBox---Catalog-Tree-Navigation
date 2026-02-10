@@ -73,6 +73,7 @@ export const Categories: FC<CategoriesProps> = () => {
   const [hasDescendantsForMove, setHasDescendantsForMove] = useState<
     boolean | null
   >(null);
+  const [productToMoveToRecycleBin, setProductToMoveToRecycleBin] = useState<DisplayItem | null>(null);
 
   const openDuplicateForProduct = (item: DisplayItem) => {
     setDuplicateProductId(item.id);
@@ -223,31 +224,40 @@ export const Categories: FC<CategoriesProps> = () => {
 
     setShowMoveToRecycleBinModal(true);
   };
+  const handleMoveProductToRecycleBin = async (product: DisplayItem) => {
+    setProductToMoveToRecycleBin(product);
+    setHasDescendantsForMove(false);
+    setShowMoveToRecycleBinModal(true);
+  };
 
   const confirmMoveToRecycleBin = async (strategy: "cascade" | "move_up") => {
-    if (!categoryToMoveToRecycleBin) return;
-
     try {
       setIsMovingToRecycleBin(true);
       setMoveStrategyLoading(strategy);
 
       await new Promise((r) => setTimeout(r, 800));
 
-      await recycleBinService.moveCategoryToRecycleBin(
-        categoryToMoveToRecycleBin._id,
-        strategy,
-      );
+      if (categoryToMoveToRecycleBin) {
+        await recycleBinService.moveCategoryToRecycleBin(
+          categoryToMoveToRecycleBin._id,
+          strategy,
+        );
 
+        toast.success(
+          strategy === "cascade"
+            ? `הקטגוריה "${categoryToMoveToRecycleBin.categoryName}" הועברה לסל המיחזור!`
+            : `הקטגוריה "${categoryToMoveToRecycleBin.categoryName}" הועברה לסל המיחזור והתכנים הועברו שכבה אחת למעלה!`,
+        );
+      } else if (productToMoveToRecycleBin) {
+        await recycleBinService.moveProductToRecycleBin(productToMoveToRecycleBin.id);
+        
+        toast.success(`המוצר "${productToMoveToRecycleBin.name}" הועבר לסל המיחזור!`);
+      }
       await loadCategoriesAndFavorites();
-
-      toast.success(
-        strategy === "cascade"
-          ? `הקטגוריה "${categoryToMoveToRecycleBin.categoryName}" הועברה לסל המיחזור!`
-          : `הקטגוריה "${categoryToMoveToRecycleBin.categoryName}" הועברה לסל המיחזור והתכנים הועברו שכבה אחת למעלה!`,
-      );
 
       setShowMoveToRecycleBinModal(false);
       setCategoryToMoveToRecycleBin(null);
+      setProductToMoveToRecycleBin(null);
 
     } catch (error) {
       toast.error("שגיאה בהעברה לסל המיחזור");
@@ -270,6 +280,7 @@ export const Categories: FC<CategoriesProps> = () => {
     setShowEditModal(false);
     setCategoryToMoveToRecycleBin(null);
     setCategoryToEdit(null);
+    setProductToMoveToRecycleBin(null);
   };
 
   const handleAddCategory = async ({ name, imageFile }: AddCategoryResult) => {
@@ -551,64 +562,66 @@ export const Categories: FC<CategoriesProps> = () => {
                       </div>
                     </div>
 
-                    <div className="absolute right-3 top-3 flex flex-col gap-2">
-                      <div className="relative">
+                    <div className="absolute right-3 top-3">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          toggleFavorite(item.id, item.name, "product");
+                        }}
+                        className="peer h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110 transition-all duration-200"
+                      >
+                        <Heart
+                          size={22}
+                          strokeWidth={2}
+                          className={
+                            item.favorite
+                              ? "fill-red-500 text-red-500"
+                              : "text-gray-700"
+                          }
+                        />
+                      </button>
+                      <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                        {item.favorite ? "הסר ממועדפים" : "הוסף למועדפים"}
+                      </span>
+                    </div>
+
+                    {role === "editor" && (
+                      <>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            toggleFavorite(item.id, item.name, "product");
+                            openMoveForItem(item);
                           }}
-                          className="peer h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110 transition-all duration-200"
+                          className="absolute bottom-3 right-3 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-blue-500 hover:scale-110"
+                          title="העבר מוצר"
                         >
-                          <Heart
-                            size={22}
-                            strokeWidth={2}
-                            className={
-                              item.favorite
-                                ? "fill-red-500 text-red-500"
-                                : "text-gray-700"
-                            }
-                          />
+                          <FolderInput size={18} />
                         </button>
-                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                          {item.favorite ? "הסר ממועדפים" : "הוסף למועדפים"}
-                        </span>
-                      </div>
 
-                      {role === "editor" && (
-                        <div className="relative">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openMoveForItem(item);
-                            }}
-                            className="peer h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110 transition-all duration-200 text-gray-700"
-                          >
-                            <FolderInput size={20} />
-                          </button>
-                          <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                            העבר מוצר
-                          </span>
-                        </div>
-                      )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openDuplicateForProduct(item);
+                          }}
+                          className="absolute bottom-3 right-12 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-purple-500 hover:scale-110"
+                          title="שכפל מוצר"
+                        >
+                          <Copy size={18} />
+                        </button>
 
-                      {role === "editor" && (
-                        <div className="relative">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openDuplicateForProduct(item);
-                            }}
-                            className="peer h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110 transition-all duration-200 text-gray-700"
-                          >
-                            <Copy size={20} />
-                          </button>
-                          <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                            שכפל מוצר
-                          </span>
-                        </div>
-                      )}
-                    </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMoveProductToRecycleBin(item);
+                          }}
+                          className="absolute bottom-3 left-3 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-orange-500 hover:scale-110"
+                          title="העבר לסל מיחזור"
+                        >
+                          <Trash size={18} />
+                        </button>
+                      </>
+                    )}
 
                     <div className="h-36 w-full flex justify-center items-center p-5 rounded-none mr-2">
                       <ImagePreviewHover
@@ -622,6 +635,21 @@ export const Categories: FC<CategoriesProps> = () => {
                       <h2 className="text-[1.1rem] text-[#0D305B] mb-2">
                         {item.name}
                       </h2>
+                      {role === "editor" && (
+                        <div className="mt-2 flex justify-center">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPreviousPath(location.pathname);
+                              navigate(`/permissions/product/${item.id}`);
+                            }}
+                            className="flex items-center gap-2 text-sm font-medium text-white bg-[#0D305B] px-4 py-2 shadow-md transition-all duration-300 hover:bg-[#16447A] hover:shadow-lg focus:ring-2 focus:ring-[#0D305B]/40"
+                          >
+                            <Lock size={16} className="text-white" />
+                            ניהול הרשאות
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -651,11 +679,9 @@ export const Categories: FC<CategoriesProps> = () => {
           className="fixed bottom-8 right-8 w-16 h-16 bg-slate-700 rounded-full flex items-center justify-center text-3xl text-white cursor-pointer transition-all duration-200 hover:scale-105 hover:bg-slate-600 group z-50 shadow-lg"
           onClick={() => setShowAddCatModal(true)}
         >
-          {/* Tooltip - positioned to the left of the button */}
           <span className="absolute right-full mr-4 bg-gray-800 text-white text-xs px-3 py-2 rounded opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none shadow-xl">
             הוספת קטגוריה חדשה
           </span>
-
           <svg
             width="24"
             height="24"
@@ -680,7 +706,7 @@ export const Categories: FC<CategoriesProps> = () => {
             onSave={handleAddCategory}
           />
 
-          {showMoveToRecycleBinModal && categoryToMoveToRecycleBin && (
+          {showMoveToRecycleBinModal && (categoryToMoveToRecycleBin || productToMoveToRecycleBin) && (
             <div
               className="fixed inset-0 bg-slate-800 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 transition-all duration-300"
               onClick={closeAllModals}
@@ -694,12 +720,21 @@ export const Categories: FC<CategoriesProps> = () => {
                 </h4>
 
                 <p className="text-slate-700 mb-3">
-                  האם ברצונך להעביר את הקטגוריה "
-                  {categoryToMoveToRecycleBin.categoryName}" לסל המיחזור?
+                  {categoryToMoveToRecycleBin ? (
+                    <>
+                      האם ברצונך להעביר את הקטגוריה "
+                      {categoryToMoveToRecycleBin.categoryName}" לסל המיחזור?
+                    </>
+                  ) : (
+                    <>
+                      האם ברצונך להעביר את המוצר "
+                      {productToMoveToRecycleBin?.name}" לסל המיחזור?
+                    </>
+                  )}
                 </p>
 
                 <div className="flex flex-col gap-3 mt-5">
-                  {hasDescendantsForMove ? (
+                  {hasDescendantsForMove && categoryToMoveToRecycleBin ? (
                     <>
                       <button
                         onClick={() => confirmMoveToRecycleBin("cascade")}
