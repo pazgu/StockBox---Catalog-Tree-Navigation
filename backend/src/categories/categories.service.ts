@@ -67,6 +67,22 @@ export class CategoriesService {
     }
   }
 
+  async getCategoryByPath(categoryPath: string, user: any): Promise<Category> {
+  const fullPath = categoryPath.startsWith('/categories/')
+    ? categoryPath
+    : `/categories/${categoryPath}`;
+
+  const category = await this.categoryModel.findOne({ 
+    categoryPath: fullPath 
+  });
+
+  if (!category) {
+    throw new NotFoundException(`Category not found at path: ${fullPath}`);
+  }
+
+  return category;
+}
+
   async getCategories(user: { userId: string; role: string }) {
     const categories = await this.categoryModel.find({
       categoryPath: /^\/categories\/[^\/]+$/,
