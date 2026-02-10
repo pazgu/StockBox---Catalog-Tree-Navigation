@@ -143,7 +143,9 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
     return (
       <div key={cat._id} style={{ marginRight: `${level * 20}px` }}>
         <label
-          className={`flex items-center gap-2 p-3 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-all mb-2 ${
+             className={`flex items-center gap-2 p-3 border-2 rounded-lg ${
+     (isCurrentPath && !isSourceSelection) ? "" : "cursor-pointer hover:bg-gray-50"
+   } transition-all mb-2 ${
             isSelected
               ? "border-slate-700 bg-slate-50"
               : isCurrentPath && !isSourceSelection
@@ -172,21 +174,23 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
             </button>
           )}
 
-          <input
-            type="radio"
-            name={isSourceSelection ? "source" : "destination"}
-            value={cat.categoryPath}
-            checked={isSelected}
-            onChange={(e) => {
-              if (isSourceSelection) {
-                setSourceCategoryPath(e.target.value);
-              } else {
-                setDestinationCategoryPath(e.target.value);
-              }
-            }}
-            className="w-4 h-4"
-            disabled={loading}
-          />
+            {!(isCurrentPath && !isSourceSelection) && (
+                <input
+                  type="radio"
+                  name={isSourceSelection ? "source" : "destination"}
+                  value={cat.categoryPath}
+                  checked={isSelected}
+                  onChange={(e) => {
+                    if (isSourceSelection) {
+                      setSourceCategoryPath(e.target.value);
+                    } else {
+                      setDestinationCategoryPath(e.target.value);
+                    }
+                  }}
+                  className="w-4 h-4"
+                  disabled={loading}
+                />
+              )}
 
           <div className="flex items-center gap-2 flex-1">
             {cat.categoryImage && (
