@@ -50,11 +50,21 @@ export class CategoriesService {
     }
 
     const newCategory = new this.categoryModel(createCategoryDto);
-    const savedCategory = await newCategory.save();
+    try {
+      const savedCategory = await newCategory.save();
 
-    await this.permissionsService.assignPermissionsForNewEntity(savedCategory);
+      await this.permissionsService.assignPermissionsForNewEntity(
+        savedCategory,
+      );
 
-    return savedCategory;
+      return savedCategory;
+    } catch (err: any) {
+      if (err?.code === 11000 || /duplicate key/i.test(err?.message || '')) {
+        throw new BadRequestException('שם זה כבר קיים. אנא בחר שם ייחודי אחר.');
+      }
+
+      throw err;
+    }
   }
 
   async getCategories(user: { userId: string; role: string }) {
@@ -307,9 +317,7 @@ export class CategoriesService {
       });
 
       if (dup) {
-        throw new BadRequestException(
-          'A category with this name already exists in this location',
-        );
+        throw new BadRequestException('שם זה כבר קיים. אנא בחר שם ייחודי אחר.');
       }
 
       updateCategoryDto.categoryPath = newCategoryPath;
@@ -423,9 +431,7 @@ export class CategoriesService {
     });
 
     if (existingCategory) {
-      throw new BadRequestException(
-        'A category with this name already exists at the destination',
-      );
+      throw new BadRequestException('שם זה כבר קיים. אנא בחר שם ייחודי אחר.');
     }
 
     category.categoryPath = newPath;
