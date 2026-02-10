@@ -385,9 +385,9 @@ const AllUsers: FC<AllUsersProps> = () => {
               </div>
 
               <div>
-                <div className="text-sm text-gray-600">שם:</div>
+                <div className="text-sm text-gray-600">{user.approved ? "שם:" : "שם משתמש:"}</div>
                 <div className="font-semibold text-[#0D305B]">
-                  {user.firstName}
+                  {user.approved ? user.firstName : user.userName}
                 </div>
 
                 <div className="text-sm text-gray-600">{user.email}</div>
