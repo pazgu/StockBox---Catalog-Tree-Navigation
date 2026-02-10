@@ -36,6 +36,23 @@ import MoveMultipleItemsModal from "./MoveMultipleItemsModal/MoveMultipleItemsMo
 import { usePath } from "../../../../context/PathContext";
 import ImagePreviewHover from "../../ProductArea/ImageCarousel/ImageCarousel/ImagePreviewHover";
 
+const hasImage = (images: any): boolean => {
+  if (!images) return false;
+  if (typeof images === "string") return images.trim().length > 0;
+  if (Array.isArray(images)) return images.length > 0 && !!images[0];
+
+  return false;
+};
+
+const NoImageCard: React.FC<{ label?: string }> = ({ label = "אין תמונה" }) => {
+  return (
+    <div className="h-full w-[75%] mx-auto flex flex-col items-center justify-center gap-2 rounded-md border border-dashed border-gray-300 bg-white/40">
+      <div className="text-gray-400 text-sm">{label}</div>
+    </div>
+  );
+};
+
+
 const SingleCat: FC = () => {
   const [items, setItems] = useState<DisplayItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -310,11 +327,9 @@ const SingleCat: FC = () => {
           "cascade",
         );
         toast.success(`הקטגוריה "${itemToDelete.name}" הועברה לסל המיחזור!`);
-        navigate("/recycle-bin");
       } else {
         await recycleBinService.moveProductToRecycleBin(itemToDelete.id);
         toast.success(`המוצר "${itemToDelete.name}" הועבר לסל המיחזור!`);
-        navigate("/recycle-bin");
       }
 
       await loadAllContent();
@@ -358,7 +373,6 @@ const SingleCat: FC = () => {
       toast.success(`המוצר "${itemToDelete.name}" הועבר לסל המיחזור!`);
       setItems(items.filter((item) => item.id !== itemToDelete.id));
 
-      navigate("/recycle-bin");
     } catch (error) {
       toast.error("שגיאה בהעברה לסל המיחזור");
     } finally {
@@ -426,7 +440,6 @@ const SingleCat: FC = () => {
           : `הקטגוריה "${itemToDelete.name}" הועברה לסל המיחזור והתכנים הועברו שכבה אחת למעלה!`,
       );
 
-      navigate("/recycle-bin");
     } catch (error) {
       toast.error("שגיאה בהעברת הקטגוריה לסל המיחזור");
     } finally {
@@ -482,7 +495,16 @@ const SingleCat: FC = () => {
       setShowAddProductModal(false);
     } catch (error: any) {
       console.error("Save Error:", error);
-      toast.error(error.message || "שגיאה בהוספת המוצר");
+      const serverMessage =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message;
+
+      if (typeof serverMessage === "string" && serverMessage.trim()) {
+        toast.error(serverMessage);
+      } else {
+        toast.error("שגיאה בהוספת המוצר");
+      }
     }
   };
 
@@ -511,7 +533,15 @@ const SingleCat: FC = () => {
       toast.success(`הקטגוריה "${data.name}" נוספה בהצלחה!`);
       setShowAddSubCategoryModal(false);
     } catch (error) {
-      toast.error("שגיאה בהוספת קטגוריה");
+      const serverMessage =
+        (error as any)?.response?.data?.message ||
+        (error as any)?.response?.data?.error;
+
+      if (typeof serverMessage === "string" && serverMessage.trim()) {
+        toast.error(serverMessage);
+      } else {
+        toast.error("שגיאה בהוספת קטגוריה");
+      }
     }
   };
 
@@ -716,48 +746,64 @@ const SingleCat: FC = () => {
             {role === "editor" && !isSelectionMode && (
               <>
                 {item.type === "product" && (
-                  <button
-                    title="שכפול לקטגוריות נוספות"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDuplicate(item);
-                    }}
-                    className="absolute bottom-3 right-12 group-hover:opacity-100 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-purple-500 hover:scale-110"
-                  >
-                    <Copy size={18} />
-                  </button>
+                  <div className="absolute bottom-5 right-12">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDuplicate(item);
+                      }}
+                      className="peer group-hover:opacity-100 h-9 w-9 text-gray-700 flex items-center hover:text-purple-500"
+                    >
+                      <Copy size={18} />
+                    </button>
+                    <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                      שכפול לקטגוריות נוספות
+                    </span>
+                  </div>
                 )}
-                <button
-                  title="העברה לקטגוריה אחרת"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleMove(item);
-                  }}
-                  className="absolute bottom-3 right-3 group-hover:opacity-100 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-blue-500 hover:scale-110"
-                >
-                  <FolderInput size={18} />
-                </button>
-                <button
-                  title="העבר לסל מיחזור"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleMoveToRecycleBin(item);
-                  }}
-                  className="absolute bottom-3 left-3 group-hover:opacity-100 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-orange-500 hover:scale-110"
-                >
-                  <Trash size={18} />
-                </button>
-                {item.type === "category" && (
+                <div className="absolute bottom-5 right-3">
                   <button
-                    title="עריכת קטגוריה"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleEdit(item);
+                      handleMove(item);
                     }}
-                    className="absolute bottom-3 left-12 group-hover:opacity-100 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-green-500 hover:scale-110"
+                    className="peer group-hover:opacity-100 h-9 w-9 text-gray-700 flex items-center hover:text-blue-500"
                   >
-                    <Pen size={18} />
+                    <FolderInput size={18} />
                   </button>
+                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                    העברה לקטגוריה אחרת
+                  </span>
+                </div>
+                <div className="absolute bottom-5 left-3">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleMoveToRecycleBin(item);
+                    }}
+                    className="peer group-hover:opacity-100 h-9 w-9 text-gray-700 flex items-center hover:text-orange-500"
+                  >
+                    <Trash size={18} />
+                  </button>
+                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                    העבר לסל מיחזור
+                  </span>
+                </div>
+                {item.type === "category" && (
+                  <div className="absolute bottom-5 left-12">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(item);
+                      }}
+                      className="peer group-hover:opacity-100 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-green-500"
+                    >
+                      <Pen size={18} />
+                    </button>
+                    <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                      עריכת קטגוריה
+                    </span>
+                  </div>
                 )}
               </>
             )}
@@ -798,21 +844,32 @@ const SingleCat: FC = () => {
                 }
               }}
             >
-              {item.type === "category" ? (
-                <img
-                  src={item.images as string}
-                  alt={item.name}
-                  className="max-h-full max-w-full object-contain"
-                />
-              ) : (
-                <div className="h-full w-full flex justify-center items-center">
-                  <ImagePreviewHover
-                    images={item.images}
-                    alt={item.name}
-                    className="w-full h-full"
-                  />
-                </div>
-              )}
+             {item.type === "category" ? (
+  hasImage(item.images) ? (
+    <img
+      src={item.images as string}
+      alt={item.name}
+      className="max-h-full max-w-full object-contain"
+      onError={(e) => {
+        // if URL exists but fails to load, fallback to placeholder
+        (e.currentTarget as HTMLImageElement).style.display = "none";
+      }}
+    />
+  ) : (
+    <NoImageCard label="אין תמונה לקטגוריה" />
+  )
+) : hasImage(item.images) ? (
+  <div className="h-full w-full flex justify-center items-center">
+    <ImagePreviewHover
+      images={item.images}
+      alt={item.name}
+      className="w-full h-full"
+    />
+  </div>
+) : (
+  <NoImageCard label="אין תמונה למוצר" />
+)}
+
             </div>
 
             <div className="w-full text-center pt-4 border-t border-gray-200">
@@ -825,7 +882,7 @@ const SingleCat: FC = () => {
                       e.stopPropagation();
                       handleManagePermissions(item.id, item.type);
                     }}
-                    className="flex items-center gap-2 text-sm font-medium text-white bg-[#0D305B] px-4 py-2 shadow-md transition-all duration-300 hover:bg-[#16447A] hover:shadow-lg focus:ring-2 focus:ring-[#0D305B]/40"
+                    className="flex items-center gap-2 text-sm font-medium text-white bg-[#0D305B] px-4 py-2 shadow-md transition-all duration-300 hover:bg-[#16447A] hover:shadow-lg focus:ring-2 focus:ring-[#0D305B]/40 border-none rounded"
                   >
                     <Lock size={16} className="text-white" />
                     ניהול הרשאות
@@ -842,21 +899,23 @@ const SingleCat: FC = () => {
           {/* Main Trigger Button - with its own hover group */}
           <div className="group">
             <button
-              className="w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 z-10"
-              title="הוסף"
+              className="peer w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 z-10"
             >
               <span className="text-3xl font-light p-7">+</span>
             </button>
+            <span className="absolute -top-2 left-16 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+              הוסף
+            </span>
 
             {/* Popup buttons container */}
             <div className="absolute bottom-full left-0 mb-3 flex flex-col-reverse gap-3 opacity-0 scale-0 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 pointer-events-none group-hover:pointer-events-auto">
               {/* Product Button */}
               <button
                 onClick={() => setShowAddProductModal(true)}
-                className="group/btn w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 relative"
+                className="peer/btn w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 relative"
               >
                 <FilePlus2Icon size={24} />
-                <span className="absolute left-16 bg-gray-800 text-white text-xs px-3 py-1 rounded opacity-0 group-hover/btn:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none">
+                <span className="absolute left-16 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover/btn:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
                   הוסף מוצר
                 </span>
               </button>
@@ -864,7 +923,7 @@ const SingleCat: FC = () => {
               {/* Sub-Category Button */}
               <button
                 onClick={() => setShowAddSubCategoryModal(true)}
-                className="group/btn w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 relative"
+                className="peer/btn w-14 h-14 bg-stockblue rounded-full flex items-center justify-center text-white shadow-lg hover:bg-stockblue/90 transition-all duration-300 relative"
               >
                 <svg
                   color="white"
@@ -880,7 +939,7 @@ const SingleCat: FC = () => {
                 >
                   <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2zm-10-8v6m-3-3h6" />
                 </svg>
-                <span className="absolute left-16 bg-gray-800 text-white text-xs px-3 py-1 rounded opacity-0 group-hover/btn:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none">
+                <span className="absolute left-16 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover/btn:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
                   הוסף תת-קטגוריה
                 </span>
               </button>

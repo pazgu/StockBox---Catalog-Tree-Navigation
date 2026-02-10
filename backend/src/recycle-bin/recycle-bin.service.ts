@@ -337,7 +337,7 @@ private async restoreCategory(recycleBinItem: RecycleBin, restoreChildren: boole
   });
   if (existing) {
     throw new BadRequestException(
-      'Cannot restore: a category already exists at this path',
+      'שם זה כבר קיים. אנא בחר שם ייחודי אחר.',
     );
   }
 

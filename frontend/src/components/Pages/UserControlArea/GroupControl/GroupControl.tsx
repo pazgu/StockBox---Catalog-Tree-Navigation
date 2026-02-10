@@ -35,6 +35,8 @@ const GroupControl: React.FC = () => {
   const [groups, setGroups] = useState<Group[]>([]);
   const [isBannedLoading, setIsBannedLoading] = useState(false);
   const MAX_GROUP_NAME_LEN = 30;
+  const SELECTED_GROUP_STORAGE_KEY = "groupControl:selectedGroupId";
+
 
 
 useEffect(() => {
@@ -44,10 +46,24 @@ useEffect(() => {
 }, [selectedGroup]);
 
   useEffect(() => {
-    if (role !== "editor") {
-      navigate("/");
-    }
-  }, [navigate, role]);
+  if (!role) return;
+  if (role !== "editor") {
+    navigate("/", { replace: true });
+  }
+}, [navigate, role]);
+
+useEffect(() => {
+  const savedGroupId = localStorage.getItem(SELECTED_GROUP_STORAGE_KEY);
+  if (savedGroupId) setSelectedGroup(savedGroupId);
+}, []);
+
+useEffect(() => {
+  if (selectedGroup) {
+    localStorage.setItem(SELECTED_GROUP_STORAGE_KEY, selectedGroup);
+  }
+}, [selectedGroup]);
+
+
 
   useEffect(() => {
     if (showAddGroupModal && inputRef.current) inputRef.current.focus();
@@ -62,10 +78,15 @@ useEffect(() => {
       const transformedGroups = await groupService.getGroups();
       
       setGroups(transformedGroups);
-      
-      if (transformedGroups.length > 0 && !selectedGroup) {
-        setSelectedGroup(transformedGroups[0].id);
-      }
+
+const savedGroupId = localStorage.getItem(SELECTED_GROUP_STORAGE_KEY);
+const exists = savedGroupId && transformedGroups.some((g) => g.id === savedGroupId);
+
+if (!selectedGroup) {
+  if (exists) setSelectedGroup(savedGroupId!);
+  else if (transformedGroups.length > 0) setSelectedGroup(transformedGroups[0].id);
+}
+
     } catch (error) {
       console.error("Error fetching groups:", error);
       toast.error("שגיאה בטעינת קבוצות");

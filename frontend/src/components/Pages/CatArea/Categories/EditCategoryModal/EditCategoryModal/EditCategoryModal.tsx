@@ -104,14 +104,14 @@ const EditCategoryModal: React.FC<Props> = ({
   };
 
   const commitEditCrop = () => {
-  if (!editRawImage) return;
+  if (!editRawImage) return null;
 
   const OUT = 512;
   const canvas = document.createElement("canvas");
   canvas.width = OUT;
   canvas.height = OUT;
   const ctx = canvas.getContext("2d");
-  if (!ctx) return;
+  if (!ctx) return null;
 
   const iw = editRawImage.naturalWidth;
   const ih = editRawImage.naturalHeight;
@@ -142,12 +142,7 @@ const EditCategoryModal: React.FC<Props> = ({
   const safe = name.trim().toLowerCase().replace(/\s+/g, "-") || "category";
   const file = dataURLtoFile(dataUrl, `${safe}.jpg`);
 
-  setImageFile(file);        
-  setPreviewImage(dataUrl);  
-  setIsEditCropperOpen(false);
-  setEditRawImage(null);
-
-  toast.success("התמונה עודכנה לפי המסגור החדש");
+  return file;
 };
 
 
@@ -169,8 +164,6 @@ const EditCategoryModal: React.FC<Props> = ({
       toast.error(`התמונה גדולה מדי (מעל ${MAX_MB}MB)`);
       return;
     }
-
-     setImageFile(file); 
 
     const reader = new FileReader();
     reader.onload = () => {
@@ -201,10 +194,21 @@ const EditCategoryModal: React.FC<Props> = ({
     return;
   }
 
+  let finalImageFile = imageFile;
+
+  if (isEditCropperOpen && editRawImage) {
+    const croppedFile = commitEditCrop();
+    if (croppedFile) {
+      finalImageFile = croppedFile;
+      setIsEditCropperOpen(false);
+      setEditRawImage(null);
+    }
+  }
+
   const updated = {
     ...category,
     categoryName: trimmed,
-    imageFile,
+    imageFile: finalImageFile,
   } as any;
 
   try {
@@ -238,9 +242,10 @@ const EditCategoryModal: React.FC<Props> = ({
     }}
   >
     <div
-      className="bg-gradient-to-br from-white via-[#fffdf8] to-[#fff9ed] rounded-2xl p-8 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-100 text-right"
-      onClick={(e) => e.stopPropagation()}
-    >
+  className="bg-gradient-to-br from-white via-[#fffdf8] to-[#fff9ed] rounded-2xl w-full max-w-3xl max-h-[90vh] shadow-2xl border border-gray-100 text-right overflow-hidden"
+  onClick={(e) => e.stopPropagation()}
+>
+  <div className="overflow-y-auto max-h-[90vh] p-8">
       {/* Header */}
       <div className="flex justify-start w-full mb-6">
         <h2 className="flex items-center gap-3 text-2xl font-bold text-[#0D305B]">
@@ -454,13 +459,6 @@ const EditCategoryModal: React.FC<Props> = ({
       >
         איפוס
       </button>
-      <button
-        type="button"
-        onClick={commitEditCrop}
-        className="ml-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#0D305B] to-[#15457a] text-white hover:from-[#15457a] hover:to-[#1e5a9e] font-bold shadow-lg hover:shadow-xl"
-      >
-        השתמש בתמונה
-      </button>
     </div>
   </div>
 )}
@@ -488,10 +486,10 @@ const EditCategoryModal: React.FC<Props> = ({
 
         <button
           onClick={handleSave}
-          disabled={isSaving || isEditCropperOpen}
+          disabled={isSaving}
           className={`px-8 py-3 rounded-xl text-white transition-colors font-bold shadow-lg
             ${
-              isSaving || isEditCropperOpen
+              isSaving
                 ? "bg-slate-400 cursor-not-allowed"
                 : "bg-gradient-to-r from-[#0D305B] to-[#15457a] hover:from-[#15457a] hover:to-[#1e5a9e] hover:shadow-xl"
             }`}
@@ -508,6 +506,7 @@ const EditCategoryModal: React.FC<Props> = ({
       </div>
     </div>
   </div>
+    </div>
 );
 
 };

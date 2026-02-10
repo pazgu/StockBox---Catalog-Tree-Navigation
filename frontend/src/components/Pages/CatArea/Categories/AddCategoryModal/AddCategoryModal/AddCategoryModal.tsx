@@ -81,8 +81,10 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   const [isPanning, setIsPanning] = React.useState(false);
   const [startPan, setStartPan] = React.useState({ x: 0, y: 0 });
   const [isCropperOpen, setIsCropperOpen] = React.useState(false);
-  const [committedPreview, setCommittedPreview] = React.useState<string | null>(null);
   const [isSaving, setIsSaving] = React.useState(false);
+  const [committedPreview, setCommittedPreview] = React.useState<string | null>(null);
+
+
 
 
 
@@ -91,7 +93,6 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
 
   React.useEffect(() => {
     if (!isOpen) {
-      // reset when closing
       setNewCatName("");
       setRawImage(null);
       setZoom(1);
@@ -99,6 +100,7 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
       setIsPanning(false);
       setIsCropperOpen(false);
       setCommittedPreview(null);
+
     }
   }, [isOpen]);
 
@@ -123,6 +125,7 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
       const img = new Image();
       img.onload = () => {
         setRawImage(img);
+        setCommittedPreview(null);
         setZoom(1);
 
         const clamped = clampOffsetToCircle(
@@ -141,40 +144,44 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   };
 
   const commitCrop = () => {
-    if (!rawImage) return null;
+  if (!rawImage) return null;
 
-    const OUT = 512;
-    const out = document.createElement("canvas");
-    out.width = OUT;
-    out.height = OUT;
-    const ctx = out.getContext("2d");
-    if (!ctx) return null;
+  const OUT = 512;
+  const out = document.createElement("canvas");
+  out.width = OUT;
+  out.height = OUT;
 
-    const iw = rawImage.naturalWidth;
-    const ih = rawImage.naturalHeight;
-    const baseScale = getBaseCoverScale(iw, ih, CROP_BOX);
-    const displayScale = baseScale * zoom;
-    const canvasScale = OUT / CROP_BOX;
+  const ctx = out.getContext("2d");
+  if (!ctx) return null;
 
-    ctx.clearRect(0, 0, OUT, OUT);
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, OUT, OUT);
+  const iw = rawImage.naturalWidth;
+  const ih = rawImage.naturalHeight;
+  const baseScale = getBaseCoverScale(iw, ih, CROP_BOX);
+  const displayScale = baseScale * zoom;
+  const canvasScale = OUT / CROP_BOX;
 
-    ctx.save();
-    ctx.scale(canvasScale, canvasScale);
+  ctx.clearRect(0, 0, OUT, OUT);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, OUT, OUT);
 
-    ctx.translate(CROP_BOX / 2, CROP_BOX / 2);
-    ctx.translate(offset.x, offset.y);
-    ctx.scale(displayScale, displayScale);
-    ctx.drawImage(rawImage, -iw / 2, -ih / 2);
-    ctx.restore();
+  ctx.save();
+  ctx.scale(canvasScale, canvasScale);
 
-    const dataUrl = out.toDataURL("image/jpeg", 0.92);
-    setCommittedPreview(dataUrl);
-    setIsCropperOpen(false);
-    toast.success("התמונה נשמרה לפי המסגור שבחרת");
-    return dataUrl;
-  };
+  ctx.translate(CROP_BOX / 2, CROP_BOX / 2);
+  ctx.translate(offset.x, offset.y);
+  ctx.scale(displayScale, displayScale);
+  ctx.drawImage(rawImage, -iw / 2, -ih / 2);
+  ctx.restore();
+
+  const dataUrl = out.toDataURL("image/jpeg", 0.92);
+
+  setCommittedPreview(dataUrl);
+  setIsCropperOpen(false);
+  toast.success("התמונה נשמרה לפי המסגור שבחרת");
+
+  return dataUrl;
+};
+
 
   const handleSave = async () => {
   if (!newCatName.trim()) {
@@ -182,19 +189,20 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     return;
   }
 
-  let finalImage = committedPreview;
-
-  if (!finalImage && (isCropperOpen || rawImage)) {
-    finalImage = commitCrop();
-  }
-
-  if (!finalImage) {
-    toast.error("נא לבחור תמונה ולהחיל את החיתוך");
+  if (!rawImage) {
+    toast.error("נא לבחור תמונה");
     return;
   }
 
-  const safeName = newCatName.trim().toLowerCase().replace(/\s+/g, "-");
-  const file = dataURLtoFile(finalImage, `${safeName}.jpg`);
+  if (!committedPreview) {
+  toast.error("נא לבחור תמונה וללחוץ 'השתמש בתמונה'");
+  return;
+}
+
+const safeName = newCatName.trim().toLowerCase().replace(/\s+/g, "-");
+const file = dataURLtoFile(committedPreview, `${safeName}.jpg`);
+
+
 
   try {
   setIsSaving(true);
@@ -219,34 +227,75 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
 
   return (
     <div
-      className="fixed inset-0 bg-slate-900 bg-opacity-85 backdrop-blur-xl flex items-center justify-center z-50 transition-all duration-300 p-4"
-      onClick={() => {
-  if (!isSaving) onClose();
-}}
+  className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+  onClick={() => {
+    if (!isSaving) onClose();
+  }}
+>
 
-    >
       <div
-        className="bg-white p-8 rounded-xl w-[800px] max-w-[95%] max-h-[90vh] overflow-y-auto shadow-2xl text-center transform translate-y-[-2px]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h4 className="m-0 mb-5 text-xl text-slate-700 font-semibold tracking-tight">
-          הוסף קטגוריה חדשה
-        </h4>
+  className="bg-gradient-to-br from-white via-[#fffdf8] to-[#fff9ed] rounded-2xl w-full max-w-3xl max-h-[90vh] shadow-2xl border border-gray-100 text-right overflow-hidden"
+  onClick={(e) => e.stopPropagation()}
+>
+  <div className="overflow-y-auto max-h-[90vh] p-8">
 
-        <input
-          type="text"
-          placeholder="שם קטגוריה"
-          value={newCatName}
-          onChange={(e) => setNewCatName(e.target.value)}
-          className="w-full p-3 border-2 border-gray-200 rounded-lg mb-5 text-base transition-all duration-200 outline-none focus:border-slate-700 focus:ring focus:ring-slate-700 focus:ring-opacity-10"
-        />
+    <div className="flex justify-start w-full mb-6">
+  <h2 className="flex items-center gap-3 text-2xl font-bold text-[#0D305B]">
+    <svg
+      className="w-7 h-7 text-[#0D305B]"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M12 5v14M5 12h14"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+    <span>הוספת קטגוריה חדשה</span>
+  </h2>
+</div>
 
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleImageUpload}
-          className="w-full mb-4"
-        />
+
+
+
+        <div className="group mb-5">
+  <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
+    <span className="w-1.5 h-1.5 rounded-full bg-[#0D305B]"></span>
+    שם קטגוריה
+  </label>
+
+  <input
+    type="text"
+    placeholder="שם קטגוריה"
+    value={newCatName}
+    onChange={(e) => setNewCatName(e.target.value)}
+    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
+  />
+</div>
+
+
+        <div className="group mb-4">
+  <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
+    <span className="w-1.5 h-1.5 rounded-full bg-[#0D305B]"></span>
+    תמונת קטגוריה
+  </label>
+
+  <input
+    type="file"
+    accept="image/*"
+    onChange={handleImageUpload}
+    className="w-full file:mr-4 file:py-2 file:px-4 file:rounded-xl
+               file:border-0 file:text-sm file:font-bold
+               file:bg-[#0D305B] file:text-white
+               hover:file:bg-[#15457a]
+               text-sm text-gray-600"
+  />
+</div>
+
 
         {isCropperOpen && rawImage && (
           <div className="w-full flex flex-col items-center mb-4">
@@ -257,30 +306,54 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
                 width: CROP_BOX,
                 height: CROP_BOX,
                 position: "relative",
+                borderRadius: "50%",
                 touchAction: "none",
                 overscrollBehavior: "contain",
               }}
               onWheel={(e) => {
-                if (!rawImage) return;
-                e.preventDefault();
-                e.stopPropagation();
-                const rect = (cropRef.current as HTMLDivElement).getBoundingClientRect();
-                const cursor = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-                const delta = Math.sign(e.deltaY) * -0.1;
-                const next = Math.min(4, Math.max(1, +(zoom + delta).toFixed(3)));
-                if (next === zoom) return;
-                const newOff = anchoredZoom(
-                  zoom,
-                  next,
-                  offset,
-                  cursor,
-                  rawImage.naturalWidth,
-                  rawImage.naturalHeight,
-                  CROP_BOX
-                );
-                setZoom(next);
-                setOffset(newOff);
-              }}
+  e.preventDefault();
+  e.stopPropagation();
+
+  if (!rawImage) return;
+
+  const SCROLL_SPEED = 1;
+
+  if (e.ctrlKey) {
+    const rect = cropRef.current.getBoundingClientRect();
+    const cursor = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+
+    const deltaZoom = Math.sign(e.deltaY) * -0.1;
+    const nextZoom = Math.min(4, Math.max(1, +(zoom + deltaZoom).toFixed(3)));
+    if (nextZoom === zoom) return;
+
+    const newOffset = anchoredZoom(
+      zoom,
+      nextZoom,
+      offset,
+      cursor,
+      rawImage.naturalWidth,
+      rawImage.naturalHeight,
+      CROP_BOX
+    );
+
+    setZoom(nextZoom);
+    setOffset(newOffset);
+  } else {
+    const dx = e.deltaX * SCROLL_SPEED;
+    const dy = e.deltaY * SCROLL_SPEED;
+
+    setOffset((prev) =>
+      clampOffsetToCircle(
+        { x: prev.x + dx, y: prev.y + dy },
+        rawImage.naturalWidth,
+        rawImage.naturalHeight,
+        zoom,
+        CROP_BOX
+      )
+    );
+  }
+}}
+
               onMouseDown={(e) => {
                 e.preventDefault();
                 setIsPanning(true);
@@ -400,13 +473,18 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
               >
                 איפוס
               </button>
+
               <button
-                type="button"
-                onClick={commitCrop}
-                className="ml-2 px-3 py-2 rounded-lg bg-slate-700 text-white hover:bg-slate-600"
-              >
-                השתמש בתמונה
-              </button>
+  type="button"
+  onClick={commitCrop}
+  disabled={isSaving}
+  className={`ml-2 px-5 py-2 rounded-xl text-white font-bold shadow-md transition-all
+    ${isSaving ? "bg-slate-400 cursor-not-allowed" : "bg-[#0D305B] hover:bg-[#15457a]"}
+  `}
+>
+  השתמש בתמונה
+</button>
+
             </div>
           </div>
         )}
@@ -415,48 +493,49 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
           <img
             src={committedPreview}
             alt="preview"
-            className="max-w-full mt-2.5 rounded-lg mb-4 h-40 object-cover"
+            className="max-w-full mt-2.5 rounded-xl mb-4 h-40 object-cover shadow-sm"
           />
         )}
 
-        <div className="flex justify-between gap-3">
-          <button
-  onClick={handleSave}
-  disabled={isSaving || (isCropperOpen && !committedPreview)}
-  className={`flex-1 p-3 rounded-lg text-base font-medium transition-all duration-200 text-white shadow-md
-    ${
-      isSaving || (isCropperOpen && !committedPreview)
-        ? "bg-slate-400 cursor-not-allowed"
-        : "bg-slate-700 hover:bg-slate-600 hover:-translate-y-px hover:shadow-lg"
-    }`}
->
-  {isSaving ? (
-    <span className="flex items-center justify-center gap-2">
-      <Spinner className="size-4 text-white" />
-      מוסיף...
-    </span>
-  ) : (
-    "שמור"
-  )}
-</button>
+       <div className="flex justify-end gap-4 mt-8 pt-6 border-t-2 border-gray-200">
+  <button
+    onClick={onClose}
+    disabled={isSaving}
+    className={`px-6 py-3 rounded-xl border-2 border-gray-300 transition-colors font-bold
+      ${
+        isSaving
+          ? "bg-gray-100 text-gray-300 cursor-not-allowed"
+          : "bg-white text-gray-700 hover:bg-gray-50"
+      }`}
+  >
+    ביטול
+  </button>
 
+  <button
+    onClick={handleSave}
+    disabled={isSaving || (isCropperOpen && !committedPreview)}
+    className={`px-8 py-3 rounded-xl text-white transition-colors font-bold shadow-lg
+      ${
+        isSaving || (isCropperOpen && !committedPreview)
+          ? "bg-slate-400 cursor-not-allowed"
+          : "bg-gradient-to-r from-[#0D305B] to-[#15457a] hover:from-[#15457a] hover:to-[#1e5a9e] hover:shadow-xl"
+      }`}
+  >
+    {isSaving ? (
+      <span className="flex items-center justify-center gap-2">
+        <Spinner className="size-4 text-white" />
+        מוסיף...
+      </span>
+    ) : (
+      "שמור"
+    )}
+  </button>
+</div>
 
-         <button
-  onClick={onClose}
-  disabled={isSaving}
-  className={`flex-1 p-3 border-none rounded-lg text-base font-medium transition-all duration-200 border
-    ${
-      isSaving
-        ? "bg-gray-100 text-gray-300 cursor-not-allowed border-gray-200"
-        : "bg-gray-100 text-gray-500 border border-gray-300 hover:bg-gray-300 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"
-    }`}
->
-  ביטול
-</button>
-
-        </div>
       </div>
     </div>
+        </div>
+
   );
 };
 
