@@ -113,9 +113,8 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
           false,
         );
         const unifiedTree = [...taggedBlockedTree, ...taggedAvailableTree];
-        setUnifiedTree(data.fullTree || []);
+        setUnifiedTree(unifiedTree);
         setPermissionIdByKey(data.permissionIdByKey);
-        setLocalBannedItems(data.blocked || []);
         const enrichWithContextPath = (items: BannedItem[]): BannedItem[] => {
           return items.map((item) => {
             if (item.type === "product" && item.productPath) {
@@ -141,7 +140,6 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
         const enrichedAvailable = enrichWithContextPath(data.available).map(
           (i) => ({ ...i, isBlocked: false }),
         );
-
         setAllItems([...enrichedBlocked, ...enrichedAvailable]);
         setLocalBannedItems(enrichedBlocked);
 
@@ -290,9 +288,13 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
   };
   const handleSelectAll = () => {
     const currentItems =
-      activeTab === "banned" ? filteredBannedItems : availableItems;
+      viewMode === "tree"
+        ? allItems
+        : activeTab === "banned"
+          ? filteredBannedItems
+          : availableItems;
 
-    if (selectedItems.size === currentItems.length) {
+    if (selectedItems.size >= currentItems.length && selectedItems.size > 0) {
       setSelectedItems(new Map());
       setSelectedWithChildren(new Set());
     } else {
@@ -363,12 +365,6 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
       await load(true);
       setSelectedItems(new Map());
       setSelectedWithChildren(new Set());
-      const totalCreated = result.data?.created || items.length;
-      const message =
-        inheritToChildren && totalCreated > items.length
-          ? `${items.length} פריטים שוחררו בהצלחה (כולל ${totalCreated - items.length} צאצאים)`
-          : `${items.length} פריטים שוחררו בהצלחה`;
-      toast.success(message);
     } catch (e: any) {
       console.error("Bulk unblock failed:", e);
       if (e.response?.data?.message) {
@@ -382,13 +378,16 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
     }
   };
 
-  const handleBulkAction = async () => {
+  const handleBulkAction = async (forcedMode?: "banned" | "available") => {
+    const mode = forcedMode || activeTab;
+
     const items = Array.from(selectedItems.entries())
       .map(([itemId, contextPath]) => {
         const item =
-          activeTab === "banned"
+          mode === "banned"
             ? localBannedItems.find((i) => i.id === itemId)
             : availableItems.find((i) => i.id === itemId);
+
         if (!item) return undefined;
         return {
           ...item,
@@ -398,10 +397,11 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
       .filter((item): item is BannedItem => item !== undefined);
 
     if (items.length === 0) {
-      toast.error("לא נבחרו פריטים");
+      toast.error("לא נבחרו פריטים מתאימים");
       return;
     }
-    if (activeTab === "banned") {
+
+    if (mode === "banned") {
       const hasCategories = items.some((item) => item.type === "category");
       if (hasCategories) {
         setPendingUnblockItems(items);
@@ -422,8 +422,6 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
           setIsLoading(true);
           await permissionsService.deletePermissionsBatch(permissionIds);
           await load(true);
-          setSelectedItems(new Map());
-          setSelectedWithChildren(new Set());
           toast.success(`${items.length} פריטים נחסמו בהצלחה`);
         } catch (e: any) {
           console.error("Bulk block failed:", e);
@@ -711,8 +709,9 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
           </div>
 
           {/* Selection Controls */}
-          {((activeTab === "banned" && filteredBannedItems.length > 0) ||
-            (activeTab === "available" && availableItems.length > 0)) && (
+          {(filteredBannedItems.length > 0 ||
+            availableItems.length > 0 ||
+            selectedItems.size > 0) && (
             <div className="flex gap-1 mb-2 items-center bg-gray-50 p-1 rounded-md flex-shrink-0">
               <button
                 onClick={handleSelectAll}
@@ -726,39 +725,49 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
                   : "בחר הכל"}
               </button>
 
-              {selectedItems.size > 0 && (
+              {(selectedItems.size > 0 ||
+                filteredBannedItems.length > 0 ||
+                availableItems.length > 0 ) && (
                 <>
                   <span className="text-[11px] text-gray-500 bg-white px-2 py-0.5 rounded">
                     {selectedItems.size} נבחרו
                     {selectedWithChildren.size > 0 &&
                       ` (${selectedWithChildren.size} עם ילדים)`}
                   </span>
-                  <button
-                    onClick={handleBulkAction}
-                    disabled={isLoading}
-                    className={`py-1 px-3 rounded-md text-[11px] font-medium transition-all shadow-sm hover:shadow-md ${
-                      activeTab === "banned"
-                        ? "bg-green-500 text-white hover:bg-green-600 disabled:bg-green-300"
-                        : "bg-red-500 text-white hover:bg-red-600 disabled:bg-red-300"
-                    }`}
-                    title={
-                      activeTab === "banned"
-                        ? "שחרר פריטים נבחרים"
-                        : "חסום פריטים נבחרים"
-                    }
-                  >
-                    {activeTab === "banned" ? (
-                      <LockOpen className="w-3.5 h-3.5" />
-                    ) : (
-                      <Lock className="w-3.5 h-3.5" />
-                    )}
-                  </button>
+                  {viewMode === "grid" && (
+                    <button
+                      onClick={() => handleBulkAction()}
+                      disabled={isLoading}
+                      className={`py-1 px-3 rounded-md text-[11px] font-medium transition-all shadow-sm hover:shadow-md ${
+                        activeTab === "banned"
+                          ? "bg-green-500 text-white hover:bg-green-600 disabled:bg-green-300"
+                          : "bg-red-500 text-white hover:bg-red-600 disabled:bg-red-300"
+                      }`}
+                      title={
+                        activeTab === "banned"
+                          ? "שחרר פריטים נבחרים"
+                          : "חסום פריטים נבחרים"
+                      }
+                    >
+                      {activeTab === "banned" ? (
+                        <LockOpen className="w-3.5 h-3.5" />
+                      ) : (
+                        <Lock className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  )}
                   {viewMode === "tree" && (
-                    <div className="flex items-center justify-center py-1 px-3 bg-red-500 hover:bg-red-600 rounded-md transition-colors">
-                      <button
-                        onClick={handleBulkAction}>
-                        <Lock className="w-3.5 h-3.5 text-white" />
-                      </button>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-center py-1 px-3 bg-green-500 hover:bg-green-600 rounded-md transition-colors">
+                        <button onClick={() => handleBulkAction("banned")}>
+                          <LockOpen className="w-3.5 h-3.5 text-white" />
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-center py-1 px-3 bg-red-500 hover:bg-red-600 rounded-md transition-colors">
+                        <button onClick={() => handleBulkAction("available")}>
+                          <Lock className="w-3.5 h-3.5 text-white" />
+                        </button>
+                      </div>
                     </div>
                   )}{" "}
                   <button

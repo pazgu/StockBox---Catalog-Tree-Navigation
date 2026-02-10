@@ -32,12 +32,13 @@ interface TreeNodeProps {
   onToggleSelection: (
     itemId: string | number,
     withChildren: boolean,
-    contextPath?: string
+    contextPath?: string,
   ) => void;
   onToggleExpand: (itemId: string | number) => void;
   expandedNodes: Set<string | number>;
   isCategory?: boolean;
   parentHovered?: boolean;
+  parentBulkSelected?: boolean;
 }
 
 const TreeNode: React.FC<TreeNodeProps> = ({
@@ -50,23 +51,29 @@ const TreeNode: React.FC<TreeNodeProps> = ({
   expandedNodes,
   isCategory = true,
   parentHovered = false,
+  parentBulkSelected = false,
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { setPreviousPath } = usePath();
 
-  const [isHoveringSelectWithChildren, setIsHoveringSelectWithChildren] = useState(false);
+  const [isHoveringSelectWithChildren, setIsHoveringSelectWithChildren] =
+    useState(false);
 
-  const hasChildren = (node.children?.length ?? 0) > 0 || (node.products?.length ?? 0) > 0;
+  const hasChildren =
+    (node.children?.length ?? 0) > 0 || (node.products?.length ?? 0) > 0;
   const isExpanded = expandedNodes.has(node.id);
-  
-  // Logic Variables
-  const isSelected = selectedItems.has(node.id);
-  const isSelectedWithChildren = selectedWithChildren.has(node.id);
+
+  const isSelected = selectedItems.has(node.id) || parentBulkSelected;
+  const isSelectedWithChildren =
+    selectedWithChildren.has(node.id) || parentBulkSelected;
   const isBlocked = node.isBlocked === true;
 
-  // The "Lit up" logic: Highlighting children when parent is hovered OR selected with children
-  const shouldHighlightFromParent = parentHovered || isHoveringSelectWithChildren || isSelectedWithChildren;
+  const shouldHighlightFromParent =
+    parentHovered ||
+    isHoveringSelectWithChildren ||
+    isSelectedWithChildren ||
+    parentBulkSelected;
 
   const styles = isBlocked
     ? {
@@ -92,7 +99,6 @@ const TreeNode: React.FC<TreeNodeProps> = ({
 
   return (
     <div className="select-none relative">
-      {/* Hierarchy Line */}
       {level > 0 && (
         <div
           className="absolute border-r-2 border-gray-200/60"
@@ -113,7 +119,6 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         `}
         style={{ marginRight: `${level * 32}px` }}
       >
-        {/* Horizontal Connector Line */}
         {level > 0 && (
           <div
             className="absolute w-5 border-t-2 border-gray-200/60"
@@ -121,7 +126,6 @@ const TreeNode: React.FC<TreeNodeProps> = ({
           />
         )}
 
-        {/* Expand/Collapse Toggle */}
         <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center">
           {hasChildren ? (
             <button
@@ -131,76 +135,84 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               }}
               className="p-1 rounded-lg hover:bg-white transition-colors shadow-sm border border-gray-100"
             >
-              {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+              {isExpanded ? (
+                <ChevronDown className="w-4 h-4" />
+              ) : (
+                <ChevronLeft className="w-4 h-4" />
+              )}
             </button>
           ) : (
             <div className="w-1.5 h-1.5 rounded-full bg-gray-300 mx-auto" />
           )}
         </div>
 
-        {/* Selection Buttons Container */}
         <div className="flex items-center gap-1.5">
-          {/* 1. Single Selection (Blue) - Stays empty if Bulk is active */}
           <button
             onClick={(e) => {
               e.stopPropagation();
               onToggleSelection(node.id, false, node.contextPath);
             }}
             className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all
-              ${(isSelected && !isSelectedWithChildren) 
-                ? "bg-blue-600 border-blue-600 text-white" 
-                : "bg-white border-gray-300 text-transparent hover:border-blue-400 hover:text-blue-400"}`}
+              ${
+                isSelected && !isSelectedWithChildren
+                  ? "bg-blue-600 border-blue-600 text-white"
+                  : "bg-white border-gray-300 text-transparent hover:border-blue-400 hover:text-blue-400"
+              }`}
           >
             <CheckCircle2 className="w-4 h-4" />
           </button>
 
-          {/* 2. Bulk Selection (Indigo) - Lights up children */}
           {isCategory && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onToggleSelection(node.id, true, node.contextPath);
               }}
-              onMouseEnter={() => setIsHoveringSelectWithChildren(true)}
-              onMouseLeave={() => setIsHoveringSelectWithChildren(false)}
               className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all
-                ${isSelectedWithChildren 
-                  ? "bg-indigo-600 border-indigo-600 text-white" 
-                  : "bg-white border-gray-300 text-gray-400 hover:border-indigo-400"}`}
+      ${
+        isSelectedWithChildren
+          ? "bg-indigo-600 border-indigo-600 text-white"
+          : "bg-white border-gray-300 text-gray-400 hover:border-indigo-400"
+      }`}
             >
               <Users className="w-4 h-4" />
             </button>
           )}
         </div>
 
-        {/* Image */}
         <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100 bg-gray-50 shadow-inner">
           <img
             src={node.image || "/assets/images/default-product.jpg"}
             alt={node.name}
             className={`w-full h-full object-cover transition-all duration-500 ${isBlocked ? "grayscale opacity-60 contrast-75" : ""}`}
-            onError={(e) => (e.currentTarget.src = "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=100")}
+            onError={(e) =>
+              (e.currentTarget.src =
+                "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=100")
+            }
           />
         </div>
 
-        {/* Content */}
         <div className="flex-1 min-w-0 flex items-center justify-between">
           <div className="flex flex-col">
             <span className={`text-sm font-bold truncate ${styles.text}`}>
               {node.name}
             </span>
             <span className="text-[10px] text-gray-400 flex items-center gap-1 font-medium">
-              {node.type === "product" ? <Package className="w-3 h-3" /> : <FolderTree className="w-3 h-3" />}
+              {node.type === "product" ? (
+                <Package className="w-3 h-3" />
+              ) : (
+                <FolderTree className="w-3 h-3" />
+              )}
               {node.type === "product" ? "מוצר" : "קטגוריה"}
             </span>
           </div>
-
           <div className="flex items-center gap-2">
-            <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black shadow-sm ${styles.badge}`}>
+            <div
+              className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black shadow-sm ${styles.badge}`}
+            >
               {styles.icon}
               <span className="hidden sm:inline">{styles.statusText}</span>
             </div>
-            
             <button
               onClick={handlePermissionsClick}
               className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
@@ -211,7 +223,6 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         </div>
       </div>
 
-      {/* Children Rendering */}
       {isExpanded && (
         <div className="overflow-hidden transition-all duration-300 ease-in-out">
           {node.children?.map((child: TreeItem) => (
@@ -225,7 +236,8 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               onToggleExpand={onToggleExpand}
               expandedNodes={expandedNodes}
               isCategory={true}
-              parentHovered={shouldHighlightFromParent} // Pass the "lit up" state down
+              parentHovered={shouldHighlightFromParent}
+              parentBulkSelected={parentBulkSelected || isSelectedWithChildren}
             />
           ))}
           {node.products?.map((product: TreeItem) => (
@@ -239,7 +251,8 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               onToggleExpand={onToggleExpand}
               expandedNodes={expandedNodes}
               isCategory={false}
-              parentHovered={shouldHighlightFromParent} // Pass the "lit up" state down
+              parentHovered={shouldHighlightFromParent}
+              parentBulkSelected={parentBulkSelected || isSelectedWithChildren}
             />
           ))}
         </div>
