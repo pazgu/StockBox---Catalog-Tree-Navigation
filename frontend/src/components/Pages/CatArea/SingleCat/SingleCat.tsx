@@ -36,6 +36,23 @@ import MoveMultipleItemsModal from "./MoveMultipleItemsModal/MoveMultipleItemsMo
 import { usePath } from "../../../../context/PathContext";
 import ImagePreviewHover from "../../ProductArea/ImageCarousel/ImageCarousel/ImagePreviewHover";
 
+const hasImage = (images: any): boolean => {
+  if (!images) return false;
+  if (typeof images === "string") return images.trim().length > 0;
+  if (Array.isArray(images)) return images.length > 0 && !!images[0];
+
+  return false;
+};
+
+const NoImageCard: React.FC<{ label?: string }> = ({ label = "אין תמונה" }) => {
+  return (
+    <div className="h-full w-[75%] mx-auto flex flex-col items-center justify-center gap-2 rounded-md border border-dashed border-gray-300 bg-white/40">
+      <div className="text-gray-400 text-sm">{label}</div>
+    </div>
+  );
+};
+
+
 const SingleCat: FC = () => {
   const [items, setItems] = useState<DisplayItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -815,21 +832,32 @@ const SingleCat: FC = () => {
                 }
               }}
             >
-              {item.type === "category" ? (
-                <img
-                  src={item.images as string}
-                  alt={item.name}
-                  className="max-h-full max-w-full object-contain"
-                />
-              ) : (
-                <div className="h-full w-full flex justify-center items-center">
-                  <ImagePreviewHover
-                    images={item.images}
-                    alt={item.name}
-                    className="w-full h-full"
-                  />
-                </div>
-              )}
+             {item.type === "category" ? (
+  hasImage(item.images) ? (
+    <img
+      src={item.images as string}
+      alt={item.name}
+      className="max-h-full max-w-full object-contain"
+      onError={(e) => {
+        // if URL exists but fails to load, fallback to placeholder
+        (e.currentTarget as HTMLImageElement).style.display = "none";
+      }}
+    />
+  ) : (
+    <NoImageCard label="אין תמונה לקטגוריה" />
+  )
+) : hasImage(item.images) ? (
+  <div className="h-full w-full flex justify-center items-center">
+    <ImagePreviewHover
+      images={item.images}
+      alt={item.name}
+      className="w-full h-full"
+    />
+  </div>
+) : (
+  <NoImageCard label="אין תמונה למוצר" />
+)}
+
             </div>
 
             <div className="w-full text-center pt-4 border-t border-gray-200">
