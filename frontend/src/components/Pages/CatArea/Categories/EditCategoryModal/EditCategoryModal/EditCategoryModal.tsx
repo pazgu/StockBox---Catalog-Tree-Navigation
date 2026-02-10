@@ -190,7 +190,7 @@ const EditCategoryModal: React.FC<Props> = ({
   const trimmed = name.trim();
 
   if (!trimmed) {
-    toast.error("שם קטגוריה חובה");
+     toast.error("שם קטגוריה חובה");
     return;
   }
 
@@ -213,18 +213,8 @@ const EditCategoryModal: React.FC<Props> = ({
 
   try {
     setIsSaving(true);
-    await onSave(updated);
-    toast.success("הקטגוריה עודכנה בהצלחה");
+    await onSave(updated); 
   } catch (error: any) {
-    const serverMessage =
-      error?.response?.data?.message || error?.response?.data?.error;
-
-    if (typeof serverMessage === "string" && serverMessage.trim()) {
-      toast.error(serverMessage);
-    } else {
-      toast.error("שגיאה בעדכון הקטגוריה");
-    }
-
     console.error("Edit category failed:", error);
   } finally {
     setIsSaving(false);
