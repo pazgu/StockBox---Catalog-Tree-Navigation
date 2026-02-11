@@ -1,6 +1,6 @@
 
 
-export type BlockType = "intro" | "features" | "bullets" | "paragraph";
+export type BlockType = "intro" | "features" | "bullets" | "paragraph" | "cta";
 
 export type AboutBlock = {
   id: string;

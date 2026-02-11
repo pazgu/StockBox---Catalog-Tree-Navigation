@@ -37,6 +37,7 @@ interface PathData {
   categoryId: string;
   categoryName: string;
   categoryImage: string | null;
+  isRootLevel?: boolean;
   categoryPermissions: Array<{ _id: string; allowed: string }>;
   ancestorCategories: Array<{
     categoryId: string;
@@ -533,7 +534,7 @@ const ProductPermissions: React.FC = () => {
           <div className="mb-4">
             <Button
               variant="outline"
-              className="px-6 flex items-center gap-2 hover:bg-gray-300 transition-colors"
+              className="px-6 flex items-center gap-2 border-2 border-blue-300 shadow-md transition-all duration-200 hover:bg-blue-50 hover:border-blue-400 hover:shadow-lg"
               onClick={() => navigate(-1)}
             >
               <ArrowRight className="w-4 h-4" />
@@ -599,11 +600,13 @@ const ProductPermissions: React.FC = () => {
                     className="w-full justify-between p-4 hover:bg-gray-50 h-auto"
                   >
                     <div className="flex items-center gap-3 flex-1 text-right min-w-0">
-                      <img
-                        src={pathData.categoryImage || "/placeholder-image.png"}
-                        className="w-14 h-14 rounded-lg object-cover border border-gray-200 flex-shrink-0"
-                        alt={pathData.categoryName}
-                      />
+                      {!pathData.isRootLevel && (
+                        <img
+                          src={pathData.categoryImage || "/placeholder-image.png"}
+                          className="w-14 h-14 rounded-lg object-cover border border-gray-200 flex-shrink-0"
+                          alt={pathData.categoryName}
+                        />
+                      )}
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-gray-800 truncate">
                           {pathData.categoryName}
@@ -834,7 +837,7 @@ const ProductPermissions: React.FC = () => {
                             </AnimatePresence>
                           </div>
 
-                          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                          <div className="flex flex-row-reverse justify-start gap-3 pt-4 border-t border-gray-200">
                             <Button
                               variant="outline"
                               onClick={() => {
