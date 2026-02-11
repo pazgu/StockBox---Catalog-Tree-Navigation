@@ -19,6 +19,7 @@ const Login: FC<LoginProps> = () => {
     };
 
     let hasError = false;
+    let emailFormatError = false;
 
     if (!firstName.trim()) {
       newErrors.firstName = true;
@@ -36,22 +37,26 @@ const Login: FC<LoginProps> = () => {
     }
 
     if (!email.trim()) {
-      newErrors.email = true;
-      hasError = true;
-    }
+    newErrors.email = true;
+    hasError = true;
+  } else if (!isValidEmail(email)) {
+    newErrors.email = true;
+    emailFormatError = true;
+  }
 
-    setErrors(newErrors);
 
+
+   setErrors(newErrors);
     if (hasError) {
       toast.error("נא למלא את כל השדות");
       return;
     }
 
-    if (!isValidEmail(email)) {
+    if (emailFormatError) {
       toast.error("אימייל לא תקין");
-      setErrors({ ...newErrors, email: true });
       return;
     }
+
     try {
       const res = await authService.login({ firstName, lastName, userName, email });
       if (res.status === 201) {
