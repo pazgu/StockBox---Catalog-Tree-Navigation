@@ -7,14 +7,17 @@ export type AboutDocument = About &
     updatedAt: Date;
   };
 
-export type BlockType = 'intro' | 'bullets' | 'features' | 'paragraph';
+export type BlockType = 'intro' | 'bullets' | 'features' | 'paragraph' | 'cta';
 
 @Schema({ _id: false })
 export class AboutBlock {
   @Prop({ required: true })
   id: string;
 
-  @Prop({ required: true, enum: ['intro', 'bullets', 'features', 'paragraph'] })
+  @Prop({
+    required: true,
+    enum: ['intro', 'bullets', 'features', 'paragraph', 'cta'],
+  })
   type: BlockType;
 
   @Prop({ type: MongooseSchema.Types.Mixed, required: true })

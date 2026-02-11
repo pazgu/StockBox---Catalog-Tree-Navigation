@@ -17,6 +17,7 @@ import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
 import { permissionsService } from "../../../../services/permissions.service";
 import { usePath } from "../../../../context/PathContext";
+import { Spinner } from '../../../ui/spinner';
 
 interface Group {
   _id: string;
@@ -36,6 +37,7 @@ interface PathData {
   categoryId: string;
   categoryName: string;
   categoryImage: string | null;
+  isRootLevel?: boolean;
   categoryPermissions: Array<{ _id: string; allowed: string }>;
   ancestorCategories: Array<{
     categoryId: string;
@@ -82,6 +84,7 @@ const ProductPermissions: React.FC = () => {
   const [allGroups, setAllGroups] = useState<Group[]>([]);
   const {previousPath} = usePath();
   const savedPreviousPath = useRef<string | null>(null);
+  const [savingPath, setSavingPath] = useState<string | null>(null);
   if (previousPath && !savedPreviousPath.current) {
     savedPreviousPath.current = previousPath;
   }
@@ -365,6 +368,7 @@ const ProductPermissions: React.FC = () => {
   };
 
   const savePermissionsForPath = async (pathData: PathData) => {
+    setSavingPath(pathData.path);
     try {
       const pathState = pathStates[pathData.path];
       if (!pathState) return;
@@ -456,6 +460,8 @@ const ProductPermissions: React.FC = () => {
     } catch (err) {
       console.error(err);
       toast.error("שגיאה בשמירה");
+    } finally {
+      setSavingPath(null);
     }
   };
 
@@ -594,11 +600,13 @@ const ProductPermissions: React.FC = () => {
                     className="w-full justify-between p-4 hover:bg-gray-50 h-auto"
                   >
                     <div className="flex items-center gap-3 flex-1 text-right min-w-0">
-                      <img
-                        src={pathData.categoryImage || "/placeholder-image.png"}
-                        className="w-14 h-14 rounded-lg object-cover border border-gray-200 flex-shrink-0"
-                        alt={pathData.categoryName}
-                      />
+                      {!pathData.isRootLevel && (
+                        <img
+                          src={pathData.categoryImage || "/placeholder-image.png"}
+                          className="w-14 h-14 rounded-lg object-cover border border-gray-200 flex-shrink-0"
+                          alt={pathData.categoryName}
+                        />
+                      )}
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-gray-800 truncate">
                           {pathData.categoryName}
@@ -864,11 +872,18 @@ const ProductPermissions: React.FC = () => {
                               ביטול
                             </Button>
                             <Button
-                              className="bg-green-600 text-white hover:bg-green-700"
+                              className="bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
                               onClick={() => savePermissionsForPath(pathData)}
-                              disabled={!hasChanges}
+                              disabled={!hasChanges || savingPath === pathData.path}
                             >
-                              שמירה
+                              {savingPath === pathData.path ? (
+                                <span className="flex items-center justify-center gap-2">
+                                  <Spinner className="size-4 text-white" />
+                                  שומר...
+                                </span>
+                              ) : (
+                                'שמירה'
+                              )}
                             </Button>
                           </div>
                         </div>

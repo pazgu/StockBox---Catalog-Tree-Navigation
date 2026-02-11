@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { permissionsService } from "../../../../services/permissions.service";
 import InheritanceModal from "../../SharedComponents/DialogModal/DialogModal";
 import { usePath } from "../../../../context/PathContext";
+import { Spinner } from "../../../ui/spinner";
 
 interface Group {
   _id: string;
@@ -54,6 +55,7 @@ const Permissions: React.FC = () => {
     permissionsInheritedToChildren: boolean; 
 
   } | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   
 
   useEffect(() => {
@@ -217,6 +219,7 @@ if (role !== "editor") {
 
 
   const savePermissions = async (inheritToChildren: boolean) => {
+    setIsSaving(true);
     try {
       if (!cleanId) return;
 
@@ -272,6 +275,8 @@ if (role !== "editor") {
     }
     } catch (err) {
       toast.error("שגיאה בשמירה");
+    } finally {
+      setIsSaving(false);
     }
   };
   const handleSave = async () => {
@@ -288,7 +293,9 @@ if (role !== "editor") {
     );
 
     if (toCreate.length === 0 && toDelete.length > 0) {
+      setIsSaving(true);
       await savePermissions(false);
+      setIsSaving(false);
       return;
     }
 
@@ -508,11 +515,18 @@ const showManualInheritButton =
                   ביטול
                 </Button>
                 <Button
-                  className="bg-green-600 text-white hover:bg-green-700 px-10 shadow-lg"
+                  className="bg-green-600 text-white hover:bg-green-700 px-10 shadow-lg disabled:opacity-50"
                   onClick={handleSave}
                   disabled={!hasLocalChanges}
                 >
-                  שמירה
+                  {isSaving ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Spinner className="size-4 text-white" />
+                      שומר...
+                    </span>
+                  ) : (
+                    'שמירה'
+                  )}
                 </Button>
               </div>
             </div>
