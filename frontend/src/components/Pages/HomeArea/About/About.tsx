@@ -16,7 +16,12 @@ import { debounce } from "../../../../lib/utils";
 import AboutSkeleton from "./AboutSkeleton/AboutSkeleton";
 
 
+
 const uid = () => crypto.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
+const CTA_SECTION_ID = "__cta_section__";
+
+
+
 type FeatureItem = {
   id: string;
   icon: string;
@@ -32,13 +37,25 @@ type ImageItem = {
 
 type SectionType = {
   id: string;
-  type: "features" | "bullets" | "intro" | "paragraph";
+  type: "features" | "bullets" | "intro" | "paragraph" | "cta";
   title: string;
   content?: string;
 
   features?: FeatureItem[];
   bullets?: BulletItem[];
 };
+const getHeaderOffset = () => {
+  const header = document.querySelector("header");
+  const h = header?.getBoundingClientRect().height ?? 0;
+  return h + 16; 
+};
+
+
+const clampDropIndex = (arr: SectionType[], dropIndex: number) => {
+  return Math.max(0, Math.min(dropIndex, arr.length));
+};
+
+
 
 const blocksToSections = (blocks: AboutBlock[]): SectionType[] => {
   return blocks.map((b) => {
@@ -65,12 +82,20 @@ const blocksToSections = (blocks: AboutBlock[]): SectionType[] => {
       };
     }
 
-    if (b.type === "paragraph") {
+        if (b.type === "paragraph") {
       return {
         id: b.id,
         type: "paragraph",
         title: b.data?.title ?? "",
         content: b.data?.content ?? "",
+      };
+    }
+
+    if (b.type === "cta") {
+      return {
+        id: b.id,
+        type: "cta",
+        title: "",
       };
     }
 
@@ -83,6 +108,7 @@ const blocksToSections = (blocks: AboutBlock[]): SectionType[] => {
         text: x.text ?? "",
       })),
     };
+
   });
 };
 
@@ -109,6 +135,14 @@ const sectionsToBlocks = (sections: SectionType[]): AboutBlock[] => {
         id: s.id,
         type: "paragraph",
         data: { title: s.title, content: s.content ?? "" },
+      };
+    }
+
+     if (s.type === "cta") {
+      return {
+        id: s.id,
+        type: "cta",
+        data: {},
       };
     }
 
@@ -146,6 +180,7 @@ const mkKey = (kind: FieldKind, sectionId: string, itemId?: string) =>
 const isBlank = (v?: string | null) => !v || v.trim().length === 0;
 
 const isSectionFilledEnough = (s: SectionType) => {
+  if (s.type === "cta") return true;
   if (isBlank(s.title)) return false;
 
   if (s.type === "intro" || s.type === "paragraph") {
@@ -196,6 +231,10 @@ const About: FC<AboutProps> = () => {
   const hasUnconfirmedChanges = dirtyKeys.size > 0;
 
   const getSnapshotValue = (key: string) => confirmedSnapshot[key] ?? "";
+
+  const realSections = useMemo(() => sections, [sections]);
+
+
 
   const markDirty = (key: string, currentValue: string) => {
     const snap = getSnapshotValue(key);
@@ -256,6 +295,9 @@ const About: FC<AboutProps> = () => {
 
   const sectionRefs = React.useRef<(HTMLDivElement | null)[]>([]);
   const dragCounterRef = React.useRef(0);
+  const draggedIndexRef = React.useRef<number | null>(null);
+
+
 
   const imageWrapRef = React.useRef<HTMLDivElement | null>(null);
   const goPrev = React.useCallback(() => {
@@ -277,26 +319,33 @@ const About: FC<AboutProps> = () => {
   React.useEffect(() => {
   (async () => {
     try {
-      setIsPageLoading(true); // ✅ ADD
+      setIsPageLoading(true); 
       const res = await aboutApi.get();
 
-      const loadedSections = blocksToSections(res.blocks ?? []);
-      setSections(loadedSections);
+     const loadedSections = blocksToSections(res.blocks ?? []);
 
-      const loadedImages: ImageItem[] = (res.images ?? []).map((url) => ({
-        url,
-      }));
+const loadedImages: ImageItem[] = (res.images ?? []).map((url) => ({ url }));
 
-      setEditableImages(loadedImages);
+const hasCta = loadedSections.some((s) => s.type === "cta");
 
-      setOriginalData({
-        sections: loadedSections,
-        images: loadedImages,
-      });
+const withCta: SectionType[] = hasCta
+  ? loadedSections
+  : [...loadedSections, { id: CTA_SECTION_ID, type: "cta", title: "" }];
+
+setSections(withCta);
+setEditableImages(loadedImages);
+
+setOriginalData({
+  sections: withCta,
+  images: loadedImages,
+});
+
+
+
 
       const snap: Record<string, string> = {};
 
-      loadedSections.forEach((s) => {
+      withCta.forEach((s) => {
         snap[mkKey("sectionTitle", s.id)] = s.title ?? "";
 
         if (s.type === "intro") snap[mkKey("introContent", s.id)] = s.content ?? "";
@@ -371,14 +420,23 @@ const About: FC<AboutProps> = () => {
               content: "",
             };
 
-    setSections((prev) => [
-      ...prev.slice(0, afterIndex + 1),
-      newSection,
-      ...prev.slice(afterIndex + 1),
-    ]);
+    setSections((prev) => {
+  const ctaIndex = prev.findIndex((s) => s.type === "cta");
+
+  const safeAfterIndex =
+    ctaIndex !== -1 && afterIndex >= ctaIndex ? ctaIndex - 1 : afterIndex;
+
+  return [
+    ...prev.slice(0, safeAfterIndex + 1),
+    newSection,
+    ...prev.slice(safeAfterIndex + 1),
+  ];
+});
+
   };
 
   const removeSection = (index: number) => {
+     if (sections[index]?.type === "cta") return;
     if (sections.length <= 1) {
       toast.error("לא ניתן למחוק את כל המקטעים");
       return;
@@ -403,57 +461,70 @@ const About: FC<AboutProps> = () => {
   };
 
   const handleSectionDragStart = (index: number) => {
-    if (hasUnconfirmedChanges) {
-      toastErrorOnce(TOAST.unconfirmedChangesBlocked);
-      return;
-    }
-    setDraggedSectionIndex(index);
-    dragCounterRef.current = 0;
-  };
+  if (hasUnconfirmedChanges) {
+    toastErrorOnce(TOAST.unconfirmedChangesBlocked);
+    return;
+  }
+  setDraggedSectionIndex(index);
+  setDragOverIndex(index); 
+  draggedIndexRef.current = index; 
+  dragCounterRef.current = 0;
+};
 
-  const handleSectionDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    if (draggedSectionIndex === null || draggedSectionIndex === index) return;
 
-    setDragOverIndex(index);
+const handleSectionDragOver = (e: React.DragEvent, index: number) => {
+  e.preventDefault();
 
-    dragCounterRef.current++;
-    if (dragCounterRef.current % 5 !== 0) return;
+  const from = draggedIndexRef.current;
+  if (from === null || from === index) return;
 
-    setSections((prev) => {
-      const arr = [...prev];
-      const [moved] = arr.splice(draggedSectionIndex, 1);
-      arr.splice(index, 0, moved);
-      return arr;
-    });
-    setDraggedSectionIndex(index);
+  setDragOverIndex(index);
 
-    const element = sectionRefs.current[index];
-    if (element) {
-      const rect = element.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
+  const headerOffset = getHeaderOffset();
+  const topThreshold = headerOffset + 40;   
+  const bottomThreshold = 140;
+  const speed = 24;
+  const y = e.clientY;
 
-      if (rect.top < 200) {
-        window.scrollBy({ top: -30, behavior: "auto" });
-      } else if (rect.bottom > viewportHeight - 200) {
-        window.scrollBy({ top: 30, behavior: "auto" });
-      }
-    }
-  };
+  if (y < topThreshold) {
+    window.scrollBy({ top: -speed, behavior: "auto" }); 
+  } else if (window.innerHeight - y < bottomThreshold) {
+    window.scrollBy({ top: speed, behavior: "auto" });
+  }
+};
 
-  const handleSectionDragEnd = () => {
-    setDraggedSectionIndex(null);
-    setDragOverIndex(null);
-    dragCounterRef.current = 0;
-  };
+
+
+
+
+const handleSectionDragEnd = () => {
+  const from = draggedIndexRef.current;
+  const toRaw = dragOverIndex;
+
+  setDraggedSectionIndex(null);
+  setDragOverIndex(null);
+  dragCounterRef.current = 0;
+  draggedIndexRef.current = null;
+
+  if (from === null || toRaw === null || from === toRaw) return;
+
+  setSections((prev) => {
+    const arr = [...prev];
+    const [moved] = arr.splice(from, 1);
+
+    const adjustedTo =
+      toRaw === prev.length ? arr.length : from < toRaw ? toRaw - 1 : toRaw;
+
+    const to = clampDropIndex(arr, adjustedTo);
+    arr.splice(to, 0, moved);
+    return arr;
+  });
+};
 
   const handleSectionDragEnter = (index: number) => {
     setDragOverIndex(index);
   };
 
-  const handleSectionDragLeave = () => {
-    setDragOverIndex(null);
-  };
 
   const onTouchStart = (e: React.TouchEvent) => {
     touchStartXRef.current = e.touches[0].clientX;
@@ -498,7 +569,7 @@ const About: FC<AboutProps> = () => {
   }, [images.length, currentImageIndex]);
 
  const hasActualChanges = useCallback(() => {
-  const currentBlocks = sectionsToBlocks(sections);
+  const currentBlocks = sectionsToBlocks(realSections);
   const originalBlocks = sectionsToBlocks(originalData.sections);
 
   const currentImages = editableImages
@@ -523,8 +594,7 @@ const About: FC<AboutProps> = () => {
     return;
   }
 
-    
-    const invalidIndex = sections.findIndex((s) => !isSectionFilledEnough(s));
+    const invalidIndex = realSections.findIndex((s) => !isSectionFilledEnough(s));
 
     if (invalidIndex !== -1) {
       toast.error("אי אפשר לשמור כשיש מקטע ריק. מלא כותרת ותוכן ואז שמור.");
@@ -537,7 +607,7 @@ const About: FC<AboutProps> = () => {
 
     try {
       const payload = {
-        blocks: sectionsToBlocks(sections),
+        blocks: sectionsToBlocks(realSections),
         images: editableImages.map((i) => i.url),
       };
 
@@ -545,7 +615,7 @@ const About: FC<AboutProps> = () => {
 
       const snap: Record<string, string> = {};
 
-      sections.forEach((s) => {
+      realSections.forEach((s) => {
         snap[mkKey("sectionTitle", s.id)] = s.title ?? "";
 
         if (s.type === "intro")
@@ -576,11 +646,12 @@ const About: FC<AboutProps> = () => {
       setDirtyKeys(new Set());
 
       setOriginalData({
-        sections,
-        images: editableImages
-          .filter((i) => !i.isPreview)
-          .map((i) => ({ url: i.url })),
-      });
+  sections: realSections,
+  images: editableImages
+    .filter((i) => !i.isPreview)
+    .map((i) => ({ url: i.url })),
+});
+
 
       setIsEditing(false);
       toast.success(TOAST.saveSuccess);
@@ -606,7 +677,9 @@ const About: FC<AboutProps> = () => {
         images: originalData.images.map((i) => i.url),
       });
 
-      setSections(originalData.sections);
+    setSections(originalData.sections);
+
+
       setEditableImages(originalData.images);
 
       const snap = buildSnapshotFromSections(originalData.sections);
@@ -876,7 +949,6 @@ const debouncedRemoveImage = useMemo(
               onDragStart={() => handleSectionDragStart(sectionIndex)}
               onDragOver={(e) => handleSectionDragOver(e, sectionIndex)}
               onDragEnter={() => handleSectionDragEnter(sectionIndex)}
-              onDragLeave={handleSectionDragLeave}
               onDragEnd={handleSectionDragEnd}
               className={`relative my-6 transition-all duration-200 ${
                 isEditing
@@ -893,7 +965,7 @@ const debouncedRemoveImage = useMemo(
                   : ""
               }`}
             >
-            {isEditing && (
+            {isEditing && section.type !== "cta" && (
               <div className="absolute -right-3 -top-3 flex gap-2 z-20">
                 <div className="group relative">
                   <div className="p-2 bg-stockblue text-white rounded-lg cursor-grab active:cursor-grabbing shadow-md hover:bg-stockblue/90 transition">
@@ -903,7 +975,7 @@ const debouncedRemoveImage = useMemo(
                     גרור לשינוי סדר
                   </span>
                 </div>
-                {sections.length > 1 && (
+                {isEditing && (
                   <div className="group relative">
                     <button
                       onClick={() => {
@@ -1255,7 +1327,35 @@ const debouncedRemoveImage = useMemo(
                 </>
               )}
 
-              {isEditing && (
+              {section.type === "cta" && (
+  <div className="flex justify-center my-10">
+    <button
+      onClick={handleNavigateToCategories}
+      className="group inline-flex items-center gap-3 rounded-2xl border border-stockblue/20 bg-gradient-to-r from-white/90 via-white/80 to-blue-50/60 px-10 py-4 text-[1.15rem] font-bold text-stockblue backdrop-blur-sm shadow-[0_8px_28px_rgba(13,48,91,0.18)] hover:shadow-[0_12px_38px_rgba(13,48,91,0.3)] hover:scale-105 active:scale-95 transition-all duration-300 ease-out"
+    >
+      <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-stockblue text-white shadow-[0_4px_14px_rgba(13,48,91,0.35)] group-hover:rotate-12 transition-transform duration-300">
+        <Compass size={22} />
+      </span>
+      גלו את התכולות והאמצעים
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-[22px] w-[22px] -scale-x-100 transition-transform duration-300 group-hover:translate-x-1"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M5 12h14" />
+        <path d="m12 5 7 7-7 7" />
+      </svg>
+    </button>
+  </div>
+)}
+
+
+              {isEditing && section.type !== "cta" && (
                 <div className="mt-6 flex justify-center">
                   <AddSectionButton
                     index={sectionIndex}
@@ -1275,30 +1375,28 @@ const debouncedRemoveImage = useMemo(
             </div>
           ))}
 
-          <div className="flex justify-center my-10">
-            <button
-              onClick={handleNavigateToCategories}
-              className="group inline-flex items-center gap-3 rounded-2xl border border-stockblue/20 bg-gradient-to-r from-white/90 via-white/80 to-blue-50/60 px-10 py-4 text-[1.15rem] font-bold text-stockblue backdrop-blur-sm shadow-[0_8px_28px_rgba(13,48,91,0.18)] hover:shadow-[0_12px_38px_rgba(13,48,91,0.3)] hover:scale-105 active:scale-95 transition-all duration-300 ease-out"
-            >
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-stockblue text-white shadow-[0_4px_14px_rgba(13,48,91,0.35)] group-hover:rotate-12 transition-transform duration-300">
-                <Compass size={22} />
-              </span>
-              גלו את התכולות והאמצעים
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-[22px] w-[22px] -scale-x-100 transition-transform duration-300 group-hover:translate-x-1"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M5 12h14" />
-                <path d="m12 5 7 7-7 7" />
-              </svg>
-            </button>
-          </div>
+          {isEditing && !hasUnconfirmedChanges && (
+  <div
+    onDragOver={(e) => {
+      e.preventDefault();
+      const from = draggedIndexRef.current;
+      if (from === null) return;
+      setDragOverIndex(sections.length);
+    }}
+    onDragEnter={() => {
+      const from = draggedIndexRef.current;
+      if (from === null) return;
+      setDragOverIndex(sections.length);
+    }}
+    className={`my-6 h-12 rounded-xl transition-all duration-200 ${
+      dragOverIndex === sections.length
+        ? "border-2 border-solid border-stockblue bg-stockblue/5"
+        : "border-2 border-dashed border-stockblue/15"
+    }`}
+  />
+)}
+
+
         </div>
 
         {/* Image Panel */}
