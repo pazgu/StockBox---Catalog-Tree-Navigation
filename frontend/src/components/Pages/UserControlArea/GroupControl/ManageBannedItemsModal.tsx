@@ -721,8 +721,8 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
                 (activeTab === "banned"
                   ? filteredBannedItems.length
                   : availableItems.length)
-                  ? "בטל הכל"
-                  : "בחר הכל"}
+                  ? "בחר הכל"
+                  : "בטל בחירה"}
               </button>
 
               {selectedItems.size > 0 && (
