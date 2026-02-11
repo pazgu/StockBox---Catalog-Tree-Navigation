@@ -32,7 +32,7 @@ const SmartDeleteModal: React.FC<SmartDeleteModalProps> = ({
 
   const togglePathSelection = (path: string) => {
     setSelectedPaths((prev) =>
-      prev.includes(path) ? prev.filter((p) => p !== path) : [...prev, path]
+      prev.includes(path) ? prev.filter((p) => p !== path) : [...prev, path],
     );
   };
 
@@ -69,7 +69,7 @@ const SmartDeleteModal: React.FC<SmartDeleteModalProps> = ({
                 מחיקת מוצר
               </h4>
               <p className="text-sm text-slate-600 mt-0.5">
-                אנא בחר את אופן המחיקה המתאים
+                נא לבחור את אופן המחיקה המתאים
               </p>
             </div>
           </div>
@@ -218,7 +218,7 @@ const SmartDeleteModal: React.FC<SmartDeleteModalProps> = ({
                             }`}
                           >
                             {selectedPaths.length === 0
-                              ? "אנא בחר לפחות מיקום אחד למחיקה"
+                              ? "נא לבחור לפחות מיקום אחד למחיקה"
                               : `המוצר יימחק מ-${selectedPaths.length} ${
                                   selectedPaths.length === 1
                                     ? "מיקום"

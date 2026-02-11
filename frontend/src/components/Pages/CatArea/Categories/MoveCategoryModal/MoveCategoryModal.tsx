@@ -140,9 +140,9 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
     return (
       <div key={cat._id} style={{ marginRight: `${level * 20}px` }}>
         <label
-             className={`flex items-center gap-2 p-3 border-2 rounded-lg ${
-     isCurrentParent ? "" : "cursor-pointer hover:bg-gray-50"
-   } transition-all mb-2 ${
+          className={`flex items-center gap-2 p-3 border-2 rounded-lg ${
+            isCurrentParent ? "" : "cursor-pointer hover:bg-gray-50"
+          } transition-all mb-2 ${
             selectedParentPath === cat.categoryPath
               ? "border-slate-700 bg-slate-50"
               : isCurrentParent
@@ -171,17 +171,17 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
             </button>
           )}
 
-        {!isCurrentParent && (
-          <input
-            type="radio"
-            name="destination"
-            value={cat.categoryPath}
-            checked={selectedParentPath === cat.categoryPath}
-            onChange={(e) => setSelectedParentPath(e.target.value)}
-            className="w-4 h-4"
-            disabled={loading}
-          />
-        )}
+          {!isCurrentParent && (
+            <input
+              type="radio"
+              name="destination"
+              value={cat.categoryPath}
+              checked={selectedParentPath === cat.categoryPath}
+              onChange={(e) => setSelectedParentPath(e.target.value)}
+              className="w-4 h-4"
+              disabled={loading}
+            />
+          )}
 
           <div className="flex items-center gap-2 flex-1">
             {cat.categoryImage && (
@@ -216,7 +216,7 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
 
   const handleMove = async () => {
     if (!selectedParentPath) {
-      toast.error("אנא בחר קטגוריית יעד");
+      toast.error("נא לבחור קטגוריית יעד");
       return;
     }
 
