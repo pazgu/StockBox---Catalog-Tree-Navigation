@@ -467,36 +467,35 @@ const SingleCat: FC = () => {
     setItemToDuplicate(null);
   };
 
-  const handleSaveProduct = async (data: {
-    name: string;
-    description: string;
-    imageFile: File;
-  }) => {
-    try {
-      const safeName = data.name.trim().replace(/\s+/g, "-").normalize('NFC');
-      const productPathString = `${categoryPath}/${safeName}`.normalize('NFC');
-      const createdProduct = await ProductsService.createProduct({
-        productName: data.name,
-        productPath: productPathString,
-        productDescription: data.description,
-        customFields: {},
-        imageFile: data.imageFile,
-      });
+const handleSaveProduct = async (data: {
+  name: string;
+  description: string;
+  imageFile: File;
+}) => {
+  try {
+    const productPathString = categoryPath;
+    const createdProduct = await ProductsService.createProduct({
+      productName: data.name,
+      productPath: productPathString,
+      productDescription: data.description,
+      customFields: {},
+      imageFile: data.imageFile,
+    });
 
-      const newItem: DisplayItem = {
-        id: createdProduct._id!,
-        name: createdProduct.productName,
-        images: createdProduct.productImages || [],
-        type: "product",
-        path: createdProduct.productPath,
-        favorite: false,
-        description: createdProduct.productDescription,
-      };
+    const newItem: DisplayItem = {
+      id: createdProduct._id!,
+      name: createdProduct.productName,
+      images: createdProduct.productImages || [],
+      type: "product",
+      path: createdProduct.productPath,
+      favorite: false,
+      description: createdProduct.productDescription,
+    };
 
-      setItems((prev) => [...prev, newItem]);
-      toast.success(`המוצר "${data.name}" נוסף בהצלחה!`);
-      setShowAddProductModal(false);
-    } catch (error: any) {
+    setItems((prev) => [...prev, newItem]);
+    toast.success(`המוצר "${data.name}" נוסף בהצלחה!`);
+    setShowAddProductModal(false);
+  } catch (error: any) {
       console.error("Save Error:", error);
       const serverMessage =
         error?.response?.data?.message ||
