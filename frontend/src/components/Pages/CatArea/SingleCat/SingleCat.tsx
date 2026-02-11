@@ -473,9 +473,8 @@ const SingleCat: FC = () => {
     imageFile: File;
   }) => {
     try {
-      const safeName =
-        data.name.trim().toLowerCase().replace(/\s+/g, "-") || "product";
-      const productPathString = `${categoryPath}/${safeName}`;
+      const safeName = data.name.trim().replace(/\s+/g, "-").normalize('NFC');
+      const productPathString = `${categoryPath}/${safeName}`.normalize('NFC');
       const createdProduct = await ProductsService.createProduct({
         productName: data.name,
         productPath: productPathString,
@@ -517,8 +516,7 @@ const SingleCat: FC = () => {
     imageFile: File;
   }) => {
     try {
-      const newCategoryPath = `${categoryPath}/${data.name.toLowerCase().replace(/\s+/g, "-")}`;
-
+      const newCategoryPath = `${categoryPath}/${data.name.trim().toLowerCase().replace(/\s+/g, "-")}`.normalize('NFC');
       const newCategory = await categoriesService.createCategory({
         categoryName: data.name,
         categoryPath: newCategoryPath,

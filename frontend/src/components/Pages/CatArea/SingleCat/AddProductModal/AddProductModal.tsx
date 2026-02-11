@@ -2,6 +2,7 @@ import React from "react";
 import { toast } from "sonner";
 import useBlockBrowserZoom from "../../Categories/useBlockBrowserZoom";
 import { Spinner } from "../../../../ui/spinner";
+import { Asterisk } from "lucide-react";
 
 
 type Props = {
@@ -80,6 +81,17 @@ function anchoredZoom(
     box,
   );
 }
+
+const RequiredStar = () => (
+  <Asterisk
+    size={14}
+    className="text-red-600 relative -top-[1px]"
+    aria-hidden="true"
+  />
+);
+
+
+
 
 const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   const [productName, setProductName] = React.useState("");
@@ -247,10 +259,15 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
           </div>
 
           <div className="group mb-5">
-            <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#0D305B]" />
-              שם מוצר
-            </label>
+ <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center">
+  <span className="inline-flex items-center gap-1 flex-row-reverse">
+    <span>שם מוצר</span>
+    <RequiredStar />
+  </span>
+</label>
+
+
+
 
             <input
               type="text"
@@ -262,10 +279,10 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
           </div>
 
           <div className="group mb-5">
-            <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#0D305B]" />
-              תיאור מוצר
-            </label>
+           <label className="block text-sm font-bold mb-2 text-gray-700">
+  תיאור מוצר
+</label>
+
 
             <input
               type="text"
@@ -277,10 +294,15 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
           </div>
 
           <div className="group mb-4">
-            <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#0D305B]" />
-              תמונת מוצר
-            </label>
+      <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center">
+  <span className="inline-flex items-center gap-1 flex-row-reverse">
+    <span>תמונת מוצר</span>
+    <RequiredStar />
+  </span>
+</label>
+
+
+
 
             <input
               type="file"

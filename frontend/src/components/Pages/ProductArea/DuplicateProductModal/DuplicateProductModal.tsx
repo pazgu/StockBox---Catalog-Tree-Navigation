@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { categoriesService } from "../../../../services/CategoryService";
 import { ProductsService } from "../../../../services/ProductService";
 import { Copy, ChevronLeft } from "lucide-react";
+import { c } from "framer-motion/dist/types.d-CSbqhfMB";
 
 // Use CategoryDTO type instead of Category to match your project's type system
 interface Category {
@@ -135,9 +136,11 @@ const DuplicateProductModal: React.FC<DuplicateProductModalProps> = ({
     const isExpanded = expandedCategories.has(cat.categoryPath);
     const isLoading = loadingSubcats.has(cat.categoryPath);
     const isSelected = selectedCategoryPaths.has(cat.categoryPath);
-    const isCurrentPath = currentPaths.some((path) =>
-      path.startsWith(cat.categoryPath + "/"),
-    );
+    const productName = currentPaths[0]?.split("/").pop();
+    const isCurrentPath = productName
+      ? currentPaths.includes(`${cat.categoryPath}/${productName}`)
+      : false;
+
 
     return (
       <div key={cat._id} style={{ marginRight: `${level * 20}px` }}>
