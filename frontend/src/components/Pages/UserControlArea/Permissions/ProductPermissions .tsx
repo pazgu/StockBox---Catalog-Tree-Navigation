@@ -36,6 +36,7 @@ interface PathData {
   categoryId: string;
   categoryName: string;
   categoryImage: string | null;
+  isRootLevel?: boolean;
   categoryPermissions: Array<{ _id: string; allowed: string }>;
   ancestorCategories: Array<{
     categoryId: string;
@@ -594,11 +595,13 @@ const ProductPermissions: React.FC = () => {
                     className="w-full justify-between p-4 hover:bg-gray-50 h-auto"
                   >
                     <div className="flex items-center gap-3 flex-1 text-right min-w-0">
-                      <img
-                        src={pathData.categoryImage || "/placeholder-image.png"}
-                        className="w-14 h-14 rounded-lg object-cover border border-gray-200 flex-shrink-0"
-                        alt={pathData.categoryName}
-                      />
+                      {!pathData.isRootLevel && (
+                        <img
+                          src={pathData.categoryImage || "/placeholder-image.png"}
+                          className="w-14 h-14 rounded-lg object-cover border border-gray-200 flex-shrink-0"
+                          alt={pathData.categoryName}
+                        />
+                      )}
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-gray-800 truncate">
                           {pathData.categoryName}
