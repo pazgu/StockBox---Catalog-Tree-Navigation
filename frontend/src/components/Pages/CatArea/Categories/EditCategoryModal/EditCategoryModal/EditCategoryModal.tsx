@@ -190,7 +190,7 @@ const EditCategoryModal: React.FC<Props> = ({
   const trimmed = name.trim();
 
   if (!trimmed) {
-    toast.error("שם קטגוריה חובה");
+     toast.error("שם קטגוריה חובה");
     return;
   }
 
@@ -213,18 +213,8 @@ const EditCategoryModal: React.FC<Props> = ({
 
   try {
     setIsSaving(true);
-    await onSave(updated);
-    toast.success("הקטגוריה עודכנה בהצלחה");
+    await onSave(updated); 
   } catch (error: any) {
-    const serverMessage =
-      error?.response?.data?.message || error?.response?.data?.error;
-
-    if (typeof serverMessage === "string" && serverMessage.trim()) {
-      toast.error(serverMessage);
-    } else {
-      toast.error("שגיאה בעדכון הקטגוריה");
-    }
-
     console.error("Edit category failed:", error);
   } finally {
     setIsSaving(false);
@@ -266,7 +256,6 @@ const EditCategoryModal: React.FC<Props> = ({
           <span>עריכת קטגוריה</span>
         </h2>
       </div>
-
       {/* Name field */}
       <div className="group mb-5">
         <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
@@ -482,7 +471,7 @@ const EditCategoryModal: React.FC<Props> = ({
           ${
             isSaving
               ? "bg-slate-400 cursor-not-allowed"
-              : "bg-gradient-to-r from-[#0D305B] to-[#15457a] hover:from-[#15457a] hover:to-[#1e5a9e] hover:shadow-xl"
+              : "bg-[#0D305B] hover:bg-[#15457a] hover:to-[#1e5a9e] hover:shadow-xl"
           }`}
       >
         {isSaving ? (
