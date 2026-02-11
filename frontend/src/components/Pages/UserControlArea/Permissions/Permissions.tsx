@@ -311,7 +311,7 @@ const showManualInheritButton =
           <div className="mb-4">
             <Button
               variant="outline"
-              className="px-6 flex items-center gap-2 hover:bg-gray-300 transition-colors"
+              className="px-6 flex items-center gap-2 border-2 border-blue-300 shadow-md transition-all duration-200 hover:bg-blue-50 hover:border-blue-400 hover:shadow-lg"
               onClick={() => navigate(-1)}
             >
               <ArrowRight className="w-4 h-4" />
@@ -499,7 +499,7 @@ const showManualInheritButton =
                 )}
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex flex-row-reverse gap-3">
                 <Button
                   variant="outline"
                   className="px-8 py-2 border-gray-300 hover:bg-gray-300 transition-all font-medium"
@@ -510,6 +510,7 @@ const showManualInheritButton =
                 <Button
                   className="bg-green-600 text-white hover:bg-green-700 px-10 shadow-lg"
                   onClick={handleSave}
+                  disabled={!hasLocalChanges}
                 >
                   שמירה
                 </Button>
