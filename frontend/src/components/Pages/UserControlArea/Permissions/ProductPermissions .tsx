@@ -528,7 +528,7 @@ const ProductPermissions: React.FC = () => {
           <div className="mb-4">
             <Button
               variant="outline"
-              className="px-6 flex items-center gap-2 hover:bg-gray-300 transition-colors"
+              className="px-6 flex items-center gap-2 border-2 border-blue-300 shadow-md transition-all duration-200 hover:bg-blue-50 hover:border-blue-400 hover:shadow-lg"
               onClick={() => navigate(-1)}
             >
               <ArrowRight className="w-4 h-4" />
@@ -829,7 +829,7 @@ const ProductPermissions: React.FC = () => {
                             </AnimatePresence>
                           </div>
 
-                          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                          <div className="flex flex-row-reverse justify-start gap-3 pt-4 border-t border-gray-200">
                             <Button
                               variant="outline"
                               onClick={() => {
