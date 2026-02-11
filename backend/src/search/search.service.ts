@@ -212,7 +212,6 @@ export class SearchService {
           categoryPath: { $in: allowedCategoryPaths },
         },
       },
-
       {
         $addFields: {
           type: 'category',
@@ -234,14 +233,18 @@ export class SearchService {
               },
             },
 
-            {
-              $match: {
-                productName: {
-                  $regex: isSpecificSearch ? fuzzyRegex : tokens[0],
-                  $options: 'i',
-                },
-              },
-            },
+            ...(isSpecificSearch
+              ? [
+                  {
+                    $match: {
+                      productName: {
+                        $regex: isSpecificSearch ? fuzzyRegex : tokens[0],
+                        $options: 'i',
+                      },
+                    },
+                  },
+                ]
+              : []),
 
             {
               $match: {

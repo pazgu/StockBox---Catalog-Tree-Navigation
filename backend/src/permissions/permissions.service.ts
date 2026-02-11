@@ -594,37 +594,34 @@ export class PermissionsService {
   }
 
   private buildHierarchicalTree(items: any[]): any[] {
-    const categories = items.filter((i) => i.type === 'category');
-    const products = items.filter((i) => i.type === 'product');
     const categoryByPath = new Map<string, any>();
-    const categoryById = new Map<string, any>();
-
-    for (const c of categories) {
-      const path = Array.isArray(c.categoryPath)
-        ? c.categoryPath[0]
-        : c.categoryPath;
-      const node = {
-        ...c,
-        categoryPath: path,
-        children: [],
-        products: [],
-        isExpanded: false,
-      };
-      categoryByPath.set(path, node);
-      categoryById.set(c.id, node);
-    }
-
     const roots: any[] = [];
 
-    for (const node of categoryById.values()) {
-      if (!node.categoryPath) {
+    items
+      .filter((i) => i.type === 'category')
+      .forEach((c) => {
+        const path = Array.isArray(c.categoryPath)
+          ? c.categoryPath[0]
+          : c.categoryPath;
+        const node = {
+          ...c,
+          categoryPath: path,
+          children: [],
+          products: [],
+          isExpanded: false,
+        };
+        categoryByPath.set(path, node);
+      });
+    for (const node of categoryByPath.values()) {
+      const path = node.categoryPath;
+      if (!path) {
         roots.push(node);
         continue;
       }
 
-      const parts = node.categoryPath.split('/').filter(Boolean);
+      const parts = path.split('/').filter(Boolean);
       const parentPath =
-        parts.length > 2 ? '/categories/' + parts.slice(1, -1).join('/') : null;
+        parts.length > 1 ? `/${parts.slice(0, -1).join('/')}` : null;
 
       if (parentPath && categoryByPath.has(parentPath)) {
         categoryByPath.get(parentPath).children.push(node);
@@ -632,53 +629,47 @@ export class PermissionsService {
         roots.push(node);
       }
     }
-    const orphanProducts: any[] = [];
 
-    for (const p of products) {
-      const paths = Array.isArray(p.productPath)
-        ? p.productPath
-        : [p.productPath];
-      let attached = false;
+    items
+      .filter((i) => i.type === 'product')
+      .forEach((p) => {
+        const paths = Array.isArray(p.productPath)
+          ? p.productPath
+          : [p.productPath];
+        let attached = false;
 
-      for (const rawPath of paths) {
-        if (!rawPath) continue;
+        for (const rawPath of paths) {
+          if (!rawPath) continue;
 
-        const parts = rawPath.split('/').filter(Boolean);
-        const categoryPath =
-          parts.length > 1
-            ? '/categories/' + parts.slice(1, -1).join('/')
-            : null;
+          const parts = rawPath.split('/').filter(Boolean);
+          const categoryPath =
+            parts.length > 1 ? `/${parts.slice(0, -1).join('/')}` : null;
 
-        if (categoryPath && categoryByPath.has(categoryPath)) {
-          const categoryNode = categoryByPath.get(categoryPath);
-          categoryNode.products.push({
-            ...p,
-            contextPath: categoryPath,
-          });
-          attached = true;
+          if (categoryPath && categoryByPath.has(categoryPath)) {
+            categoryByPath.get(categoryPath).products.push({
+              ...p,
+              contextPath: categoryPath,
+            });
+            attached = true;
+            break;
+          }
         }
-      }
 
-      if (!attached) {
-        orphanProducts.push({
-          ...p,
-          contextPath: undefined,
-        });
-      }
-    }
-    roots.push(...orphanProducts);
+        if (!attached) {
+          roots.push({ ...p, contextPath: undefined });
+        }
+      });
     const sortTree = (nodes: any[]) => {
       nodes.sort((a, b) => {
-        if (a.type === 'category' && b.type === 'product') return -1;
-        if (a.type === 'product' && b.type === 'category') return 1;
-        return a.name.localeCompare(b.name, 'he');
+        if (a.type !== b.type) return a.type === 'category' ? -1 : 1;
+        return (a.name || '').localeCompare(b.name || '', 'he');
       });
 
       for (const n of nodes) {
         if (n.children?.length) sortTree(n.children);
         if (n.products?.length) {
           n.products.sort((a: any, b: any) =>
-            a.name.localeCompare(b.name, 'he'),
+            (a.name || '').localeCompare(b.name || '', 'he'),
           );
         }
       }
@@ -826,18 +817,18 @@ export class PermissionsService {
       },
       {} as Record<string, string>,
     );
+    const allItems = [
+      ...availableProducts.map((p) => ({ ...p, isBlocked: false })),
+      ...blockedProducts.map((p) => ({ ...p, isBlocked: true })),
+      ...availableCategories.map((c) => ({ ...c, isBlocked: false })),
+      ...blockedCategories.map((c) => ({ ...c, isBlocked: true })),
+    ];
+    const fullTree = this.buildHierarchicalTree(allItems);
     return {
       blocked: [...blockedProducts, ...blockedCategories],
       available: [...availableProducts, ...availableCategories],
       permissionIdByKey,
-      blockedTree: this.buildHierarchicalTree([
-        ...blockedProducts,
-        ...blockedCategories,
-      ]),
-      availableTree: this.buildHierarchicalTree([
-        ...availableProducts,
-        ...availableCategories,
-      ]),
+      fullTree,
     };
   }
   async canCreatePermission(
