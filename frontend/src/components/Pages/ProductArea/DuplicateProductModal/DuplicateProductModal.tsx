@@ -141,7 +141,6 @@ const DuplicateProductModal: React.FC<DuplicateProductModalProps> = ({
       ? currentPaths.includes(`${cat.categoryPath}/${productName}`)
       : false;
 
-
     return (
       <div key={cat._id} style={{ marginRight: `${level * 20}px` }}>
         <label
@@ -217,7 +216,7 @@ const DuplicateProductModal: React.FC<DuplicateProductModalProps> = ({
 
   const handleDuplicate = async () => {
     if (selectedCategoryPaths.size === 0) {
-      toast.error("אנא בחר לפחות קטגוריית יעד אחת");
+      toast.error("נא לבחור לפחות קטגוריית יעד אחת");
       return;
     }
 

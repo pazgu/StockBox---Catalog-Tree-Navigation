@@ -37,33 +37,29 @@ const GroupControl: React.FC = () => {
   const MAX_GROUP_NAME_LEN = 30;
   const SELECTED_GROUP_STORAGE_KEY = "groupControl:selectedGroupId";
 
-
-
-useEffect(() => {
-  if (selectedGroup) {
-    loadBlockedItemsForGroup(selectedGroup);
-  }
-}, [selectedGroup]);
+  useEffect(() => {
+    if (selectedGroup) {
+      loadBlockedItemsForGroup(selectedGroup);
+    }
+  }, [selectedGroup]);
 
   useEffect(() => {
-  if (!role) return;
-  if (role !== "editor") {
-    navigate("/", { replace: true });
-  }
-}, [navigate, role]);
+    if (!role) return;
+    if (role !== "editor") {
+      navigate("/", { replace: true });
+    }
+  }, [navigate, role]);
 
-useEffect(() => {
-  const savedGroupId = localStorage.getItem(SELECTED_GROUP_STORAGE_KEY);
-  if (savedGroupId) setSelectedGroup(savedGroupId);
-}, []);
+  useEffect(() => {
+    const savedGroupId = localStorage.getItem(SELECTED_GROUP_STORAGE_KEY);
+    if (savedGroupId) setSelectedGroup(savedGroupId);
+  }, []);
 
-useEffect(() => {
-  if (selectedGroup) {
-    localStorage.setItem(SELECTED_GROUP_STORAGE_KEY, selectedGroup);
-  }
-}, [selectedGroup]);
-
-
+  useEffect(() => {
+    if (selectedGroup) {
+      localStorage.setItem(SELECTED_GROUP_STORAGE_KEY, selectedGroup);
+    }
+  }, [selectedGroup]);
 
   useEffect(() => {
     if (showAddGroupModal && inputRef.current) inputRef.current.focus();
@@ -76,17 +72,18 @@ useEffect(() => {
     try {
       setIsLoading(true);
       const transformedGroups = await groupService.getGroups();
-      
+
       setGroups(transformedGroups);
 
-const savedGroupId = localStorage.getItem(SELECTED_GROUP_STORAGE_KEY);
-const exists = savedGroupId && transformedGroups.some((g) => g.id === savedGroupId);
+      const savedGroupId = localStorage.getItem(SELECTED_GROUP_STORAGE_KEY);
+      const exists =
+        savedGroupId && transformedGroups.some((g) => g.id === savedGroupId);
 
-if (!selectedGroup) {
-  if (exists) setSelectedGroup(savedGroupId!);
-  else if (transformedGroups.length > 0) setSelectedGroup(transformedGroups[0].id);
-}
-
+      if (!selectedGroup) {
+        if (exists) setSelectedGroup(savedGroupId!);
+        else if (transformedGroups.length > 0)
+          setSelectedGroup(transformedGroups[0].id);
+      }
     } catch (error) {
       console.error("Error fetching groups:", error);
       toast.error("שגיאה בטעינת קבוצות");
@@ -96,25 +93,27 @@ if (!selectedGroup) {
   };
 
   const loadBlockedItemsForGroup = async (groupId: string) => {
-  try {
-    setIsBannedLoading(true);
+    try {
+      setIsBannedLoading(true);
 
-    const data = await permissionsService.getBlockedItemsForGroup(groupId);
+      const data = await permissionsService.getBlockedItemsForGroup(groupId);
 
-    setGroups((prev) =>
-      prev.map((g) => (g.id === groupId ? { ...g, bannedItems: data.blocked } : g))
-    );
-  } catch (err) {
-    console.error("Failed loading blocked items:", err);
-    toast.error("שגיאה בטעינת פריטים חסומים");
-  } finally {
-    setIsBannedLoading(false);
-  }
-};
+      setGroups((prev) =>
+        prev.map((g) =>
+          g.id === groupId ? { ...g, bannedItems: data.blocked } : g,
+        ),
+      );
+    } catch (err) {
+      console.error("Failed loading blocked items:", err);
+      toast.error("שגיאה בטעינת פריטים חסומים");
+    } finally {
+      setIsBannedLoading(false);
+    }
+  };
 
   const currentGroup = useMemo(
     () => groups.find((g) => g.id === selectedGroup),
-    [groups, selectedGroup]
+    [groups, selectedGroup],
   );
   const openAddGroupModal = () => setShowAddGroupModal(true);
   const closeAddGroupModal = () => {
@@ -125,14 +124,14 @@ if (!selectedGroup) {
   const saveNewGroup = async () => {
     const trimmedName = newGroupName.trim();
     if (!trimmedName) return;
-    
+
     if (trimmedName.length > MAX_GROUP_NAME_LEN) {
-    toast.error(`שם הקבוצה ארוך מדי (מקסימום ${MAX_GROUP_NAME_LEN} תווים)`);
-    return;
-  }
+      toast.error(`שם הקבוצה ארוך מדי (מקסימום ${MAX_GROUP_NAME_LEN} תווים)`);
+      return;
+    }
 
     if (groups.some((g) => g.name === trimmedName)) {
-      toast.error("כבר קיימת קבוצה עם שם זה. אנא בחר שם אחר.");
+      toast.error("כבר קיימת קבוצה עם שם זה. נא לבחור שם אחר.");
       return;
     }
 
@@ -187,7 +186,7 @@ if (!selectedGroup) {
     setSelectedUsers((prev) =>
       prev.size === filteredUsers.length
         ? new Set()
-        : new Set(filteredUsers.map((u) => u._id!))
+        : new Set(filteredUsers.map((u) => u._id!)),
     );
   };
 
@@ -197,15 +196,15 @@ if (!selectedGroup) {
     try {
       const userIdsArray = Array.from(selectedUsers);
       const newMembers = currentGroup.members.filter(
-        (memberId) => !userIdsArray.includes(memberId)
+        (memberId) => !userIdsArray.includes(memberId),
       );
 
       await groupService.updateGroupMembers(selectedGroup, newMembers);
 
       setGroups((prev) =>
         prev.map((g) =>
-          g.id === selectedGroup ? { ...g, members: newMembers } : g
-        )
+          g.id === selectedGroup ? { ...g, members: newMembers } : g,
+        ),
       );
 
       toast.info(`${selectedUsers.size} משתמשים הוסרו מהקבוצה`);
@@ -222,12 +221,15 @@ if (!selectedGroup) {
       if (!group) return;
 
       const newMembers = Array.from(new Set([...group.members, ...userIds]));
-      const updatedMembers = await groupService.updateGroupMembers(groupId, newMembers);
+      const updatedMembers = await groupService.updateGroupMembers(
+        groupId,
+        newMembers,
+      );
 
       setGroups((prev) =>
         prev.map((g) =>
-          g.id === groupId ? { ...g, members: updatedMembers } : g
-        )
+          g.id === groupId ? { ...g, members: updatedMembers } : g,
+        ),
       );
 
       toast.success(`${userIds.length} משתמשים נוספו בהצלחה לקבוצה`);
@@ -244,7 +246,7 @@ if (!selectedGroup) {
           return { ...g, bannedItems: items };
         }
         return g;
-      })
+      }),
     );
     toast.info("פריטים חסומים עודכנו בהצלחה");
   };
@@ -264,10 +266,10 @@ if (!selectedGroup) {
     }
 
     if (trimmedName.length > MAX_GROUP_NAME_LEN) {
-     toast.error(`שם הקבוצה ארוך מדי (מקסימום ${MAX_GROUP_NAME_LEN} תווים)`);
-    return;
-  }
-    
+      toast.error(`שם הקבוצה ארוך מדי (מקסימום ${MAX_GROUP_NAME_LEN} תווים)`);
+      return;
+    }
+
     if (groups.some((g) => g.name === trimmedName && g.id !== groupToEdit.id)) {
       toast.error("כבר קיימת קבוצה עם שם זה");
       return;
@@ -278,10 +280,10 @@ if (!selectedGroup) {
 
       setGroups((prev) =>
         prev.map((g) =>
-          g.id === groupToEdit.id ? { ...g, name: trimmedName } : g
-        )
+          g.id === groupToEdit.id ? { ...g, name: trimmedName } : g,
+        ),
       );
-      
+
       toast.success("שם הקבוצה עודכן בהצלחה");
       setGroupToEdit(null);
       setEditedGroupName("");
@@ -307,7 +309,7 @@ if (!selectedGroup) {
       setGroups((prevGroups) => {
         const newGroups = prevGroups.filter((g) => g.id !== groupToDelete.id);
         setSelectedGroup((prev) =>
-          prev === groupToDelete.id ? newGroups[0]?.id || "" : prev
+          prev === groupToDelete.id ? newGroups[0]?.id || "" : prev,
         );
         return newGroups;
       });
@@ -333,7 +335,6 @@ if (!selectedGroup) {
       dir="rtl"
       className="min-h-screen bg-[#fffaf1] p-4 sm:p-8 md:p-12 lg:p-16 pt-28 font-sans mt-12"
     >
-
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden max-w-[5000px] mx-auto">
         {/* Header */}
         <div className="bg-gradient-to-l from-slate-700 to-slate-600 text-white p-6">
@@ -403,172 +404,170 @@ if (!selectedGroup) {
         />
       )}
 
-     {showAddGroupModal && (
-  <div
-    role="dialog"
-    aria-modal="true"
-    className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-    onClick={closeAddGroupModal}
-  >
-    <div
-      className="bg-gradient-to-br from-white via-[#fffdf8] to-[#fff9ed] rounded-2xl p-8 w-full max-w-md shadow-2xl border border-gray-100 text-right"
-      onClick={(e) => e.stopPropagation()}
-    >
-      {/* Title */}
-      <div className="flex justify-start w-full mb-6">
-        <h3 className="flex items-center gap-3 text-2xl font-bold text-[#0D305B]">
-          <Users className="w-7 h-7" />
-          <span>יצירת קבוצה חדשה</span>
-        </h3>
-      </div>
-
-      {/* Input */}
-      <div className="group mb-2">
-        <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#0D305B]"></span>
-          שם הקבוצה
-        </label>
-
-        <input
-          ref={inputRef}
-          type="text"
-          value={newGroupName}
-          maxLength={MAX_GROUP_NAME_LEN}
-          onChange={(e) =>
-            setNewGroupName(e.target.value.slice(0, MAX_GROUP_NAME_LEN))
-          }
-          placeholder="שם הקבוצה"
-          className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 mb-2 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md text-right"
-          aria-label="שם הקבוצה החדשה"
-        />
-
-        <div className="text-xs text-gray-500 mb-3">
-          {newGroupName.length}/{MAX_GROUP_NAME_LEN}
-        </div>
-      </div>
-
-      {/* Buttons */}
-      <div className="flex justify-end gap-4 mt-6 pt-6 border-t-2 border-gray-200">
-        <button
-          type="button"
+      {showAddGroupModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           onClick={closeAddGroupModal}
-          className="px-6 h-12 rounded-xl border-2 border-gray-300 transition-colors font-bold bg-white text-gray-700 hover:bg-gray-50"
         >
-          ביטול
-        </button>
+          <div
+            className="bg-gradient-to-br from-white via-[#fffdf8] to-[#fff9ed] rounded-2xl p-8 w-full max-w-md shadow-2xl border border-gray-100 text-right"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Title */}
+            <div className="flex justify-start w-full mb-6">
+              <h3 className="flex items-center gap-3 text-2xl font-bold text-[#0D305B]">
+                <Users className="w-7 h-7" />
+                <span>יצירת קבוצה חדשה</span>
+              </h3>
+            </div>
 
-        <button
-          type="button"
-          onClick={saveNewGroup}
-          disabled={!newGroupName.trim()}
-          className={`px-8 h-12 rounded-xl text-white transition-colors font-bold shadow-lg
+            {/* Input */}
+            <div className="group mb-2">
+              <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#0D305B]"></span>
+                שם הקבוצה
+              </label>
+
+              <input
+                ref={inputRef}
+                type="text"
+                value={newGroupName}
+                maxLength={MAX_GROUP_NAME_LEN}
+                onChange={(e) =>
+                  setNewGroupName(e.target.value.slice(0, MAX_GROUP_NAME_LEN))
+                }
+                placeholder="שם הקבוצה"
+                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 mb-2 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md text-right"
+                aria-label="שם הקבוצה החדשה"
+              />
+
+              <div className="text-xs text-gray-500 mb-3">
+                {newGroupName.length}/{MAX_GROUP_NAME_LEN}
+              </div>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex justify-end gap-4 mt-6 pt-6 border-t-2 border-gray-200">
+              <button
+                type="button"
+                onClick={closeAddGroupModal}
+                className="px-6 h-12 rounded-xl border-2 border-gray-300 transition-colors font-bold bg-white text-gray-700 hover:bg-gray-50"
+              >
+                ביטול
+              </button>
+
+              <button
+                type="button"
+                onClick={saveNewGroup}
+                disabled={!newGroupName.trim()}
+                className={`px-8 h-12 rounded-xl text-white transition-colors font-bold shadow-lg
             ${
               !newGroupName.trim()
                 ? "bg-slate-400 cursor-not-allowed"
                 : "bg-gradient-to-r from-[#0D305B] to-[#15457a] hover:from-[#15457a] hover:to-[#1e5a9e] hover:shadow-xl"
             }`}
-        >
-          הוסף קבוצה
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
+              >
+                הוסף קבוצה
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {groupToDelete && (
-  <div
-    className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-    onClick={closeDeleteModal}
-  >
-    <div
-      className="bg-gradient-to-br from-white via-[#fffdf8] to-[#fff9ed] rounded-2xl p-8 w-full max-w-md shadow-2xl border border-gray-100 text-right"
-      onClick={(e) => e.stopPropagation()}
-    >
-      <div className="flex justify-start w-full mb-4">
-        <h3 className="flex items-center gap-3 text-2xl font-bold text-[#0D305B]">
-          <Users className="w-7 h-7" />
-          <span>מחיקת קבוצה</span>
-        </h3>
-      </div>
-
-      <p className="text-slate-700 mb-2">
-        האם ברצונך למחוק את הקבוצה "{groupToDelete.name}"?
-      </p>
-      <small className="text-gray-500 block mb-6">
-        לא ניתן לבטל פעולה זו לאחר מכן
-      </small>
-
-      {/* aligned buttons (no jump) */}
-      <div className="flex justify-end gap-4 pt-6 border-t-2 border-gray-200">
-        <button
-          type="button"
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           onClick={closeDeleteModal}
-          className="flex-1 h-12 rounded-xl border-2 border-gray-300 font-bold bg-white text-gray-700 transition-colors hover:bg-gray-50"
         >
-          ביטול
-        </button>
+          <div
+            className="bg-gradient-to-br from-white via-[#fffdf8] to-[#fff9ed] rounded-2xl p-8 w-full max-w-md shadow-2xl border border-gray-100 text-right"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-start w-full mb-4">
+              <h3 className="flex items-center gap-3 text-2xl font-bold text-[#0D305B]">
+                <Users className="w-7 h-7" />
+                <span>מחיקת קבוצה</span>
+              </h3>
+            </div>
 
-        <button
-          type="button"
-          onClick={confirmDeleteGroup}
-          className="flex-1 h-12 rounded-xl font-bold text-white transition-colors shadow-lg bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 hover:shadow-xl"
-        >
-          מחיקה
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+            <p className="text-slate-700 mb-2">
+              האם ברצונך למחוק את הקבוצה "{groupToDelete.name}"?
+            </p>
+            <small className="text-gray-500 block mb-6">
+              לא ניתן לבטל פעולה זו לאחר מכן
+            </small>
 
-    {groupToEdit && (
-  <div
-    className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-    onClick={() => setGroupToEdit(null)}
-  >
-    <div
-      className="bg-gradient-to-br from-white via-[#fffdf8] to-[#fff9ed] rounded-2xl p-8 w-full max-w-md shadow-2xl border border-gray-100 text-right"
-      onClick={(e) => e.stopPropagation()}
-    >
-      <div className="flex justify-start w-full mb-6">
-        <h3 className="flex items-center gap-3 text-2xl font-bold text-[#0D305B]">
-          <Users className="w-7 h-7" />
-          <span>עריכת שם הקבוצה</span>
-        </h3>
-      </div>
+            {/* aligned buttons (no jump) */}
+            <div className="flex justify-end gap-4 pt-6 border-t-2 border-gray-200">
+              <button
+                type="button"
+                onClick={closeDeleteModal}
+                className="flex-1 h-12 rounded-xl border-2 border-gray-300 font-bold bg-white text-gray-700 transition-colors hover:bg-gray-50"
+              >
+                ביטול
+              </button>
 
-      <input
-        type="text"
-        value={editedGroupName}
-        maxLength={MAX_GROUP_NAME_LEN}
-        onChange={(e) =>
-          setEditedGroupName(e.target.value.slice(0, MAX_GROUP_NAME_LEN))
-        }
-        placeholder="שם חדש לקבוצה"
-        className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 mb-5 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md text-right"
-      />
+              <button
+                type="button"
+                onClick={confirmDeleteGroup}
+                className="flex-1 h-12 rounded-xl font-bold text-white transition-colors shadow-lg bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 hover:shadow-xl"
+              >
+                מחיקה
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-      <div className="flex justify-end gap-4 mt-6 pt-6 border-t-2 border-gray-200">
-        <button
-          type="button"
+      {groupToEdit && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           onClick={() => setGroupToEdit(null)}
-          className="px-6 h-12 rounded-xl border-2 border-gray-300 transition-colors font-bold bg-white text-gray-700 hover:bg-gray-50"
         >
-          ביטול
-        </button>
+          <div
+            className="bg-gradient-to-br from-white via-[#fffdf8] to-[#fff9ed] rounded-2xl p-8 w-full max-w-md shadow-2xl border border-gray-100 text-right"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-start w-full mb-6">
+              <h3 className="flex items-center gap-3 text-2xl font-bold text-[#0D305B]">
+                <Users className="w-7 h-7" />
+                <span>עריכת שם הקבוצה</span>
+              </h3>
+            </div>
 
-        <button
-          type="button"
-          onClick={saveEditedGroup}
-          className="px-8 h-12 rounded-xl text-white transition-colors font-bold shadow-lg bg-gradient-to-r from-[#0D305B] to-[#15457a] hover:from-[#15457a] hover:to-[#1e5a9e] hover:shadow-xl"
-        >
-          שמור
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+            <input
+              type="text"
+              value={editedGroupName}
+              maxLength={MAX_GROUP_NAME_LEN}
+              onChange={(e) =>
+                setEditedGroupName(e.target.value.slice(0, MAX_GROUP_NAME_LEN))
+              }
+              placeholder="שם חדש לקבוצה"
+              className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 mb-5 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md text-right"
+            />
 
+            <div className="flex justify-end gap-4 mt-6 pt-6 border-t-2 border-gray-200">
+              <button
+                type="button"
+                onClick={() => setGroupToEdit(null)}
+                className="px-6 h-12 rounded-xl border-2 border-gray-300 transition-colors font-bold bg-white text-gray-700 hover:bg-gray-50"
+              >
+                ביטול
+              </button>
+
+              <button
+                type="button"
+                onClick={saveEditedGroup}
+                className="px-8 h-12 rounded-xl text-white transition-colors font-bold shadow-lg bg-gradient-to-r from-[#0D305B] to-[#15457a] hover:from-[#15457a] hover:to-[#1e5a9e] hover:shadow-xl"
+              >
+                שמור
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
