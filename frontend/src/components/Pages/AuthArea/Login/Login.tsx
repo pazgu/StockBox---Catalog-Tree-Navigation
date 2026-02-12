@@ -1,7 +1,7 @@
 import React, { FC, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
-import { MailQuestionIcon, UserPen, Lock } from "lucide-react";
+import { MailQuestionIcon, UserPen, Lock, User } from "lucide-react";
 import { authService } from "../../../../services/auth.service";
 import { toast } from "sonner";
 import NestedCatalogSVG from "../login.svg";
@@ -10,22 +10,55 @@ interface LoginProps {}
 const Login: FC<LoginProps> = () => {
   const { setUser } = useUser();
   const handleLogin = async () => {
+    // Reset errors
+    const newErrors = {
+      firstName: false,
+      lastName: false,
+      userName: false,
+      email: false,
+    };
+
+    let hasError = false;
+    let emailFormatError = false;
+
+    if (!firstName.trim()) {
+      newErrors.firstName = true;
+      hasError = true;
+    }
+
+    if (!lastName.trim()) {
+      newErrors.lastName = true;
+      hasError = true;
+    }
+
     if (!userName.trim()) {
-      toast.error("שם משתמש הוא שדה חובה");
-      return;
+      newErrors.userName = true;
+      hasError = true;
     }
 
     if (!email.trim()) {
-      toast.error("אימייל הוא שדה חובה");
+    newErrors.email = true;
+    hasError = true;
+  } else if (!isValidEmail(email)) {
+    newErrors.email = true;
+    emailFormatError = true;
+  }
+
+
+
+   setErrors(newErrors);
+    if (hasError) {
+      toast.error("נא למלא את כל השדות");
       return;
     }
 
-    if (!isValidEmail(email)) {
+    if (emailFormatError) {
       toast.error("אימייל לא תקין");
       return;
     }
+
     try {
-      const res = await authService.login({ userName, email });
+      const res = await authService.login({ firstName, lastName, userName, email });
       if (res.status === 201) {
         const { accessToken, user } = res.data;
 
@@ -46,8 +79,16 @@ const Login: FC<LoginProps> = () => {
 
         await authService.markRequestSent(userId);
 
+        setFirstName("");
+        setLastName("");
         setuserName("");
         setEmail("");
+        setErrors({
+          firstName: false,
+          lastName: false,
+          userName: false,
+          email: false,
+        });
       } else if (code === "USER_NOT_APPROVED_REQUEST_SENT") {
         toast.info("משתמש לא מאושר – בקשתך כבר נשלחה");
       } else if (code === "USER_NOT_APPROVED_REQUEST_NOT_SENT") {
@@ -89,8 +130,16 @@ const Login: FC<LoginProps> = () => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [userName, setuserName] = useState("");
   const [email, setEmail] = useState("");
+  const [errors, setErrors] = useState({
+    firstName: false,
+    lastName: false,
+    userName: false,
+    email: false,
+  });
 
   const { role } = useUser();
 
@@ -102,50 +151,111 @@ const Login: FC<LoginProps> = () => {
 
   return (
     <div className="h-230 pt-20 flex p-0 overflow-hidden box-border w-full">
-      <div className="flex-1 flex justify-center items-center ">
-        <div className="max-w-lg w-full bg-white rounded-2xl shadow-md p-8 mt-6 border border-slate-100 animate-fadeInUp">
+      <div className="flex-1 flex justify-center items-center pr-8">
+        <div className="max-w-xl w-full bg-white rounded-2xl shadow-md p-8 mt-6 border border-slate-100 animate-fadeInUp">
           <h1 className="text-3xl font-bold text-right text-gray-800 mb-6 -mt-3">
             התחברות
           </h1>
-
-          {/* שם משתמש */}
-          <div className="mb-7">
-            <label className="block text-right text-gray-700 font-semibold mb-4 text-base">
-              שם משתמש
-            </label>
-            <div className="relative w-full">
-              <input
-                type="text"
-                value={userName}
-                onChange={(e) => setuserName(e.target.value)}
-                className="w-full py-3 px-4 pl-11 border-2 border-gray-300 rounded-lg text-right text-sm"
-                placeholder="הכנס שם משתמש..."
-                dir="rtl"
-              />
-              <UserPen
-                size={20}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
-              />
+          <div className="mb-7 flex gap-4">
+            <div className="flex-1">
+              <label className="block text-right text-gray-700 font-semibold mb-4 text-base">
+                שם פרטי
+              </label>
+              <div className="relative w-full">
+                <input
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => {
+                    setFirstName(e.target.value);
+                    if (errors.firstName) {
+                      setErrors({ ...errors, firstName: false });
+                    }
+                  }}
+                  className={`w-full py-3 px-4 pl-11 border-2 ${errors.firstName ? 'border-red-300' : 'border-gray-300'} rounded-lg text-right text-sm`}
+                  placeholder="הכנס שם פרטי..."
+                  dir="rtl"
+                />
+                <User
+                  size={20}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+                />
+              </div>
+            </div>
+            <div className="flex-1">
+              <label className="block text-right text-gray-700 font-semibold mb-4 text-base">
+                שם משפחה
+              </label>
+              <div className="relative w-full">
+                <input
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => {
+                    setLastName(e.target.value);
+                    if (errors.lastName) {
+                      setErrors({ ...errors, lastName: false });
+                    }
+                  }}
+                  className={`w-full py-3 px-4 pl-11 border-2 ${errors.lastName ? 'border-red-300' : 'border-gray-300'} rounded-lg text-right text-sm`}
+                  placeholder="הכנס שם משפחה..."
+                  dir="rtl"
+                />
+                <User
+                  size={20}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+                />
+              </div>
             </div>
           </div>
+          <div className="mb-7 flex gap-4">
+            <div className="flex-1">
+              <label className="block text-right text-gray-700 font-semibold mb-4 text-base">
+                שם משתמש
+              </label>
+              <div className="relative w-full">
+                <input
+                  type="text"
+                  value={userName}
+                  onChange={(e) => {
+                    setuserName(e.target.value);
+                    if (errors.userName) {
+                      setErrors({ ...errors, userName: false });
+                    }
+                  }}
+                  className={`w-full py-3 px-4 pl-11 border-2 ${errors.userName ? 'border-red-300' : 'border-gray-300'} rounded-lg text-right text-sm`}
+                  placeholder="הכנס שם משתמש..."
+                  dir="rtl"
+                />
+                <UserPen
+                  size={20}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+                />
+              </div>
+            </div>
 
-          <div className="mb-7">
-            <label className="block text-right text-gray-700 font-semibold mb-4 text-base">
-              אימייל
-            </label>
-            <div className="relative w-full">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full py-3 px-4 pl-11 border-2 border-gray-300 rounded-lg text-right text-sm"
-                placeholder="הכנס אימייל..."
-                dir="rtl"
-              />
-              <MailQuestionIcon
-                size={20}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
-              />
+            {/* אימייל */}
+            <div className="flex-1">
+              <label className="block text-right text-gray-700 font-semibold mb-4 text-base">
+                אימייל
+              </label>
+              <div className="relative w-full">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (errors.email) {
+                      setErrors({ ...errors, email: false });
+                    }
+                  }}
+                  className={`w-full py-3 px-4 pl-11 border-2 ${errors.email ? 'border-red-300' : 'border-gray-300'} rounded-lg text-right text-sm`}
+                  placeholder="הכנס אימייל..."
+                  dir="rtl"
+                />
+                <MailQuestionIcon
+                  size={20}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+                />
+              </div>
             </div>
           </div>
 

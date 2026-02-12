@@ -149,7 +149,8 @@ const SingleCat: FC = () => {
       setLoading(true);
 
       try {
-        const currentCategory = await categoriesService.getCategoryByPath(categoryPath);
+        const currentCategory =
+          await categoriesService.getCategoryByPath(categoryPath);
         setCategoryInfo(currentCategory);
       } catch (err) {
         console.error("Error fetching category info:", err);
@@ -467,36 +468,35 @@ const SingleCat: FC = () => {
     setItemToDuplicate(null);
   };
 
-  const handleSaveProduct = async (data: {
-    name: string;
-    description: string;
-    imageFile: File;
-  }) => {
-    try {
-      const safeName = data.name.trim().replace(/\s+/g, "-").normalize('NFC');
-      const productPathString = `${categoryPath}/${safeName}`.normalize('NFC');
-      const createdProduct = await ProductsService.createProduct({
-        productName: data.name,
-        productPath: productPathString,
-        productDescription: data.description,
-        customFields: {},
-        imageFile: data.imageFile,
-      });
+const handleSaveProduct = async (data: {
+  name: string;
+  description: string;
+  imageFile: File;
+}) => {
+  try {
+    const productPathString = categoryPath;
+    const createdProduct = await ProductsService.createProduct({
+      productName: data.name,
+      productPath: productPathString,
+      productDescription: data.description,
+      customFields: {},
+      imageFile: data.imageFile,
+    });
 
-      const newItem: DisplayItem = {
-        id: createdProduct._id!,
-        name: createdProduct.productName,
-        images: createdProduct.productImages || [],
-        type: "product",
-        path: createdProduct.productPath,
-        favorite: false,
-        description: createdProduct.productDescription,
-      };
+    const newItem: DisplayItem = {
+      id: createdProduct._id!,
+      name: createdProduct.productName,
+      images: createdProduct.productImages || [],
+      type: "product",
+      path: createdProduct.productPath,
+      favorite: false,
+      description: createdProduct.productDescription,
+    };
 
-      setItems((prev) => [...prev, newItem]);
-      toast.success(`המוצר "${data.name}" נוסף בהצלחה!`);
-      setShowAddProductModal(false);
-    } catch (error: any) {
+    setItems((prev) => [...prev, newItem]);
+    toast.success(`המוצר "${data.name}" נוסף בהצלחה!`);
+    setShowAddProductModal(false);
+  } catch (error: any) {
       console.error("Save Error:", error);
       const serverMessage =
         error?.response?.data?.message ||
@@ -516,7 +516,10 @@ const SingleCat: FC = () => {
     imageFile: File;
   }) => {
     try {
-      const newCategoryPath = `${categoryPath}/${data.name.trim().toLowerCase().replace(/\s+/g, "-")}`.normalize('NFC');
+      const newCategoryPath =
+        `${categoryPath}/${data.name.trim().toLowerCase().replace(/\s+/g, "-")}`.normalize(
+          "NFC",
+        );
       const newCategory = await categoriesService.createCategory({
         categoryName: data.name,
         categoryPath: newCategoryPath,
@@ -592,7 +595,7 @@ const SingleCat: FC = () => {
 
   const handleMoveSelectedToRecycleBin = () => {
     if (selectedItems.length === 0) {
-      toast.error("אנא בחר לפחות פריט אחד להעברה לסל מיחזור");
+      toast.error("נא לבחור לפחות פריט אחד להעברה לסל מיחזור");
       return;
     }
     setShowDeleteAllModal(true);
@@ -608,7 +611,7 @@ const SingleCat: FC = () => {
 
   const handleMoveSelected = () => {
     if (selectedItems.length === 0) {
-      toast.error("אנא בחר לפחות פריט אחד להעברה");
+      toast.error("נא לבחור לפחות פריט אחד להעברה");
       return;
     }
     setShowMoveMultipleModal(true);
@@ -645,13 +648,14 @@ const SingleCat: FC = () => {
             className="w-32 h-32 rounded-full object-cover shadow-md border-2 border-gray-200"
           />
         )}
-        
+
         {/* Category Title and Stats */}
         <div className="flex flex-col">
           <h1 className="text-[48px] font-light font-alef text-[#0D305B] border-b-4 border-gray-400 pb-1 mb-3 tracking-tight">
             {categoryInfo
               ? categoryInfo.categoryName
-              : breadcrumbPathParts[breadcrumbPathParts.length - 1] || "קטגוריה"}
+              : breadcrumbPathParts[breadcrumbPathParts.length - 1] ||
+                "קטגוריה"}
           </h1>
           <div className="flex items-center gap-4">
             <span className="text-base">סך הכל פריטים: {items.length}</span>

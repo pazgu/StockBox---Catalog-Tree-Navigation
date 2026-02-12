@@ -32,8 +32,8 @@ export class AuthService {
       const newUser = await this.usersService.createUserFromLogin({
         email: dto.email,
         userName: dto.userName,
-        firstName: 'xxx',
-        lastName: 'xxx',
+        firstName: dto.firstName,
+        lastName: dto.lastName,
         role: UserRole.VIEWER,
         approved: false,
         requestSent: false,

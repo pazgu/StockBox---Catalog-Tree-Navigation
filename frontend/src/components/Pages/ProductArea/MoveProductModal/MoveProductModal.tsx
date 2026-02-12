@@ -131,7 +131,7 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
     const isExpanded = expandedCategories.has(cat.categoryPath);
     const isLoading = loadingSubcats.has(cat.categoryPath);
     const isCurrentPath = currentCategoryPaths.includes(cat.categoryPath);
-    
+
     const productExistsHere = currentCategoryPaths.includes(cat.categoryPath);
 
     const isSelected = isSourceSelection
@@ -145,9 +145,11 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
     return (
       <div key={cat._id} style={{ marginRight: `${level * 20}px` }}>
         <label
-             className={`flex items-center gap-2 p-3 border-2 rounded-lg ${
-     (isCurrentPath && !isSourceSelection) ? "" : "cursor-pointer hover:bg-gray-50"
-   } transition-all mb-2 ${
+          className={`flex items-center gap-2 p-3 border-2 rounded-lg ${
+            isCurrentPath && !isSourceSelection
+              ? ""
+              : "cursor-pointer hover:bg-gray-50"
+          } transition-all mb-2 ${
             isSelected
               ? "border-slate-700 bg-slate-50"
               : productExistsHere && !isSourceSelection
@@ -176,23 +178,23 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
             </button>
           )}
 
-            {!(isCurrentPath && !isSourceSelection) && (
-                <input
-                  type="radio"
-                  name={isSourceSelection ? "source" : "destination"}
-                  value={cat.categoryPath}
-                  checked={isSelected}
-                  onChange={(e) => {
-                    if (isSourceSelection) {
-                      setSourceCategoryPath(e.target.value);
-                    } else {
-                      setDestinationCategoryPath(e.target.value);
-                    }
-                  }}
-                  className="w-4 h-4"
-                  disabled={loading}
-                />
-              )}
+          {!(isCurrentPath && !isSourceSelection) && (
+            <input
+              type="radio"
+              name={isSourceSelection ? "source" : "destination"}
+              value={cat.categoryPath}
+              checked={isSelected}
+              onChange={(e) => {
+                if (isSourceSelection) {
+                  setSourceCategoryPath(e.target.value);
+                } else {
+                  setDestinationCategoryPath(e.target.value);
+                }
+              }}
+              className="w-4 h-4"
+              disabled={loading}
+            />
+          )}
 
           <div className="flex items-center gap-2 flex-1">
             {cat.categoryImage && (
@@ -230,7 +232,7 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
   const handleMove = async () => {
     if (currentCategoryPaths.length === 1) {
       if (!destinationCategoryPath) {
-        toast.error("אנא בחר קטגוריית יעד");
+        toast.error("נא לבחור קטגוריית יעד");
         return;
       }
 
@@ -255,12 +257,12 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
       }
     } else {
       if (!sourceCategoryPath) {
-        toast.error("אנא בחר מאיזו קטגוריה להעביר");
+        toast.error("נא לבחור מאיזו קטגוריה להעביר");
         return;
       }
 
       if (!destinationCategoryPath) {
-        toast.error("אנא בחר קטגוריית יעד");
+        toast.error("נא לבחור קטגוריית יעד");
         return;
       }
 

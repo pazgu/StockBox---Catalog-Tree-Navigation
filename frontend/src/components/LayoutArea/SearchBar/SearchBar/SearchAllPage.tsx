@@ -41,6 +41,9 @@ const SearchResultsPage = () => {
     fetchResults();
   }, [searchTerm]);
 
+  const removeFirstSegment = (path: string): string => {
+    return path.split("/").filter(Boolean).slice(1).join("/");
+  };
   const loadMore = useCallback(async () => {
     if (isFetchingMore || !hasMore) return;
 
@@ -158,7 +161,7 @@ const SearchResultsPage = () => {
                                   e.stopPropagation();
                                   navigate(`/products/${item.id}`, {
                                     state: {
-                                      searchBreadcrumbs: p,
+                                      searchBreadcrumbs: removeFirstSegment(p),
                                     },
                                   });
                                 }}

@@ -60,7 +60,9 @@ export class CategoriesService {
       return savedCategory;
     } catch (err: any) {
       if (err?.code === 11000 || /duplicate key/i.test(err?.message || '')) {
-        throw new BadRequestException('שם זה כבר קיים. אנא בחר שם ייחודי אחר.');
+        throw new BadRequestException(
+          'שם זה כבר קיים. נא לבחור שם ייחודי אחר.',
+        );
       }
 
       throw err;
@@ -68,20 +70,20 @@ export class CategoriesService {
   }
 
   async getCategoryByPath(categoryPath: string, user: any): Promise<Category> {
-  const fullPath = categoryPath.startsWith('/categories/')
-    ? categoryPath
-    : `/categories/${categoryPath}`;
+    const fullPath = categoryPath.startsWith('/categories/')
+      ? categoryPath
+      : `/categories/${categoryPath}`;
 
-  const category = await this.categoryModel.findOne({ 
-    categoryPath: fullPath 
-  });
+    const category = await this.categoryModel.findOne({
+      categoryPath: fullPath,
+    });
 
-  if (!category) {
-    throw new NotFoundException(`Category not found at path: ${fullPath}`);
+    if (!category) {
+      throw new NotFoundException(`Category not found at path: ${fullPath}`);
+    }
+
+    return category;
   }
-
-  return category;
-}
 
   async getCategories(user: { userId: string; role: string }) {
     const categories = await this.categoryModel.find({
@@ -333,7 +335,9 @@ export class CategoriesService {
       });
 
       if (dup) {
-        throw new BadRequestException('שם זה כבר קיים. אנא בחר שם ייחודי אחר.');
+        throw new BadRequestException(
+          'שם זה כבר קיים. נא לבחור שם ייחודי אחר.',
+        );
       }
 
       updateCategoryDto.categoryPath = newCategoryPath;
@@ -447,7 +451,7 @@ export class CategoriesService {
     });
 
     if (existingCategory) {
-      throw new BadRequestException('שם זה כבר קיים. אנא בחר שם ייחודי אחר.');
+      throw new BadRequestException('שם זה כבר קיים. נא לבחור שם ייחודי אחר.');
     }
 
     category.categoryPath = newPath;

@@ -264,7 +264,7 @@ export class SearchService {
                 _id: '$_id',
                 label: { $first: '$productName' },
                 score: { $max: searchTerm ? { $meta: 'textScore' } : 0 },
-                paths: { $addToSet: '$productPath' },
+                paths: { $push: '$productPath' },
               },
             },
 

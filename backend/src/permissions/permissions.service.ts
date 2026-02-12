@@ -878,15 +878,14 @@ export class PermissionsService {
               ? pathParts.slice(1, -1)
               : pathParts.slice(0, -1);
 
-          effectiveContextPath = '/categories/' + categoryParts.join('/');
+          if (categoryParts.length > 0) {
+            effectiveContextPath = '/categories/' + categoryParts.join('/');
+          }
         }
       }
 
       if (!effectiveContextPath) {
-        return {
-          canCreate: false,
-          reason: 'חסר נתיב הקשר לבדיקת הרשאות',
-        };
+        return { canCreate: true };
       }
 
       const parentPaths = this.extractParentCategoryPaths(effectiveContextPath);
@@ -1126,6 +1125,25 @@ export class PermissionsService {
           pathParts[0] === 'categories'
             ? pathParts.slice(1, -1)
             : pathParts.slice(0, -1);
+        if (categoryParts.length === 0) {
+          const [userIds, groupIds] = await Promise.all([
+            this.usersService.getAllUserIds(),
+            this.groupsService.getAllGroupIds(),
+          ]);
+          const allAllowedIds = [...userIds, ...groupIds];
+          return {
+            path: pathStr,
+            categoryId: 'root',
+            categoryName: 'רמת שורש (categories)',
+            categoryImage: null,
+            isRootLevel: true,
+            categoryPermissions: allAllowedIds.map((id) => ({
+              _id: `virtual-${id}`,
+              allowed: id.toString(),
+            })),
+            ancestorCategories: [],
+          };
+        }
         const categoryPath = '/categories/' + categoryParts.join('/');
         const parentCategory = await this.categoryModel
           .findOne({ categoryPath })
