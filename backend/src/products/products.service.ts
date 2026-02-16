@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
@@ -25,14 +26,16 @@ import { EntityType } from 'src/schemas/Permissions.schema';
 import { UpdateProductDto } from './dtos/UpdateProduct.dto';
 import { Category } from 'src/schemas/Categories.schema';
 import { Group } from 'src/schemas/Groups.schema';
+import { NameLock } from 'src/schemas/NameLock.schema';
 import { UsersService } from 'src/users/users.service';
-
+import { normalizeName } from 'src/utils/nameLock';
 @Injectable()
 export class ProductsService {
   constructor(
     @InjectModel(Product.name) private productModel: Model<Product>,
     @InjectModel(Category.name) private categoryModel: Model<Category>,
     @InjectModel(Group.name) private groupModel: Model<Group>,
+    @InjectModel(NameLock.name) private nameLockModel: Model<NameLock>,
     private usersService: UsersService,
 
     private permissionsService: PermissionsService,
@@ -151,9 +154,22 @@ export class ProductsService {
         cleanCustomFields = [];
       }
     }
-
+    const nameKey = normalizeName(createProductDto.productName); // NEW
+    try {
+      await this.nameLockModel.create({
+        nameKey,
+        type: 'product',
+        refId: 'pending',
+      });
+    } catch (error: any) {
+      if (error?.code === 11000) {
+        throw new ConflictException('שם זה כבר קיים. נא לבחור שם ייחודי אחר.');
+      }
+      throw error;
+    }
     const newProductData = {
       productName: createProductDto.productName,
+      nameKey,
       productDescription: createProductDto.productDescription || '',
       productPath: [createProductDto.productPath],
       productImages: productImages,
@@ -163,11 +179,15 @@ export class ProductsService {
     try {
       const newProduct = new this.productModel(newProductData);
       const savedProduct = await newProduct.save();
-
+      await this.nameLockModel.updateOne(
+        { nameKey },
+        { $set: { refId: savedProduct._id.toString() } },
+      );
       await this.permissionsService.assignPermissionsForNewEntity(savedProduct);
 
       return savedProduct;
     } catch (error: any) {
+      await this.nameLockModel.deleteOne({ nameKey }).catch(() => undefined);
       console.error('Mongoose Save Error:', error);
 
       if (error?.code === 11000) {
