@@ -16,6 +16,7 @@ import { Category } from 'src/schemas/Categories.schema';
 import { Product } from 'src/schemas/Products.schema';
 import { PermissionsService } from 'src/permissions/permissions.service';
 import { EntityType } from 'src/schemas/Permissions.schema';
+import { NameLock } from 'src/schemas/NameLock.schema';
 
 @Injectable()
 export class RecycleBinService {
@@ -23,6 +24,7 @@ export class RecycleBinService {
     @InjectModel(RecycleBin.name) private recycleBinModel: Model<RecycleBin>,
     @InjectModel(Category.name) private categoryModel: Model<Category>,
     @InjectModel(Product.name) private productModel: Model<Product>,
+    @InjectModel(NameLock.name) private nameLockModel: Model<NameLock>,
     private permissionsService: PermissionsService,
   ) {}
 
@@ -529,6 +531,10 @@ export class RecycleBinService {
     if (!recycleBinItem) {
       throw new NotFoundException('Item not found in recycle bin');
     }
+    await this.nameLockModel.deleteOne({
+      refId: recycleBinItem.itemId.toString(),
+      type: recycleBinItem.itemType, // must be 'product' | 'category'
+    });
 
     await this.recycleBinModel.findByIdAndDelete(new Types.ObjectId(itemId));
 
@@ -539,6 +545,20 @@ export class RecycleBinService {
   }
 
   async emptyRecycleBin() {
+    const recycleItems = await this.recycleBinModel.find().lean();
+    const productIds = recycleItems
+      .filter((i) => i.itemType === 'product')
+      .map((i) => i.itemId.toString());
+
+    const categoryIds = recycleItems
+      .filter((i) => i.itemType === 'category')
+      .map((i) => i.itemId.toString());
+    await this.nameLockModel.deleteMany({
+      $or: [
+        { type: 'product', refId: { $in: productIds } },
+        { type: 'category', refId: { $in: categoryIds } },
+      ],
+    });
     const result = await this.recycleBinModel.deleteMany({});
 
     return {
