@@ -34,9 +34,8 @@ import { handleEntityRouteError } from "../../../../lib/routing/handleEntityRout
 import { useLocation } from "react-router-dom";
 import { userService } from "../../../../services/UserService";
 import { User } from "@/components/models/user.models";
+import { Skeleton } from "../../../ui/skeleton";
 import { usePath } from "../../../../context/PathContext";
-import { Skeleton } from "../../../ui/skeleton"; 
-
 
 interface SingleProdProps {}
 
@@ -72,12 +71,11 @@ const SingleProd: FC<SingleProdProps> = () => {
   const { previousPath } = usePath();
   const [isLoading, setIsLoading] = useState(true);
 
-
   useEffect(() => {
-      if (!productId) {
-    setIsLoading(false);
-    return;
-  }
+    if (!productId) {
+      setIsLoading(false);
+      return;
+    }
     const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(productId);
     if (!isValidObjectId) {
       navigate("/404", { replace: true });
@@ -142,37 +140,25 @@ const SingleProd: FC<SingleProdProps> = () => {
         console.error(err);
         toast.error("שגיאה בטעינת המוצר");
       } finally {
-    setIsLoading(false);
-  }
+        setIsLoading(false);
+      }
     };
 
     loadProduct();
   }, [productId, navigate, id]);
 
   const location = useLocation();
-  const breadcrumbPath = useMemo(() => {
-    const hasPassedBreadcrumbs = Boolean(location.state?.searchBreadcrumbs);
-    const searchVar = location.state?.searchBreadcrumbs;
-
-    if (hasPassedBreadcrumbs && typeof searchVar === "string") {
-      return ["categories", ...searchVar.split("/").filter(Boolean)];
-    }
-
-    if (!product) return ["categories"];
-
-    const rawPath = Array.isArray(product.productPath)
-      ? product.productPath[0]
-      : (product.productPath as unknown as string);
-
-    if (!rawPath) return ["categories"];
-
-    const cleanPath = rawPath
-      .replace(/^\/categories\//, "")
-      .replace(/^categories\//, "");
-
-    return ["categories", ...cleanPath.split("/").filter(Boolean)];
-  }, [product, location.state]);
-
+  const breadcrumbPath = useMemo<string[]>(
+    () => [
+      "categories",
+      ...(previousPath ?? "")
+        .split("/")
+        .filter(Boolean)
+        .filter((s) => s !== "categories"),
+      ...(product?.productName ? [product.productName] : []),
+    ],
+    [previousPath, product?.productName],
+  );
   type EditSnapshot = {
     title: string;
     description: string;
@@ -613,13 +599,13 @@ const SingleProd: FC<SingleProdProps> = () => {
       console.error(err);
     }
   };
- const isFavorite = useMemo(() => {
-  return user?.favorites?.some((fav) => fav.id === product?._id) ?? false;
-}, [user?.favorites, product?._id]);
+  const isFavorite = useMemo(() => {
+    return user?.favorites?.some((fav) => fav.id === product?._id) ?? false;
+  }, [user?.favorites, product?._id]);
 
-if (isLoading) {
-  return <SingleProdSkeleton />;
-}
+  if (isLoading) {
+    return <SingleProdSkeleton />;
+  }
 
   return (
     <div className="pt-16 px-6 pb-10 font-sans-['Noto_Sans_Hebrew'] rtl">
@@ -849,14 +835,13 @@ ${isEditing ? "cursor-pointer" : "cursor-not-allowed opacity-80"}`}
                 </div>
               ) : role === "editor" ? (
                 <div className="relative z-10">
-                 <Link
-  to={`/permissions/product/${product?._id}`}
-  state={{ from: location.pathname + location.search }}
-  className="block w-full text-center py-3 px-4 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-800 shadow-md transition-all duration-300"
->
-  נהל הרשאות
-</Link>
-
+                  <Link
+                    to={`/permissions/product/${product?._id}`}
+                    state={{ from: location.pathname + location.search }}
+                    className="block w-full text-center py-3 px-4 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-800 shadow-md transition-all duration-300"
+                  >
+                    נהל הרשאות
+                  </Link>
                 </div>
               ) : null}
             </div>
@@ -948,10 +933,7 @@ const SingleProdSkeleton: FC = () => {
             {/* Accordion skeleton */}
             <div className="w-full space-y-2">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="border-b border-gray-200/70 rounded-lg"
-                >
+                <div key={i} className="border-b border-gray-200/70 rounded-lg">
                   <div className="py-4 px-2 flex items-center justify-between">
                     <Skeleton className="h-6 w-64 rounded-md" />
                     <Skeleton className="h-6 w-6 rounded-md" />
@@ -1025,6 +1007,5 @@ const SingleProdSkeleton: FC = () => {
     </div>
   );
 };
-
 
 export default SingleProd;
