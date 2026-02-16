@@ -26,6 +26,8 @@ import { PermissionsService } from 'src/permissions/permissions.service';
 import { UsersService } from 'src/users/users.service';
 import { Group } from 'src/schemas/Groups.schema';
 import mongoose from 'mongoose';
+import { NameLock } from 'src/schemas/NameLock.schema';
+import { normalizeName } from 'src/utils/nameLock';
 
 @Injectable()
 export class CategoriesService {
@@ -33,9 +35,11 @@ export class CategoriesService {
     @InjectModel(Category.name) private categoryModel: Model<Category>,
     @InjectModel(Product.name) private productModel: Model<Product>,
     @InjectModel(Group.name) private groupModel: Model<Group>,
+    @InjectModel(NameLock.name) private nameLockModel: Model<NameLock>,
     private readonly permissionsService: PermissionsService,
     private readonly usersService: UsersService,
   ) {}
+  nameKey = normalizeName(CreateCategoryDto.prototype.categoryName);
 
   async createCategory(
     createCategoryDto: CreateCategoryDto,
@@ -49,9 +53,33 @@ export class CategoriesService {
       createCategoryDto.categoryImage = uploaded.secure_url;
     }
 
-    const newCategory = new this.categoryModel(createCategoryDto);
+    const nameKey = normalizeName(createCategoryDto.categoryName);
+    try {
+      await this.nameLockModel.create({
+        nameKey,
+        type: 'category',
+        refId: 'pending',
+      });
+    } catch (err: any) {
+      if (err?.code === 11000 || /duplicate key/i.test(err?.message || '')) {
+        throw new BadRequestException(
+          'שם זה כבר קיים. נא לבחור שם ייחודי אחר.',
+        );
+      }
+      throw err;
+    }
+    const newCategory = new this.categoryModel({
+      ...createCategoryDto,
+      nameKey,
+    });
+
     try {
       const savedCategory = await newCategory.save();
+
+      await this.nameLockModel.updateOne(
+        { nameKey },
+        { $set: { refId: savedCategory._id.toString() } },
+      );
 
       await this.permissionsService.assignPermissionsForNewEntity(
         savedCategory,
@@ -59,6 +87,7 @@ export class CategoriesService {
 
       return savedCategory;
     } catch (err: any) {
+      await this.nameLockModel.deleteOne({ nameKey }).catch(() => undefined);
       if (err?.code === 11000 || /duplicate key/i.test(err?.message || '')) {
         throw new BadRequestException(
           'שם זה כבר קיים. נא לבחור שם ייחודי אחר.',
