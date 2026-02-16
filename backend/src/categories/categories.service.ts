@@ -350,10 +350,31 @@ export class CategoriesService {
 
     const oldCategoryPath = category.categoryPath;
 
+    let oldKey: string | null = null;
+    let newKey: string | null = null;
+
     if (
       updateCategoryDto.categoryName &&
       updateCategoryDto.categoryName !== category.categoryName
     ) {
+      oldKey = normalizeName(category.categoryName);
+      newKey = normalizeName(updateCategoryDto.categoryName);
+      if (!newKey) throw new BadRequestException('Invalid name');
+      try {
+        await this.nameLockModel.create({
+          nameKey: newKey,
+          type: 'category',
+          refId: id,
+        });
+      } catch (e: any) {
+        if (e?.code === 11000) {
+          throw new BadRequestException(
+            'שם זה כבר קיים. נא לבחור שם ייחודי אחר.',
+          );
+        }
+        throw e;
+      }
+      (updateCategoryDto as any).nameKey = newKey;
       const parentPath = this.getParentPath(oldCategoryPath);
       const newSlug = this.slugify(updateCategoryDto.categoryName);
       const newCategoryPath = `${parentPath}/${newSlug}`;
@@ -364,6 +385,9 @@ export class CategoriesService {
       });
 
       if (dup) {
+        await this.nameLockModel
+          .deleteOne({ nameKey: newKey })
+          .catch(() => undefined);
         throw new BadRequestException(
           'שם זה כבר קיים. נא לבחור שם ייחודי אחר.',
         );
@@ -380,11 +404,34 @@ export class CategoriesService {
       updateCategoryDto.categoryImage = uploaded.secure_url;
     }
 
-    const updatedCategory = await this.categoryModel.findByIdAndUpdate(
-      id,
-      updateCategoryDto,
-      { new: true },
-    );
+    let updatedCategory;
+    try {
+      updatedCategory = await this.categoryModel.findByIdAndUpdate(
+        id,
+        updateCategoryDto,
+        { new: true },
+      );
+    } catch (e) {
+      if (newKey)
+        await this.nameLockModel
+          .deleteOne({ nameKey: newKey })
+          .catch(() => undefined);
+      throw e;
+    }
+
+    if (!updatedCategory) {
+      if (newKey)
+        await this.nameLockModel
+          .deleteOne({ nameKey: newKey })
+          .catch(() => undefined);
+      throw new NotFoundException('Category not found');
+    }
+
+    if (oldKey && newKey && oldKey !== newKey) {
+      await this.nameLockModel
+        .deleteOne({ nameKey: oldKey })
+        .catch(() => undefined);
+    }
 
     if (
       updateCategoryDto.categoryPath &&
@@ -420,7 +467,9 @@ export class CategoriesService {
         '\\$&',
       );
       const productsToUpdate = await this.productModel.find({
-        productPath: new RegExp(`^${escapedOldPath}`),
+        productPath: {
+          $elemMatch: { $regex: new RegExp(`^${escapedOldPath}`) },
+        },
       });
 
       for (const product of productsToUpdate) {

@@ -278,34 +278,64 @@ export class ProductsService {
         return field;
       });
     }
+    let oldNameKey: string | null = null;
+    let newNameKey: string | null = null;
 
     if (dto.productName && dto.productName !== existing.productName) {
+      oldNameKey = normalizeName(existing.productName);
+      newNameKey = normalizeName(dto.productName);
+      if (!newNameKey) throw new BadRequestException('Invalid name');
+      try {
+        await this.nameLockModel.create({
+          nameKey: newNameKey,
+          type: 'product',
+          refId: id,
+        });
+      } catch (e: any) {
+        if (e?.code === 11000) {
+          throw new BadRequestException(
+            'שם זה כבר קיים. נא לבחור שם ייחודי אחר.',
+          );
+        }
+        throw e;
+      }
+
       const parentPath = this.getParentPath(existing.productPath[0]);
       const newSlug = this.slugify(dto.productName);
       const newPath = `${parentPath}/${newSlug}`;
-
-      const dup = await this.productModel.findOne({
-        productPath: newPath,
-        _id: { $ne: id },
-      });
-
-      if (dup) {
-        throw new BadRequestException(
-          'שם זה כבר קיים. נא לבחור שם ייחודי אחר.',
-        );
-      }
-
       dto.productPath = [newPath];
+      (dto as any).nameKey = newNameKey;
     }
 
-    const updatedProduct = await this.productModel.findByIdAndUpdate(
-      id,
-      { $set: dto },
-      { new: true },
-    );
+    let updatedProduct;
+    try {
+      updatedProduct = await this.productModel.findByIdAndUpdate(
+        id,
+        { $set: dto },
+        { new: true },
+      );
+    } catch (e) {
+      if (newNameKey) {
+        await this.nameLockModel
+          .deleteOne({ nameKey: newNameKey })
+          .catch(() => undefined);
+      }
+      throw e;
+    }
 
     if (!updatedProduct) {
+      if (newNameKey) {
+        await this.nameLockModel
+          .deleteOne({ nameKey: newNameKey })
+          .catch(() => undefined);
+      }
       throw new NotFoundException('Product not found');
+    }
+
+    if (oldNameKey && newNameKey && oldNameKey !== newNameKey) {
+      await this.nameLockModel
+        .deleteOne({ nameKey: oldNameKey })
+        .catch(() => undefined);
     }
 
     return updatedProduct;
