@@ -376,7 +376,9 @@ export class CategoriesService {
       }
       (updateCategoryDto as any).nameKey = newKey;
       const parentPath = this.getParentPath(oldCategoryPath);
+
       const newSlug = this.slugify(updateCategoryDto.categoryName);
+
       const newCategoryPath = `${parentPath}/${newSlug}`;
 
       const dup = await this.categoryModel.findOne({
@@ -601,14 +603,17 @@ export class CategoriesService {
     return category;
   }
 
-  private slugify(name: string): string {
-    return name
-      .trim()
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-');
-  }
+private slugify(name: string): string {
+  return name
+    .trim()
+    .toLowerCase()
+    .normalize('NFKC') 
+    .replace(/\s+/g, '-') 
+    .replace(/[^\u0590-\u05FFa-z0-9-]/gi, '') 
+    .replace(/-+/g, '-') 
+    .replace(/^-|-$/g, ''); 
+}
+
 
   private async buildAllowedMapForUser(user: {
     userId: string;
@@ -635,7 +640,6 @@ export class CategoriesService {
     >();
 
     for (const p of permissions) {
-      // keep only category permissions here (we're filtering categories)
       if (p.entityType !== EntityType.CATEGORY) continue;
 
       const entityId = p.entityId.toString();
