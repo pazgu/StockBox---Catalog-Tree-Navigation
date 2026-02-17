@@ -248,7 +248,7 @@ const GroupControl: React.FC = () => {
         return g;
       }),
     );
-    toast.info("פריטים חסומים עודכנו בהצלחה");
+    toast.success("פריטים חסומים עודכנו בהצלחה");
   };
 
   const handleEditGroup = (group: Group) => {

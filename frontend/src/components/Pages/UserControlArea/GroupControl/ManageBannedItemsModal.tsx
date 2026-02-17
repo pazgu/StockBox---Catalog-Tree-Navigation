@@ -436,7 +436,6 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
           setIsLoading(true);
           await permissionsService.deletePermissionsBatch(permissionIds);
           await load(true);
-          toast.success(`${items.length} פריטים נחסמו בהצלחה`);
         } catch (e: any) {
           console.error("Bulk block failed:", e);
           toast.error("שגיאה בחסימת הפריטים");
