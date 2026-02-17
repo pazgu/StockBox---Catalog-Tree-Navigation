@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { FC, useState, useEffect, use } from "react";
+import React, { FC, useState, useEffect, use, useMemo } from "react";
 import {
   Pen,
   Trash,
@@ -29,6 +29,9 @@ import DuplicateProductModal from "../../ProductArea/DuplicateProductModal/Dupli
 import { usePath } from "../../../../context/PathContext";
 import ImagePreviewHover from "../../ProductArea/ImageCarousel/ImageCarousel/ImagePreviewHover";
 import { recycleBinService } from "../../../../services/RecycleBinService";
+import { debounce } from "lodash";
+import throttle from "lodash/throttle";
+
 interface CategoriesProps {}
 
 export interface Category {
@@ -73,7 +76,20 @@ export const Categories: FC<CategoriesProps> = () => {
   const [hasDescendantsForMove, setHasDescendantsForMove] = useState<
     boolean | null
   >(null);
-  const [productToMoveToRecycleBin, setProductToMoveToRecycleBin] = useState<DisplayItem | null>(null);
+  const [productToMoveToRecycleBin, setProductToMoveToRecycleBin] =
+    useState<DisplayItem | null>(null);
+  const throttledToggleFavorite = useMemo(
+    () =>
+      throttle(
+        async (itemId: string, itemType: "product" | "category") => {
+          await userService.toggleFavorite(itemId, itemType);
+          toast.success("עודכן");
+        },
+        800,
+        { trailing: false },
+      ),
+    [],
+  );
 
   const openDuplicateForProduct = (item: DisplayItem) => {
     setDuplicateProductId(item.id);
@@ -107,7 +123,8 @@ export const Categories: FC<CategoriesProps> = () => {
         setIsLoading(false);
       }
     }
-  }, [role, id]);
+    return () => throttledToggleFavorite.cancel();
+  }, [role, id, throttledToggleFavorite]);
 
   const loadCategoriesAndFavorites = async () => {
     try {
@@ -249,16 +266,19 @@ export const Categories: FC<CategoriesProps> = () => {
             : `הקטגוריה "${categoryToMoveToRecycleBin.categoryName}" הועברה לסל המיחזור והתכנים הועברו שכבה אחת למעלה!`,
         );
       } else if (productToMoveToRecycleBin) {
-        await recycleBinService.moveProductToRecycleBin(productToMoveToRecycleBin.id);
-        
-        toast.success(`המוצר "${productToMoveToRecycleBin.name}" הועבר לסל המיחזור!`);
+        await recycleBinService.moveProductToRecycleBin(
+          productToMoveToRecycleBin.id,
+        );
+
+        toast.success(
+          `המוצר "${productToMoveToRecycleBin.name}" הועבר לסל המיחזור!`,
+        );
       }
       await loadCategoriesAndFavorites();
 
       setShowMoveToRecycleBinModal(false);
       setCategoryToMoveToRecycleBin(null);
       setProductToMoveToRecycleBin(null);
-
     } catch (error) {
       toast.error("שגיאה בהעברה לסל המיחזור");
       console.error("Error moving to recycle bin:", error);
@@ -334,10 +354,6 @@ export const Categories: FC<CategoriesProps> = () => {
       console.error("Error updating category:", error);
       toast.error("שגיאה בעדכון הקטגוריה");
     }
-  };
-
-  const handleCategoryClick = (category: Category) => {
-    navigate(encodeURI(category.categoryPath));
   };
 
   if (isLoading) {
@@ -442,7 +458,7 @@ export const Categories: FC<CategoriesProps> = () => {
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              toggleFavorite(item.id, item.name, "category");
+                              throttledToggleFavorite(item.id, "category");
                             }}
                             className="peer p-2 rounded-full bg-black/40 hover:bg-black/60 transition-colors relative"
                           >
@@ -456,6 +472,7 @@ export const Categories: FC<CategoriesProps> = () => {
                               }
                             />
                           </button>
+
                           <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
                             {item.favorite ? "הסר ממועדפים" : "הוסף למועדפים"}
                           </span>
@@ -706,102 +723,103 @@ export const Categories: FC<CategoriesProps> = () => {
             onSave={handleAddCategory}
           />
 
-          {showMoveToRecycleBinModal && (categoryToMoveToRecycleBin || productToMoveToRecycleBin) && (
-            <div
-              className="fixed inset-0 bg-slate-800 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 transition-all duration-300"
-              onClick={closeAllModals}
-            >
+          {showMoveToRecycleBinModal &&
+            (categoryToMoveToRecycleBin || productToMoveToRecycleBin) && (
               <div
-                className="bg-white p-8 rounded-xl w-96 max-w-[90%] shadow-xl text-center transform translate-y-[-2px]"
-                onClick={(e) => e.stopPropagation()}
+                className="fixed inset-0 bg-slate-800 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 transition-all duration-300"
+                onClick={closeAllModals}
               >
-                <h4 className="m-0 mb-5 text-xl text-slate-700 font-semibold tracking-tight">
-                  העברה לסל מיחזור
-                </h4>
+                <div
+                  className="bg-white p-8 rounded-xl w-96 max-w-[90%] shadow-xl text-center transform translate-y-[-2px]"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <h4 className="m-0 mb-5 text-xl text-slate-700 font-semibold tracking-tight">
+                    העברה לסל מיחזור
+                  </h4>
 
-                <p className="text-slate-700 mb-3">
-                  {categoryToMoveToRecycleBin ? (
-                    <>
-                      האם ברצונך להעביר את הקטגוריה "
-                      {categoryToMoveToRecycleBin.categoryName}" לסל המיחזור?
-                    </>
-                  ) : (
-                    <>
-                      האם ברצונך להעביר את המוצר "
-                      {productToMoveToRecycleBin?.name}" לסל המיחזור?
-                    </>
-                  )}
-                </p>
+                  <p className="text-slate-700 mb-3">
+                    {categoryToMoveToRecycleBin ? (
+                      <>
+                        האם ברצונך להעביר את הקטגוריה "
+                        {categoryToMoveToRecycleBin.categoryName}" לסל המיחזור?
+                      </>
+                    ) : (
+                      <>
+                        האם ברצונך להעביר את המוצר "
+                        {productToMoveToRecycleBin?.name}" לסל המיחזור?
+                      </>
+                    )}
+                  </p>
 
-                <div className="flex flex-col gap-3 mt-5">
-                  {hasDescendantsForMove && categoryToMoveToRecycleBin ? (
-                    <>
-                      <button
-                        onClick={() => confirmMoveToRecycleBin("cascade")}
-                        disabled={isMovingToRecycleBin}
-                        className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 shadow-md
+                  <div className="flex flex-col gap-3 mt-5">
+                    {hasDescendantsForMove && categoryToMoveToRecycleBin ? (
+                      <>
+                        <button
+                          onClick={() => confirmMoveToRecycleBin("cascade")}
+                          disabled={isMovingToRecycleBin}
+                          className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 shadow-md
 ${isMovingToRecycleBin ? "bg-orange-400 cursor-not-allowed text-white" : "bg-orange-600 text-white hover:bg-orange-700 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"}`}
-                      >
-                        {isMovingToRecycleBin &&
-                        moveStrategyLoading === "cascade" ? (
-                          <span className="flex items-center justify-center gap-2">
-                            <Spinner className="size-4 text-white" />
-                            מעביר לסל...
-                          </span>
-                        ) : (
-                          "העבר הכל לסל (כולל כל הצאצאים)"
-                        )}
-                      </button>
+                        >
+                          {isMovingToRecycleBin &&
+                          moveStrategyLoading === "cascade" ? (
+                            <span className="flex items-center justify-center gap-2">
+                              <Spinner className="size-4 text-white" />
+                              מעביר לסל...
+                            </span>
+                          ) : (
+                            "העבר הכל לסל (כולל כל הצאצאים)"
+                          )}
+                        </button>
 
-                      <button
-                        onClick={() => confirmMoveToRecycleBin("move_up")}
-                        disabled={isMovingToRecycleBin}
-                        className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 shadow-md
+                        <button
+                          onClick={() => confirmMoveToRecycleBin("move_up")}
+                          disabled={isMovingToRecycleBin}
+                          className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 shadow-md
 ${isMovingToRecycleBin ? "bg-blue-200 cursor-not-allowed text-blue-900" : "bg-blue-100 text-blue-900 hover:bg-blue-200 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"}`}
-                      >
-                        {isMovingToRecycleBin &&
-                        moveStrategyLoading === "move_up" ? (
-                          <span className="flex items-center justify-center gap-2">
-                            <Spinner className="size-4 text-blue-900" />
-                            מעביר לסל...
-                          </span>
-                        ) : (
-                          "העבר רק קטגוריה (העבר צאצאים למעלה)"
-                        )}
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() => confirmMoveToRecycleBin("cascade")}
-                        disabled={isMovingToRecycleBin}
-                        className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 shadow-md
+                        >
+                          {isMovingToRecycleBin &&
+                          moveStrategyLoading === "move_up" ? (
+                            <span className="flex items-center justify-center gap-2">
+                              <Spinner className="size-4 text-blue-900" />
+                              מעביר לסל...
+                            </span>
+                          ) : (
+                            "העבר רק קטגוריה (העבר צאצאים למעלה)"
+                          )}
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => confirmMoveToRecycleBin("cascade")}
+                          disabled={isMovingToRecycleBin}
+                          className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 shadow-md
 ${isMovingToRecycleBin ? "bg-orange-400 cursor-not-allowed text-white" : "bg-orange-600 text-white hover:bg-orange-700 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"}`}
-                      >
-                        {isMovingToRecycleBin ? (
-                          <span className="flex items-center justify-center gap-2">
-                            <Spinner className="size-4 text-white" />
-                            מעביר לסל...
-                          </span>
-                        ) : (
-                          "העבר לסל מיחזור"
-                        )}
-                      </button>
-                    </>
-                  )}
+                        >
+                          {isMovingToRecycleBin ? (
+                            <span className="flex items-center justify-center gap-2">
+                              <Spinner className="size-4 text-white" />
+                              מעביר לסל...
+                            </span>
+                          ) : (
+                            "העבר לסל מיחזור"
+                          )}
+                        </button>
+                      </>
+                    )}
 
-                  <button
-                    onClick={closeAllModals}
-                    disabled={isMovingToRecycleBin}
-                    className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200
+                    <button
+                      onClick={closeAllModals}
+                      disabled={isMovingToRecycleBin}
+                      className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200
 ${isMovingToRecycleBin ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"}`}
-                  >
-                    ביטול
-                  </button>
+                    >
+                      ביטול
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
           {showEditModal && categoryToEdit && (
             <EditCategoryModal
