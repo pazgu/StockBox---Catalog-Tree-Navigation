@@ -718,11 +718,11 @@ const SingleCat: FC = () => {
         </div>
       )}
 
-      <main className="grid grid-cols-[repeat(auto-fill,minmax(290px,1fr))] gap-24">
+      <main className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-16">
         {items.map((item) => (
           <div
             key={item.id}
-            className={`flex flex-col items-center p-5 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 ${
+            className={`flex flex-col items-center p-4 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 w-80 ${
               selectedItems.includes(item.id)
                 ? "bg-[#0D305B]/10"
                 : "border-gray-200"
