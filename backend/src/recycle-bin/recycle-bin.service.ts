@@ -474,9 +474,7 @@ export class RecycleBinService {
   }
 
   private async restoreProduct(recycleBinItem: RecycleBin) {
-    const pathsToRestore = recycleBinItem.allProductPaths || [
-      recycleBinItem.originalPath,
-    ];
+    const pathsToRestore = [recycleBinItem.originalPath];
 
     const validPaths: string[] = [];
     for (const path of pathsToRestore) {
@@ -488,12 +486,7 @@ export class RecycleBinService {
         validPaths.push(path);
       }
     }
-
-    if (validPaths.length === 0) {
-      throw new BadRequestException(
-        'Cannot restore: no parent categories exist for this product',
-      );
-    }
+    if (validPaths.length === 0) validPaths.push(recycleBinItem.originalPath);
 
     const restoredProduct = new this.productModel({
       _id: recycleBinItem.itemId,
