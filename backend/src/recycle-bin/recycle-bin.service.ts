@@ -515,7 +515,7 @@ export class RecycleBinService {
     };
   }
 
-  async permanentlyDelete(itemId: string, deleteChildren: boolean = false) {
+  async permanentlyDelete(itemId: string, deleteChildren = false) {
     const recycleBinItem = await this.recycleBinModel
       .findOne({ _id: new Types.ObjectId(itemId) })
       .lean()
@@ -524,9 +524,17 @@ export class RecycleBinService {
     if (!recycleBinItem) {
       throw new NotFoundException('Item not found in recycle bin');
     }
-    await this.nameLockModel.deleteOne({
-      refId: recycleBinItem.itemId.toString(),
-      type: recycleBinItem.itemType, // must be 'product' | 'category'
+    const refIdsToDelete = new Set<string>();
+    refIdsToDelete.add(recycleBinItem.itemId.toString());
+
+    if (deleteChildren && Array.isArray(recycleBinItem.descendants)) {
+      for (const d of recycleBinItem.descendants) {
+        if (d?.itemId) refIdsToDelete.add(d.itemId.toString());
+      }
+    }
+
+    await this.nameLockModel.deleteMany({
+      refId: { $in: Array.from(refIdsToDelete) },
     });
 
     await this.recycleBinModel.findByIdAndDelete(new Types.ObjectId(itemId));
@@ -539,19 +547,33 @@ export class RecycleBinService {
 
   async emptyRecycleBin() {
     const recycleItems = await this.recycleBinModel.find().lean();
-    const productIds = recycleItems
-      .filter((i) => i.itemType === 'product')
-      .map((i) => i.itemId.toString());
+    const productRefIds = new Set<string>();
+    const categoryRefIds = new Set<string>();
 
-    const categoryIds = recycleItems
-      .filter((i) => i.itemType === 'category')
-      .map((i) => i.itemId.toString());
+    for (const item of recycleItems) {
+      if (item.itemType === 'product') {
+        productRefIds.add(item.itemId.toString());
+      } else if (item.itemType === 'category') {
+        categoryRefIds.add(item.itemId.toString());
+
+        if (Array.isArray(item.descendants)) {
+          for (const d of item.descendants) {
+            if (!d?.itemId || !d?.itemType) continue;
+            if (d.itemType === 'product')
+              productRefIds.add(d.itemId.toString());
+            if (d.itemType === 'category')
+              categoryRefIds.add(d.itemId.toString());
+          }
+        }
+      }
+    }
     await this.nameLockModel.deleteMany({
       $or: [
-        { type: 'product', refId: { $in: productIds } },
-        { type: 'category', refId: { $in: categoryIds } },
+        { type: 'product', refId: { $in: Array.from(productRefIds) } },
+        { type: 'category', refId: { $in: Array.from(categoryRefIds) } },
       ],
     });
+
     const result = await this.recycleBinModel.deleteMany({});
 
     return {
