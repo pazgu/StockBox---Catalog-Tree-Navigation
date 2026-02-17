@@ -478,7 +478,7 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
                 selectedItem.movedChildrenCount! > 0) && (
                 <p className="text-red-600 text-sm mb-4 font-semibold">
                   {selectedItem.childrenCount! > 0
-                    ? `גם ${selectedItem.childrenCount} הפריטים שבתוכה יימחקו לצמיתות!`
+                    ? `גם ${selectedItem.childrenCount} הפריטים שבתוכה יימחקו לצמיתות מכל המערכת!`
                     : `אזהרה: ${selectedItem.movedChildrenCount} פריטים נמצאים כעת מחוץ לקטגוריה זו`}
                   <AlertTriangle size={16} className="inline mr-1" />
                 </p>
