@@ -126,16 +126,20 @@ const SmartDeleteModal: React.FC<SmartDeleteModalProps> = ({
                               onChange={() => togglePathSelection(path)}
                               className="w-4 h-4 cursor-pointer accent-blue-600"
                             />
-                            <span
-                              className={`text-xs font-mono ${
-                                path.startsWith(currentCategoryPath)
-                                  ? "text-blue-900 font-medium"
-                                  : "text-slate-600"
-                              }`}
-                              dir="ltr"
-                            >
-                              {path}
-                            </span>
+                           <span
+                            className={`text-xs font-mono ${
+                              path.startsWith(currentCategoryPath)
+                                ? "text-blue-900 font-medium"
+                                : "text-slate-600"
+                            }`}
+                            style={{
+                              direction: "ltr",
+                              unicodeBidi: "bidi-override"
+                            }}
+                          >
+                            {path}
+                          </span>
+
                           </div>
                           {path.startsWith(currentCategoryPath) && (
                             <span className="bg-blue-600 text-white px-2 py-0.5 rounded text-[10px] font-medium whitespace-nowrap">
