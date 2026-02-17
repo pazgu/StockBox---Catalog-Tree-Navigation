@@ -116,4 +116,17 @@ export class GroupsService {
   async getAllGroupIds(): Promise<mongoose.Types.ObjectId[]> {
     return this.groupModel.distinct('_id');
   }
+  async getUserIdsInGroups(groupIds: string[]): Promise<string[]> {
+    if (!groupIds.length) return [];
+
+    const groups = await this.groupModel
+      .find({ _id: { $in: groupIds } }, { members: 1 }) 
+      .lean();
+
+    const allUserIds = groups.flatMap((g) =>
+      (g.members || []).map((id: any) => id.toString()),
+    );
+
+    return Array.from(new Set(allUserIds));
+  }
 }
