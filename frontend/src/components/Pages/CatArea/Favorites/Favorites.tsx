@@ -28,122 +28,131 @@ export const Favorites: React.FC = () => {
       loadFavorites();
     }
     window.scrollBy({ top: 10, behavior: "smooth" });
-  }, [id]); 
+  }, [id]);
   const loadFavorites = async () => {
-      if (!id) return;
-      try {
-        setLoading(true);
-        const userFavorites = await userService.getFavorites();
-        setFavorites(userFavorites);
-        let failedProducts = 0;
-        let failedCategories = 0;
+    if (!id) return;
+    try {
+      setLoading(true);
+      const userFavorites = await userService.getFavorites();
+      setFavorites(userFavorites);
+      let failedProducts = 0;
+      let failedCategories = 0;
 
-        const productIds = userFavorites
-          .filter((fav: FavoriteItem) => fav.type === "product")
-          .map((fav: FavoriteItem) => fav.id);      
-        const categoryIds = userFavorites
-          .filter((fav: FavoriteItem) => fav.type === "category")
-          .map((fav: FavoriteItem) => fav.id);
-        if (categoryIds.length > 0) {
-          const categoryPromises = categoryIds.map((categoryId: string) =>
-            categoriesService.getCategoryById(categoryId).catch((err) => {
-  failedCategories += 1;
-  console.error(`Failed to load category ${categoryId}:`, err);
-  return null;
-})
-
-          );
-          const loadedCategories = await Promise.all(categoryPromises);
-          const validCategories = loadedCategories.filter(c => c !== null) as CategoryDTO[];
-          setCategories(validCategories);
-        }
-        if (productIds.length > 0) {
-          const productPromises = productIds.map((productId: string) =>
-            ProductsService.getById(productId).catch((err) => {
-  failedProducts += 1;
-  console.error(`Failed to load product ${productId}:`, err);
-  return null;
-})
-
-          );
-          const loadedProducts = await Promise.all(productPromises);
-          const validProducts = loadedProducts.filter(p => p !== null) as ProductDto[];
-          setProducts(validProducts);
-        }
-      } catch (error) {
-        console.error("Error loading favorites:", error);
-        toast.error("שגיאה בטעינת המועדפים");
-      } finally {
-        setLoading(false);
+      const productIds = userFavorites
+        .filter((fav: FavoriteItem) => fav.type === "product")
+        .map((fav: FavoriteItem) => fav.id);
+      const categoryIds = userFavorites
+        .filter((fav: FavoriteItem) => fav.type === "category")
+        .map((fav: FavoriteItem) => fav.id);
+      if (categoryIds.length > 0) {
+        const categoryPromises = categoryIds.map((categoryId: string) =>
+          categoriesService.getCategoryById(categoryId).catch((err) => {
+            failedCategories += 1;
+            console.error(`Failed to load category ${categoryId}:`, err);
+            return null;
+          }),
+        );
+        const loadedCategories = await Promise.all(categoryPromises);
+        const validCategories = loadedCategories.filter(
+          (c) => c !== null,
+        ) as CategoryDTO[];
+        setCategories(validCategories);
       }
-    };
-    const toggleProductFavorite = async (productId: string, productName: string) => {
-  if (!id) {
-    toast.error("יש להתחבר כדי להוסיף למועדפים");
-    return;
-  }
-
-  const isFavorite = favorites.some((fav) => fav.id === productId);
-
-  try {
-    await userService.toggleFavorite(productId, "product");
-
-    if (isFavorite) {
-      setFavorites((prev) => prev.filter((fav) => fav.id !== productId));
-      setProducts((prev) => prev.filter((p) => p._id !== productId));
-      toast.info(`${productName} הוסר מהמועדפים`);
+      if (productIds.length > 0) {
+        const productPromises = productIds.map((productId: string) =>
+          ProductsService.getById(productId).catch((err) => {
+            failedProducts += 1;
+            console.error(`Failed to load product ${productId}:`, err);
+            return null;
+          }),
+        );
+        const loadedProducts = await Promise.all(productPromises);
+        const validProducts = loadedProducts.filter(
+          (p) => p !== null,
+        ) as ProductDto[];
+        setProducts(validProducts);
+      }
+    } catch (error) {
+      console.error("Error loading favorites:", error);
+      toast.error("שגיאה בטעינת המועדפים");
+    } finally {
+      setLoading(false);
+    }
+  };
+  const toggleProductFavorite = async (
+    productId: string,
+    productName: string,
+  ) => {
+    if (!id) {
+      toast.error("יש להתחבר כדי להוסיף למועדפים");
       return;
     }
 
-    setFavorites((prev) => [...prev, { id: productId, type: "product" }]);
+    const isFavorite = favorites.some((fav) => fav.id === productId);
 
-    const fullProduct = await ProductsService.getById(productId);
-    if (fullProduct) {
-      setProducts((prev) => [fullProduct, ...prev]);
+    try {
+      await userService.toggleFavorite(productId, "product");
+
+      if (isFavorite) {
+        setFavorites((prev) => prev.filter((fav) => fav.id !== productId));
+        setProducts((prev) => prev.filter((p) => p._id !== productId));
+        toast.info(`${productName} הוסר מהמועדפים`);
+        return;
+      }
+
+      setFavorites((prev) => [...prev, { id: productId, type: "product" }]);
+
+      const fullProduct = await ProductsService.getById(productId);
+      if (fullProduct) {
+        setProducts((prev) => [fullProduct, ...prev]);
+      }
+
+      toast.success(`${productName} נוסף למועדפים`);
+    } catch (error) {
+      toast.error("שגיאה בעדכון המועדפים");
     }
+  };
 
-    toast.success(`${productName} נוסף למועדפים`);
-  } catch (error) {
-    toast.error("שגיאה בעדכון המועדפים");
-  }
-};
-
-    const toggleCategoryFavorite = async (categoryId: string, categoryName: string) => {
-  if (!id) {
-    toast.error("יש להתחבר כדי להוסיף למועדפים");
-    return;
-  }
-
-  const isFavorite = favorites.some((fav) => fav.id === categoryId);
-
-  try {
-    await userService.toggleFavorite(categoryId, "category");
-
-    if (isFavorite) {
-      setFavorites((prev) => prev.filter((fav) => fav.id !== categoryId));
-      setCategories((prev) => prev.filter((c) => c._id !== categoryId));
-      toast.info(`${categoryName} הוסר מהמועדפים`);
+  const toggleCategoryFavorite = async (
+    categoryId: string,
+    categoryName: string,
+  ) => {
+    if (!id) {
+      toast.error("יש להתחבר כדי להוסיף למועדפים");
       return;
     }
 
-    setFavorites((prev) => [...prev, { id: categoryId, type: "category" }]);
+    const isFavorite = favorites.some((fav) => fav.id === categoryId);
 
-    const fullCategory = await categoriesService.getCategoryById(categoryId);
-    if (fullCategory) {
-      setCategories((prev) => [fullCategory, ...prev]);
+    try {
+      await userService.toggleFavorite(categoryId, "category");
+
+      if (isFavorite) {
+        setFavorites((prev) => prev.filter((fav) => fav.id !== categoryId));
+        setCategories((prev) => prev.filter((c) => c._id !== categoryId));
+        toast.info(`${categoryName} הוסר מהמועדפים`);
+        return;
+      }
+
+      setFavorites((prev) => [...prev, { id: categoryId, type: "category" }]);
+
+      const fullCategory = await categoriesService.getCategoryById(categoryId);
+      if (fullCategory) {
+        setCategories((prev) => [fullCategory, ...prev]);
+      }
+
+      toast.success(`${categoryName} נוסף למועדפים`);
+    } catch (error) {
+      toast.error("שגיאה בעדכון המועדפים");
     }
+  };
 
-    toast.success(`${categoryName} נוסף למועדפים`);
-  } catch (error) {
-    toast.error("שגיאה בעדכון המועדפים");
-  }
-};
-
-  const showCategories = activeFilter === "all" || activeFilter === "categories";
+  const showCategories =
+    activeFilter === "all" || activeFilter === "categories";
   const showProducts = activeFilter === "all" || activeFilter === "products";
   if (!id) {
     return (
-       <div className="mt-12 p-4 flex items-center justify-center min-h-[400px]">
+      <div className="mt-12 p-4 flex items-center justify-center min-h-[400px]">
         <div className="text-slate-700 text-xl">
           יש להתחבר כדי לצפות במועדפים
         </div>
@@ -159,7 +168,10 @@ export const Favorites: React.FC = () => {
   }
   if (products.length === 0 && categories.length === 0) {
     return (
-      <div className="mt-12 p-4 font-system direction-rtl text-right overflow-x-hidden" style={{ direction: "rtl" }}>
+      <div
+        className="mt-12 p-4 font-system direction-rtl text-right overflow-x-hidden"
+        style={{ direction: "rtl" }}
+      >
         <div className="text-right mt-16 mb-6">
           <h2 className="text-5xl font-light text-slate-700 mb-2 tracking-tight">
             מועדפים
@@ -176,7 +188,10 @@ export const Favorites: React.FC = () => {
     );
   }
   return (
-    <div className="mt-12 p-4 font-system direction-rtl text-right overflow-x-hidden" style={{ direction: "rtl" }}>
+    <div
+      className="mt-12 p-4 font-system direction-rtl text-right overflow-x-hidden"
+      style={{ direction: "rtl" }}
+    >
       <div className="text-right mt-16 mb-6">
         <h2 className="text-5xl font-light text-slate-700 mb-2 tracking-tight">
           מועדפים
@@ -232,7 +247,9 @@ export const Favorites: React.FC = () => {
               >
                 <div className="absolute top-3 right-3">
                   <button
-                    onClick={() => toggleCategoryFavorite(cat._id, cat.categoryName)}
+                    onClick={() =>
+                      toggleCategoryFavorite(cat._id, cat.categoryName)
+                    }
                     className="peer p-2 rounded-full bg-black/40 hover:bg-black/60 transition-colors"
                   >
                     <Heart
@@ -252,7 +269,9 @@ export const Favorites: React.FC = () => {
                     className="w-[100px] h-[100px] object-contain mx-auto mb-3"
                   />
                 </Link>
-                <p className="font-semibold text-slate-800">{cat.categoryName}</p>
+                <p className="font-semibold text-slate-800">
+                  {cat.categoryName}
+                </p>
               </div>
             ))}
           </div>
@@ -272,7 +291,9 @@ export const Favorites: React.FC = () => {
               >
                 <div className="absolute top-3 right-3">
                   <button
-                    onClick={() => toggleProductFavorite(product._id!, product.productName)}
+                    onClick={() =>
+                      toggleProductFavorite(product._id!, product.productName)
+                    }
                     className="peer p-2 rounded-full bg-black/40 hover:bg-black/60 transition-colors"
                   >
                     <Heart
