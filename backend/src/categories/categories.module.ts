@@ -8,7 +8,7 @@ import { Product, ProductSchema } from 'src/schemas/Products.schema';
 import { PermissionsModule } from 'src/permissions/permissions.module';
 import { Group, GroupSchema } from 'src/schemas/Groups.schema';
 import { UsersModule } from 'src/users/users.module';
-
+import { NameLock, NameLockSchema } from 'src/schemas/NameLock.schema';
 @Module({
   imports: [
     MongooseModule.forFeature([
@@ -21,6 +21,7 @@ import { UsersModule } from 'src/users/users.module';
         schema: ProductSchema,
       },
       { name: Group.name, schema: GroupSchema },
+      { name: NameLock.name, schema: NameLockSchema },
     ]),
     PermissionsModule,
     UsersModule,

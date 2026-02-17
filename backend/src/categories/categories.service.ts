@@ -26,6 +26,8 @@ import { PermissionsService } from 'src/permissions/permissions.service';
 import { UsersService } from 'src/users/users.service';
 import { Group } from 'src/schemas/Groups.schema';
 import mongoose from 'mongoose';
+import { NameLock } from 'src/schemas/NameLock.schema';
+import { normalizeName } from 'src/utils/nameLock';
 
 @Injectable()
 export class CategoriesService {
@@ -33,9 +35,11 @@ export class CategoriesService {
     @InjectModel(Category.name) private categoryModel: Model<Category>,
     @InjectModel(Product.name) private productModel: Model<Product>,
     @InjectModel(Group.name) private groupModel: Model<Group>,
+    @InjectModel(NameLock.name) private nameLockModel: Model<NameLock>,
     private readonly permissionsService: PermissionsService,
     private readonly usersService: UsersService,
   ) {}
+  nameKey = normalizeName(CreateCategoryDto.prototype.categoryName);
 
   async createCategory(
     createCategoryDto: CreateCategoryDto,
@@ -49,9 +53,33 @@ export class CategoriesService {
       createCategoryDto.categoryImage = uploaded.secure_url;
     }
 
-    const newCategory = new this.categoryModel(createCategoryDto);
+    const nameKey = normalizeName(createCategoryDto.categoryName);
+    try {
+      await this.nameLockModel.create({
+        nameKey,
+        type: 'category',
+        refId: 'pending',
+      });
+    } catch (err: any) {
+      if (err?.code === 11000 || /duplicate key/i.test(err?.message || '')) {
+        throw new BadRequestException(
+          'שם זה כבר קיים. נא לבחור שם ייחודי אחר.',
+        );
+      }
+      throw err;
+    }
+    const newCategory = new this.categoryModel({
+      ...createCategoryDto,
+      nameKey,
+    });
+
     try {
       const savedCategory = await newCategory.save();
+
+      await this.nameLockModel.updateOne(
+        { nameKey },
+        { $set: { refId: savedCategory._id.toString() } },
+      );
 
       await this.permissionsService.assignPermissionsForNewEntity(
         savedCategory,
@@ -59,6 +87,7 @@ export class CategoriesService {
 
       return savedCategory;
     } catch (err: any) {
+      await this.nameLockModel.deleteOne({ nameKey }).catch(() => undefined);
       if (err?.code === 11000 || /duplicate key/i.test(err?.message || '')) {
         throw new BadRequestException(
           'שם זה כבר קיים. נא לבחור שם ייחודי אחר.',
@@ -321,10 +350,31 @@ export class CategoriesService {
 
     const oldCategoryPath = category.categoryPath;
 
+    let oldKey: string | null = null;
+    let newKey: string | null = null;
+
     if (
       updateCategoryDto.categoryName &&
       updateCategoryDto.categoryName !== category.categoryName
     ) {
+      oldKey = normalizeName(category.categoryName);
+      newKey = normalizeName(updateCategoryDto.categoryName);
+      if (!newKey) throw new BadRequestException('Invalid name');
+      try {
+        await this.nameLockModel.create({
+          nameKey: newKey,
+          type: 'category',
+          refId: id,
+        });
+      } catch (e: any) {
+        if (e?.code === 11000) {
+          throw new BadRequestException(
+            'שם זה כבר קיים. נא לבחור שם ייחודי אחר.',
+          );
+        }
+        throw e;
+      }
+      (updateCategoryDto as any).nameKey = newKey;
       const parentPath = this.getParentPath(oldCategoryPath);
       const newSlug = this.slugify(updateCategoryDto.categoryName);
       const newCategoryPath = `${parentPath}/${newSlug}`;
@@ -335,6 +385,9 @@ export class CategoriesService {
       });
 
       if (dup) {
+        await this.nameLockModel
+          .deleteOne({ nameKey: newKey })
+          .catch(() => undefined);
         throw new BadRequestException(
           'שם זה כבר קיים. נא לבחור שם ייחודי אחר.',
         );
@@ -351,11 +404,34 @@ export class CategoriesService {
       updateCategoryDto.categoryImage = uploaded.secure_url;
     }
 
-    const updatedCategory = await this.categoryModel.findByIdAndUpdate(
-      id,
-      updateCategoryDto,
-      { new: true },
-    );
+    let updatedCategory;
+    try {
+      updatedCategory = await this.categoryModel.findByIdAndUpdate(
+        id,
+        updateCategoryDto,
+        { new: true },
+      );
+    } catch (e) {
+      if (newKey)
+        await this.nameLockModel
+          .deleteOne({ nameKey: newKey })
+          .catch(() => undefined);
+      throw e;
+    }
+
+    if (!updatedCategory) {
+      if (newKey)
+        await this.nameLockModel
+          .deleteOne({ nameKey: newKey })
+          .catch(() => undefined);
+      throw new NotFoundException('Category not found');
+    }
+
+    if (oldKey && newKey && oldKey !== newKey) {
+      await this.nameLockModel
+        .deleteOne({ nameKey: oldKey })
+        .catch(() => undefined);
+    }
 
     if (
       updateCategoryDto.categoryPath &&
@@ -391,7 +467,9 @@ export class CategoriesService {
         '\\$&',
       );
       const productsToUpdate = await this.productModel.find({
-        productPath: new RegExp(`^${escapedOldPath}`),
+        productPath: {
+          $elemMatch: { $regex: new RegExp(`^${escapedOldPath}`) },
+        },
       });
 
       for (const product of productsToUpdate) {
