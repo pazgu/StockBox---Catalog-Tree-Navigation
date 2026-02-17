@@ -153,14 +153,6 @@ const SmartDeleteModal: React.FC<SmartDeleteModalProps> = ({
                 </div>
               )}
 
-              {!isMultiLocation && (
-                <div className="bg-amber-50/50 border border-amber-100 rounded-xl p-5">
-                  <p className="text-sm text-amber-900 leading-relaxed">
-                    ⚠️ פעולה זו תמחק את המוצר לצמיתות מהמערכת. לא ניתן יהיה
-                    לשחזר את המוצר לאחר המחיקה.
-                  </p>
-                </div>
-              )}
             </div>
 
             {/* Right Column - Action Buttons */}
