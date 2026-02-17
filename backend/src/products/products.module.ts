@@ -9,7 +9,7 @@ import { AuthModule } from 'src/auth/auth.module';
 import { PermissionsModule } from 'src/permissions/permissions.module';
 import { Group, GroupSchema } from 'src/schemas/Groups.schema';
 import { UsersModule } from 'src/users/users.module';
-
+import { NameLock, NameLockSchema } from 'src/schemas/NameLock.schema';
 @Module({
   imports: [
     AuthModule,
@@ -17,6 +17,7 @@ import { UsersModule } from 'src/users/users.module';
       { name: Product.name, schema: ProductSchema },
       { name: Category.name, schema: CategorySchema },
       { name: Group.name, schema: GroupSchema },
+      { name: NameLock.name, schema: NameLockSchema },
     ]),
     PermissionsModule,
     UsersModule,

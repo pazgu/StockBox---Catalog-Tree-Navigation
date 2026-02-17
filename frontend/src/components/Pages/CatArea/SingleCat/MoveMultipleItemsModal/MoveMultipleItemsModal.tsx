@@ -21,13 +21,14 @@ const MoveMultipleItemsModal: React.FC<MoveMultipleItemsModalProps> = ({
 }) => {
   const [allCategories, setAllCategories] = useState<CategoryDTO[]>([]);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
-  const [destinationCategoryPath, setDestinationCategoryPath] = useState<string>("");
+  const [destinationCategoryPath, setDestinationCategoryPath] =
+    useState<string>("");
   const [loading, setLoading] = useState(false);
-  const [subcategoriesCache, setSubcategoriesCache] = useState<Record<string, CategoryDTO[]>>(
-    {}
-  );
+  const [subcategoriesCache, setSubcategoriesCache] = useState<
+    Record<string, CategoryDTO[]>
+  >({});
   const [loadingSubcats, setLoadingSubcats] = useState<Set<string>>(new Set());
 
   const products = selectedItems.filter((item) => item.type === "product");
@@ -35,28 +36,28 @@ const MoveMultipleItemsModal: React.FC<MoveMultipleItemsModalProps> = ({
 
   const getCurrentPaths = (): Set<string> => {
     const paths = new Set<string>();
-    
+
     products.forEach((product) => {
       product.path.forEach((fullPath) => {
         const parts = fullPath.split("/");
-        parts.pop(); 
+        parts.pop();
         const categoryPath = parts.join("/");
         if (categoryPath) {
           paths.add(categoryPath);
         }
       });
     });
-    
+
     categories.forEach((category) => {
       const categoryPath = category.path[0];
       const parts = categoryPath.split("/");
-      parts.pop(); 
+      parts.pop();
       const parentPath = parts.join("/");
       if (parentPath) {
         paths.add(parentPath);
       }
     });
-    
+
     return paths;
   };
 
@@ -80,11 +81,11 @@ const MoveMultipleItemsModal: React.FC<MoveMultipleItemsModalProps> = ({
 
       const filteredCategories = mainCategories.filter((cat) => {
         if (selectedCategoryIds.includes(cat._id)) return false;
-        
+
         for (const selectedPath of selectedCategoryPaths) {
           if (cat.categoryPath.startsWith(selectedPath + "/")) return false;
         }
-        
+
         return true;
       });
 
@@ -92,8 +93,8 @@ const MoveMultipleItemsModal: React.FC<MoveMultipleItemsModalProps> = ({
 
       await Promise.all(
         filteredCategories.map((cat) =>
-          loadAllSubcategoriesRecursively(cat.categoryPath)
-        )
+          loadAllSubcategoriesRecursively(cat.categoryPath),
+        ),
       );
     } catch (error) {
       toast.error("שגיאה בטעינת קטגוריות");
@@ -104,7 +105,7 @@ const MoveMultipleItemsModal: React.FC<MoveMultipleItemsModalProps> = ({
   };
 
   const loadAllSubcategoriesRecursively = async (
-    categoryPath: string
+    categoryPath: string,
   ): Promise<void> => {
     if (subcategoriesCache[categoryPath]) {
       return;
@@ -118,11 +119,11 @@ const MoveMultipleItemsModal: React.FC<MoveMultipleItemsModalProps> = ({
 
       const filteredSubcats = subcats.filter((cat) => {
         if (selectedCategoryIds.includes(cat._id)) return false;
-        
+
         for (const selectedPath of selectedCategoryPaths) {
           if (cat.categoryPath.startsWith(selectedPath + "/")) return false;
         }
-        
+
         return true;
       });
 
@@ -133,8 +134,8 @@ const MoveMultipleItemsModal: React.FC<MoveMultipleItemsModalProps> = ({
 
       await Promise.all(
         filteredSubcats.map((subcat) =>
-          loadAllSubcategoriesRecursively(subcat.categoryPath)
-        )
+          loadAllSubcategoriesRecursively(subcat.categoryPath),
+        ),
       );
     } catch (error) {
       console.error("Error loading subcategories:", error);
@@ -168,15 +169,15 @@ const MoveMultipleItemsModal: React.FC<MoveMultipleItemsModalProps> = ({
     const hasSubcats = subcats.length > 0;
     const isExpanded = expandedCategories.has(cat.categoryPath);
     const isLoading = loadingSubcats.has(cat.categoryPath);
-    
+
     const isCurrentPath = currentPaths.has(cat.categoryPath);
 
     return (
       <div key={cat._id} style={{ marginRight: `${level * 20}px` }}>
         <label
-             className={`flex items-center gap-2 p-3 border-2 rounded-lg ${
-     isCurrentPath ? "" : "cursor-pointer hover:bg-gray-50"
-   } transition-all mb-2 ${
+          className={`flex items-center gap-2 p-3 border-2 rounded-lg ${
+            isCurrentPath ? "" : "cursor-pointer hover:bg-gray-50"
+          } transition-all mb-2 ${
             destinationCategoryPath === cat.categoryPath
               ? "border-slate-700 bg-slate-50"
               : isCurrentPath
@@ -205,17 +206,17 @@ const MoveMultipleItemsModal: React.FC<MoveMultipleItemsModalProps> = ({
             </button>
           )}
 
-        {!isCurrentPath && (
-          <input
-            type="radio"
-            name="destination"
-            value={cat.categoryPath}
-            checked={destinationCategoryPath === cat.categoryPath}
-            onChange={(e) => setDestinationCategoryPath(e.target.value)}
-            className="w-4 h-4"
-            disabled={loading}
-          />
-        )}
+          {!isCurrentPath && (
+            <input
+              type="radio"
+              name="destination"
+              value={cat.categoryPath}
+              checked={destinationCategoryPath === cat.categoryPath}
+              onChange={(e) => setDestinationCategoryPath(e.target.value)}
+              className="w-4 h-4"
+              disabled={loading}
+            />
+          )}
 
           <div className="flex items-center gap-2 flex-1">
             {cat.categoryImage && (
@@ -250,7 +251,7 @@ const MoveMultipleItemsModal: React.FC<MoveMultipleItemsModalProps> = ({
 
   const handleMove = async () => {
     if (!destinationCategoryPath) {
-      toast.error("אנא בחר קטגוריית יעד");
+      toast.error("נא לבחור קטגוריית יעד");
       return;
     }
 
@@ -263,7 +264,9 @@ const MoveMultipleItemsModal: React.FC<MoveMultipleItemsModalProps> = ({
 
       for (const product of products) {
         try {
-          await ProductsService.moveProduct(product.id, [destinationCategoryPath]);
+          await ProductsService.moveProduct(product.id, [
+            destinationCategoryPath,
+          ]);
           successCount++;
         } catch (error: any) {
           failCount++;
@@ -274,7 +277,10 @@ const MoveMultipleItemsModal: React.FC<MoveMultipleItemsModalProps> = ({
 
       for (const category of categories) {
         try {
-          await categoriesService.moveCategory(category.id, destinationCategoryPath);
+          await categoriesService.moveCategory(
+            category.id,
+            destinationCategoryPath,
+          );
           successCount++;
         } catch (error: any) {
           failCount++;
@@ -289,7 +295,7 @@ const MoveMultipleItemsModal: React.FC<MoveMultipleItemsModalProps> = ({
         onClose();
       } else if (successCount > 0 && failCount > 0) {
         toast.warning(
-          `${successCount} פריטים הועברו בהצלחה, ${failCount} נכשלו`
+          `${successCount} פריטים הועברו בהצלחה, ${failCount} נכשלו`,
         );
         if (errors.length > 0) {
           console.error("Move errors:", errors);
@@ -332,7 +338,7 @@ const MoveMultipleItemsModal: React.FC<MoveMultipleItemsModalProps> = ({
           <p className="text-gray-700 mb-3 font-medium">
             מעביר {selectedItems.length} פריטים:
           </p>
-          
+
           <div className="bg-gray-50 rounded-lg p-4 max-h-48 overflow-y-auto">
             {products.length > 0 && (
               <div className="mb-3">

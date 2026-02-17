@@ -50,9 +50,7 @@ export class GroupsService {
     });
 
     if (existingGroup) {
-      throw new ConflictException(
-        `שם זה כבר קיים. אנא בחר שם ייחודי אחר.`,
-      );
+      throw new ConflictException(`שם זה כבר קיים. נא לבחור שם ייחודי אחר.`);
     }
 
     const newGroup = new this.groupModel(createGroupDto);
@@ -74,9 +72,7 @@ export class GroupsService {
       });
 
       if (existingGroup) {
-        throw new ConflictException(
-          `שם זה כבר קיים. אנא בחר שם ייחודי אחר.`,
-        );
+        throw new ConflictException(`שם זה כבר קיים. נא לבחור שם ייחודי אחר.`);
       }
     }
 

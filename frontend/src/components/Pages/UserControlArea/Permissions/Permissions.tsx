@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { permissionsService } from "../../../../services/permissions.service";
 import InheritanceModal from "../../SharedComponents/DialogModal/DialogModal";
 import { usePath } from "../../../../context/PathContext";
+import { Spinner } from "../../../ui/spinner";
 
 interface Group {
   _id: string;
@@ -54,6 +55,7 @@ const Permissions: React.FC = () => {
     permissionsInheritedToChildren: boolean; 
 
   } | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   
 
   useEffect(() => {
@@ -217,6 +219,7 @@ if (role !== "editor") {
 
 
   const savePermissions = async (inheritToChildren: boolean) => {
+    setIsSaving(true);
     try {
       if (!cleanId) return;
 
@@ -272,6 +275,8 @@ if (role !== "editor") {
     }
     } catch (err) {
       toast.error("שגיאה בשמירה");
+    } finally {
+      setIsSaving(false);
     }
   };
   const handleSave = async () => {
@@ -288,7 +293,9 @@ if (role !== "editor") {
     );
 
     if (toCreate.length === 0 && toDelete.length > 0) {
+      setIsSaving(true);
       await savePermissions(false);
+      setIsSaving(false);
       return;
     }
 
@@ -311,7 +318,7 @@ const showManualInheritButton =
           <div className="mb-4">
             <Button
               variant="outline"
-              className="px-6 flex items-center gap-2 hover:bg-gray-300 transition-colors"
+              className="px-6 flex items-center gap-2 border-2 border-blue-300 shadow-md transition-all duration-200 hover:bg-blue-50 hover:border-blue-400 hover:shadow-lg"
               onClick={() => navigate(-1)}
             >
               <ArrowRight className="w-4 h-4" />
@@ -499,7 +506,7 @@ const showManualInheritButton =
                 )}
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex flex-row-reverse gap-3">
                 <Button
                   variant="outline"
                   className="px-8 py-2 border-gray-300 hover:bg-gray-300 transition-all font-medium"
@@ -508,10 +515,18 @@ const showManualInheritButton =
                   ביטול
                 </Button>
                 <Button
-                  className="bg-green-600 text-white hover:bg-green-700 px-10 shadow-lg"
+                  className="bg-green-600 text-white hover:bg-green-700 px-10 shadow-lg disabled:opacity-50"
                   onClick={handleSave}
+                  disabled={!hasLocalChanges}
                 >
-                  שמירה
+                  {isSaving ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Spinner className="size-4 text-white" />
+                      שומר...
+                    </span>
+                  ) : (
+                    'שמירה'
+                  )}
                 </Button>
               </div>
             </div>

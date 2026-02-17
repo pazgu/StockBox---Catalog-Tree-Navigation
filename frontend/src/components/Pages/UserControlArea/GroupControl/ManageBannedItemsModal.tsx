@@ -113,8 +113,9 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
           false,
         );
         const unifiedTree = [...taggedBlockedTree, ...taggedAvailableTree];
-        setUnifiedTree(unifiedTree);
+        setUnifiedTree(data.fullTree || []);
         setPermissionIdByKey(data.permissionIdByKey);
+        setLocalBannedItems(data.blocked || []);
         const enrichWithContextPath = (items: BannedItem[]): BannedItem[] => {
           return items.map((item) => {
             if (item.type === "product" && item.productPath) {
@@ -140,6 +141,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
         const enrichedAvailable = enrichWithContextPath(data.available).map(
           (i) => ({ ...i, isBlocked: false }),
         );
+
         setAllItems([...enrichedBlocked, ...enrichedAvailable]);
         setLocalBannedItems(enrichedBlocked);
 
@@ -709,9 +711,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
           </div>
 
           {/* Selection Controls */}
-          {(filteredBannedItems.length > 0 ||
-            availableItems.length > 0 ||
-            selectedItems.size > 0) && (
+          {(filteredBannedItems.length > 0 || availableItems.length > 0) && (
             <div className="flex gap-1 mb-2 items-center bg-gray-50 p-1 rounded-md flex-shrink-0">
               <button
                 onClick={handleSelectAll}
@@ -721,13 +721,11 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
                 (activeTab === "banned"
                   ? filteredBannedItems.length
                   : availableItems.length)
-                  ? "בטל הכל"
-                  : "בחר הכל"}
+                  ? "בחר הכל"
+                  : "בטל בחירה"}
               </button>
 
-              {(selectedItems.size > 0 ||
-                filteredBannedItems.length > 0 ||
-                availableItems.length > 0 ) && (
+              {selectedItems.size > 0 && (
                 <>
                   <span className="text-[11px] text-gray-500 bg-white px-2 py-0.5 rounded">
                     {selectedItems.size} נבחרו
@@ -758,11 +756,14 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
                   )}
                   {viewMode === "tree" && (
                     <div className="flex items-center gap-2">
+                      {/* Unblock Button (Green) */}
                       <div className="flex items-center justify-center py-1 px-3 bg-green-500 hover:bg-green-600 rounded-md transition-colors">
                         <button onClick={() => handleBulkAction("banned")}>
                           <LockOpen className="w-3.5 h-3.5 text-white" />
                         </button>
                       </div>
+
+                      {/* Block Button (Red) */}
                       <div className="flex items-center justify-center py-1 px-3 bg-red-500 hover:bg-red-600 rounded-md transition-colors">
                         <button onClick={() => handleBulkAction("available")}>
                           <Lock className="w-3.5 h-3.5 text-white" />

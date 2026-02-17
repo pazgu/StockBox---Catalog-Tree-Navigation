@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
@@ -25,14 +26,16 @@ import { EntityType } from 'src/schemas/Permissions.schema';
 import { UpdateProductDto } from './dtos/UpdateProduct.dto';
 import { Category } from 'src/schemas/Categories.schema';
 import { Group } from 'src/schemas/Groups.schema';
+import { NameLock } from 'src/schemas/NameLock.schema';
 import { UsersService } from 'src/users/users.service';
-
+import { normalizeName } from 'src/utils/nameLock';
 @Injectable()
 export class ProductsService {
   constructor(
     @InjectModel(Product.name) private productModel: Model<Product>,
     @InjectModel(Category.name) private categoryModel: Model<Category>,
     @InjectModel(Group.name) private groupModel: Model<Group>,
+    @InjectModel(NameLock.name) private nameLockModel: Model<NameLock>,
     private usersService: UsersService,
 
     private permissionsService: PermissionsService,
@@ -151,9 +154,22 @@ export class ProductsService {
         cleanCustomFields = [];
       }
     }
-
+    const nameKey = normalizeName(createProductDto.productName); // NEW
+    try {
+      await this.nameLockModel.create({
+        nameKey,
+        type: 'product',
+        refId: 'pending',
+      });
+    } catch (error: any) {
+      if (error?.code === 11000) {
+        throw new ConflictException('שם זה כבר קיים. נא לבחור שם ייחודי אחר.');
+      }
+      throw error;
+    }
     const newProductData = {
       productName: createProductDto.productName,
+      nameKey,
       productDescription: createProductDto.productDescription || '',
       productPath: [createProductDto.productPath],
       productImages: productImages,
@@ -163,15 +179,19 @@ export class ProductsService {
     try {
       const newProduct = new this.productModel(newProductData);
       const savedProduct = await newProduct.save();
-
+      await this.nameLockModel.updateOne(
+        { nameKey },
+        { $set: { refId: savedProduct._id.toString() } },
+      );
       await this.permissionsService.assignPermissionsForNewEntity(savedProduct);
 
       return savedProduct;
     } catch (error: any) {
+      await this.nameLockModel.deleteOne({ nameKey }).catch(() => undefined);
       console.error('Mongoose Save Error:', error);
 
       if (error?.code === 11000) {
-        throw new ConflictException('שם זה כבר קיים. אנא בחר שם ייחודי אחר.');
+        throw new ConflictException('שם זה כבר קיים. נא לבחור שם ייחודי אחר.');
       }
 
       if (error?.name === 'ValidationError') {
@@ -258,32 +278,64 @@ export class ProductsService {
         return field;
       });
     }
+    let oldNameKey: string | null = null;
+    let newNameKey: string | null = null;
 
     if (dto.productName && dto.productName !== existing.productName) {
+      oldNameKey = normalizeName(existing.productName);
+      newNameKey = normalizeName(dto.productName);
+      if (!newNameKey) throw new BadRequestException('Invalid name');
+      try {
+        await this.nameLockModel.create({
+          nameKey: newNameKey,
+          type: 'product',
+          refId: id,
+        });
+      } catch (e: any) {
+        if (e?.code === 11000) {
+          throw new BadRequestException(
+            'שם זה כבר קיים. נא לבחור שם ייחודי אחר.',
+          );
+        }
+        throw e;
+      }
+
       const parentPath = this.getParentPath(existing.productPath[0]);
       const newSlug = this.slugify(dto.productName);
       const newPath = `${parentPath}/${newSlug}`;
-
-      const dup = await this.productModel.findOne({
-        productPath: newPath,
-        _id: { $ne: id },
-      });
-
-      if (dup) {
-        throw new BadRequestException('שם זה כבר קיים. אנא בחר שם ייחודי אחר.');
-      }
-
       dto.productPath = [newPath];
+      (dto as any).nameKey = newNameKey;
     }
 
-    const updatedProduct = await this.productModel.findByIdAndUpdate(
-      id,
-      { $set: dto },
-      { new: true },
-    );
+    let updatedProduct;
+    try {
+      updatedProduct = await this.productModel.findByIdAndUpdate(
+        id,
+        { $set: dto },
+        { new: true },
+      );
+    } catch (e) {
+      if (newNameKey) {
+        await this.nameLockModel
+          .deleteOne({ nameKey: newNameKey })
+          .catch(() => undefined);
+      }
+      throw e;
+    }
 
     if (!updatedProduct) {
+      if (newNameKey) {
+        await this.nameLockModel
+          .deleteOne({ nameKey: newNameKey })
+          .catch(() => undefined);
+      }
       throw new NotFoundException('Product not found');
+    }
+
+    if (oldNameKey && newNameKey && oldNameKey !== newNameKey) {
+      await this.nameLockModel
+        .deleteOne({ nameKey: oldNameKey })
+        .catch(() => undefined);
     }
 
     return updatedProduct;
@@ -319,7 +371,9 @@ export class ProductsService {
       });
 
       if (existingProduct) {
-        throw new BadRequestException('שם זה כבר קיים. אנא בחר שם ייחודי אחר.');
+        throw new BadRequestException(
+          'שם זה כבר קיים. נא לבחור שם ייחודי אחר.',
+        );
       }
     }
 
@@ -365,7 +419,9 @@ export class ProductsService {
 
     for (const newPath of newPaths) {
       if (product.productPath.includes(newPath)) {
-        throw new BadRequestException('שם זה כבר קיים. אנא בחר שם ייחודי אחר.');
+        throw new BadRequestException(
+          'שם זה כבר קיים. נא לבחור שם ייחודי אחר.',
+        );
       }
 
       const existingProduct = await this.productModel.findOne({
@@ -374,7 +430,9 @@ export class ProductsService {
       });
 
       if (existingProduct) {
-        throw new BadRequestException('שם זה כבר קיים. אנא בחר שם ייחודי אחר.');
+        throw new BadRequestException(
+          'שם זה כבר קיים. נא לבחור שם ייחודי אחר.',
+        );
       }
     }
 

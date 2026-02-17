@@ -212,7 +212,6 @@ export class SearchService {
           categoryPath: { $in: allowedCategoryPaths },
         },
       },
-
       {
         $addFields: {
           type: 'category',
@@ -234,14 +233,18 @@ export class SearchService {
               },
             },
 
-            {
-              $match: {
-                productName: {
-                  $regex: isSpecificSearch ? fuzzyRegex : tokens[0],
-                  $options: 'i',
-                },
-              },
-            },
+            ...(isSpecificSearch
+              ? [
+                  {
+                    $match: {
+                      productName: {
+                        $regex: isSpecificSearch ? fuzzyRegex : tokens[0],
+                        $options: 'i',
+                      },
+                    },
+                  },
+                ]
+              : []),
 
             {
               $match: {
@@ -261,7 +264,7 @@ export class SearchService {
                 _id: '$_id',
                 label: { $first: '$productName' },
                 score: { $max: searchTerm ? { $meta: 'textScore' } : 0 },
-                paths: { $addToSet: '$productPath' },
+                paths: { $push: '$productPath' },
               },
             },
 

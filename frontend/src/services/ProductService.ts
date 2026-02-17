@@ -45,7 +45,7 @@ export class ProductsService {
   ): Promise<ProductDto> {
     const fd = new FormData();
     fd.append("productName", payload.productName);
-    fd.append("productPath", payload.productPath);
+    fd.append("productPath", payload.productPath + "/" + payload.productName);
 
     if (payload.productDescription) {
       fd.append("productDescription", payload.productDescription);
