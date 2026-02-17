@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
@@ -83,23 +84,22 @@ export class CategoriesController {
     return await this.categoriesService.moveCategory(id, moveCategoryDto);
   }
 
-
   @Get('by-path/*path')
-async getCategoryByPath(@Req() request: any) {
-  const fullUrl = request.url;
-  const pathPart = fullUrl.split('by-path/')[1];
+  async getCategoryByPath(@Req() request: any) {
+    const fullUrl = request.url;
+    const pathPart = fullUrl.split('by-path/')[1];
 
-  if (!pathPart) {
-    throw new NotFoundException('Path not provided');
+    if (!pathPart) {
+      throw new NotFoundException('Path not provided');
+    }
+
+    const decodedPath = decodeURIComponent(pathPart);
+
+    return await this.categoriesService.getCategoryByPath(
+      decodedPath,
+      request.user,
+    );
   }
-
-  const decodedPath = decodeURIComponent(pathPart);
-  
-  return await this.categoriesService.getCategoryByPath(
-    decodedPath,
-    request.user,
-  );
-}
 
   @Patch(':id')
   @UsePipes(new ValidationPipe({ transform: true }))
