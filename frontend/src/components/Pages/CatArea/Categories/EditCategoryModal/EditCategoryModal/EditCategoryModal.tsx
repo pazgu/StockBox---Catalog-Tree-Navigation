@@ -64,19 +64,7 @@ const EditCategoryModal: React.FC<Props> = ({
 
   if (!isOpen) return null;
 
-  const moveImage = (dx: number, dy: number) => {
-  if (!editRawImage) return;
-  const next = { x: editOffset.x + dx, y: editOffset.y + dy };
-  setEditOffset(
-    clampOffsetToCircle(
-      next,
-      editRawImage.naturalWidth,
-      editRawImage.naturalHeight,
-      editZoom,
-      CROP_BOX
-    )
-  );
-};
+  
 
 
   const openCropperFromCurrent = () => {

@@ -472,14 +472,17 @@ export class ProductsService {
     }
   }
 
-  private slugify(name: string): string {
-    return name
-      .trim()
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-');
-  }
+ private slugify(name: string): string {
+  return name
+    .trim()
+    .toLowerCase()
+    .normalize('NFKC') 
+    .replace(/\s+/g, '-') 
+    .replace(/[^\u0590-\u05FFa-z0-9-]/gi, '') 
+    .replace(/-+/g, '-') 
+    .replace(/^-|-$/g, ''); 
+}
+
 
   private getParentPath(fullProductPath: string): string {
     const idx = fullProductPath.lastIndexOf('/');
