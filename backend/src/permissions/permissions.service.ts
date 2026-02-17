@@ -419,56 +419,63 @@ export class PermissionsService {
     const path = isProduct ? entity.productPath : entity.categoryPath;
 
     const pathAsString = Array.isArray(path) ? path[0] : path;
+
     const rawParts = pathAsString.split('/').filter(Boolean);
+
     const normalizedParts =
       rawParts[0] === 'categories' ? rawParts.slice(1) : rawParts;
 
-    if (!isProduct && normalizedParts.length === 1) {
-      const [userIds, groupIds] = await Promise.all([
-        this.usersService.getAllUserIds(),
-        this.groupsService.getAllGroupIds(),
-      ]);
+    const isRootCategory = !isProduct && normalizedParts.length === 1;
 
-      const permissions = [...userIds, ...groupIds].map((id) => ({
-        entityType: EntityType.CATEGORY,
-        entityId: entity._id,
-        allowed: id,
-      }));
+    if (!isRootCategory) {
+      const parentPath = `/categories/${normalizedParts.slice(0, -1).join('/')}`;
 
-      if (permissions.length) {
+      const parentCategory = await this.categoryModel
+        .findOne({ categoryPath: parentPath })
+        .lean();
+      if (!parentCategory) {
+        throw new Error(`Parent category not found for path: '${parentPath}'`);
+      }
+
+      const parentPermissions = await this.permissionModel
+        .find({ entityId: parentCategory._id })
+        .lean();
+      if (parentPermissions.length) {
+        const permissions = parentPermissions.map((p) => ({
+          entityType: isProduct ? EntityType.PRODUCT : EntityType.CATEGORY,
+          entityId: entity._id,
+          allowed: p.allowed,
+        }));
         await this.permissionModel.insertMany(permissions, { ordered: false });
       }
 
       return;
     }
 
-    const parentPaths: string[] = [];
-    for (let i = 1; i < normalizedParts.length; i++) {
-      parentPaths.push('/categories/' + normalizedParts.slice(0, i).join('/'));
-    }
+    const [allUserIds, allGroupIds] = await Promise.all([
+      this.usersService.getAllUserIds(),
+      this.groupsService.getAllGroupIds(),
+    ]);
 
-    const parents = await this.categoryModel
-      .find({ categoryPath: { $in: parentPaths } })
-      .select('_id')
-      .lean();
+    const allGroupIdsString = allGroupIds.map((id) => id.toString());
+    const usersInGroups =
+      await this.groupsService.getUserIdsInGroups(allGroupIdsString);
+    const usersInGroupsSet = new Set(usersInGroups);
 
-    if (!parents.length) return;
-
-    const parentIds = parents.map((p) => p._id);
-
-    const { allowedGroupIds, allowedUserIds } =
-      await this.resolveAllowedSubjectsForPath(parentIds);
+    const individualUserIds = allUserIds.filter(
+      (id) => !usersInGroupsSet.has(id),
+    );
 
     const permissions = [
-      ...allowedGroupIds.map((id) => ({
-        entityType: isProduct ? EntityType.PRODUCT : EntityType.CATEGORY,
+      ...individualUserIds.map((id) => ({
+        entityType: EntityType.CATEGORY,
         entityId: entity._id,
-        allowed: new mongoose.Types.ObjectId(id),
+        allowed: id,
       })),
-      ...allowedUserIds.map((id) => ({
-        entityType: isProduct ? EntityType.PRODUCT : EntityType.CATEGORY,
+      ...allGroupIds.map((id) => ({
+        entityType: EntityType.CATEGORY,
         entityId: entity._id,
-        allowed: new mongoose.Types.ObjectId(id),
+        allowed: id,
       })),
     ];
 
