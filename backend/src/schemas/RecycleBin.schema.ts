@@ -4,16 +4,16 @@ import { HydratedDocument, Types } from 'mongoose';
 export interface MovedChild {
   itemId: Types.ObjectId;
   itemType: 'category' | 'product';
-  previousPath: string | string[]; 
-  newPath: string | string[];     
+  previousPath: string | string[];
+  newPath: string | string[];
 }
 
 @Schema({ timestamps: true })
 export class RecycleBin {
   _id?: Types.ObjectId;
 
-  @Prop({ required: true, type: Types.ObjectId })  
-  itemId: Types.ObjectId; 
+  @Prop({ required: true, type: Types.ObjectId })
+  itemId: Types.ObjectId;
 
   @Prop({ required: true, enum: ['category', 'product'] })
   itemType: 'category' | 'product';
@@ -25,16 +25,16 @@ export class RecycleBin {
   itemImage: string;
 
   @Prop({ required: true })
-  originalPath: string; 
+  originalPath: string;
 
   @Prop({ required: true, type: Date, default: Date.now })
   deletedAt: Date;
 
   @Prop({ required: false, type: Types.ObjectId })
-  deletedBy: Types.ObjectId; 
+  deletedBy: Types.ObjectId;
 
   @Prop({ required: false, type: Number, default: 0 })
-  childrenCount: number; 
+  childrenCount: number;
 
   @Prop({ required: false })
   productDescription?: string;
@@ -49,10 +49,10 @@ export class RecycleBin {
   uploadFolders?: any[];
 
   @Prop({ type: [String], default: [] })
-  allProductPaths?: string[]; 
+  allProductPaths?: string[];
 
   @Prop({ required: false })
-  specificPathDeleted?: string; 
+  specificPathDeleted?: string;
 
   @Prop({ required: false, type: Boolean })
   permissionsInheritedToChildren?: boolean;
@@ -70,8 +70,7 @@ export class RecycleBin {
   movedChildren?: MovedChild[];
 
   @Prop({ required: false, type: Number, default: 0 })
-  movedChildrenCount?: number; 
-
+  movedChildrenCount?: number;
 }
 
 export const RecycleBinSchema = SchemaFactory.createForClass(RecycleBin);
