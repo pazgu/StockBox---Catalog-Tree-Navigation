@@ -307,6 +307,18 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
       setSelectedItems(newMap);
     }
   };
+
+  const allCurrentSelected = (() => {
+    const currentItems =
+      viewMode === "tree"
+        ? allItems
+        : activeTab === "banned"
+          ? filteredBannedItems
+          : availableItems;
+    return currentItems.length > 0 &&
+      currentItems.every((item) => selectedItems.has(item.id));
+  })();
+
   const executeUnblock = async (
     items: BannedItem[],
     inheritToChildren: boolean,
@@ -424,7 +436,6 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
           setIsLoading(true);
           await permissionsService.deletePermissionsBatch(permissionIds);
           await load(true);
-          toast.success(`${items.length} פריטים נחסמו בהצלחה`);
         } catch (e: any) {
           console.error("Bulk block failed:", e);
           toast.error("שגיאה בחסימת הפריטים");
@@ -711,18 +722,13 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
           </div>
 
           {/* Selection Controls */}
-          {(filteredBannedItems.length > 0 || availableItems.length > 0) && (
+          {(activeTab === "banned" ? filteredBannedItems.length : availableItems.length) > 0 && (
             <div className="flex gap-1 mb-2 items-center bg-gray-50 p-1 rounded-md flex-shrink-0">
               <button
                 onClick={handleSelectAll}
                 className="py-1 px-5 rounded-md text-[11px] font-medium bg-blue-500 text-white hover:bg-blue-600 transition-all shadow-sm hover:shadow-md"
               >
-                {selectedItems.size ===
-                (activeTab === "banned"
-                  ? filteredBannedItems.length
-                  : availableItems.length)
-                  ? "בחר הכל"
-                  : "בטל בחירה"}
+                {allCurrentSelected ? "בטל בחירה" : "בחר הכל"}
               </button>
 
               {selectedItems.size > 0 && (
@@ -770,17 +776,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
                         </button>
                       </div>
                     </div>
-                  )}{" "}
-                  <button
-                    onClick={() => {
-                      setSelectedItems(new Map());
-                      setSelectedWithChildren(new Set());
-                    }}
-                    disabled={isLoading}
-                    className="py-1 px-3 rounded-md text-[11px] font-medium bg-gray-400 text-white hover:bg-gray-500 disabled:bg-gray-300 transition-all shadow-sm hover:shadow-md"
-                  >
-                    בטל בחירה
-                  </button>
+                  )}
                 </>
               )}
             </div>

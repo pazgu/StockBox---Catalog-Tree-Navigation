@@ -338,7 +338,7 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
                       </button>
                     </div>
 
-                    <div className="h-36 w-full flex justify-center items-center p-5 rounded-none mr-2 grayscale">
+                    <div className="h-36 w-full flex justify-center items-center p-5 rounded-none mr-2 grayscale pointer-events-none">
                       <ImagePreviewHover
                         images={item.productImages || [item.itemImage]}
                         alt={item.itemName}
