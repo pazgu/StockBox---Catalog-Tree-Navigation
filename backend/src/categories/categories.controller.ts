@@ -11,7 +11,6 @@ import {
   Body,
   UsePipes,
   ValidationPipe,
-  Delete,
   Param,
   Patch,
   Req,
@@ -47,15 +46,6 @@ export class CategoriesController {
     @UploadedFile() file?: Express.Multer.File,
   ) {
     return await this.categoriesService.createCategory(createCategoryDto, file);
-  }
-
-  @Delete(':id')
-  async deleteCategory(@Param('id') id: string, @Req() req: any) {
-    const strategy = req.query?.strategy as 'cascade' | 'move_up' | undefined;
-    return await this.categoriesService.deleteCategory(
-      id,
-      strategy ?? 'cascade',
-    );
   }
 
   @Get('children/*path')
