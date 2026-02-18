@@ -204,68 +204,6 @@ export class ProductsService {
     }
   }
 
-  async delete(
-    id: string,
-    categoryPath?: string,
-  ): Promise<{ success: boolean; message: string }> {
-    const product = await this.productModel.findById(id);
-
-    if (!product) {
-      throw new NotFoundException(`Product with ID ${id} not found`);
-    }
-
-    try {
-      if (categoryPath && product.productPath.length > 1) {
-        const updatedPaths = product.productPath.filter(
-          (path) => !path.startsWith(categoryPath),
-        );
-
-        if (updatedPaths.length === product.productPath.length) {
-          throw new BadRequestException(
-            `Product does not exist in category: ${categoryPath}`,
-          );
-        }
-
-        product.productPath = updatedPaths;
-        await product.save();
-
-        return {
-          success: true,
-          message: `Product "${product.productName}" removed from this category`,
-        };
-      }
-
-      if (product.productImages && product.productImages.length > 0) {
-        await Promise.all(
-          product.productImages.map((url) => this.deleteProductImage(url)),
-        );
-      }
-
-      await this.productModel.findByIdAndDelete(id);
-      await this.permissionsService.deletePermissionsForEntity(
-        EntityType.PRODUCT,
-        id,
-      );
-
-      await this.usersService.removeItemFromAllUserFavorites(id);
-
-      return {
-        success: true,
-        message: `Product "${product.productName}" deleted from all categories`,
-      };
-    } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException
-      ) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        `Failed to delete product: ${(error as Error).message}`,
-      );
-    }
-  }
-
   async update(id: string, dto: UpdateProductDto) {
     const existing = await this.productModel.findById(id);
     if (!existing) throw new NotFoundException('Product not found');

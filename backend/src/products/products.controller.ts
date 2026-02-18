@@ -22,7 +22,6 @@ import {
   UseGuards as ProductUseGuards,
   Patch as ProductPatch,
   UploadedFiles,
-  Query as ProductQuery,
 } from '@nestjs/common';
 import {
   FilesInterceptor,
@@ -80,16 +79,6 @@ export class ProductsController {
     @ProductUploadedFile() file?: Express.Multer.File,
   ) {
     return this.productsService.create(createProductDto, file);
-  }
-
-  @ProductDelete(':id')
-  @ProductUseGuards(JwtAuthGuard, EditorGuard)
-  @HttpCode(HttpStatus.OK)
-  delete(
-    @ProductParam('id', ParseObjectIdPipe) id: string,
-    @ProductQuery('categoryPath') categoryPath?: string,
-  ) {
-    return this.productsService.delete(id, categoryPath);
   }
 
   @ProductPost(':id/move')
