@@ -1,7 +1,6 @@
 import {
   CategoryDTO,
   CreateCategoryDTO,
-  DeleteCategoryResponse,
   UpdateCategoryDTO,
 } from "../components/models/category.models";
 import { environment } from "./../environments/environment.development";
@@ -92,21 +91,6 @@ class CategoriesService {
       throw error;
     }
   }
-
-  async deleteCategory(
-  id: string,
-  strategy: "cascade" | "move_up" = "cascade",
-): Promise<DeleteCategoryResponse> {
-  try {
-    const response = await api.delete<DeleteCategoryResponse>(
-      `${this.baseUrl}/${id}?strategy=${strategy}`,
-    );
-    return response.data;
-  } catch (error) {
-    console.error("Error deleting category:", error);
-    throw error;
-  }
-}
 
 
   async updateCategory(

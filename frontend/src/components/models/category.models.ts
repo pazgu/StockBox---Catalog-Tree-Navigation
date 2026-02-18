@@ -13,13 +13,6 @@ export interface CreateCategoryDTO {
   imageFile?: File;
 }
 
-
-export interface DeleteCategoryResponse {
-  success: boolean;
-  message: string;
-  deletedCategoryPath: string;
-}
-
 export interface UpdateCategoryDTO {
   categoryName?: string;
   categoryPath?: string;
