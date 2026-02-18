@@ -401,11 +401,25 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
               )}
 
             <p className="text-slate-500 text-sm mb-5">
-              הפריט ישוחזר למיקום המקורי: <br />
+  הפריט ישוחזר למיקום המקורי: <br />
+
+            {selectedItem.allProductPaths?.length ? (
+              selectedItem.allProductPaths.map((path, index) => (
+                <code
+                  key={index}
+                  className="bg-gray-100 px-2 py-1 rounded text-xs block mt-1"
+                >
+                  {path}
+                </code>
+              ))
+            ) : (
               <code className="bg-gray-100 px-2 py-1 rounded text-xs">
                 {selectedItem.originalPath}
               </code>
+            )}
+
             </p>
+
 
             <div className="flex flex-col gap-3 mt-5">
               <button

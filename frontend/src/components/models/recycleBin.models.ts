@@ -15,6 +15,8 @@ export interface RecycleBinItemDTO {
     permissionsInheritedToChildren?: boolean;
   };
   movedChildrenCount?: number;
+  allProductPaths?: string[];
+
 
 }
 

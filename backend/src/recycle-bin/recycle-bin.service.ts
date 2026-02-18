@@ -445,7 +445,7 @@ export class RecycleBinService {
             _id: desc.itemId,
             categoryName: desc.itemName,
             categoryPath: desc.categoryPath,
-            categoryImage: desc.categoryImage,
+            categoryImage: desc.itemImage,
             permissionsInheritedToChildren: desc.permissionsInheritedToChildren,
           });
           await descCategory.save();
@@ -474,7 +474,7 @@ export class RecycleBinService {
   }
 
   private async restoreProduct(recycleBinItem: RecycleBin) {
-    const pathsToRestore = [recycleBinItem.originalPath];
+    const pathsToRestore = recycleBinItem.allProductPaths || recycleBinItem.originalPath;
 
     const validPaths: string[] = [];
     for (const path of pathsToRestore) {
