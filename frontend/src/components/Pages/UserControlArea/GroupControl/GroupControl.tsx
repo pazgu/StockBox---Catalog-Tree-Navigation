@@ -13,6 +13,7 @@ import { categoriesService } from "../../../../services/CategoryService";
 
 import { groupService } from "../../../../services/GroupService";
 import { permissionsService } from "../../../../services/permissions.service";
+import { is } from "zod/v4/locales";
 
 const GroupControl: React.FC = () => {
   const [selectedGroup, setSelectedGroup] = useState("");
@@ -31,6 +32,7 @@ const GroupControl: React.FC = () => {
 
   const [groupToEdit, setGroupToEdit] = useState<Group | null>(null);
   const [editedGroupName, setEditedGroupName] = useState("");
+const [bannedItemsByGroup, setBannedItemsByGroup] = useState<Record<string, BannedItem[]>>({})
 
   const [groups, setGroups] = useState<Group[]>([]);
   const [isBannedLoading, setIsBannedLoading] = useState(false);
@@ -38,10 +40,10 @@ const GroupControl: React.FC = () => {
   const SELECTED_GROUP_STORAGE_KEY = "groupControl:selectedGroupId";
 
   useEffect(() => {
-    if (selectedGroup) {
-      loadBlockedItemsForGroup(selectedGroup);
-    }
-  }, [selectedGroup]);
+  if (!selectedGroup) return;
+  loadBlockedItemsForGroup(selectedGroup);
+}, [selectedGroup]);
+
 
   useEffect(() => {
     if (!role) return;
@@ -50,10 +52,7 @@ const GroupControl: React.FC = () => {
     }
   }, [navigate, role]);
 
-  useEffect(() => {
-    const savedGroupId = localStorage.getItem(SELECTED_GROUP_STORAGE_KEY);
-    if (savedGroupId) setSelectedGroup(savedGroupId);
-  }, []);
+
 
   useEffect(() => {
     if (selectedGroup) {
@@ -79,11 +78,13 @@ const GroupControl: React.FC = () => {
       const exists =
         savedGroupId && transformedGroups.some((g) => g.id === savedGroupId);
 
-      if (!selectedGroup) {
-        if (exists) setSelectedGroup(savedGroupId!);
-        else if (transformedGroups.length > 0)
-          setSelectedGroup(transformedGroups[0].id);
-      }
+    if (exists) {
+  setSelectedGroup(savedGroupId!);
+} else if (transformedGroups.length > 0) {
+  setSelectedGroup(transformedGroups[0].id);
+}
+
+
     } catch (error) {
       console.error("Error fetching groups:", error);
       toast.error("שגיאה בטעינת קבוצות");
@@ -92,24 +93,23 @@ const GroupControl: React.FC = () => {
     }
   };
 
-  const loadBlockedItemsForGroup = async (groupId: string) => {
-    try {
-      setIsBannedLoading(true);
+ const loadBlockedItemsForGroup = async (groupId: string) => {
+  try {
+    setIsBannedLoading(true);
+    const data = await permissionsService.getBlockedItemsForGroup(groupId);
 
-      const data = await permissionsService.getBlockedItemsForGroup(groupId);
+    setBannedItemsByGroup(prev => ({
+      ...prev,
+      [groupId]: data.blocked
+    }));
 
-      setGroups((prev) =>
-        prev.map((g) =>
-          g.id === groupId ? { ...g, bannedItems: data.blocked } : g,
-        ),
-      );
-    } catch (err) {
-      console.error("Failed loading blocked items:", err);
-      toast.error("שגיאה בטעינת פריטים חסומים");
-    } finally {
-      setIsBannedLoading(false);
-    }
-  };
+  } catch (err) {
+    toast.error("שגיאה בטעינת פריטים חסומים");
+  } finally {
+    setIsBannedLoading(false);
+  }
+};
+
 
   const currentGroup = useMemo(
     () => groups.find((g) => g.id === selectedGroup),
@@ -201,11 +201,7 @@ const GroupControl: React.FC = () => {
 
       await groupService.updateGroupMembers(selectedGroup, newMembers);
 
-      setGroups((prev) =>
-        prev.map((g) =>
-          g.id === selectedGroup ? { ...g, members: newMembers } : g,
-        ),
-      );
+    
 
       toast.info(`${selectedUsers.size} משתמשים הוסרו מהקבוצה`);
       setSelectedUsers(new Set());
@@ -226,11 +222,7 @@ const GroupControl: React.FC = () => {
         newMembers,
       );
 
-      setGroups((prev) =>
-        prev.map((g) =>
-          g.id === groupId ? { ...g, members: updatedMembers } : g,
-        ),
-      );
+    
 
       toast.success(`${userIds.length} משתמשים נוספו בהצלחה לקבוצה`);
     } catch (error) {
@@ -278,11 +270,7 @@ const GroupControl: React.FC = () => {
     try {
       await groupService.updateGroupName(groupToEdit.id, trimmedName);
 
-      setGroups((prev) =>
-        prev.map((g) =>
-          g.id === groupToEdit.id ? { ...g, name: trimmedName } : g,
-        ),
-      );
+    
 
       toast.success("שם הקבוצה עודכן בהצלחה");
       setGroupToEdit(null);
@@ -386,7 +374,7 @@ const GroupControl: React.FC = () => {
           <BannedItems
             currentGroupId={selectedGroup}
             currentGroupName={currentGroup?.name || ""}
-            bannedItems={currentGroup?.bannedItems || []}
+            bannedItems={bannedItemsByGroup[selectedGroup] || []}
             onUpdateBannedItems={(items: BannedItem[]) =>
               handleUpdateBannedItems(selectedGroup, items)
             }
