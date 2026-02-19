@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { FC, useState, useEffect, use } from "react";
+import React, { FC, useState, useEffect, use, useMemo } from "react";
 import {
   Pen,
   Trash,
@@ -29,6 +29,8 @@ import DuplicateProductModal from "../../ProductArea/DuplicateProductModal/Dupli
 import { usePath } from "../../../../context/PathContext";
 import ImagePreviewHover from "../../ProductArea/ImageCarousel/ImageCarousel/ImagePreviewHover";
 import { recycleBinService } from "../../../../services/RecycleBinService";
+import { useDebouncedFavorite } from "../../../../hooks/useDebouncedFavorite";
+
 interface CategoriesProps {}
 
 export interface Category {
@@ -178,7 +180,7 @@ export const Categories: FC<CategoriesProps> = () => {
     }
   };
 
-  const toggleFavorite = async (
+ const toggleFavorite = async (
     itemId: string,
     itemName: string,
     itemType: "category" | "product",
@@ -211,6 +213,13 @@ export const Categories: FC<CategoriesProps> = () => {
       );
     }
   };
+
+ const debouncedToggleFavorite = useDebouncedFavorite(
+  items,
+  setItems,
+  500,
+);
+
 
   const handleMoveToRecycleBin = async (category: Category) => {
     setCategoryToMoveToRecycleBin(category);
@@ -442,7 +451,8 @@ export const Categories: FC<CategoriesProps> = () => {
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              toggleFavorite(item.id, item.name, "category");
+                              debouncedToggleFavorite(item.id, item.name, "category");
+
                             }}
                             className="peer p-2 rounded-full bg-black/40 hover:bg-black/60 transition-colors relative"
                           >
@@ -567,7 +577,8 @@ export const Categories: FC<CategoriesProps> = () => {
                         onClick={(e) => {
                           e.stopPropagation();
                           e.preventDefault();
-                          toggleFavorite(item.id, item.name, "product");
+                          debouncedToggleFavorite(item.id, item.name, "product");
+
                         }}
                         className="peer h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110 transition-all duration-200"
                       >
