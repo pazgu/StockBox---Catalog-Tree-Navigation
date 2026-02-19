@@ -55,7 +55,7 @@ const GroupList: React.FC<GroupListProps> = ({
         <div className="text-center py-8 text-gray-400">
           <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
           <p>אין קבוצות במערכת</p>
-          <p className="text-sm">לחצי על "קבוצה חדשה" כדי להתחיל</p>
+          <p className="text-sm">לחץ/י על "קבוצה חדשה" כדי להתחיל</p>
         </div>
       ) : (
         <div className="space-y-3 max-h-[calc(5*64px)] overflow-y-auto overflow-x-hidden px-0 pt-4">
