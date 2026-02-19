@@ -36,6 +36,7 @@ import { userService } from "../../../../services/UserService";
 import { User } from "@/components/models/user.models";
 import { Skeleton } from "../../../ui/skeleton";
 import { usePath } from "../../../../context/PathContext";
+import { useDebouncedFavoriteSingle } from "../../../../hooks/useDebouncedFavoriteSingle";
 
 interface SingleProdProps {}
 
@@ -566,53 +567,7 @@ const SingleProd: FC<SingleProdProps> = () => {
     setFolders((prev) => prev.filter((f) => f.uiId !== folderUiId));
   };
 
-  const toggleFavorite = async (itemId: string) => {
-  if (!id) {
-    toast.error("יש להתחבר כדי להוסיף למועדפים");
-    return;
-  }
-
-  const isFavorite = user?.favorites?.some((fav) => fav.id === itemId);
-
-  // עדכון UI מיידי
-  setUser((prev) => {
-    if (!prev) return prev;
-    const favorites = prev.favorites ?? [];
-    return {
-      ...prev,
-      favorites: isFavorite
-        ? favorites.filter((fav) => fav.id !== itemId)
-        : [...favorites, { id: itemId, type: "product" }],
-    };
-  });
-
-  if (favoriteTimerRef.current) clearTimeout(favoriteTimerRef.current);
-
-  const wasAdding = !isFavorite;
-
-  favoriteTimerRef.current = setTimeout(async () => {
-    try {
-      await userService.toggleFavorite(itemId, "product");
-
-      toast[wasAdding ? "success" : "info"](
-        `${product?.productName} ${wasAdding ? "נוסף למועדפים" : "הוסר מהמועדפים"}`
-      );
-    } catch (err) {
-  
-      setUser((prev) => {
-        if (!prev) return prev;
-        const favorites = prev.favorites ?? [];
-        return {
-          ...prev,
-          favorites: wasAdding
-            ? favorites.filter((fav) => fav.id !== itemId)
-            : [...favorites, { id: itemId, type: "product" }],
-        };
-      });
-      toast.error("שגיאה בעדכון המועדפים");
-    }
-  }, 500);
-};
+  const toggleFavorite = useDebouncedFavoriteSingle(500);
   const isFavorite = useMemo(() => {
     return user?.favorites?.some((fav) => fav.id === product?._id) ?? false;
   }, [user?.favorites, product?._id]);
@@ -831,10 +786,7 @@ ${isEditing ? "cursor-pointer" : "cursor-not-allowed opacity-80"}`}
                     <button
                       className={`peer w-14 h-12 flex items-center justify-center rounded-lg hover:scale-105 transition-all duration-300 transform
                       ${isFavorite ? "text-red-600" : "text-gray-700"}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleFavorite(product?._id || "");
-                      }}
+                     onClick={() => toggleFavorite(product?._id || "", product?.productName || "", setUser)}
                     >
                       <Heart
                         size={24}
