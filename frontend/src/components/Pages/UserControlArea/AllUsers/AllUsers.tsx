@@ -482,7 +482,7 @@ const AllUsers: FC<AllUsersProps> = () => {
         פעולה זו לא ניתנת לביטול. האם ברצונך למחוק את המשתמש?
       </p>
       <small className="text-gray-500 block mb-6">
-        כל המידע המשויך למשתמש יוסר
+        כל המידע המשויך למשתמש ימחק
       </small>
 
       <div className={MODAL_FOOTER}>

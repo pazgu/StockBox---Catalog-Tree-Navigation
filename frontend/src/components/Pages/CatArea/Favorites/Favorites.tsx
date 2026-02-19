@@ -218,6 +218,19 @@ export const Favorites: React.FC = () => {
           מוצרים ({products.length})
         </button>
       </div>
+      {activeFilter === "categories" && categories.length === 0 && (
+        <div className="w-full h-40 flex flex-col justify-center items-center my-12 text-slate-500">
+          <Heart size={48} className="mb-4 text-slate-300" />
+          <p className="text-lg">אין קטגוריות מועדפות כרגע</p>
+        </div>
+      )}
+      {activeFilter === "products" && products.length === 0 && (
+        <div className="w-full h-40 flex flex-col justify-center items-center my-12 text-slate-500">
+          <Heart size={48} className="mb-4 text-slate-300" />
+          <p className="text-lg">אין מוצרים מועדפים כרגע</p>
+        </div>
+      )}
+
       {/* Categories Section */}
       {showCategories && categories.length > 0 && (
         <>

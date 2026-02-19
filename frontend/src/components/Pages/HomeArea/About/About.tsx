@@ -4,7 +4,7 @@ import React, { FC, useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
-import { Compass, Edit2, Check, GripVertical, Trash2, X, Save } from "lucide-react";
+import { Compass, Edit2, Check, GripVertical, Trash2, X, Save,FileText, ListChecks, LayoutGrid, Plus } from "lucide-react";
 import { ICONS_HE } from "../../../../mockdata/icons";
 import FeaturesSection from "./FeaturesSection/FeaturesSection";
 import AboutImagesPanel from "./AboutImagesPanel/AboutImagesPanel";
@@ -220,6 +220,14 @@ const About: FC<AboutProps> = () => {
 
   const [sections, setSections] = useState<SectionType[]>([]);
 
+  const contentSectionsCount = useMemo(
+  () => sections.filter((s) => s.type !== "cta").length,
+  [sections]
+);
+
+const isEmptyContent = contentSectionsCount === 0;
+
+
   const [dirtyKeys, setDirtyKeys] = useState<Set<string>>(new Set());
   const [isImagesLoading, setIsImagesLoading] = useState(false);
 
@@ -296,6 +304,36 @@ const About: FC<AboutProps> = () => {
   const sectionRefs = React.useRef<(HTMLDivElement | null)[]>([]);
   const dragCounterRef = React.useRef(0);
   const draggedIndexRef = React.useRef<number | null>(null);
+  const pendingScrollToSectionIdRef = React.useRef<string | null>(null);
+
+const scrollToSectionById = (id: string) => {
+  const idx = sections.findIndex((s) => s.id === id);
+  if (idx === -1) return;
+
+  const el = sectionRefs.current[idx];
+  if (!el) return;
+
+  const y = el.getBoundingClientRect().top + window.scrollY - getHeaderOffset();
+  window.scrollTo({ top: y, behavior: "smooth" });
+};
+const focusFirstFieldInSection = (el: HTMLDivElement) => {
+  const field = el.querySelector("input, textarea, select") as
+    | HTMLInputElement
+    | HTMLTextAreaElement
+    | HTMLSelectElement
+    | null;
+
+  if (!field) return;
+
+  field.focus();
+
+  // select text only for input/textarea
+  if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) {
+    field.select?.();
+  }
+};
+
+
 
 
 
@@ -419,6 +457,9 @@ setOriginalData({
               title: "",
               content: "",
             };
+
+              pendingScrollToSectionIdRef.current = newSection.id;
+
 
     setSections((prev) => {
   const ctaIndex = prev.findIndex((s) => s.type === "cta");
@@ -568,6 +609,28 @@ const handleSectionDragEnd = () => {
     }
   }, [images.length, currentImageIndex]);
 
+  useEffect(() => {
+  const id = pendingScrollToSectionIdRef.current;
+  if (!id) return;
+
+  requestAnimationFrame(() => {
+  const idx = sections.findIndex((s) => s.id === id);
+  const el = idx === -1 ? null : sectionRefs.current[idx];
+
+  if (el) {
+    const y = el.getBoundingClientRect().top + window.scrollY - getHeaderOffset();
+    window.scrollTo({ top: y, behavior: "smooth" });
+
+    setTimeout(() => focusFirstFieldInSection(el), 250);
+  }
+
+  pendingScrollToSectionIdRef.current = null;
+});
+}, [sections]);
+
+
+
+
  const hasActualChanges = useCallback(() => {
   const currentBlocks = sectionsToBlocks(realSections);
   const originalBlocks = sectionsToBlocks(originalData.sections);
@@ -608,7 +671,7 @@ const handleSectionDragEnd = () => {
     try {
       const payload = {
         blocks: sectionsToBlocks(realSections),
-        images: editableImages.map((i) => i.url),
+        images: editableImages.filter((i) => !i.isPreview).map((i) => i.url),
       };
 
       await aboutApi.replace(payload);
@@ -1374,6 +1437,102 @@ const debouncedRemoveImage = useMemo(
               )}
             </div>
           ))}
+
+        {isEditing && isEmptyContent && (
+  <div className="my-6 border-2 border-dashed border-stockblue/20 rounded-2xl p-10 bg-white/50 backdrop-blur-sm shadow-sm">
+    <div className="text-center mb-6">
+      <h3 className="text-stockblue font-bold text-xl mb-2">
+הוספת תוכן לעמוד      </h3>
+      <p className="text-stockblue/70 text-sm">
+יש לבחור סוג מקטע להתחלה :       </p>
+    </div>
+
+    <div className="flex flex-wrap justify-center gap-3">
+      {/* Paragraph */}
+      <button
+        type="button"
+        disabled={hasUnconfirmedChanges}
+        onClick={() => handleAddSection(-1, "paragraph")}
+        title={hasUnconfirmedChanges ? TOAST.unconfirmedChangesBlocked : "הוסף מקטע פסקה"}
+        className={`group inline-flex items-center gap-2 rounded-full px-5 py-2 font-semibold border shadow-md transition-all duration-300
+          ${
+            hasUnconfirmedChanges
+              ? "text-gray-400 border-gray-200 bg-white cursor-not-allowed opacity-60"
+              : "text-stockblue border-stockblue/30 bg-white hover:bg-stockblue hover:text-white"
+          }`}
+      >
+        <span
+          className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition-all duration-300
+            ${
+              hasUnconfirmedChanges
+                ? "border-gray-200 bg-gray-50"
+                : "border-stockblue/20 bg-stockblue/5 group-hover:bg-white/10 group-hover:border-white/30"
+            }`}
+        >
+          <FileText size={18} />
+        </span>
+        פסקה
+        <Plus size={16} className="opacity-70 group-hover:opacity-100" />
+      </button>
+
+      {/* Bullets */}
+      <button
+        type="button"
+        disabled={hasUnconfirmedChanges}
+        onClick={() => handleAddSection(-1, "bullets")}
+        title={hasUnconfirmedChanges ? TOAST.unconfirmedChangesBlocked : "הוסף מקטע נקודות"}
+        className={`group inline-flex items-center gap-2 rounded-full px-5 py-2 font-semibold border shadow-md transition-all duration-300
+          ${
+            hasUnconfirmedChanges
+              ? "text-gray-400 border-gray-200 bg-white cursor-not-allowed opacity-60"
+              : "text-stockblue border-stockblue/30 bg-white hover:bg-stockblue hover:text-white"
+          }`}
+      >
+        <span
+          className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition-all duration-300
+            ${
+              hasUnconfirmedChanges
+                ? "border-gray-200 bg-gray-50"
+                : "border-stockblue/20 bg-stockblue/5 group-hover:bg-white/10 group-hover:border-white/30"
+            }`}
+        >
+          <ListChecks size={18} />
+        </span>
+        נקודות
+        <Plus size={16} className="opacity-70 group-hover:opacity-100" />
+      </button>
+
+      {/* Features */}
+      <button
+        type="button"
+        disabled={hasUnconfirmedChanges}
+        onClick={() => handleAddSection(-1, "features")}
+        title={hasUnconfirmedChanges ? TOAST.unconfirmedChangesBlocked : "הוסף מקטע פיצ'רים"}
+        className={`group inline-flex items-center gap-2 rounded-full px-5 py-2 font-semibold border shadow-md transition-all duration-300
+          ${
+            hasUnconfirmedChanges
+              ? "text-gray-400 border-gray-200 bg-white cursor-not-allowed opacity-60"
+              : "text-stockblue border-stockblue/30 bg-white hover:bg-stockblue hover:text-white"
+          }`}
+      >
+        <span
+          className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition-all duration-300
+            ${
+              hasUnconfirmedChanges
+                ? "border-gray-200 bg-gray-50"
+                : "border-stockblue/20 bg-stockblue/5 group-hover:bg-white/10 group-hover:border-white/30"
+            }`}
+        >
+          <LayoutGrid size={18} />
+        </span>
+        פיצ׳רים
+        <Plus size={16} className="opacity-70 group-hover:opacity-100" />
+      </button>
+    </div>
+  </div>
+)}
+
+
 
           {isEditing && !hasUnconfirmedChanges && (
   <div
