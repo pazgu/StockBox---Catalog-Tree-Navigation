@@ -1,4 +1,4 @@
-import React, { FC, useState, useCallback, useMemo } from "react";
+import React, { FC, useState, useCallback, useMemo, useRef } from "react";
 import {
   Heart,
   PencilLine,
@@ -64,6 +64,7 @@ const SingleProd: FC<SingleProdProps> = () => {
   const bulletsIconUrl = bulletIcon;
   const [isSaving, setIsSaving] = useState(false);
   const addImagesInputRef = React.useRef<HTMLInputElement>(null);
+  const favoriteTimerRef = useRef<NodeJS.Timeout | null>(null);
   const navigate = useNavigate();
   const [isUploadingImages, setIsUploadingImages] = useState(false);
   const { productId } = useParams<{ productId: string }>();
@@ -566,39 +567,52 @@ const SingleProd: FC<SingleProdProps> = () => {
   };
 
   const toggleFavorite = async (itemId: string) => {
-    if (!id) {
-      toast.error("יש להתחבר כדי להוסיף למועדפים");
-      return;
-    }
+  if (!id) {
+    toast.error("יש להתחבר כדי להוסיף למועדפים");
+    return;
+  }
 
-    const previousUser = user;
-    const isFavorite = user?.favorites?.some((fav) => fav.id === itemId);
+  const isFavorite = user?.favorites?.some((fav) => fav.id === itemId);
 
-    setUser((prev) => {
-      if (!prev) return prev;
-      const favorites = prev.favorites ?? [];
-      return {
-        ...prev,
-        favorites: isFavorite
-          ? favorites.filter((fav) => fav.id !== itemId)
-          : [...favorites, { id: itemId, type: "product" }],
-      };
-    });
+  // עדכון UI מיידי
+  setUser((prev) => {
+    if (!prev) return prev;
+    const favorites = prev.favorites ?? [];
+    return {
+      ...prev,
+      favorites: isFavorite
+        ? favorites.filter((fav) => fav.id !== itemId)
+        : [...favorites, { id: itemId, type: "product" }],
+    };
+  });
 
+  if (favoriteTimerRef.current) clearTimeout(favoriteTimerRef.current);
+
+  const wasAdding = !isFavorite;
+
+  favoriteTimerRef.current = setTimeout(async () => {
     try {
-      const updatedUser = await userService.toggleFavorite(itemId, "product");
+      await userService.toggleFavorite(itemId, "product");
 
-      setUser(updatedUser);
-
-      toast[isFavorite ? "info" : "success"](
-        `${product?.productName} ${isFavorite ? "הוסר מהמועדפים" : "נוסף למועדפים"}`,
+      toast[wasAdding ? "success" : "info"](
+        `${product?.productName} ${wasAdding ? "נוסף למועדפים" : "הוסר מהמועדפים"}`
       );
     } catch (err) {
-      setUser(previousUser);
-      toast.error("שגיאה בעדכון המועדפים. נסה שוב.");
-      console.error(err);
+  
+      setUser((prev) => {
+        if (!prev) return prev;
+        const favorites = prev.favorites ?? [];
+        return {
+          ...prev,
+          favorites: wasAdding
+            ? favorites.filter((fav) => fav.id !== itemId)
+            : [...favorites, { id: itemId, type: "product" }],
+        };
+      });
+      toast.error("שגיאה בעדכון המועדפים");
     }
-  };
+  }, 500);
+};
   const isFavorite = useMemo(() => {
     return user?.favorites?.some((fav) => fav.id === product?._id) ?? false;
   }, [user?.favorites, product?._id]);
