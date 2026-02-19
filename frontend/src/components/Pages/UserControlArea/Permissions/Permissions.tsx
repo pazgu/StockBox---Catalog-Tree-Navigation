@@ -16,7 +16,7 @@ import { Spinner } from "../../../ui/spinner";
 interface Group {
   _id: string;
   groupName: string;
-  memebers: boolean;
+  members: boolean;
 }
 
 interface ViewerUser {
@@ -104,7 +104,7 @@ if (role !== "editor") {
         const mappedGroups: Group[] = rawGroups.map((g: any) => ({
           _id: g.id || g._id,
           groupName: g.groupName,
-          memebers: perms.some((p) => p.allowed === (g.id || g._id)),
+          members: perms.some((p) => p.allowed === (g.id || g._id)),
         }));
 
         setUsers(mappedUsers);
@@ -120,14 +120,14 @@ if (role !== "editor") {
 
 
   const enabledGroupIds = useMemo(() => {
-    return new Set(groups.filter((g) => g.memebers).map((g) => g._id));
+    return new Set(groups.filter((g) => g.members).map((g) => g._id));
   }, [groups]);
 
   const usersWithGroupInfo = useMemo(() => {
     return users.map((user) => {
       const userGroups = groups.filter((g) => user.groupIds?.includes(g._id));
-      const enabledGroups = userGroups.filter((g) => g.memebers);
-      const blockedGroups = userGroups.filter((g) => !g.memebers);
+      const enabledGroups = userGroups.filter((g) => g.members);
+      const blockedGroups = userGroups.filter((g) => !g.members);
 
       const allGroupsEnabled =
         userGroups.length > 0 && blockedGroups.length === 0;
@@ -166,7 +166,7 @@ if (role !== "editor") {
       setGroups((prev) =>
         prev.map((g) =>
           String(g._id) === String(targetId)
-            ? { ...g, memebers: !g.memebers }
+            ? { ...g, members: !g.members }
             : g,
         ),
       );
@@ -174,7 +174,7 @@ if (role !== "editor") {
   };
   const hasAddedPermissions = useMemo(() => {
     const usersToAllow = users.filter((u) => u.enabled).map((u) => u._id);
-    const groupsToAllow = groups.filter((g) => g.memebers).map((g) => g._id);
+    const groupsToAllow = groups.filter((g) => g.members).map((g) => g._id);
     const finalAllowedIds = [...usersToAllow, ...groupsToAllow];
 
     const currentDbIds = existingPermissions.map((p) => p.allowed);
@@ -207,7 +207,7 @@ if (role !== "editor") {
 
   const hasLocalChanges = useMemo(() => {
   const usersToAllow = users.filter(u => u.enabled).map(u => u._id);
-  const groupsToAllow = groups.filter(g => g.memebers).map(g => g._id);
+  const groupsToAllow = groups.filter(g => g.members).map(g => g._id);
   const finalAllowedIds = [...usersToAllow, ...groupsToAllow];
   const currentDbIds = existingPermissions.map(p => p.allowed);
 
@@ -224,7 +224,7 @@ if (role !== "editor") {
       if (!cleanId) return;
 
       const usersToAllow = users.filter((u) => u.enabled).map((u) => u._id);
-      const groupsToAllow = groups.filter((g) => g.memebers).map((g) => g._id);
+      const groupsToAllow = groups.filter((g) => g.members).map((g) => g._id);
       const finalAllowedIds = [...usersToAllow, ...groupsToAllow];
 
       const currentDbIds = existingPermissions.map((p) => p.allowed);
@@ -283,7 +283,7 @@ if (role !== "editor") {
     if (!cleanId) return;
 
     const usersToAllow = users.filter((u) => u.enabled).map((u) => u._id);
-    const groupsToAllow = groups.filter((g) => g.memebers).map((g) => g._id);
+    const groupsToAllow = groups.filter((g) => g.members).map((g) => g._id);
     const finalAllowedIds = [...usersToAllow, ...groupsToAllow];
 
     const currentDbIds = existingPermissions.map((p) => p.allowed);
@@ -351,16 +351,16 @@ const showManualInheritButton =
             </Label>
             <Switch
               checked={
-                users.length > 0 &&
-                users.every((u) => u.enabled) &&
-                groups.every((g) => g.memebers)
+                usersWithGroupInfo.length > 0 &&
+                usersWithGroupInfo.every((u) => u.effectiveEnabled) &&
+                groups.every((g) => g.members)
               }
               onCheckedChange={(checked) => {
                 setUsers((prev) =>
                   prev.map((u) => ({ ...u, enabled: checked })),
                 );
                 setGroups((prev) =>
-                  prev.map((g) => ({ ...g, memebers: checked })),
+                  prev.map((g) => ({ ...g, members: checked })),
                 );
               }}
             />
@@ -462,7 +462,7 @@ const showManualInheritButton =
                       >
                         <Label className="font-medium">{group.groupName}</Label>
                         <Switch
-                          checked={group.memebers}
+                          checked={group.members}
                           onCheckedChange={() =>
                             handleToggle(group._id, "group")
                           }
