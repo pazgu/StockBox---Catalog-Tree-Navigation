@@ -41,7 +41,7 @@ const UsersList: React.FC<UsersListProps> = ({
           <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
             type="text"
-            placeholder="חפש משתמש לפי שם או אימייל..."
+            placeholder="חפש/י משתמש לפי שם או אימייל..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             className="w-full pr-10 pl-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-slate-700 focus:ring focus:ring-slate-700 focus:ring-opacity-10 transition-all duration-200"
@@ -75,7 +75,7 @@ const UsersList: React.FC<UsersListProps> = ({
           className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-900 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-md text-sm font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
         >
           <Plus className="w-4 h-4" />
-          הוסף משתמשים
+          הוספת משתמשים לקבוצה
         </button>
 
         <button
@@ -91,8 +91,8 @@ const UsersList: React.FC<UsersListProps> = ({
       {filteredUsers.length === 0 ? (
         <div className="text-center py-12 text-gray-400">
           <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
-          <p>אין משתמשים בקבוצה זו</p>
-          {searchQuery && <p className="text-sm mt-2">נסי חיפוש אחר</p>}
+          <p>לא נמצאו משתמשים התואמים לחיפוש בקבוצה זו</p>
+          {searchQuery && <p className="text-sm mt-2">נסה/י חיפוש אחר</p>}
         </div>
       ) : (
         <div className="space-y-3 max-h-[500px] lg:max-h-[700px] overflow-y-auto pr-2">

@@ -110,7 +110,7 @@ const AddUsersModal: React.FC<AddUsersModalProps> = ({ group, allUsers, onClose,
         <div className="flex justify-start w-full mb-6">
   <h3 className="flex items-center gap-3 text-2xl font-bold text-[#0D305B]">
     <Users className="w-7 h-7" />
-    <span>הוסף משתמשים</span>
+    <span>הוספת משתמשים לקבוצה</span>
   </h3>
 </div>
 
@@ -123,7 +123,7 @@ const AddUsersModal: React.FC<AddUsersModalProps> = ({ group, allUsers, onClose,
           <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
             type="text"
-            placeholder="חפש משתמש להוספה..."
+            placeholder="חפש/י משתמש להוספה..."
             value={modalSearch}
             onChange={(e) => setModalSearch(e.target.value)}
             className="w-full pr-10 pl-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
@@ -191,7 +191,7 @@ const AddUsersModal: React.FC<AddUsersModalProps> = ({ group, allUsers, onClose,
   }`}
 
           >
-            הוסף משתמשים ({selectedUserIds.length})
+            "הוספת משתמש/ים" ({selectedUserIds.length})
           </button>
           <button
             onClick={onClose}

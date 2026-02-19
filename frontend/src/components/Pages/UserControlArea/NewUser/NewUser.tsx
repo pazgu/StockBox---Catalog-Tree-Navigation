@@ -359,7 +359,7 @@ const NewUser: React.FC = () => {
           whileTap={{ scale: 0.99 }}
           onClick={debouncedSubmit}
         >
-          {isSubmitting ? "מוסיף..." : "הוסף משתמש"}
+          {isSubmitting ? "מוסיף..." : "הוספת משתמש/ים"}
         </motion.button>
       </motion.div>
     </div>
