@@ -20,7 +20,7 @@ export class AboutBlock {
   })
   type: BlockType;
 
-  @Prop({ type: MongooseSchema.Types.Mixed, required: true })
+  @Prop({ type: MongooseSchema.Types.Mixed, required: true, default: {} })
   data: any;
 }
 export const AboutBlockSchema = SchemaFactory.createForClass(AboutBlock);
