@@ -384,7 +384,7 @@ const showManualInheritButton =
                 >
                   <input
                     className="w-full p-2 mb-2 border rounded shadow-sm text-right"
-                    placeholder="חפש משתמש..."
+                    placeholder="חפש/י משתמש..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                   />
