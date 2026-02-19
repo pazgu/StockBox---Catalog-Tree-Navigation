@@ -54,7 +54,7 @@ const GroupList: React.FC<GroupListProps> = ({
       {filteredGroups.length === 0 ? (
         <div className="text-center py-8 text-gray-400">
           <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
-          <p>אין קבוצות במערכת</p>
+          <p>אין קבוצות במערכת בשם זה</p>
           <p className="text-sm">לחץ/י על "קבוצה חדשה" כדי להתחיל</p>
         </div>
       ) : (
