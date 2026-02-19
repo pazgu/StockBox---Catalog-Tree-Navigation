@@ -642,7 +642,7 @@ const ProductPermissions: React.FC = () => {
                             <Switch
                               checked={
                                 pathState.users.length > 0 &&
-                                pathState.users.every((u) => u.enabled) &&
+                                usersWithGroupInfo.every((u) => u.effectiveEnabled) &&
                                 pathState.groups.every((g) => g.members)
                               }
                               onCheckedChange={(checked) =>
