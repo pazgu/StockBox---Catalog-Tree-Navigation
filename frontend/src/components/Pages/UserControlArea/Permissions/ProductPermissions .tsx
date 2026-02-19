@@ -680,7 +680,7 @@ const ProductPermissions: React.FC = () => {
                                 >
                                   <input
                                     className="w-full p-2 mb-2 border rounded shadow-sm text-right"
-                                    placeholder="חפש משתמש..."
+                                    placeholder="חפש/י משתמש..."
                                     value={searchMap[pathData.path] || ""}
                                     onChange={(e) =>
                                       setSearchMap((prev) => ({

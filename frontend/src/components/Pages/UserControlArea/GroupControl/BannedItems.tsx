@@ -69,7 +69,7 @@ const BannedItems: React.FC<BannedItemsProps> = ({
           <div className="text-center py-8 text-gray-400">
             <ShieldBan className="w-12 h-12 mx-auto mb-3 opacity-50" />
             <p className="font-medium">אין פריטים חסומים</p>
-            <p className="text-sm mt-1">לחץ על "נהל פריטים" להוספת חסימות</p>
+            <p className="text-sm mt-1">לחצ/י על "נהל פריטים" להוספת חסימות</p>
           </div>
         ) : (
           <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2">
