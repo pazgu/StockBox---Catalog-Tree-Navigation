@@ -35,6 +35,7 @@ import DuplicateProductModal from "../../ProductArea/DuplicateProductModal/Dupli
 import MoveMultipleItemsModal from "./MoveMultipleItemsModal/MoveMultipleItemsModal";
 import { usePath } from "../../../../context/PathContext";
 import ImagePreviewHover from "../../ProductArea/ImageCarousel/ImageCarousel/ImagePreviewHover";
+import { useDebouncedFavorite } from "../../../../hooks/useDebouncedFavorite";  
 
 const hasImage = (images: any): boolean => {
   if (!images) return false;
@@ -257,39 +258,7 @@ const SingleCat: FC = () => {
     }
   };
 
-  const toggleFavorite = async (
-    itemId: string,
-    name: string,
-    type: "product" | "category",
-  ) => {
-    if (!id) {
-      toast.error("יש להתחבר כדי להוסיף למועדפים");
-      return;
-    }
-    const item = items.find((i) => i.id === itemId);
-    const previousFavoriteStatus = item?.favorite || false;
-    const newFavoriteStatus = !previousFavoriteStatus;
-    try {
-      setItems((prev) =>
-        prev.map((i) =>
-          i.id === itemId ? { ...i, favorite: newFavoriteStatus } : i,
-        ),
-      );
-      await userService.toggleFavorite(itemId, type);
-      if (newFavoriteStatus) {
-        toast.success(`${name} נוסף למועדפים`);
-      } else {
-        toast.info(`${name} הוסר מהמועדפים`);
-      }
-    } catch (error) {
-      toast.error("שגיאה בעדכון המועדפים");
-      setItems((prev) =>
-        prev.map((i) =>
-          i.id === itemId ? { ...i, favorite: previousFavoriteStatus } : i,
-        ),
-      );
-    }
-  };
+  const toggleFavorite = useDebouncedFavorite(items, setItems, 500);
 
   const handleMoveToRecycleBin = (item: DisplayItem) => {
     setItemToDelete(item);
@@ -825,30 +794,26 @@ const SingleCat: FC = () => {
             )}
 
             {!isSelectionMode && (
-              <div className="absolute right-3 top-3">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    toggleFavorite(item.id, item.name, item.type);
-                  }}
-                  className="peer group-hover:opacity-100 transition-all duration-200 h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110"
-                >
-                  <Heart
-                    size={22}
-                    strokeWidth={2}
-                    className={
-                      item.favorite
-                        ? "fill-red-500 text-red-500"
-                        : "text-gray-700"
-                    }
-                  />
-                </button>
-                <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                  {item.favorite ? "הסר ממועדפים" : "הוסף למועדפים"}
-                </span>
-              </div>
-            )}
+            <div className="absolute right-3 top-3 z-10">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  toggleFavorite(item.id, item.name, item.type);
+                }}
+                className="peer transition-all duration-200 h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110 cursor-pointer"
+              >
+                <Heart
+                  size={22}
+                  strokeWidth={2}
+                  className={`pointer-events-none ${item.favorite ? "fill-red-500 text-red-500" : "text-gray-700"}`}
+                />
+              </button>
+              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                {item.favorite ? "הסר ממועדפים" : "הוסף למועדפים"}
+              </span>
+            </div>
+          )}
             <div
               className="h-[140px] w-full flex justify-center items-center p-2 cursor-pointer"
               onClick={() => {
