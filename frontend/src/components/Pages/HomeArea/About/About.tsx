@@ -608,7 +608,7 @@ const handleSectionDragEnd = () => {
     try {
       const payload = {
         blocks: sectionsToBlocks(realSections),
-        images: editableImages.map((i) => i.url),
+        images: editableImages.filter((i) => !i.isPreview).map((i) => i.url),
       };
 
       await aboutApi.replace(payload);
