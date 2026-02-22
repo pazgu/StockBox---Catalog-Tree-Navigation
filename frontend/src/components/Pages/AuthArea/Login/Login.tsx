@@ -103,7 +103,7 @@ const Login: FC<LoginProps> = () => {
             .catch(() => toast.error("שגיאה בשליחת הבקשה"));
         }
       } else if (error?.response?.status === 500) {
-  toast.error("שם משתמש או אימייל שגויים");
+  toast.error("שם משתמש או אימייל כבר קיימים/שגויים במערכת");
 } else {
   toast.error("שגיאה לא צפויה, אנא נסה שוב");
 }

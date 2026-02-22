@@ -54,8 +54,8 @@ const GroupList: React.FC<GroupListProps> = ({
       {filteredGroups.length === 0 ? (
         <div className="text-center py-8 text-gray-400">
           <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
-          <p>אין קבוצות במערכת</p>
-          <p className="text-sm">לחצי על "קבוצה חדשה" כדי להתחיל</p>
+          <p>אין קבוצות במערכת בשם זה</p>
+          <p className="text-sm">לחץ/י על "קבוצה חדשה" כדי להתחיל</p>
         </div>
       ) : (
         <div className="space-y-3 max-h-[calc(5*64px)] overflow-y-auto overflow-x-hidden px-0 pt-4">
@@ -74,9 +74,12 @@ const GroupList: React.FC<GroupListProps> = ({
               <div className="flex justify-between items-center">
                <div className="flex items-center gap-2 min-w-0">
 <div className="relative flex-1 min-w-0 group/name">
-  <h4 className="font-semibold text-gray-800 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
-    {group.name}
-  </h4>
+  <h4 
+  className="font-semibold text-gray-800 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap"
+  style={{ direction: /[\u0590-\u05FF]/.test(group.name) ? 'rtl' : 'ltr' }}
+>
+  {group.name}
+</h4>
   <span className="absolute right-0 bottom-full mb-2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover/name:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-[9999]">
   {group.name}
 </span>

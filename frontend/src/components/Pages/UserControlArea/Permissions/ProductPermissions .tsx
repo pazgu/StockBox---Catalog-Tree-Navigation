@@ -642,7 +642,7 @@ const ProductPermissions: React.FC = () => {
                             <Switch
                               checked={
                                 pathState.users.length > 0 &&
-                                pathState.users.every((u) => u.enabled) &&
+                                usersWithGroupInfo.every((u) => u.effectiveEnabled) &&
                                 pathState.groups.every((g) => g.members)
                               }
                               onCheckedChange={(checked) =>
@@ -680,7 +680,7 @@ const ProductPermissions: React.FC = () => {
                                 >
                                   <input
                                     className="w-full p-2 mb-2 border rounded shadow-sm text-right"
-                                    placeholder="חפש משתמש..."
+                                    placeholder="חפש/י משתמש..."
                                     value={searchMap[pathData.path] || ""}
                                     onChange={(e) =>
                                       setSearchMap((prev) => ({
