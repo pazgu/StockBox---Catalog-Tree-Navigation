@@ -5,6 +5,7 @@ import { useLocation, useNavigate, Link } from "react-router-dom";
 import { searchService } from "../../../../services/search.service";
 import { useUser } from "../../../../context/UserContext";
 import { usePath } from "../../../../context/PathContext";
+import { PathDisplay } from "../../../Pages/SharedComponents/PathDisplay/PathDisplay";
 
 const SearchResultsPage = () => {
   const [results, setResults] = useState<any[]>([]);
@@ -22,7 +23,6 @@ const SearchResultsPage = () => {
   const { setPreviousPath } = usePath();
   const navigate = useNavigate();
   const searchTerm = new URLSearchParams(search).get("q") || "";
-
   useEffect(() => {
     const fetchResults = async () => {
       setIsLoading(true);
@@ -131,21 +131,21 @@ const SearchResultsPage = () => {
                       StockBox
                     </span>
                     <div className="flex flex-col">
-                      <small
-                        className="text-gray-500 hover:text-blue-600 hover:underline cursor-pointer"
-                        onClick={(e) => {
-                          setPreviousPath(location.pathname);
-
-                          navigate(
-                            item.type === "product"
-                              ? `/products/${item.id}`
-                              : (item.paths?.[0] ?? "/"),
-                          );
-                        }}
-                        dir="ltr"
-                      >
-                        {item.paths[0]}
-                      </small>
+                     <small
+                          className="text-gray-500 hover:text-blue-600 hover:underline cursor-pointer text-left"
+                          dir="ltr"
+                          style={{ unicodeBidi: "isolate" }}
+                          onClick={() => {
+                            setPreviousPath(location.pathname);
+                            navigate(
+                              item.type === "product"
+                                ? `/products/${item.id}`
+                                : (item.paths?.[0] ?? "/"),
+                            );
+                          }}
+                        >
+                          <PathDisplay path={item.paths[0]} />
+                        </small>
                       {isEditor && item.paths && item.paths.length > 1 && (
                         <div className="relative inline-block group">
                           <span className="text-[12px] text-blue-600 w-fit cursor-pointer select-none">
@@ -165,10 +165,11 @@ const SearchResultsPage = () => {
                                     },
                                   });
                                 }}
-                                className="w-full text-left text-[12px] break-all py-1 px-2 rounded-md hover:bg-gray-50 hover:text-blue-700 transition-colors cursor-pointer"
-                                dir="ltr"
-                              >
-                                {p}
+                                 className="w-full text-left text-[12px] break-all py-1 px-2 rounded-md hover:bg-gray-50 hover:text-blue-700 transition-colors cursor-pointer"
+                                  >
+                              <span dir="ltr" style={{ unicodeBidi: "isolate" }}>
+                        <PathDisplay path={p} />        
+                      </span>
                               </button>
                             ))}
                           </div>

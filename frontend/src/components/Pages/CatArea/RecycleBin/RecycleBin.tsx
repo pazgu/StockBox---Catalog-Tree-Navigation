@@ -14,6 +14,7 @@ import { recycleBinService } from "../../../../services/RecycleBinService";
 import { RecycleBinItemDTO } from "../../../models/recycleBin.models";
 import { Spinner } from "../../../ui/spinner";
 import ImagePreviewHover from "../../ProductArea/ImageCarousel/ImageCarousel/ImagePreviewHover";
+import { PathDisplay } from "../../SharedComponents/PathDisplay/PathDisplay";
 
 type FilterType = "all" | "categories" | "products";
 
@@ -409,12 +410,12 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
                   key={index}
                   className="bg-gray-100 px-2 py-1 rounded text-xs block mt-1"
                 >
-                  {path}
-                </code>
+          <PathDisplay path={path} />           
+     </code>
               ))
             ) : (
               <code className="bg-gray-100 px-2 py-1 rounded text-xs">
-                {selectedItem.originalPath}
+                <PathDisplay path={selectedItem.originalPath} />
               </code>
             )}
 

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Trash, AlertTriangle } from "lucide-react";
+import { PathDisplay } from "../../SharedComponents/PathDisplay/PathDisplay";
 
 interface SmartDeleteModalProps {
   isOpen: boolean;
@@ -132,12 +133,10 @@ const SmartDeleteModal: React.FC<SmartDeleteModalProps> = ({
                                 ? "text-blue-900 font-medium"
                                 : "text-slate-600"
                             }`}
-                            style={{
-                              direction: "ltr",
-                              unicodeBidi: "bidi-override"
-                            }}
+                            dir="ltr"
+                          style={{ unicodeBidi: "isolate" }}
                           >
-                            {path}
+                            <PathDisplay path={path} />
                           </span>
 
                           </div>
