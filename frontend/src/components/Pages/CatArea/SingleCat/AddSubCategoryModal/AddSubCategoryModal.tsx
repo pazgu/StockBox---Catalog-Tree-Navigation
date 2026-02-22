@@ -77,6 +77,8 @@ function anchoredZoom(
 
 const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   const [categoryName, setCategoryName] = React.useState("");
+  const [errorMessage, setErrorMessage] = React.useState("");
+  const FORBIDDEN_CHARS = /[;|"'*<>]/;
   const [rawImage, setRawImage] = React.useState<HTMLImageElement | null>(null);
   const [zoom, setZoom] = React.useState(1);
   const [offset, setOffset] = React.useState({ x: 0, y: 0 });
@@ -166,6 +168,28 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     return out.toDataURL("image/jpeg", 0.92);
   };
 
+ const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const value = e.target.value;
+  setCategoryName(value);
+
+  const FORBIDDEN_CHARS = /[;|"'*<>]/;
+  if (!value) {
+    setErrorMessage(""); 
+  } else if (FORBIDDEN_CHARS.test(value)) {
+    setErrorMessage("שם קטגוריה לא יכול להכיל תווים ; | \" ' * < >");
+  } else {
+    setErrorMessage(""); 
+  }
+};
+
+const handleClose = () => {
+  setErrorMessage(""); 
+  setCategoryName(""); 
+  setRawImage(null);  
+  onClose();       
+};
+  
+
   const handleSave = async () => {
     if (!categoryName.trim()) {
       toast.error("שם תת-קטגוריה חובה");
@@ -239,12 +263,15 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
             </label>
 
             <input
-              type="text"
-              placeholder="שם תת-קטגוריה"
-              value={categoryName}
-              onChange={(e) => setCategoryName(e.target.value)}
-              className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
-            />
+                type="text"
+                placeholder="שם תת-קטגוריה"
+                value={categoryName}
+                onChange={handleNameChange}
+                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
+              />
+              {errorMessage && (
+                <p className="mt-1 text-sm text-red-600">{errorMessage}</p>
+              )}
           </div>
 
           <div className="group mb-4">
@@ -467,10 +494,10 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
             </button>
 
             <button
-              onClick={onClose}
+              onClick={handleClose}
               disabled={isSaving}
               className={`flex-1 p-3 border-none rounded-lg text-base font-medium transition-all duration-200 border
-    ${isSaving
+                ${isSaving
                   ? "bg-gray-100 text-gray-300 cursor-not-allowed border-gray-200"
                   : "bg-gray-100 text-gray-500 border border-gray-300 hover:bg-gray-300 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"
                 }`}
