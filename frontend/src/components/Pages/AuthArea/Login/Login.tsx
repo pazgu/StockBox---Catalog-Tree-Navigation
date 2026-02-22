@@ -1,14 +1,17 @@
 import React, { FC, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
-import { MailQuestionIcon, UserPen, Lock, User } from "lucide-react";
+import { MailQuestionIcon, UserPen, Lock, User, ArrowLeft } from "lucide-react";
 import { authService } from "../../../../services/auth.service";
 import { toast } from "sonner";
 import NestedCatalogSVG from "../login.svg";
+import { boolean } from "zod";
+
 interface LoginProps {}
 
 const Login: FC<LoginProps> = () => {
   const { setUser } = useUser();
+  const [isReturningUser, setIsReturningUser] = useState<boolean | null>(null);
   const handleLogin = async () => {
     // Reset errors
     const newErrors = {
@@ -21,12 +24,12 @@ const Login: FC<LoginProps> = () => {
     let hasError = false;
     let emailFormatError = false;
 
-    if (!firstName.trim()) {
+    if (!isReturningUser && !firstName.trim()) {
       newErrors.firstName = true;
       hasError = true;
     }
 
-    if (!lastName.trim()) {
+    if (!isReturningUser && !lastName.trim()) {
       newErrors.lastName = true;
       hasError = true;
     }
@@ -157,138 +160,185 @@ const Login: FC<LoginProps> = () => {
           <h1 className="text-3xl font-bold text-right text-gray-800 mb-6 -mt-3">
             התחברות
           </h1>
-          <div className="mb-7 flex gap-4">
-            <div className="flex-1">
-              <label className="block text-right text-gray-700 font-semibold mb-4 text-base">
-                שם פרטי
-              </label>
-              <div className="relative w-full">
-                <input
-                  type="text"
-                  value={firstName}
-                  onChange={(e) => {
-                    setFirstName(e.target.value);
-                    if (errors.firstName) {
-                      setErrors({ ...errors, firstName: false });
-                    }
-                  }}
-                  className={`w-full py-3 px-4 pl-11 border-2 ${errors.firstName ? "border-red-300" : "border-gray-300"} rounded-lg text-right text-sm`}
-                  placeholder="הכנס שם פרטי..."
-                  dir="rtl"
-                />
-                <User
-                  size={20}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
-                />
+          {isReturningUser === null ? (
+            <div className="flex flex-col items-center gap-5 py-2">
+              <div className="w-full text-center">
+                <p className="text-gray-800 font-bold text-xl">
+                  האם כבר נרשמת בעבר?
+                </p>
               </div>
-            </div>
-            <div className="flex-1">
-              <label className="block text-right text-gray-700 font-semibold mb-4 text-base">
-                שם משפחה
-              </label>
-              <div className="relative w-full">
-                <input
-                  type="text"
-                  value={lastName}
-                  onChange={(e) => {
-                    setLastName(e.target.value);
-                    if (errors.lastName) {
-                      setErrors({ ...errors, lastName: false });
-                    }
-                  }}
-                  className={`w-full py-3 px-4 pl-11 border-2 ${errors.lastName ? "border-red-300" : "border-gray-300"} rounded-lg text-right text-sm`}
-                  placeholder="הכנס שם משפחה..."
-                  dir="rtl"
-                />
-                <User
-                  size={20}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
-                />
-              </div>
-            </div>
-          </div>
-          <div className="mb-7 flex gap-4">
-            <div className="flex-1">
-              <label className="block text-right text-gray-700 font-semibold mb-4 text-base">
-                שם משתמש
-              </label>
-              <div className="relative w-full">
-                <input
-                  type="text"
-                  value={userName}
-                  onChange={(e) => {
-                    setuserName(e.target.value);
-                    if (errors.userName) {
-                      setErrors({ ...errors, userName: false });
-                    }
-                  }}
-                  className={`w-full py-3 px-4 pl-11 border-2 ${errors.userName ? "border-red-300" : "border-gray-300"} rounded-lg text-right text-sm`}
-                  placeholder="הכנס שם משתמש..."
-                  dir="rtl"
-                />
-                <UserPen
-                  size={20}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
-                />
-              </div>
-            </div>
 
-            {/* אימייל */}
-            <div className="flex-1">
-              <label className="block text-right text-gray-700 font-semibold mb-4 text-base">
-                אימייל
-              </label>
-              <div className="relative w-full">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    if (errors.email) {
-                      setErrors({ ...errors, email: false });
-                    }
-                  }}
-                  className={`w-full py-3 px-4 pl-11 border-2 ${errors.email ? "border-red-300" : "border-gray-300"} rounded-lg text-right text-sm`}
-                  placeholder="הכנס אימייל..."
-                  dir="rtl"
-                />
-                <MailQuestionIcon
-                  size={20}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
-                />
+              <div className="w-full h-px bg-gray-100" />
+
+              <div className="flex flex-col gap-3 w-50%">
+                <button
+                  type="button"
+                  onClick={() => setIsReturningUser(false)}
+                  className="w-full flex px-5 py-4 rounded-xl border-2 border-blue-900 bg-blue-900 text-white font-semibold text-base transition-all duration-200 hover:bg-blue-800 hover:border-blue-800 hover:shadow-md active:scale-95 focus:outline-none group display-flex"
+                >
+                  <span>לא, זוהי ההתחברות הראשונה שלי</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsReturningUser(true)}
+                  className="w-full flex items-center justify-between px-5 py-4 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-700 font-semibold text-base transition-all duration-200 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-900 active:scale-95 focus:outline-none group"
+                >
+                  <span className="mr-5">כן, ביצעתי התחברות בעבר</span>
+                </button>
               </div>
             </div>
-          </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between mb-5">
+                <button
+                  type="button"
+                  onClick={() => setIsReturningUser(null)}
+                  className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-blue-900 transition-colors duration-200 focus:outline-none"
+                >
+                  <ArrowLeft size={16} className="rotate-180" />
+                </button>
 
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              handleLogin();
-            }}
-            className="
-    w-full
-    bg-blue-900
-    text-white
-    py-3
-    px-5
-    rounded-lg
-    font-semibold
-    text-base
-    transition-all
-    duration-200
-    hover:bg-blue-800
-    hover:shadow-lg
-    hover:shadow-blue-900/30
-    active:scale-95
-    focus:outline-none
-    focus:ring-2
-    focus:ring-blue-500
-    focus:ring-offset-2
-  "
-          >
-            התחבר
-          </button>
+                <span className="text-blue-900 font-medium">
+                  {isReturningUser ? "משתמש קיים" : "משתמש חדש"}
+                </span>
+              </div>
+              {!isReturningUser && (
+                <div className="mb-7 flex gap-4">
+                  <div className="flex-1">
+                    <label className="block text-right text-gray-700 font-semibold mb-4 text-base">
+                      שם פרטי
+                    </label>
+                    <div className="relative w-full">
+                      <input
+                        type="text"
+                        value={firstName}
+                        onChange={(e) => {
+                          setFirstName(e.target.value);
+                          if (errors.firstName) {
+                            setErrors({ ...errors, firstName: false });
+                          }
+                        }}
+                        className={`w-full py-3 px-4 pl-11 border-2 ${errors.firstName ? "border-red-300" : "border-gray-300"} rounded-lg text-right text-sm`}
+                        placeholder="הכנס שם פרטי..."
+                        dir="rtl"
+                      />
+                      <User
+                        size={20}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-right text-gray-700 font-semibold mb-4 text-base">
+                      שם משפחה
+                    </label>
+                    <div className="relative w-full">
+                      <input
+                        type="text"
+                        value={lastName}
+                        onChange={(e) => {
+                          setLastName(e.target.value);
+                          if (errors.lastName) {
+                            setErrors({ ...errors, lastName: false });
+                          }
+                        }}
+                        className={`w-full py-3 px-4 pl-11 border-2 ${errors.lastName ? "border-red-300" : "border-gray-300"} rounded-lg text-right text-sm`}
+                        placeholder="הכנס שם משפחה..."
+                        dir="rtl"
+                      />
+                      <User
+                        size={20}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div className="mb-7 flex gap-4">
+                <div className="flex-1">
+                  <label className="block text-right text-gray-700 font-semibold mb-4 text-base">
+                    שם משתמש
+                  </label>
+                  <div className="relative w-full">
+                    <input
+                      type="text"
+                      value={userName}
+                      onChange={(e) => {
+                        setuserName(e.target.value);
+                        if (errors.userName) {
+                          setErrors({ ...errors, userName: false });
+                        }
+                      }}
+                      className={`w-full py-3 px-4 pl-11 border-2 ${errors.userName ? "border-red-300" : "border-gray-300"} rounded-lg text-right text-sm`}
+                      placeholder="הכנס שם משתמש..."
+                      dir="rtl"
+                    />
+                    <UserPen
+                      size={20}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+                    />
+                  </div>
+                </div>
+
+                {/* אימייל */}
+                <div className="flex-1">
+                  <label className="block text-right text-gray-700 font-semibold mb-4 text-base">
+                    אימייל
+                  </label>
+                  <div className="relative w-full">
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        if (errors.email) {
+                          setErrors({ ...errors, email: false });
+                        }
+                      }}
+                      className={`w-full py-3 px-4 pl-11 border-2 ${errors.email ? "border-red-300" : "border-gray-300"} rounded-lg text-right text-sm`}
+                      placeholder="הכנס אימייל..."
+                      dir="rtl"
+                    />
+                    <MailQuestionIcon
+                      size={20}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleLogin();
+                }}
+                className="
+                  w-full
+                  bg-blue-900
+                  text-white
+                  py-3
+                  px-5
+                  rounded-lg
+                  font-semibold
+                  text-base
+                  transition-all
+                  duration-200
+                  hover:bg-blue-800
+                  hover:shadow-lg
+                  hover:shadow-blue-900/30
+                  active:scale-95
+                  focus:outline-none
+                  focus:ring-2
+                  focus:ring-blue-500
+                  focus:ring-offset-2
+                "
+              >
+                התחבר
+              </button>
+            </>
+          )}
         </div>
       </div>
 
