@@ -263,6 +263,7 @@ export class SearchService {
               $group: {
                 _id: '$_id',
                 label: { $first: '$productName' },
+                description: { $first: '$productDescription' },
                 score: { $max: searchTerm ? { $meta: 'textScore' } : 0 },
                 paths: { $push: '$productPath' },
               },
@@ -276,7 +277,14 @@ export class SearchService {
             },
 
             {
-              $project: { _id: 1, type: 1, label: 1, path: 1, score: 1 },
+              $project: {
+                _id: 1,
+                type: 1,
+                label: 1,
+                path: 1,
+                score: 1,
+                description: 1,
+              },
             },
           ],
         },
@@ -298,6 +306,7 @@ export class SearchService {
         id: r._id.toString(),
         label: r.label,
         paths: Array.isArray(r.path) ? r.path : [r.path],
+        ...(r.description ? { description: r.description } : {}),
       })),
       total: results.length,
       page,
