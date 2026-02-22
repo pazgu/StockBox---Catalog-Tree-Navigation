@@ -180,7 +180,7 @@ export const Categories: FC<CategoriesProps> = () => {
     }
   };
 
- const toggleFavorite = async (
+  const toggleFavorite = async (
     itemId: string,
     itemName: string,
     itemType: "category" | "product",
@@ -201,8 +201,8 @@ export const Categories: FC<CategoriesProps> = () => {
 
       await userService.toggleFavorite(itemId, itemType);
 
-      if (!wasFavorite) toast.success(`${itemName} נוסף למועדפים`);
-      else toast.info(`${itemName} הוסר מהמועדפים`);
+      if (!wasFavorite) toast.success(`${itemName} נוספה למועדפים`);
+      else toast.info(`${itemName} הוסרה מהמועדפים`);
     } catch (error) {
       toast.error("שגיאה בעדכון המועדפים");
 
@@ -214,12 +214,7 @@ export const Categories: FC<CategoriesProps> = () => {
     }
   };
 
- const debouncedToggleFavorite = useDebouncedFavorite(
-  items,
-  setItems,
-  500,
-);
-
+  const debouncedToggleFavorite = useDebouncedFavorite(items, setItems, 500);
 
   const handleMoveToRecycleBin = async (category: Category) => {
     setCategoryToMoveToRecycleBin(category);
@@ -450,8 +445,11 @@ export const Categories: FC<CategoriesProps> = () => {
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              debouncedToggleFavorite(item.id, item.name, "category");
-
+                              debouncedToggleFavorite(
+                                item.id,
+                                item.name,
+                                "category",
+                              );
                             }}
                             className="peer p-2 rounded-full bg-black/40 hover:bg-black/60 transition-colors relative"
                           >
@@ -537,20 +535,24 @@ export const Categories: FC<CategoriesProps> = () => {
                       </div>
                     </div>
 
-                 <div className="relative group/tooltip flex justify-center mt-2">
-                    <span 
-                      className="text-base text-slate-700 font-medium w-44 line-clamp-2 text-center"
-                      style={{ 
-                        overflowWrap: 'anywhere',
-                        direction: /[\u0590-\u05FF]/.test(item.name) ? 'rtl' : 'ltr'
-                      }}
-                    >
+                    <div className="relative group/tooltip flex justify-center mt-2">
+                      <span
+                        className="text-base text-slate-700 font-medium w-44 line-clamp-2 text-center"
+                        style={{
+                          overflowWrap: "anywhere",
+                          direction: /[\u0590-\u05FF]/.test(item.name)
+                            ? "rtl"
+                            : "ltr",
+                        }}
+                      >
+                        {item.name}
+                      </span>
+                      {(item.name.length > 20) && (
+                    <span className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-50 shadow-md">
                       {item.name}
                     </span>
-                    <span className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-50">
-                      {item.name}
-                    </span>
-                  </div>
+                  )}
+                    </div>
                   </div>
                 );
               })}
@@ -587,8 +589,11 @@ export const Categories: FC<CategoriesProps> = () => {
                         onClick={(e) => {
                           e.stopPropagation();
                           e.preventDefault();
-                          debouncedToggleFavorite(item.id, item.name, "product");
-
+                          debouncedToggleFavorite(
+                            item.id,
+                            item.name,
+                            "product",
+                          );
                         }}
                         className="peer h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110 transition-all duration-200"
                       >

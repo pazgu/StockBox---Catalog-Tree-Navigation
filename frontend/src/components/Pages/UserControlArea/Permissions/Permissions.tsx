@@ -34,7 +34,10 @@ interface Permission {
 const Permissions: React.FC = () => {
   const navigate = useNavigate();
   const { role } = useUser();
-  const { type, id } = useParams<{ type: "product" | "category"; id: string }>();
+  const { type, id } = useParams<{
+    type: "product" | "category";
+    id: string;
+  }>();
   const entityType = type ?? "category";
   const cleanId = useMemo(() => id?.replace(/^:/, ""), [id]);
   const [showInheritanceModal, setShowInheritanceModal] = useState(false);
@@ -47,24 +50,22 @@ const Permissions: React.FC = () => {
   );
   const [inheritanceApplied, setInheritanceApplied] = useState(false);
   const [isSyncingChildren, setIsSyncingChildren] = useState(false);
-  const {previousPath}=usePath();
+  const { previousPath } = usePath();
   const [search, setSearch] = useState("");
   const [entityData, setEntityData] = useState<{
     name: string;
     image: string;
-    permissionsInheritedToChildren: boolean; 
-
+    permissionsInheritedToChildren: boolean;
   } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  
 
   useEffect(() => {
-    if (!role) return; 
+    if (!role) return;
 
-if (role !== "editor") {
-  navigate("/");
-  return;
-}
+    if (role !== "editor") {
+      navigate("/");
+      return;
+    }
 
     const loadData = async () => {
       try {
@@ -117,7 +118,6 @@ if (role !== "editor") {
 
     loadData();
   }, [cleanId, entityType, role, navigate, previousPath]);
-
 
   const enabledGroupIds = useMemo(() => {
     return new Set(groups.filter((g) => g.members).map((g) => g._id));
@@ -178,45 +178,43 @@ if (role !== "editor") {
     const finalAllowedIds = [...usersToAllow, ...groupsToAllow];
 
     const currentDbIds = existingPermissions.map((p) => p.allowed);
-    const toCreate = finalAllowedIds.filter(
-      (id) => !currentDbIds.includes(id),
-    );
+    const toCreate = finalAllowedIds.filter((id) => !currentDbIds.includes(id));
 
     return toCreate.length > 0;
   }, [users, groups, existingPermissions]);
 
   const handleSyncToChildren = async () => {
-  if (!cleanId) return;
+    if (!cleanId) return;
 
-  if (entityType !== "category") {
-    toast.info("החלת הרשאות לצאצאים זמינה רק עבור קטגוריות");
-    return;
-  }
+    if (entityType !== "category") {
+      toast.info("החלת הרשאות לצאצאים זמינה רק עבור קטגוריות");
+      return;
+    }
 
-  try {
-    setIsSyncingChildren(true);
-    await permissionsService.syncCategoryPermissionsToChildren(cleanId);
-    toast.success("הרשאות הוחלו בהצלחה על כל הצאצאים");
-    setInheritanceApplied(true);
-  } catch (err) {
-    toast.error("שגיאה בהחלת הרשאות על הצאצאים");
-  } finally {
-    setIsSyncingChildren(false);
-  }
-};
+    try {
+      setIsSyncingChildren(true);
+      await permissionsService.syncCategoryPermissionsToChildren(cleanId);
+      toast.success("הרשאות הוחלו בהצלחה על כל הצאצאים");
+      setInheritanceApplied(true);
+    } catch (err) {
+      toast.error("שגיאה בהחלת הרשאות על הצאצאים");
+    } finally {
+      setIsSyncingChildren(false);
+    }
+  };
 
   const hasLocalChanges = useMemo(() => {
-  const usersToAllow = users.filter(u => u.enabled).map(u => u._id);
-  const groupsToAllow = groups.filter(g => g.members).map(g => g._id);
-  const finalAllowedIds = [...usersToAllow, ...groupsToAllow];
-  const currentDbIds = existingPermissions.map(p => p.allowed);
+    const usersToAllow = users.filter((u) => u.enabled).map((u) => u._id);
+    const groupsToAllow = groups.filter((g) => g.members).map((g) => g._id);
+    const finalAllowedIds = [...usersToAllow, ...groupsToAllow];
+    const currentDbIds = existingPermissions.map((p) => p.allowed);
 
-  const addedOrRemoved = finalAllowedIds.length !== currentDbIds.length
-    || finalAllowedIds.some(id => !currentDbIds.includes(id));
+    const addedOrRemoved =
+      finalAllowedIds.length !== currentDbIds.length ||
+      finalAllowedIds.some((id) => !currentDbIds.includes(id));
 
-  return addedOrRemoved;
-}, [users, groups, existingPermissions]);
-
+    return addedOrRemoved;
+  }, [users, groups, existingPermissions]);
 
   const savePermissions = async (inheritToChildren: boolean) => {
     setIsSaving(true);
@@ -238,13 +236,12 @@ if (role !== "editor") {
       const createResults = await Promise.allSettled(
         toCreate.map((allowedId) =>
           permissionsService.createPermission(
-  entityType,
-  cleanId,
-  allowedId,
-  inheritToChildren,
-  previousPath ?? undefined
-),
-
+            entityType,
+            cleanId,
+            allowedId,
+            inheritToChildren,
+            previousPath ?? undefined,
+          ),
         ),
       );
 
@@ -270,9 +267,9 @@ if (role !== "editor") {
       } else {
         navigate(-1);
       }
-     if (inheritToChildren) {
-      setInheritanceApplied(true);
-    }
+      if (inheritToChildren) {
+        setInheritanceApplied(true);
+      }
     } catch (err) {
       toast.error("שגיאה בשמירה");
     } finally {
@@ -302,11 +299,10 @@ if (role !== "editor") {
     setShowInheritanceModal(true);
   };
 
-const showManualInheritButton =
-  entityData?.permissionsInheritedToChildren === false &&
-  existingPermissions.length > 0 &&
-  !hasLocalChanges; 
-
+  const showManualInheritButton =
+    entityData?.permissionsInheritedToChildren === false &&
+    existingPermissions.length > 0 &&
+    !hasLocalChanges;
 
   return (
     <div
@@ -428,6 +424,12 @@ const showManualInheritButton =
                             onCheckedChange={() =>
                               handleToggle(user._id, "user")
                             }
+                            className={
+                              (user.allGroupsEnabled && !user.enabled) ||
+                              user.hasBlockedGroups
+                                ? "cursor-not-allowed"
+                                : ""
+                            }
                           />
                         </div>
                       ))}
@@ -474,7 +476,7 @@ const showManualInheritButton =
               )}
             </AnimatePresence>
           </div>
-         <InheritanceModal
+          <InheritanceModal
             open={showInheritanceModal}
             onDismiss={() => {
               setShowInheritanceModal(false);
@@ -489,50 +491,47 @@ const showManualInheritButton =
             }}
           />
 
-             <div className="mt-6 flex justify-between items-start gap-3">
-                <div className="min-w-[240px]">
-                {showManualInheritButton && (
-                  <Button
-                    variant="outline"
-                    className="flex items-center gap-2 border-blue-500 text-blue-600 hover:bg-blue-50 px-4 py-2 font-medium shadow-sm"
-                    disabled={isSyncingChildren}
-                    onClick={handleSyncToChildren}
-                  >
-                    <RefreshCcw className="w-4 h-4" />
-                    {isSyncingChildren
-                      ? "מעדכן הרשאות לצאצאים..."
-                      : "החלת הרשאות על כל הצאצאים"}
-                  </Button>
-                )}
-              </div>
-
-              <div className="flex flex-row-reverse gap-3">
+          <div className="mt-6 flex justify-between items-start gap-3">
+            <div className="min-w-[240px]">
+              {showManualInheritButton && (
                 <Button
                   variant="outline"
-                  className="px-8 py-2 border-gray-300 hover:bg-gray-300 transition-all font-medium"
-                  onClick={() => navigate(-1)}
+                  className="flex items-center gap-2 border-blue-500 text-blue-600 hover:bg-blue-50 px-4 py-2 font-medium shadow-sm"
+                  disabled={isSyncingChildren}
+                  onClick={handleSyncToChildren}
                 >
-                  ביטול
+                  <RefreshCcw className="w-4 h-4" />
+                  {isSyncingChildren
+                    ? "מעדכן הרשאות לצאצאים..."
+                    : "החלת הרשאות על כל הצאצאים"}
                 </Button>
-                <Button
-                  className="bg-green-600 text-white hover:bg-green-700 px-10 shadow-lg disabled:opacity-50"
-                  onClick={handleSave}
-                  disabled={!hasLocalChanges}
-                >
-                  {isSaving ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <Spinner className="size-4 text-white" />
-                      שומר...
-                    </span>
-                  ) : (
-                    'שמירה'
-                  )}
-                </Button>
-              </div>
+              )}
             </div>
 
-
-                        
+            <div className="flex flex-row-reverse gap-3">
+              <Button
+                variant="outline"
+                className="px-8 py-2 border-gray-300 hover:bg-gray-300 transition-all font-medium"
+                onClick={() => navigate(-1)}
+              >
+                ביטול
+              </Button>
+              <Button
+                className="bg-green-600 text-white hover:bg-green-700 px-10 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleSave}
+                disabled={!hasLocalChanges}
+              >
+                {isSaving ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Spinner className="size-4 text-white" />
+                    שומר...
+                  </span>
+                ) : (
+                  "שמירה"
+                )}
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
