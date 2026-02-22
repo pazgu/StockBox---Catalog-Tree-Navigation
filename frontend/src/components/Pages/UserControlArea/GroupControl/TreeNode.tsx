@@ -147,36 +147,46 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         </div>
 
         <div className="flex items-center gap-1.5">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleSelection(node.id, false, node.contextPath);
-            }}
-            className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all
-              ${
-                isSelected && !isSelectedWithChildren
-                  ? "bg-blue-600 border-blue-600 text-white"
-                  : "bg-white border-gray-300 text-transparent hover:border-blue-400 hover:text-blue-400"
-              }`}
-          >
-            <CheckCircle2 className="w-4 h-4" />
-          </button>
-
-          {isCategory && (
+          <div className="relative group/btn">
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onToggleSelection(node.id, true, node.contextPath);
+                onToggleSelection(node.id, false, node.contextPath);
               }}
               className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all
-      ${
-        isSelectedWithChildren
-          ? "bg-indigo-600 border-indigo-600 text-white"
-          : "bg-white border-gray-300 text-gray-400 hover:border-indigo-400"
-      }`}
+                ${
+                  isSelected && !isSelectedWithChildren
+                    ? "bg-blue-600 border-blue-600 text-white"
+                    : "bg-white border-gray-300 text-transparent hover:border-blue-400 hover:text-blue-400"
+                }`}
             >
-              <Users className="w-4 h-4" />
+              <CheckCircle2 className="w-4 h-4" />
             </button>
+            <div className="absolute bottom-full right-1/2 translate-x-1/2 mb-0 px-2 py-1 bg-gray-800 text-white text-[10px] rounded-lg whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg">
+              בחר
+            </div>
+          </div>
+
+          {isCategory && (
+            <div className="relative group/btn">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleSelection(node.id, true, node.contextPath);
+                }}
+                className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all
+                  ${
+                    isSelectedWithChildren
+                      ? "bg-indigo-600 border-indigo-600 text-white"
+                      : "bg-white border-gray-300 text-gray-400 hover:border-indigo-400"
+                  }`}
+              >
+                <Users className="w-4 h-4" />
+              </button>
+              <div className="absolute bottom-full right-1/2 translate-x-1/2 mb-0 px-2 py-1 bg-gray-800 text-white text-[10px] rounded-lg whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg">
+                בחר עם צאצאים
+              </div>
+            </div>
           )}
         </div>
 
