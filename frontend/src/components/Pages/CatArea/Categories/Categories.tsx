@@ -537,9 +537,20 @@ export const Categories: FC<CategoriesProps> = () => {
                       </div>
                     </div>
 
-                    <span className="text-base text-slate-700 font-medium mt-2">
+                 <div className="relative group/tooltip flex justify-center mt-2">
+                    <span 
+                      className="text-base text-slate-700 font-medium w-44 line-clamp-2 text-center"
+                      style={{ 
+                        overflowWrap: 'anywhere',
+                        direction: /[\u0590-\u05FF]/.test(item.name) ? 'rtl' : 'ltr'
+                      }}
+                    >
                       {item.name}
                     </span>
+                    <span className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-50">
+                      {item.name}
+                    </span>
+                  </div>
                   </div>
                 );
               })}

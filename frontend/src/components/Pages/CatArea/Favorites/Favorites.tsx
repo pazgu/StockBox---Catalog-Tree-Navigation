@@ -265,7 +265,17 @@ export const Favorites: React.FC = () => {
                     className="w-[100px] h-[100px] object-contain mx-auto mb-3"
                   />
                 </Link>
-                <p className="font-semibold text-slate-800">{cat.categoryName}</p>
+               <div className="relative group/tooltip flex justify-center">
+                  <p 
+                    className="font-semibold text-slate-800 line-clamp-2"
+                    style={{ overflowWrap: 'anywhere', direction: /[\u0590-\u05FF]/.test(cat.categoryName) ? 'rtl' : 'ltr' }}
+                  >
+                    {cat.categoryName}
+                  </p>
+                  <span className="absolute top-full left-1/2 -translate-x-1/2 mt-10 bg-gray-800 text-white text-xs px-3 py-1.5 rounded-lg opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-50 shadow-lg">
+                  {cat.categoryName}
+                </span>
+                </div>
               </div>
             ))}
           </div>
@@ -305,7 +315,10 @@ export const Favorites: React.FC = () => {
                     className="w-[140px] h-[140px] object-contain rounded-lg mb-3 mx-auto"
                   />
                 </Link>
-                <span className="block text-base font-semibold text-slate-800 mb-1">
+                <span 
+                  className="block text-base font-semibold text-slate-800 mb-1 line-clamp-2"
+                  style={{ overflowWrap: 'anywhere', direction: /[\u0590-\u05FF]/.test(product.productName) ? 'rtl' : 'ltr' }}
+                >
                   {product.productName}
                 </span>
                 {product.productDescription && (

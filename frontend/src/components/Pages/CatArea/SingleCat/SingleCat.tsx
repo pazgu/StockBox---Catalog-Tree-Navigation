@@ -853,7 +853,20 @@ const SingleCat: FC = () => {
             </div>
 
             <div className="w-full text-center pt-4 border-t border-gray-200">
-              <h2 className="text-[1.1rem] text-[#0D305B] mb-2">{item.name}</h2>
+              <div className="relative group/tooltip flex justify-center">
+                <h2 
+                  className="text-[1.1rem] text-[#0D305B] mb-2 w-full line-clamp-2"
+                  style={{ 
+                    overflowWrap: 'anywhere',
+                    direction: /[\u0590-\u05FF]/.test(item.name) ? 'rtl' : 'ltr'
+                  }}
+                >
+                  {item.name}
+                </h2>
+                <span className="absolute -top-10 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-50">
+                {item.name}
+              </span>
+              </div>
 
               {role === "editor" && !isSelectionMode && (
                 <div className="mt-2 flex justify-center">
