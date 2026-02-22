@@ -863,9 +863,11 @@ const SingleCat: FC = () => {
                 >
                   {item.name}
                 </h2>
-                <span className="absolute -top-10 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-50">
-                {item.name}
-              </span>
+                 {(item.name.length > 20) && (
+                    <span className="absolute -top-6 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-50">
+                      {item.name}
+                    </span>
+                  )}
               </div>
 
               {role === "editor" && !isSelectionMode && (
