@@ -133,7 +133,7 @@ export const Favorites: React.FC = () => {
       setCategories((prev) => [fullCategory, ...prev]);
     }
 
-    toast.success(`${categoryName} נוסף למועדפים`);
+    toast.success(`${categoryName} נוספה למועדפים`);
   } catch (error) {
     toast.error("שגיאה בעדכון המועדפים");
   }

@@ -201,7 +201,7 @@ export const Categories: FC<CategoriesProps> = () => {
 
       await userService.toggleFavorite(itemId, itemType);
 
-      if (!wasFavorite) toast.success(`${itemName} נוסף למועדפים`);
+      if (!wasFavorite) toast.success(`${itemName} נוספה למועדפים`);
       else toast.info(`${itemName} הוסר מהמועדפים`);
     } catch (error) {
       toast.error("שגיאה בעדכון המועדפים");
