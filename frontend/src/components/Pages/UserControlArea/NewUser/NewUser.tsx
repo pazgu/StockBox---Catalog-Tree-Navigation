@@ -291,8 +291,8 @@ const NewUser: React.FC = () => {
                   <option value="" disabled>
                     בחר סוג
                   </option>
-                  <option value="editor">מנהל</option>
-                  <option value="viewer">משתמש</option>
+                  <option value="editor">עורך</option>
+                  <option value="viewer">צופה</option>
                 </select>
               </div>
               {errors.role && (
