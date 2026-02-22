@@ -9,7 +9,6 @@ type AboutImagesPanelProps = {
   role?: UserRole | null;
   isLoading?: boolean;
 
-
   images: string[];
   currentIndex: number;
 
@@ -20,16 +19,16 @@ type AboutImagesPanelProps = {
   onClearAll: () => void;
   onReplaceImage: (
     index: number,
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => void;
   onAddImages: (e: React.ChangeEvent<HTMLInputElement>) => void;
 
   replaceInputRef?:
-  | React.RefObject<HTMLInputElement>
-  | React.MutableRefObject<HTMLInputElement | null>;
+    | React.RefObject<HTMLInputElement>
+    | React.MutableRefObject<HTMLInputElement | null>;
   addInputRef?:
-  | React.RefObject<HTMLInputElement>
-  | React.MutableRefObject<HTMLInputElement | null>;
+    | React.RefObject<HTMLInputElement>
+    | React.MutableRefObject<HTMLInputElement | null>;
 };
 
 const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
@@ -47,7 +46,6 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
   addInputRef,
   isLoading = false,
 }) => {
-
   const wrapRef = React.useRef<HTMLDivElement | null>(null);
   const touchStartXRef = React.useRef<number | null>(null);
   const localReplaceRef = React.useRef<HTMLInputElement>(null);
@@ -55,7 +53,6 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
 
   const replaceRef = replaceInputRef ?? localReplaceRef;
   const addRef = addInputRef ?? localAddRef;
-
 
   React.useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -77,7 +74,6 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [onPrev, onNext]);
-
 
   const onTouchStart = (e: React.TouchEvent) => {
     touchStartXRef.current = e.touches[0].clientX;
@@ -110,9 +106,10 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
           className={`relative z-10 w-full h-full rounded-[3rem] overflow-hidden
             bg-gradient-to-br from-white via-blue-50 to-blue-100/70
             shadow-2xl border-4 border-white/60 backdrop-blur-sm
-            ${isEditing
-              ? ""
-              : "transition-all duration-700 ease-out hover:shadow-[0_30px_80px_rgba(59,130,246,0.3)] hover:scale-105 hover:-translate-y-2 hover:rotate-2"
+            ${
+              isEditing
+                ? ""
+                : "transition-all duration-700 ease-out hover:shadow-[0_30px_80px_rgba(59,130,246,0.3)] hover:scale-105 hover:-translate-y-2 hover:rotate-2"
             }
           `}
         >
@@ -120,9 +117,10 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
           <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-blue-600/10 z-10 pointer-events-none" />
           <div
             className={`absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent z-20 pointer-events-none skew-x-12
-              ${isEditing
-                ? ""
-                : "-translate-x-full hover:translate-x-full transition-transform duration-1000"
+              ${
+                isEditing
+                  ? ""
+                  : "-translate-x-full hover:translate-x-full transition-transform duration-1000"
               }
             `}
           />
@@ -132,8 +130,11 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
               <img
                 src={toFullUrl(images[currentIndex] ?? images[0] ?? "")}
                 alt="StockBox preview"
-                className={`w-full h-full object-cover scale-105 ${isEditing ? "" : "transition-all duration-1000 ease-out hover:scale-110"
-                  } pointer-events-none`}
+                className={`w-full h-full object-cover scale-105 ${
+                  isEditing
+                    ? ""
+                    : "transition-all duration-1000 ease-out hover:scale-110"
+                } pointer-events-none`}
               />
 
               {isEditing && images.length > 1 && (
@@ -149,7 +150,6 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
                     ‹
                   </button>
 
-
                   <button
                     type="button"
                     disabled={isLoading}
@@ -162,7 +162,6 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
                   >
                     ›
                   </button>
-
                 </>
               )}
 
@@ -182,7 +181,6 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
                     מחיקת תמונה
                   </button>
 
-
                   {images.length > 0 && (
                     <button
                       disabled={isLoading}
@@ -194,7 +192,6 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
                     >
                       מחיקת הכל
                     </button>
-
                   )}
 
                   {showClearDialog && (
@@ -271,22 +268,43 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
                     if (!isEditing) return;
                     addRef.current?.click();
                   }}
-                  className={`group w-full h-full rounded-[3rem] border-2 border-dashed border-stockblue/30 bg-white/70 backdrop-blur-sm flex flex-col items-center justify-center gap-3 transition
-          ${isEditing ? "hover:border-stockblue/50 hover:bg-white" : "opacity-70 cursor-not-allowed"}
-        `}
-                  title={isEditing ? "העלה תמונה" : "היכנסו לעריכה כדי להעלות"}
+                  onMouseMove={(e) => {
+                    const tooltip = e.currentTarget.querySelector(
+                      ".cursor-tooltip",
+                    ) as HTMLElement;
+                    if (tooltip) {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      tooltip.style.left = `${e.clientX - rect.left + 12}px`;
+                      tooltip.style.top = `${e.clientY - rect.top + 12}px`;
+                    }
+                  }}
+                  className={`relative group w-full h-full rounded-[3rem] border-2 border-dashed border-stockblue/30 bg-white/70 backdrop-blur-sm flex flex-col items-center justify-center gap-3 transition
+    ${isEditing ? "hover:border-stockblue/50 hover:bg-white" : "opacity-70 cursor-not-allowed"}
+  `}
                   aria-label="העלאת תמונה"
                 >
-                  <Upload size={32} className="opacity-70 group-hover:opacity-100" />
+                  <Upload
+                    size={32}
+                    className="opacity-70 group-hover:opacity-100"
+                  />
                   <span className="text-stockblue/80 font-semibold">
-                    אין תמונות כרגע - לחצו כדי להעלות
+                    אין תמונות כרגע{" "}
                   </span>
-                  <span className="text-xs text-slate-500">PNG · JPG · JPEG</span>
+                  {isEditing && <span>לחצו כדי להעלות תמונה חדשה</span>}
+                  {!isEditing && (
+                    <small className="text-xs text-slate-500">
+                      יש להיכנס למצב עריכה בשביל להעלות תמונות
+                    </small>
+                  )}
+                  <span className="text-xs text-slate-500">
+                    PNG · JPG · JPEG
+                  </span>
                 </button>
               ) : (
-                // VIEWER EMPTY STATE (no upload icon, not clickable)
                 <div className="w-full h-full rounded-[3rem] border-2 border-dashed border-stockblue/20 bg-white/60 backdrop-blur-sm flex flex-col items-center justify-center gap-2">
-                  <span className="text-stockblue/80 font-semibold">אין תמונות כרגע</span>
+                  <span className="text-stockblue/80 font-semibold">
+                    אין תמונות כרגע
+                  </span>
                 </div>
               )}
             </div>
@@ -305,30 +323,31 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
             <div className="absolute inset-0 z-[80] grid place-items-center bg-white/55 backdrop-blur-sm">
               <div className="flex items-center gap-2 rounded-2xl bg-white/80 px-4 py-2 shadow">
                 <Spinner className="size-5" />
-                <span className="text-sm font-semibold text-[#103e76]">טוען…</span>
+                <span className="text-sm font-semibold text-[#103e76]">
+                  טוען…
+                </span>
               </div>
             </div>
           )}
-
         </div>
 
         {/* floating glows */}
         <div
-          className={`absolute -top-6 -right-6 w-24 h-24 bg-gradient-to-br from-blue-400/40 to-purple-400/30 rounded-full blur-2xl pointer-events-none -z-10 ${isEditing ? "" : "animate-pulse"
-            }`}
+          className={`absolute -top-6 -right-6 w-24 h-24 bg-gradient-to-br from-blue-400/40 to-purple-400/30 rounded-full blur-2xl pointer-events-none -z-10 ${
+            isEditing ? "" : "animate-pulse"
+          }`}
         />
         <div
-          className={`absolute -bottom-8 -left-8 w-32 h-32 bg-gradient-to-tr from-purple-500/20 to-blue-500/30 rounded-full blur-3xl pointer-events-none -z-10 ${isEditing ? "" : "animate-pulse"
-            }`}
+          className={`absolute -bottom-8 -left-8 w-32 h-32 bg-gradient-to-tr from-purple-500/20 to-blue-500/30 rounded-full blur-3xl pointer-events-none -z-10 ${
+            isEditing ? "" : "animate-pulse"
+          }`}
         />
       </div>
     </aside>
   );
 };
 
-
 const API_BASE = environment.API_URL;
-
 
 const toFullUrl = (raw: string) => {
   if (!raw) return "";
@@ -341,8 +360,5 @@ const toFullUrl = (raw: string) => {
 
   return `${API_BASE}/${u}`;
 };
-
-
-
 
 export default AboutImagesPanel;
