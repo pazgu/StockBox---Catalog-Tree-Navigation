@@ -399,17 +399,19 @@ const handleCancelEdit = () => {
                   </svg>
                 </button>
 
-                {user.approved && (
-                  <button
-                    className={`p-1 rounded transition ${user.isBlocked
-                        ? "bg-red-600 text-white hover:bg-red-700"
-                        : "hover:bg-gray-100 opacity-60 hover:opacity-100"
-                      }`}
-                    onClick={() => setBlockUserIndex(index)}
-                  >
-                    <Ban size={14} />
-                  </button>
-                )}
+                {user.approved && user.role !== "editor" && (
+  <button
+    className={`p-1 rounded transition ${
+      user.isBlocked
+        ? "bg-red-600 text-white hover:bg-red-700"
+        : "hover:bg-gray-100 opacity-60 hover:opacity-100"
+    }`}
+    onClick={() => setBlockUserIndex(index)}
+  >
+    <Ban size={14} />
+  </button>
+)}
+
               </div>
 
               {/* Avatar */}
@@ -566,7 +568,7 @@ const handleCancelEdit = () => {
       <p className="text-slate-700 mb-2">
         {currentUsers[blockUserIndex].isBlocked
           ? "האם אתה בטוח שברצונך לבטל את חסימת המשתמש ולאפשר לו גישה מחדש לאתר?"
-          : "האם אתה בטוח שברצונך לחסום משתמש זה מצפייה במוצרים?"}
+        : "האם אתה בטוח שברצונך לחסום משתמש זה מגישה למערכת?"}
       </p>
       <small className="text-gray-500 block mb-6">
         ניתן לשנות זאת בכל עת
