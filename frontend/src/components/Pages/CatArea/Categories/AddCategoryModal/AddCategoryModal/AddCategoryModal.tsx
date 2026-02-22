@@ -75,6 +75,8 @@ function anchoredZoom(
 
 const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   const [newCatName, setNewCatName] = React.useState("");
+  const [errorMessage, setErrorMessage] = React.useState("");
+  const FORBIDDEN_CHARS = /[;|"'*<>]/;
   const [rawImage, setRawImage] = React.useState<HTMLImageElement | null>(null);
   const [zoom, setZoom] = React.useState(1);
   const [offset, setOffset] = React.useState({ x: 0, y: 0 });
@@ -165,11 +167,37 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     return out.toDataURL("image/jpeg", 0.92);
   };
 
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const value = e.target.value;
+  setNewCatName(value);
+
+  if (!value) {
+    setErrorMessage(""); 
+  } else if (FORBIDDEN_CHARS.test(value)) {
+    setErrorMessage("שם מוצר לא יכול להכיל תווים ; | \" ' * < >");
+  } else {
+    setErrorMessage(""); 
+  }
+};
+
+  const handleClose = () => {
+  setErrorMessage(""); 
+  setNewCatName(""); 
+  setRawImage(null);
+  onClose();           
+};
+
   const handleSave = async () => {
     if (!newCatName.trim()) {
       toast.error("שם קטגוריה חובה");
       return;
     }
+
+     if (FORBIDDEN_CHARS.test(newCatName)) {
+    toast.error('שם קטגוריה מכיל תווים אסורים ; | " \' * < >');
+    return;
+  }
+
 
     if (!rawImage) {
       toast.error("נא לבחור תמונה");
@@ -243,12 +271,15 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
             </label>
 
             <input
-              type="text"
-              placeholder="שם קטגוריה"
-              value={newCatName}
-              onChange={(e) => setNewCatName(e.target.value)}
-              className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
-            />
+                type="text"
+                placeholder="שם קטגוריה"
+                value={newCatName}
+                onChange={handleNameChange}   
+                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
+              />
+              {errorMessage && (
+                <p className="mt-1 text-sm text-red-600">{errorMessage}</p>
+              )}
           </div>
 
           <div className="group mb-4">
@@ -450,7 +481,7 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
 
           <div className="flex justify-end gap-4 mt-8 pt-6 border-t-2 border-gray-200">
             <button
-              onClick={onClose}
+              onClick={handleClose}
               disabled={isSaving}
               className={`px-6 py-3 rounded-xl border-2 border-gray-300 transition-colors font-bold
       ${
