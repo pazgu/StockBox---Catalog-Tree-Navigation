@@ -37,16 +37,14 @@ const Login: FC<LoginProps> = () => {
     }
 
     if (!email.trim()) {
-    newErrors.email = true;
-    hasError = true;
-  } else if (!isValidEmail(email)) {
-    newErrors.email = true;
-    emailFormatError = true;
-  }
+      newErrors.email = true;
+      hasError = true;
+    } else if (!isValidEmail(email)) {
+      newErrors.email = true;
+      emailFormatError = true;
+    }
 
-
-
-   setErrors(newErrors);
+    setErrors(newErrors);
     if (hasError) {
       toast.error("נא למלא את כל השדות");
       return;
@@ -58,7 +56,12 @@ const Login: FC<LoginProps> = () => {
     }
 
     try {
-      const res = await authService.login({ firstName, lastName, userName, email });
+      const res = await authService.login({
+        firstName,
+        lastName,
+        userName,
+        email,
+      });
       if (res.status === 201) {
         const { accessToken, user } = res.data;
 
@@ -103,12 +106,10 @@ const Login: FC<LoginProps> = () => {
             .catch(() => toast.error("שגיאה בשליחת הבקשה"));
         }
       } else if (error?.response?.status === 500) {
-  toast.error("שם משתמש או אימייל כבר קיימים/שגויים במערכת");
-} else {
-  toast.error("שגיאה לא צפויה, אנא נסה שוב");
-}
-
-
+        toast.error("שם משתמש או אימייל כבר קיימים/שגויים במערכת");
+      } else {
+        toast.error("שגיאה לא צפויה, אנא נסה שוב");
+      }
     }
   };
 
@@ -171,7 +172,7 @@ const Login: FC<LoginProps> = () => {
                       setErrors({ ...errors, firstName: false });
                     }
                   }}
-                  className={`w-full py-3 px-4 pl-11 border-2 ${errors.firstName ? 'border-red-300' : 'border-gray-300'} rounded-lg text-right text-sm`}
+                  className={`w-full py-3 px-4 pl-11 border-2 ${errors.firstName ? "border-red-300" : "border-gray-300"} rounded-lg text-right text-sm`}
                   placeholder="הכנס שם פרטי..."
                   dir="rtl"
                 />
@@ -195,7 +196,7 @@ const Login: FC<LoginProps> = () => {
                       setErrors({ ...errors, lastName: false });
                     }
                   }}
-                  className={`w-full py-3 px-4 pl-11 border-2 ${errors.lastName ? 'border-red-300' : 'border-gray-300'} rounded-lg text-right text-sm`}
+                  className={`w-full py-3 px-4 pl-11 border-2 ${errors.lastName ? "border-red-300" : "border-gray-300"} rounded-lg text-right text-sm`}
                   placeholder="הכנס שם משפחה..."
                   dir="rtl"
                 />
@@ -221,7 +222,7 @@ const Login: FC<LoginProps> = () => {
                       setErrors({ ...errors, userName: false });
                     }
                   }}
-                  className={`w-full py-3 px-4 pl-11 border-2 ${errors.userName ? 'border-red-300' : 'border-gray-300'} rounded-lg text-right text-sm`}
+                  className={`w-full py-3 px-4 pl-11 border-2 ${errors.userName ? "border-red-300" : "border-gray-300"} rounded-lg text-right text-sm`}
                   placeholder="הכנס שם משתמש..."
                   dir="rtl"
                 />
@@ -247,7 +248,7 @@ const Login: FC<LoginProps> = () => {
                       setErrors({ ...errors, email: false });
                     }
                   }}
-                  className={`w-full py-3 px-4 pl-11 border-2 ${errors.email ? 'border-red-300' : 'border-gray-300'} rounded-lg text-right text-sm`}
+                  className={`w-full py-3 px-4 pl-11 border-2 ${errors.email ? "border-red-300" : "border-gray-300"} rounded-lg text-right text-sm`}
                   placeholder="הכנס אימייל..."
                   dir="rtl"
                 />
