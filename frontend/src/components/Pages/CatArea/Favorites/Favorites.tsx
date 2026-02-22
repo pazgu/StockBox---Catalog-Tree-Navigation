@@ -122,7 +122,7 @@ export const Favorites: React.FC = () => {
     if (isFavorite) {
       setFavorites((prev) => prev.filter((fav) => fav.id !== categoryId));
       setCategories((prev) => prev.filter((c) => c._id !== categoryId));
-      toast.info(`${categoryName} הוסר מהמועדפים`);
+      toast.info(`${categoryName} הוסרה מהמועדפים`);
       return;
     }
 
