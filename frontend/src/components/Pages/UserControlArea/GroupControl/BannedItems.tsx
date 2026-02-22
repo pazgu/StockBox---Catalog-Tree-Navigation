@@ -80,9 +80,25 @@ const BannedItems: React.FC<BannedItemsProps> = ({
               >
                 <div className="mt-0.5">{getItemIcon(item.type)}</div>
                 <div className="flex-1">
-                  <h4 className="text-sm font-medium text-gray-800 leading-tight">
+                 <div className="relative group/tooltip flex-1">
+                  <h4 
+                    ref={(el) => {
+                      if (el) el.dataset.truncated = String(el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight);
+                    }}
+                    className="text-sm font-medium text-gray-800 leading-tight line-clamp-2 peer"
+                    style={{ 
+                      overflowWrap: 'anywhere',
+                      direction: /[\u0590-\u05FF]/.test(item.name) ? 'rtl' : 'ltr'
+                    }}
+                  >
                     {item.name}
                   </h4>
+                  {(item.name.length > 20) && (
+                    <span className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-50 shadow-md">
+                      {item.name}
+                    </span>
+                  )}
+                </div>
                   <p className="text-xs text-gray-500 mt-1">
                     {getItemTypeLabel(item.type)}
                   </p>
