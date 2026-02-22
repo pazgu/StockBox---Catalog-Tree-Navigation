@@ -8,6 +8,7 @@ import {
   BadRequestException,
   NotFoundException,
   InternalServerErrorException,
+  ConflictException,
 } from '@nestjs/common';
 import { Model, Types } from 'mongoose';
 import { User, FavoriteType, UserRole } from 'src/schemas/Users.schema';
@@ -30,6 +31,17 @@ export class UsersService {
     return this.userModel.find(filter).exec();
   }
   async createUser(createUserDto: CreateUserDto) {
+    const existing = await this.userModel.findOne({
+      $or: [
+        { userName: createUserDto.userName },
+        { email: createUserDto.email },
+      ],
+    });
+
+    if (existing) {
+      throw new ConflictException('שם משתמש או אימייל כבר קיימים במערכת');
+    }
+
     const newUser = new this.userModel(createUserDto);
     const savedUser = await newUser.save();
 
@@ -58,7 +70,23 @@ export class UsersService {
     return this.userModel.findByIdAndDelete(id).exec();
   }
 
-  updateUser(id: string, updateUserDto: Partial<CreateUserDto>) {
+  async updateUser(id: string, updateUserDto: Partial<CreateUserDto>) {
+    if (updateUserDto.userName || updateUserDto.email) {
+      const existing = await this.userModel.findOne({
+        _id: { $ne: id },
+        $or: [
+          ...(updateUserDto.userName
+            ? [{ userName: updateUserDto.userName }]
+            : []),
+          ...(updateUserDto.email ? [{ email: updateUserDto.email }] : []),
+        ],
+      });
+
+      if (existing) {
+        throw new ConflictException('שם משתמש או אימייל כבר קיימים במערכת');
+      }
+    }
+
     return this.userModel
       .findByIdAndUpdate(id, updateUserDto, { new: true })
       .exec();
