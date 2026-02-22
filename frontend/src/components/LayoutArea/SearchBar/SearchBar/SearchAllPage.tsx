@@ -192,8 +192,8 @@ const SearchResultsPage = () => {
 
                 <p className="text-[14px] text-[#4d5156] leading-relaxed line-clamp-2">
                   {item.type === "product"
-                    ? `צפה בפרטי המוצר המלאים במערכת. מזהה פריט: ${item.id}.`
-                    : `עיון בקטגוריית ${item.label}. לחץ לצפייה בכל המוצרים והתת-קטגוריות המשוייכים לנתיב זה.`}
+                    ? item.description || "תיאור המוצר לא זמין."
+                    : `יש ללחוץ על הקישור לעיון בקטגוריית ${item.label}`}
                 </p>
                 <div className="border-b border-gray-100 my-4" />
               </div>
