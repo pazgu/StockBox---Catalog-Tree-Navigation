@@ -73,21 +73,24 @@ export class UsersController {
     return { isFavorite: isFav };
   }
 
- @Patch('me/favorites/toggle')
+  @Patch('me/favorites/toggle')
   @UseGuards(JwtAuthGuard)
   async toggleMyFavorite(
     @Req() req: any,
     @Body() body: { itemId: string; type: FavoriteType },
   ) {
     const { itemId, type } = body;
-    const isFavorite = await this.usersService.isFavorite(req.user.userId, itemId);
-    
+    const isFavorite = await this.usersService.isFavorite(
+      req.user.userId,
+      itemId,
+    );
+
     if (isFavorite) {
       return this.usersService.removeFavorite(req.user.userId, itemId);
     } else {
       return this.usersService.addFavorite(req.user.userId, itemId, type);
     }
-}
+  }
 
   @Get(':userId/favorites')
   @UseGuards(JwtAuthGuard)

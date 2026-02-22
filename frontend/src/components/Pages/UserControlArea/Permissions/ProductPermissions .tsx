@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { permissionsService } from "../../../../services/permissions.service";
 import { usePath } from "../../../../context/PathContext";
 import { Spinner } from '../../../ui/spinner';
+import { PathDisplay } from "../../SharedComponents/PathDisplay/PathDisplay";
 
 interface Group {
   _id: string;
@@ -612,7 +613,8 @@ const ProductPermissions: React.FC = () => {
                           {pathData.categoryName}
                         </div>
                         <div className="text-xs text-gray-500 font-mono break-all">
-                          {pathData.path}
+                          <PathDisplay path={pathData.path} />           
+                          
                         </div>
                         {hasChanges && (
                           <span className="inline-block mt-1 text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-semibold">

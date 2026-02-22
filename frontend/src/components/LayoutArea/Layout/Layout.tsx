@@ -1,4 +1,4 @@
-import React, { FC } from "react";
+import { FC } from "react";
 import { Routes, Route } from "react-router-dom";
 import About from "../../Pages/HomeArea/About/About";
 import Login from "../../Pages/AuthArea/Login/Login";
@@ -16,53 +16,126 @@ import Favorites from "../../Pages/CatArea/Favorites/Favorites";
 import { Toaster } from "sonner";
 import Footer from "../Footer/Footer";
 import SearchResultsPage from "../SearchBar/SearchBar/SearchAllPage";
-import { useNavigate } from "react-router-dom";
 import Page403 from "../../Pages/Page403/Page403";
 import { RecycleBin } from "../../Pages/CatArea/RecycleBin/RecycleBin";
+import { RequireAdmin } from "../../../components/Pages/AuthArea/ProtectRoutes/RequireAdmin";
+import { RequireAuth } from "../../../components/Pages/AuthArea/ProtectRoutes/RequireAuth";
 
 interface LayoutProps {}
 
 const Layout: FC<LayoutProps> = () => {
-  const navigate = useNavigate();
-  return (
+    return (
     <div className="Layout">
-      <Header></Header>
+      <Header />
 
       <main className="-mt-12">
         <Routes>
-          <Route path="/" element={<About></About>} />
-          <Route path="/login" element={<Login></Login>} />
-          <Route
-            path="/products/:productId"
-            element={<SingleProd></SingleProd>}
-          />
-          <Route path="/categories" element={<Categories></Categories>} />
-          <Route path="/categories/*" element={<SingleCat />} />
-          <Route path="/new-user" element={<NewUser></NewUser>} />
-          <Route path="/allUsers" element={<AllUsers></AllUsers>} />
-          <Route path="/Favorites" element={<Favorites></Favorites>} />
-          <Route path="/permissions/:type/:id" element={<Permissions />} />
-          <Route
-            path="/permissions/product/:id"
-            element={<ProductPermissions></ProductPermissions>}
-          />
-          <Route
-            path="/permissions/category/:id"
-            element={<Permissions></Permissions>}
-          />
-          <Route path="/GroupControl" element={<GroupControl></GroupControl>} />
+          <Route path="/" element={<About />} />
+          <Route path="/login" element={<Login />} />
           <Route path="/403" element={<Page403 />} />
           <Route path="/404" element={<Page404 />} />
           <Route path="*" element={<Page404 />} />
 
           <Route
+            path="/products/:productId"
+            element={
+              <RequireAuth>
+                <SingleProd />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/categories"
+            element={
+              <RequireAuth>
+                <Categories />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/categories/*"
+            element={
+              <RequireAuth>
+                <SingleCat />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/Favorites"
+            element={
+              <RequireAuth>
+                <Favorites />
+              </RequireAuth>
+            }
+          />
+          <Route
             path="/search-all"
-            element={<SearchResultsPage></SearchResultsPage>}
+            element={
+              <RequireAuth>
+                <SearchResultsPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/recycle-bin"
+            element={
+              <RequireAuth>
+                <RecycleBin />
+              </RequireAuth>
+            }
           />
 
-          <Route path="/recycle-bin" element={<RecycleBin></RecycleBin>} />
+          <Route
+            path="/new-user"
+            element={
+              <RequireAdmin>
+                <NewUser />
+              </RequireAdmin>
+            }
+          />
+          <Route
+            path="/allUsers"
+            element={
+              <RequireAdmin>
+                <AllUsers />
+              </RequireAdmin>
+            }
+          />
+          <Route
+            path="/permissions/:type/:id"
+            element={
+              <RequireAdmin>
+                <Permissions />
+              </RequireAdmin>
+            }
+          />
+          <Route
+            path="/permissions/product/:id"
+            element={
+              <RequireAdmin>
+                <ProductPermissions />
+              </RequireAdmin>
+            }
+          />
+          <Route
+            path="/permissions/category/:id"
+            element={
+              <RequireAdmin>
+                <Permissions />
+              </RequireAdmin>
+            }
+          />
+          <Route
+            path="/GroupControl"
+            element={
+              <RequireAdmin>
+                <GroupControl />
+              </RequireAdmin>
+            }
+          />
         </Routes>
       </main>
+
       <Toaster richColors />
       <Footer />
     </div>

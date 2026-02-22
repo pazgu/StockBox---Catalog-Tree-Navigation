@@ -4,9 +4,9 @@ import { useUser } from "../../../../context/UserContext";
 import { MailQuestionIcon, UserPen, Lock, User, ArrowLeft } from "lucide-react";
 import { authService } from "../../../../services/auth.service";
 import { toast } from "sonner";
-import NestedCatalogSVG from "../login.svg";
 import { boolean } from "zod";
 
+import NestedCatalogSVG from "./login.svg";
 interface LoginProps {}
 
 const Login: FC<LoginProps> = () => {
