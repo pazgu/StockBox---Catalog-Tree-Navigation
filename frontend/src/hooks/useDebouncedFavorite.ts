@@ -14,7 +14,7 @@ interface PendingFavorite {
 export function useDebouncedFavorite(
   items: any[],
   setItems: (fn: (prev: any[]) => any[]) => void,
-  delay = 500
+  delay = 500,
 ) {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const pendingRef = useRef<PendingFavorite | null>(null);
@@ -26,8 +26,8 @@ export function useDebouncedFavorite(
 
       setItems((prev) =>
         prev.map((x) =>
-          x.id === itemId ? { ...x, favorite: !x.favorite } : x
-        )
+          x.id === itemId ? { ...x, favorite: !x.favorite } : x,
+        ),
       );
 
       pendingRef.current = {
@@ -47,17 +47,25 @@ export function useDebouncedFavorite(
           await userService.toggleFavorite(currentItem.id, currentItem.type);
 
           if (currentItem.originalFavorite) {
-            toast.info(`${currentItem.name} הוסר מהמועדפים`);
+            if (currentItem.type === "category") {
+              toast.info(`${currentItem.name} הוסרה מהמועדפים`);
+            } else {
+              toast.info(`${currentItem.name} הוסר מהמועדפים`);
+            }
           } else {
-            toast.success(`${currentItem.name} נוסף למועדפים`);
+            if (currentItem.type === "category") {
+              toast.success(`${currentItem.name} נוספה למועדפים`);
+            } else {
+              toast.success(`${currentItem.name} נוסף למועדפים`);
+            }
           }
         } catch (err) {
           setItems((prev) =>
             prev.map((x) =>
               x.id === currentItem.id
                 ? { ...x, favorite: currentItem.originalFavorite }
-                : x
-            )
+                : x,
+            ),
           );
           toast.error("שגיאה בעדכון המועדפים");
         } finally {
@@ -65,7 +73,7 @@ export function useDebouncedFavorite(
         }
       }, delay);
     },
-    [items, setItems, delay]
+    [items, setItems, delay],
   );
 
   return toggleFavorite;

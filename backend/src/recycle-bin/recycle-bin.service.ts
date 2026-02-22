@@ -474,7 +474,8 @@ export class RecycleBinService {
   }
 
   private async restoreProduct(recycleBinItem: RecycleBin) {
-    const pathsToRestore = recycleBinItem.allProductPaths || recycleBinItem.originalPath;
+    const pathsToRestore =
+      recycleBinItem.allProductPaths || recycleBinItem.originalPath;
 
     const validPaths: string[] = [];
     for (const path of pathsToRestore) {
