@@ -6,7 +6,7 @@ import { Spinner } from "../../../../ui/spinner";
 type Props = {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (result: { name: string; imageFile: File }) => Promise<void>;
+  onSave: (result: { name: string; imageFile?: File }) => Promise<void>;
 };
 
 const CROP_BOX = 256;
@@ -191,16 +191,19 @@ const handleClose = () => {
   
 
   const handleSave = async () => {
-    if (!categoryName.trim()) {
-      toast.error("שם תת-קטגוריה חובה");
-      return;
-    }
+  if (!categoryName.trim()) {
+    toast.error("שם תת-קטגוריה חובה");
+    return;
+  }
 
-    if (!rawImage) {
-      toast.error("נא לבחור תמונה");
-      return;
-    }
+  if (FORBIDDEN_CHARS.test(categoryName)) {
+    toast.error('שם תת-קטגוריה מכיל תווים אסורים ; | " \' * < >');
+    return;
+  }
 
+  let file: File | undefined;
+
+  if (rawImage) {
     const croppedDataUrl = generateCroppedImage();
     if (!croppedDataUrl) {
       toast.error("שגיאה ביצירת התמונה");
@@ -208,26 +211,30 @@ const handleClose = () => {
     }
 
     const safeName = categoryName.trim().toLowerCase().replace(/\s+/g, "-");
-    const file = dataURLtoFile(croppedDataUrl, `${safeName}.jpg`);
+    file = dataURLtoFile(croppedDataUrl, `${safeName}.jpg`);
+  }
 
-    try {
-      setIsSaving(true);
-      await onSave({ name: categoryName.trim(), imageFile: file });
-    } catch (error: any) {
-      const serverMessage =
-        error?.response?.data?.message || error?.response?.data?.error;
+  try {
+    setIsSaving(true);
 
-      if (typeof serverMessage === "string" && serverMessage.trim()) {
-        toast.error(serverMessage);
-      } else {
-        toast.error("שגיאה בהוספת תת-קטגוריה");
-      }
+    await onSave({ name: categoryName.trim(), imageFile: file as any });
 
-      console.error("Add sub category failed:", error);
-    } finally {
-      setIsSaving(false);
+    handleClose();
+  } catch (error: any) {
+    const serverMessage =
+      error?.response?.data?.message || error?.response?.data?.error;
+
+    if (typeof serverMessage === "string" && serverMessage.trim()) {
+      toast.error(serverMessage);
+    } else {
+      toast.error("שגיאה בהוספת תת-קטגוריה");
     }
-  };
+
+    console.error("Add sub category failed:", error);
+  } finally {
+    setIsSaving(false);
+  }
+};
 
   return (
     <div
@@ -296,7 +303,7 @@ const handleClose = () => {
             <div className="w-full flex flex-col items-center mb-4">
               <div
                 ref={cropRef}
-                className="relative overflow-hidden select-none touch-none bg-white shadow-lg ring-1 ring-gray-200"
+                className="relative overflow-hidden select-none touch-none bg-white shadow-lg"
                 style={{
                   width: CROP_BOX,
                   height: CROP_BOX,
@@ -420,7 +427,6 @@ const handleClose = () => {
                   className="pointer-events-none absolute inset-0"
                   style={{
                     boxShadow: "0 0 0 9999px rgba(0,0,0,0.45)",
-                    outline: "2px solid rgba(255,255,255,0.7)",
                     outlineOffset: "-2px",
                     zIndex: 20,
                   }}

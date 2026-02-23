@@ -11,7 +11,7 @@ type Props = {
   onSave: (result: {
   name: string;
   description: string;
-  imageFile: File;
+  imageFile?: File;
 }) => Promise<void>;
 
 };
@@ -209,16 +209,19 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
 };
 
   const handleSave = async () => {
-    if (!productName.trim()) {
-      toast.error("שם מוצר חובה");
+  if (!productName.trim()) {
+    toast.error("שם מוצר חובה");
     return;
   }
 
-    if (!rawImage) {
-      toast.error("נא לבחור תמונה");
-      return;
-    }
+  if (FORBIDDEN_CHARS.test(productName)) {
+    toast.error('שם מוצר מכיל תווים אסורים ; | " \' * < >');
+    return;
+  }
 
+  let file: File | undefined;
+
+  if (rawImage) {
     const croppedDataUrl = generateCroppedImage();
     if (!croppedDataUrl) {
       toast.error("שגיאה ביצירת התמונה");
@@ -226,31 +229,34 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     }
 
     const safeName = productName.trim().toLowerCase().replace(/\s+/g, "-");
-    const file = dataURLtoFile(croppedDataUrl, `${safeName}.jpg`);
+    file = dataURLtoFile(croppedDataUrl, `${safeName}.jpg`);
+  }
 
-    try {
-      setIsSaving(true);
+  try {
+    setIsSaving(true);
 
-      await onSave({
-        name: productName.trim(),
-        description: productDesc.trim(),
-        imageFile: file,
-      });
-    } catch (error: any) {
-      const serverMessage =
-        error?.response?.data?.message || error?.response?.data?.error;
+    await onSave({
+      name: productName.trim(),
+      description: productDesc.trim(),
+      imageFile: file,
+    });
 
-      if (typeof serverMessage === "string" && serverMessage.trim()) {
-        toast.error(serverMessage);
-      } else {
-        toast.error("שגיאה בהוספת מוצר");
-      }
+    handleClose(); // optional
+  } catch (error: any) {
+    const serverMessage =
+      error?.response?.data?.message || error?.response?.data?.error;
 
-      console.error("Add product failed:", error);
-    } finally {
-      setIsSaving(false);
+    if (typeof serverMessage === "string" && serverMessage.trim()) {
+      toast.error(serverMessage);
+    } else {
+      toast.error("שגיאה בהוספת מוצר");
     }
-  };
+
+    console.error("Add product failed:", error);
+  } finally {
+    setIsSaving(false);
+  }
+};
 
   return (
     <div
@@ -320,7 +326,6 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
       <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center">
   <span className="inline-flex items-center gap-1 flex-row-reverse">
     <span>תמונת מוצר</span>
-    <RequiredStar />
   </span>
 </label>
 

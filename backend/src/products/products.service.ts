@@ -123,6 +123,7 @@ export class ProductsService {
 
   async create(createProductDto: CreateProductDto, file?: Express.Multer.File) {
     let productImages: string[] = [];
+
     if (file?.buffer) {
       try {
         const uploaded = await uploadBufferToCloudinary(
@@ -136,6 +137,9 @@ export class ProductsService {
           'Image upload service is temporarily unavailable. Please try again.',
         );
       }
+    } else {
+      const defaultUrl = process.env.DEFAULT_PRODUCT_IMAGE_URL;
+      if (defaultUrl) productImages = [defaultUrl];
     }
 
     let cleanCustomFields: any[] = [];
