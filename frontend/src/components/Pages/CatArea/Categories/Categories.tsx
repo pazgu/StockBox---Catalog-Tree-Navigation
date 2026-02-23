@@ -39,6 +39,21 @@ export interface Category {
   categoryImage: string;
 }
 
+const hasImage = (images: any): boolean => {
+  if (!images) return false;
+  if (typeof images === "string") return images.trim().length > 0;
+  if (Array.isArray(images)) return images.length > 0 && !!images[0];
+  return false;
+};
+
+const NoImageCard: React.FC<{ label?: string }> = ({ label = "אין תמונה" }) => {
+  return (
+    <div className="h-full w-[75%] mx-auto flex flex-col items-center justify-center gap-2 rounded-md border border-dashed border-gray-300 bg-white/40">
+      <div className="text-gray-400 text-sm">{label}</div>
+    </div>
+  );
+};
+
 type CategoryEditPayload = Category & { imageFile?: File };
 type FilterType = "all" | "categories" | "products";
 
@@ -568,7 +583,8 @@ export const Categories: FC<CategoriesProps> = () => {
               )}
 
               <main className="grid grid-cols-[repeat(auto-fill,minmax(290px,1fr))] gap-24 my-12">
-                {productItems.map((item) => (
+                {productItems.map((item) => {
+                return (
                   <div
                     key={item.id}
                     className="flex flex-col items-center p-5 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 border-gray-200 cursor-pointer"
@@ -650,20 +666,37 @@ export const Categories: FC<CategoriesProps> = () => {
                     )}
 
                     <div className="h-36 w-full flex justify-center items-center p-5 rounded-none mr-2">
+                      {hasImage(item.images) ? (
+                        <div className="h-full w-full flex justify-center items-center">
                       <ImagePreviewHover
                         images={item.images}
                         alt={item.name}
-                        className="h-32 w-32"
+                        className="w-full h-full"
                       />
+                        </div>
+                      ) : (
+                        <NoImageCard label="אין תמונה למוצר" />
+                      )}
                     </div>
 
                     <div className="w-full text-center pt-4 border-t border-gray-200">
-                      <h2
-                        className="text-[1.1rem] text-[#0D305B] mb-2 break-words text-center w-full"
-                        style={{ overflowWrap: "anywhere" }}
-                      >
-                        {item.name}
-                      </h2>
+                      <div className="relative group/tooltip flex justify-center">
+                        <h2 
+                          className="text-[1.1rem] text-[#0D305B] mb-2 w-full line-clamp-2"
+                          style={{ 
+                            overflowWrap: 'anywhere',
+                            direction: /[\u0590-\u05FF]/.test(item.name) ? 'rtl' : 'ltr'
+                          }}
+                        >
+                          {item.name}
+                        </h2>
+                        {(item.name.length > 20) && (
+                          <span className="absolute -top-6 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-50">
+                            {item.name}
+                          </span>
+                        )}
+                      </div>
+
                       {role === "editor" && (
                         <div className="mt-2 flex justify-center">
                           <button
@@ -672,7 +705,7 @@ export const Categories: FC<CategoriesProps> = () => {
                               setPreviousPath(location.pathname);
                               navigate(`/permissions/product/${item.id}`);
                             }}
-                            className="flex items-center gap-2 text-sm font-medium text-white bg-[#0D305B] px-4 py-2 shadow-md transition-all duration-300 hover:bg-[#16447A] hover:shadow-lg focus:ring-2 focus:ring-[#0D305B]/40"
+                            className="flex items-center gap-2 text-sm font-medium text-white bg-[#0D305B] px-4 py-2 shadow-md transition-all duration-300 hover:bg-[#16447A] hover:shadow-lg focus:ring-2 focus:ring-[#0D305B]/40 border-none rounded"
                           >
                             <Lock size={16} className="text-white" />
                             ניהול הרשאות
@@ -681,7 +714,8 @@ export const Categories: FC<CategoriesProps> = () => {
                       )}
                     </div>
                   </div>
-                ))}
+                );
+              })}
               </main>
             </div>
           )}
