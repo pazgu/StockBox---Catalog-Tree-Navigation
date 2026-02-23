@@ -268,6 +268,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
       return newSet;
     });
   };
+
   const expandAll = () => {
     const allNodeIds = new Set<string | number>();
     const collectIds = (nodes: TreeItem[]) => {
@@ -315,10 +316,11 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
         : activeTab === "banned"
           ? filteredBannedItems
           : availableItems;
-    return currentItems.length > 0 &&
-      currentItems.every((item) => selectedItems.has(item.id));
+    return (
+      currentItems.length > 0 &&
+      currentItems.every((item) => selectedItems.has(item.id))
+    );
   })();
-
   const executeUnblock = async (
     items: BannedItem[],
     inheritToChildren: boolean,
@@ -605,6 +607,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
               <button
                 onClick={() => {
                   setActiveTab("banned");
+                  setSelectedItems(new Map());
                   scrollContainerRef.current &&
                     (scrollContainerRef.current.scrollTop = 0);
                 }}
@@ -623,6 +626,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
               <button
                 onClick={() => {
                   setActiveTab("available");
+                  setSelectedItems(new Map());
                   scrollContainerRef.current &&
                     (scrollContainerRef.current.scrollTop = 0);
                 }}
@@ -703,26 +707,31 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
             )}
             {viewMode === "tree" && (
               <>
-                <button
-                  onClick={expandAll}
-                  className="px-4 py-1.5 rounded-md text-[13px] font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all flex items-center gap-1"
-                >
-                  <ChevronDown className="w-3 h-3" />
-                  פתח הכל
-                </button>
-                <button
-                  onClick={collapseAll}
-                  className="px-4 py-1.5 rounded-md text-[13px] font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all flex items-center gap-1"
-                >
-                  <ChevronUp className="w-3 h-3" />
-                  סגור הכל
-                </button>
+                {expandedNodes.size > 0 ? (
+                  <button
+                    onClick={collapseAll}
+                    className="px-4 py-1.5 rounded-md text-[13px] font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all flex items-center gap-1"
+                  >
+                    <ChevronUp className="w-3 h-3" />
+                    סגור הכל
+                  </button>
+                ) : (
+                  <button
+                    onClick={expandAll}
+                    className="px-4 py-1.5 rounded-md text-[13px] font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all flex items-center gap-1"
+                  >
+                    <ChevronDown className="w-3 h-3" />
+                    פתח הכל
+                  </button>
+                )}
               </>
             )}
           </div>
 
           {/* Selection Controls */}
-          {(activeTab === "banned" ? filteredBannedItems.length : availableItems.length) > 0 && (
+          {(activeTab === "banned"
+            ? filteredBannedItems.length
+            : availableItems.length) > 0 && (
             <div className="flex gap-1 mb-2 items-center bg-gray-50 p-1 rounded-md flex-shrink-0">
               <button
                 onClick={handleSelectAll}
