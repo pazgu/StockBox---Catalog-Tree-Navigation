@@ -219,12 +219,11 @@ const FeaturesSection: FC<FeaturesSectionProps> = ({
                 </button>
               )}
 
-              <div className="bg-stockblue text-white w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 shadow-[0_4px_14px_rgba(13,48,91,0.25)]">
-                <IconComponent size={22} />
-              </div>
-
-              {isEditing && (
-                <div className="flex-shrink-0">
+              {isEditing ? (
+                <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
+                  <div className="bg-stockblue text-white w-11 h-11 rounded-full flex items-center justify-center shadow-[0_4px_14px_rgba(13,48,91,0.25)]">
+                    <IconComponent size={22} />
+                  </div>
                   <select
                     value={feature.icon}
                     onChange={(e) => {
@@ -238,7 +237,7 @@ const FeaturesSection: FC<FeaturesSectionProps> = ({
                       });
                       markDirty(cardKey, nextValue);
                     }}
-                    className="text-xs font-semibold text-gray-800 mb-1 leading-[1.3] w-full border border-stockblue/30 rounded px-1 py-0.5 focus:outline-none focus:border-stockblue"
+                    className="text-xs font-semibold text-gray-800 leading-[1.3] w-full border border-stockblue/30 rounded px-1 py-0.5 focus:outline-none focus:border-stockblue"
                   >
                     {iconOptions.map((opt) => (
                       <option key={opt.value} value={opt.value}>
@@ -246,6 +245,10 @@ const FeaturesSection: FC<FeaturesSectionProps> = ({
                       </option>
                     ))}
                   </select>
+                </div>
+              ) : (
+                <div className="bg-stockblue text-white w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 shadow-[0_4px_14px_rgba(13,48,91,0.25)]">
+                  <IconComponent size={22} />
                 </div>
               )}
 
