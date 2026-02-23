@@ -8,7 +8,7 @@ import { useSearchParams } from "react-router-dom";
 import { User } from "../../../models/user.models";
 import { groupService } from "../../../../services/GroupService";
 import isEmail from "validator/lib/isEmail";
-
+import { useUser } from "../../../../context/UserContext";
 const ROLE_OPTIONS: Array<{ value: User["role"]; label: string }> = [
   { value: "editor", label: "עורך" },
   { value: "viewer", label: "צופה" },
@@ -43,22 +43,22 @@ interface AllUsersProps { }
 
 const AllUsers: FC<AllUsersProps> = () => {
   const navigate = useNavigate();
+  const { id } = useUser();  
+
   const [users, setUsers] = useState<User[]>([]);
   useEffect(() => {
     userService.getAll().then(setUsers);
   }, []);
-
+  const isMe = (userId: string | undefined) => userId === id;
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [deleteUserIndex, setDeleteUserIndex] = useState<number | null>(null);
   const [searchParams] = useSearchParams();
-
   const [showEditModal, setShowEditModal] = useState(false);
   const [userToEdit, setUserToEdit] = useState<User | null>(null);
   const [blockUserIndex, setBlockUserIndex] = useState<number | null>(null);
   const [approveUserIndex, setApproveUserIndex] = useState<number | null>(null);
   const [editErrors, setEditErrors] = useState<Partial<Record<keyof User, string>>>({});
-
   const usersPerPage = 8;
 
   useEffect(() => {
@@ -375,8 +375,8 @@ const handleCancelEdit = () => {
                     />
                   </svg>
                 </button>
-
-                <button
+                {user._id != id && (
+                  <button
                   className="w-6 h-6 rounded flex items-center justify-center
              hover:bg-red-500 hover:text-white
              opacity-60 hover:opacity-100 transition"
@@ -398,6 +398,8 @@ const handleCancelEdit = () => {
                     />
                   </svg>
                 </button>
+                ) }
+              
 
                 {user.approved && user.role !== "editor" && (
   <button
@@ -452,10 +454,15 @@ const handleCancelEdit = () => {
                 <div
                   className={`inline-block mt-2 text-xs px-2 py-1 rounded-full font-semibold ${user.isBlocked
                       ? "bg-red-200 text-red-700"
+                      : isMe(user._id)
+                      ? "bg-blue-100 text-blue-700"
                       : "bg-[#0D305B]/10 text-[#0D305B]"
                     }`}
                 >
-                  {user.isBlocked ? "משתמש חסום" : roleLabel(user.role)}
+                        {user.isBlocked
+                          ? "משתמש חסום"
+                          : `${roleLabel(user.role)}${isMe(user._id) ? " (אני)" : ""}`}
+
                 </div>
               </div>
             </div>

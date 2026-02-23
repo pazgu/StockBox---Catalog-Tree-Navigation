@@ -30,7 +30,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const [isAuthReady, setIsAuthReady] = useState(false);
 
-  // ✅ Load user from localStorage ONCE on app start
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
 
@@ -46,11 +45,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     }
 
-    // ✅ important: mark auth as ready AFTER we tried loading
     setIsAuthReady(true);
   }, []);
 
-  // ✅ Keep localStorage in sync
   useEffect(() => {
     if (user) {
       localStorage.setItem("user", JSON.stringify(user));
