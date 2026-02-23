@@ -82,7 +82,9 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
       });
 
       await loadRecycleBinItems();
-      toast.success(`"${selectedItem.itemName}" שוחזר בהצלחה!`);
+      toast.success(`<span className="inline-block max-w-full break-words">
+  "${selectedItem.itemName}"
+</span> שוחזר בהצלחה!`);
       setShowRestoreModal(false);
       setSelectedItem(null);
     } catch (error) {
@@ -104,7 +106,9 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
       });
 
       await loadRecycleBinItems();
-      toast.success(`"${selectedItem.itemName}" נמחק לצמיתות`);
+      toast.success(`<span className="inline-block max-w-full break-words">
+  "${selectedItem.itemName}"
+</span> נמחק לצמיתות`);
       setShowPermanentDeleteModal(false);
       setSelectedItem(null);
     } catch (error) {
@@ -283,7 +287,7 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
                     </div>
                   </div>
 
-                  <span className="text-base text-slate-700 font-medium mt-2">
+                  <span className="text-base text-slate-700 font-medium mt-2 w-44 text-center truncate block">
                     {item.itemName}
                   </span>
                   <span className="text-xs text-slate-500">
@@ -296,6 +300,13 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
                   )}
                 </div>
               ))}
+            </div>
+          )}
+
+          {activeFilter === "categories" && categoryItems.length === 0 && (
+            <div className="w-full h-40 flex flex-col justify-center items-center my-12 text-slate-500">
+              <Trash2 size={64} className="mb-4 text-slate-300" />
+              <p className="text-lg">אין קטגוריות בסל המיחזור</p>
             </div>
           )}
 
@@ -312,7 +323,7 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
                 {productItems.map((item) => (
                   <div
                     key={item._id}
-                    className="flex flex-col items-center p-5 text-center border-b-2 relative transition-all duration-300 border-gray-200 opacity-60 hover:opacity-80"
+                    className="flex flex-col items-center p-5 text-center border-b-2 relative transition-all duration-300 border-gray-200 opacity-60 hover:opacity-80 overflow-hidden"
                   >
                     <div className="absolute top-2 left-2 px-3 py-1 text-xs font-medium rounded-full">
                       <div className="flex flex-col items-center text-gray-500">
@@ -348,7 +359,7 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
                     </div>
 
                     <div className="w-full text-center pt-4 border-t border-gray-200">
-                      <h2 className="text-[1.1rem] text-[#0D305B] mb-2">
+                      <h2 className="text-[1.1rem] text-[#0D305B] mb-2 w-full truncate">
                         {item.itemName}
                       </h2>
                       <span className="text-xs text-slate-500 block">
@@ -359,6 +370,13 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
                   </div>
                 ))}
               </main>
+            </div>
+          )}
+
+          {activeFilter === "products" && productItems.length === 0 && (
+            <div className="w-full h-40 flex flex-col justify-center items-center my-12 text-slate-500">
+              <Trash2 size={64} className="mb-4 text-slate-300" />
+              <p className="text-lg">אין מוצרים בסל המיחזור</p>
             </div>
           )}
         </>
@@ -386,8 +404,11 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
 
             <p className="text-slate-700 mb-3">
               האם ברצונך לשחזר את{" "}
-              {selectedItem.itemType === "category" ? "הקטגוריה" : "המוצר"} "
-              {selectedItem.itemName}"?
+              {selectedItem.itemType === "category" ? "הקטגוריה" : "המוצר"}{" "}
+              <span className="inline-block max-w-full break-words">
+                "{selectedItem.itemName}"
+              </span>
+              ?
             </p>
 
             {selectedItem.itemType === "category" &&
@@ -402,25 +423,22 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
               )}
 
             <p className="text-slate-500 text-sm mb-5">
-  הפריט ישוחזר למיקום המקורי: <br />
-
-            {selectedItem.allProductPaths?.length ? (
-              selectedItem.allProductPaths.map((path, index) => (
-                <code
-                  key={index}
-                  className="bg-gray-100 px-2 py-1 rounded text-xs block mt-1"
-                >
-          <PathDisplay path={path} />           
-     </code>
-              ))
-            ) : (
-              <code className="bg-gray-100 px-2 py-1 rounded text-xs">
-                <PathDisplay path={selectedItem.originalPath} />
-              </code>
-            )}
-
+              הפריט ישוחזר למיקום המקורי: <br />
+              {selectedItem.allProductPaths?.length ? (
+                selectedItem.allProductPaths.map((path, index) => (
+                  <code
+                    key={index}
+                    className="bg-gray-100 px-2 py-1 rounded text-xs block mt-1 break-all w-full overflow-hidden"
+                  >
+                    <PathDisplay path={path} />
+                  </code>
+                ))
+              ) : (
+                <code className="bg-gray-100 px-2 py-1 rounded text-xs block mt-1 break-all w-full overflow-hidden">
+                  <PathDisplay path={selectedItem.originalPath} />
+                </code>
+              )}
             </p>
-
 
             <div className="flex flex-col gap-3 mt-5">
               <button
@@ -484,8 +502,11 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
 
             <p className="text-slate-700 mb-3">
               האם אתה בטוח שברצונך למחוק לצמיתות את{" "}
-              {selectedItem.itemType === "category" ? "הקטגוריה" : "המוצר"} "
-              {selectedItem.itemName}"?
+              {selectedItem.itemType === "category" ? "הקטגוריה" : "המוצר"}{" "}
+              <span className="inline-block max-w-full break-words">
+                "{selectedItem.itemName}"
+              </span>
+              ?
             </p>
 
             {selectedItem.itemType === "category" &&

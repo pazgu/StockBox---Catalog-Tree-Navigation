@@ -490,8 +490,7 @@ export const Categories: FC<CategoriesProps> = () => {
                               : item.images?.[0]
                           }
                           alt={item.name}
-                         className="w-44 h-44 object-cover rounded-full mt-2 "
-
+                          className="w-44 h-44 object-cover rounded-full mt-2 "
                         />
 
                         {role === "editor" && category && (
@@ -563,11 +562,11 @@ export const Categories: FC<CategoriesProps> = () => {
                       >
                         {item.name}
                       </span>
-                      {(item.name.length > 20) && (
-                    <span className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-50 shadow-md">
-                      {item.name}
-                    </span>
-                  )}
+                      {item.name.length > 20 && (
+                        <span className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-50 shadow-md">
+                          {item.name}
+                        </span>
+                      )}
                     </div>
                   </div>
                 );
@@ -777,7 +776,7 @@ export const Categories: FC<CategoriesProps> = () => {
                 onClick={closeAllModals}
               >
                 <div
-                  className="bg-white p-8 rounded-xl w-96 max-w-[90%] shadow-xl text-center transform translate-y-[-2px]"
+                  className="bg-white p-8 rounded-xl w-96 max-w-[90%] shadow-xl text-center transform translate-y-[-2px] overflow-hidden"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <h4 className="m-0 mb-5 text-xl text-slate-700 font-semibold tracking-tight">
@@ -788,12 +787,18 @@ export const Categories: FC<CategoriesProps> = () => {
                     {categoryToMoveToRecycleBin ? (
                       <>
                         האם ברצונך להעביר את הקטגוריה "
-                        {categoryToMoveToRecycleBin.categoryName}" לסל המיחזור?
+                        <span className="break-words inline-block max-w-full">
+                          {categoryToMoveToRecycleBin.categoryName}
+                        </span>
+                        " לסל המיחזור?
                       </>
                     ) : (
                       <>
                         האם ברצונך להעביר את המוצר "
-                        {productToMoveToRecycleBin?.name}" לסל המיחזור?
+                        <span className="break-words inline-block max-w-full">
+                          {productToMoveToRecycleBin?.name}
+                        </span>
+                        " לסל המיחזור?
                       </>
                     )}
                   </p>
