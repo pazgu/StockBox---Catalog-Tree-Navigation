@@ -88,6 +88,33 @@ export class GroupsService {
       throw new NotFoundException(`Group with ID ${id} not found`);
     }
 
+    if (
+      Array.isArray(updateGroupDto.members) &&
+      updateGroupDto.members.length > 0
+    ) {
+      const defaultGroupName =
+        process.env.DEFAULT_NEW_USER_GROUP_NAME || 'New Users';
+
+      if (updatedGroup.groupName !== defaultGroupName) {
+        const defaultGroup = await this.groupModel
+          .findOne({ groupName: defaultGroupName })
+          .exec();
+
+        if (defaultGroup) {
+          const memberObjectIds = updateGroupDto.members.map((m: any) =>
+            m instanceof mongoose.Types.ObjectId
+              ? m
+              : new mongoose.Types.ObjectId(m),
+          );
+
+          await this.groupModel.updateOne(
+            { _id: defaultGroup._id },
+            { $pull: { members: { $in: memberObjectIds } } },
+          );
+        }
+      }
+    }
+
     return updatedGroup;
   }
 
