@@ -438,7 +438,7 @@ const SingleCat: FC = () => {
   const handleSaveProduct = async (data: {
     name: string;
     description: string;
-    imageFile: File;
+    imageFile?: File;
   }) => {
     try {
       const productPathString = categoryPath;
@@ -480,7 +480,7 @@ const SingleCat: FC = () => {
 
   const handleSaveCategory = async (data: {
     name: string;
-    imageFile: File;
+    imageFile?: File;
   }) => {
     try {
       const newCategoryPath =
@@ -608,13 +608,16 @@ const SingleCat: FC = () => {
       <Breadcrumbs path={breadcrumbPath} />
       <header className="flex items-center gap-6 mb-10">
         {/* Category Image */}
-        {categoryInfo && categoryInfo.categoryImage && (
-          <img
-            src={categoryInfo.categoryImage}
-            alt={categoryInfo.categoryName}
-            className="w-32 h-32 rounded-full object-cover shadow-md border-2 border-gray-200"
-          />
-        )}
+        {categoryInfo && (
+  <img
+    src={categoryInfo.categoryImage || "/assets/images/placeholder.png"}
+    alt={categoryInfo.categoryName}
+    className="w-32 h-32 rounded-full object-cover shadow-md"
+    onError={(e) => {
+      (e.currentTarget as HTMLImageElement).src = "/assets/images/placeholder.png";
+    }}
+  />
+)}
 
         {/* Category Title and Stats */}
         <div className="flex flex-col">
@@ -826,30 +829,31 @@ const SingleCat: FC = () => {
               }}
             >
               {item.type === "category" ? (
-                hasImage(item.images) ? (
-                  <img
-                    src={item.images as string}
-                    alt={item.name}
-                    className="max-h-full max-w-full object-contain"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).style.display =
-                        "none";
-                    }}
-                  />
-                ) : (
-                  <NoImageCard label="אין תמונה לקטגוריה" />
-                )
-              ) : hasImage(item.images) ? (
-                <div className="h-full w-full flex justify-center items-center">
-                  <ImagePreviewHover
-                    images={item.images}
-                    alt={item.name}
-                    className="w-full h-full"
-                  />
-                </div>
-              ) : (
-                <NoImageCard label="אין תמונה למוצר" />
-              )}
+  <img
+    src={
+      (typeof item.images === "string" && item.images.trim())
+        ? item.images
+        : "/assets/images/placeholder.png"
+    }
+    alt={item.name}
+    className="max-h-full max-w-full object-contain"
+    onError={(e) => {
+      (e.currentTarget as HTMLImageElement).src = "/assets/images/placeholder.png";
+    }}
+  />
+) : (
+  hasImage(item.images) ? (
+    <div className="h-full w-full flex justify-center items-center">
+      <ImagePreviewHover
+        images={item.images}
+        alt={item.name}
+        className="w-full h-full"
+      />
+    </div>
+  ) : (
+    <NoImageCard label="אין תמונה למוצר" />
+  )
+)}
             </div>
 
             <div className="w-full text-center pt-4 border-t border-gray-200">
