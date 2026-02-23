@@ -780,7 +780,7 @@ export const Categories: FC<CategoriesProps> = () => {
                 onClick={closeAllModals}
               >
                 <div
-                  className="bg-white p-8 rounded-xl w-96 max-w-[90%] shadow-xl text-center transform translate-y-[-2px]"
+                  className="bg-white p-8 rounded-xl w-96 max-w-[90%] shadow-xl text-center transform translate-y-[-2px] overflow-hidden"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <h4 className="m-0 mb-5 text-xl text-slate-700 font-semibold tracking-tight">
@@ -791,12 +791,18 @@ export const Categories: FC<CategoriesProps> = () => {
                     {categoryToMoveToRecycleBin ? (
                       <>
                         האם ברצונך להעביר את הקטגוריה "
-                        {categoryToMoveToRecycleBin.categoryName}" לסל המיחזור?
+                        <span className="break-words inline-block max-w-full">
+                          {categoryToMoveToRecycleBin.categoryName}
+                        </span>
+                        " לסל המיחזור?
                       </>
                     ) : (
                       <>
                         האם ברצונך להעביר את המוצר "
-                        {productToMoveToRecycleBin?.name}" לסל המיחזור?
+                        <span className="break-words inline-block max-w-full">
+                          {productToMoveToRecycleBin?.name}
+                        </span>
+                        " לסל המיחזור?
                       </>
                     )}
                   </p>
