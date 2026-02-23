@@ -612,7 +612,7 @@ const SingleCat: FC = () => {
   <img
     src={categoryInfo.categoryImage || "/assets/images/placeholder.png"}
     alt={categoryInfo.categoryName}
-    className="w-32 h-32 rounded-full object-cover shadow-md"
+    className="w-32 h-32 rounded-full object-cover mt-0 border-0 ring-0 outline-none bg-transparent focus:outline-none focus:ring-0 focus:ring-offset-0"
     onError={(e) => {
       (e.currentTarget as HTMLImageElement).src = "/assets/images/placeholder.png";
     }}
