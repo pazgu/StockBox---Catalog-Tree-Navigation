@@ -30,10 +30,10 @@ const Login: FC<LoginProps> = () => {
       newFieldErrors.firstName = "שם פרטי הוא שדה חובה";
     } else if (!validChars.test(firstName.trim())) {
       newErrors.firstName = true;
-      newFieldErrors.firstName = "רק אותיות";
+      newFieldErrors.firstName = "יש להזין אותיות בלבד";
     } else if (!hebrewOnly.test(firstName.trim()) && !englishOnly.test(firstName.trim()) && !arabicOnly.test(firstName.trim())) {
       newErrors.firstName = true;
-      newFieldErrors.firstName = "לא ניתן לערבב שפות";
+      newFieldErrors.firstName = "יש להשתמש בשפה אחת בלבד";
     } else if (firstName.trim().length < 2) {
       newErrors.firstName = true;
       newFieldErrors.firstName = "שם פרטי חייב להכיל לפחות 2 אותיות";
@@ -44,10 +44,10 @@ const Login: FC<LoginProps> = () => {
       newFieldErrors.lastName = "שם משפחה הוא שדה חובה";
     } else if (!validChars.test(lastName.trim())) {
       newErrors.lastName = true;
-      newFieldErrors.lastName = "רק אותיות";
+      newFieldErrors.lastName = "יש להזין אותיות בלבד";
     } else if (!hebrewOnly.test(lastName.trim()) && !englishOnly.test(lastName.trim()) && !arabicOnly.test(lastName.trim())) {
       newErrors.lastName = true;
-      newFieldErrors.lastName = "לא ניתן לערבב שפות";
+      newFieldErrors.lastName = "יש להשתמש בשפב אחת בלבד";
     } else if (lastName.trim().length < 2) {
       newErrors.lastName = true;
       newFieldErrors.lastName = "שם משפחה חייב להכיל לפחות 2 אותיות";
@@ -60,13 +60,13 @@ const Login: FC<LoginProps> = () => {
       newFieldErrors.userName = "שם משתמש הוא שדה חובה";
     } else if (!validUserNameChars.test(userName.trim())) {
       newErrors.userName = true;
-      newFieldErrors.userName = "רק אותיות ומספרים";
+      newFieldErrors.userName = "יש להזין רק אותיות ומספרים";
     } else if (!validUserNameLang.test(userName.trim())) {
       newErrors.userName = true;
-      newFieldErrors.userName = "לא ניתן לערבב שפות";
+      newFieldErrors.userName = "יש להשתמש בשפה אחת בלבד";
     } else if ((userName.trim().match(/[א-תa-zA-Z\u0600-\u06FF]/g) || []).length < 2) {
       newErrors.userName = true;
-      newFieldErrors.userName = "חייב להכיל לפחות 2 אותיות";
+      newFieldErrors.userName = "שם משתמש חייב להכיל לפחות 2 אותיות";
     }
   } else {
     if (!userName.trim()) {
@@ -124,7 +124,7 @@ const Login: FC<LoginProps> = () => {
           email: false,
         });
       } else if (code === "USER_NOT_APPROVED_REQUEST_SENT") {
-        toast.info("משתמש לא מאושר – בקשתך כבר נשלחה");
+        toast.info("משתמש לא מאושר - בקשתך כבר נשלחה");
       } else if (code === "USER_NOT_APPROVED_REQUEST_NOT_SENT") {
         openApprovalMail();
 
@@ -139,9 +139,9 @@ const Login: FC<LoginProps> = () => {
       } else if (error?.response?.status === 409) {
         toast.error("שם משתמש או אימייל כבר קיימים/שגויים במערכת");
       } else if (error?.response?.status === 500) {
-        toast.error("שגיאת שרת, אנא נסי שוב מאוחר יותר");
+        toast.error("שגיאת שרת, נא לנסות שוב מאוחר יותר");
       } else {
-        toast.error("שגיאה לא צפויה, אנא נסה שוב");
+        toast.error("שגיאה לא צפויה, נא לנסות שוב");
       }
     }
   };
