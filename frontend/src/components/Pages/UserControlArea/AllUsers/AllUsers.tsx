@@ -7,6 +7,7 @@ import { Ban } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { User } from "../../../models/user.models";
 import { groupService } from "../../../../services/GroupService";
+import isEmail from "validator/lib/isEmail";
 
 const ROLE_OPTIONS: Array<{ value: User["role"]; label: string }> = [
   { value: "editor", label: "עורך" },
@@ -56,6 +57,7 @@ const AllUsers: FC<AllUsersProps> = () => {
   const [userToEdit, setUserToEdit] = useState<User | null>(null);
   const [blockUserIndex, setBlockUserIndex] = useState<number | null>(null);
   const [approveUserIndex, setApproveUserIndex] = useState<number | null>(null);
+  const [editErrors, setEditErrors] = useState<Partial<Record<keyof User, string>>>({});
 
   const usersPerPage = 8;
 
@@ -198,33 +200,86 @@ const AllUsers: FC<AllUsersProps> = () => {
     setShowEditModal(true);
   };
 
-  const handleEditChange = (field: keyof User, value: string) => {
-    if (userToEdit) {
-      setUserToEdit({ ...userToEdit, [field]: value });
+const handleEditChange = (field: keyof User, value: string) => {
+  if (userToEdit) {
+    setUserToEdit({ ...userToEdit, [field]: value });
+
+    const hebrewOnly = /^[א-ת\s]+$/;
+    const englishOnly = /^[a-zA-Z\s]+$/;
+    const arabicOnly = /^[\u0600-\u06FF\s]+$/;
+    const validChars = /^[א-תa-zA-Z\u0600-\u06FF\s]+$/;
+    const validUserNameChars = /^[א-תa-zA-Z\u0600-\u06FF0-9]+$/;
+    const validUserNameLang = /^[א-ת0-9]+$|^[a-zA-Z0-9]+$|^[\u0600-\u06FF0-9]+$/;
+
+    let error = "";
+    const trimmed = value.trim();
+
+    if (field === "firstName" || field === "lastName") {
+      if (!trimmed) {
+        error = field === "firstName" ? "שם פרטי הוא שדה חובה" : "שם משפחה הוא שדה חובה";
+      } else if (!validChars.test(trimmed)) {
+        error = "רק אותיות";
+      } else if (!hebrewOnly.test(trimmed) && !englishOnly.test(trimmed) && !arabicOnly.test(trimmed)) {
+        error = "לא ניתן לערבב שפות";
+      } else if (trimmed.length < 2) {
+        error = field === "firstName" ? "שם פרטי חייב להכיל לפחות 2 אותיות" : "שם משפחה חייב להכיל לפחות 2 אותיות";
+      }
     }
-  };
 
-  const handleSaveEdit = async () => {
-    if (!userToEdit || !userToEdit._id) return;
-
-    try {
-      const updatedUser = await userService.update(userToEdit._id, userToEdit);
-      setUsers((prev) =>
-        prev.map((u) => (u._id === updatedUser._id ? updatedUser : u)),
-      );
-      toast.success("המשתמש עודכן בהצלחה!");
-      setShowEditModal(false);
-      setUserToEdit(null);
-    } catch (error) {
-      console.error("שגיאה בעדכון משתמש:", error);
-      toast.error("שגיאה בעדכון המשתמש");
+    if (field === "userName") {
+      if (!trimmed) {
+        error = "שם משתמש הוא שדה חובה";
+      } else if (!validUserNameChars.test(trimmed)) {
+        error = "רק אותיות ומספרים";
+      } else if (!validUserNameLang.test(trimmed)) {
+        error = "לא ניתן לערבב שפות";
+      } else if ((trimmed.match(/[א-תa-zA-Z\u0600-\u06FF]/g) || []).length < 2) {
+        error = "חייב להכיל לפחות 2 אותיות";
+      }
     }
-  };
 
-  const handleCancelEdit = () => {
+    if (field === "email") {
+      if (!trimmed) {
+        error = "כתובת מייל היא שדה חובה";
+      } else if (!isEmail(trimmed)) {
+        error = "כתובת מייל לא תקינה";
+      }
+    }
+
+    setEditErrors((prev) => ({ ...prev, [field]: error }));
+  }
+};
+
+const handleSaveEdit = async () => {
+  if (!userToEdit || !userToEdit._id) return;
+
+  const hasErrors = Object.values(editErrors).some((e) => e !== "");
+  if (hasErrors) return;
+
+  try {
+    const updatedUser = await userService.update(userToEdit._id, userToEdit);
+    setUsers((prev) =>
+      prev.map((u) => (u._id === updatedUser._id ? updatedUser : u)),
+    );
+    toast.success("המשתמש עודכן בהצלחה!");
     setShowEditModal(false);
     setUserToEdit(null);
-  };
+  } catch (error: any) {
+    console.error("שגיאה בעדכון משתמש:", error);
+    const status = error?.response?.status;
+    if (status === 409) {
+      toast.error("שם משתמש או אימייל כבר קיימים במערכת");
+    } else {
+      toast.error("שגיאה בעדכון המשתמש");
+    }
+  }
+};
+
+const handleCancelEdit = () => {
+  setShowEditModal(false);
+  setUserToEdit(null);
+  setEditErrors({});
+};
 
   return (
     <div className=" font-sans text-[#0D305B] rtl bg-[#fffaf1]">
@@ -592,6 +647,9 @@ const AllUsers: FC<AllUsersProps> = () => {
                     onChange={(e) => handleEditChange("firstName", e.target.value)}
                     className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
                   />
+                  {editErrors.firstName && (
+                    <span className="text-red-500 text-xs mt-1 block">{editErrors.firstName}</span>
+                  )}
                 </div>
 
                 <div className="group">
@@ -605,6 +663,9 @@ const AllUsers: FC<AllUsersProps> = () => {
                     onChange={(e) => handleEditChange("lastName", e.target.value)}
                     className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
                   />
+                  {editErrors.lastName && (
+                    <span className="text-red-500 text-xs mt-1 block">{editErrors.lastName}</span>
+                  )}
                 </div>
 
                 <div className="group">
@@ -618,6 +679,9 @@ const AllUsers: FC<AllUsersProps> = () => {
                     onChange={(e) => handleEditChange("userName", e.target.value)}
                     className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
                   />
+                  {editErrors.userName && (
+                    <span className="text-red-500 text-xs mt-1 block">{editErrors.userName}</span>
+                  )}
                 </div>
 
                 <div className="group">
@@ -654,6 +718,9 @@ const AllUsers: FC<AllUsersProps> = () => {
              focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent 
              transition-all bg-white shadow-sm hover:shadow-md text-left"
                   />
+                  {editErrors.email && (
+                    <span className="text-red-500 text-xs mt-1 block">{editErrors.email}</span>
+                  )}
 
                 </div>
               </div>

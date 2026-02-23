@@ -3,9 +3,8 @@ import { toast } from "sonner";
 import { categoriesService } from "../../../../services/CategoryService";
 import { ProductsService } from "../../../../services/ProductService";
 import { Copy, ChevronLeft } from "lucide-react";
-import { c } from "framer-motion/dist/types.d-CSbqhfMB";
+import { PathDisplay } from "../../SharedComponents/PathDisplay/PathDisplay";
 
-// Use CategoryDTO type instead of Category to match your project's type system
 interface Category {
   _id: string;
   categoryName: string;
@@ -200,7 +199,8 @@ const DuplicateProductModal: React.FC<DuplicateProductModalProps> = ({
                   </span>
                 )}
               </p>
-              <p className="text-xs text-gray-400">{cat.categoryPath}</p>
+              <p className="text-xs text-gray-400"> <PathDisplay path={cat.categoryPath} />           
+              </p>
             </div>
           </div>
         </label>
@@ -281,7 +281,8 @@ const DuplicateProductModal: React.FC<DuplicateProductModalProps> = ({
                     className="text-[11px] text-gray-600 py-1 border-b last:border-0 truncate"
                     dir="ltr"
                   >
-                    {path}
+                  <PathDisplay path={path} />           
+                   
                   </li>
                 ))}
               </ul>

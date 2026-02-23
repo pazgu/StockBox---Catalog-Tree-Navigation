@@ -131,21 +131,21 @@ const SearchResultsPage = () => {
                       StockBox
                     </span>
                     <div className="flex flex-col">
-                     <small
-                          className="text-gray-500 hover:text-blue-600 hover:underline cursor-pointer text-left"
-                          dir="ltr"
-                          style={{ unicodeBidi: "isolate" }}
-                          onClick={() => {
-                            setPreviousPath(location.pathname);
-                            navigate(
-                              item.type === "product"
-                                ? `/products/${item.id}`
-                                : (item.paths?.[0] ?? "/"),
-                            );
-                          }}
-                        >
-                          <PathDisplay path={item.paths[0]} />
-                        </small>
+                      <small
+                        className="text-gray-500 hover:text-blue-600 hover:underline cursor-pointer text-left"
+                        dir="ltr"
+                        style={{ unicodeBidi: "isolate" }}
+                        onClick={() => {
+                          setPreviousPath(location.pathname);
+                          navigate(
+                            item.type === "product"
+                              ? `/products/${item.id}`
+                              : (item.paths?.[0] ?? "/"),
+                          );
+                        }}
+                      >
+                        <PathDisplay path={item.paths[0]} />
+                      </small>
                       {isEditor && item.paths && item.paths.length > 1 && (
                         <div className="relative inline-block group">
                           <span className="text-[12px] text-blue-600 w-fit cursor-pointer select-none">
@@ -165,11 +165,14 @@ const SearchResultsPage = () => {
                                     },
                                   });
                                 }}
-                                 className="w-full text-left text-[12px] break-all py-1 px-2 rounded-md hover:bg-gray-50 hover:text-blue-700 transition-colors cursor-pointer"
-                                  >
-                              <span dir="ltr" style={{ unicodeBidi: "isolate" }}>
-                        <PathDisplay path={p} />        
-                      </span>
+                                className="w-full text-left text-[12px] break-all py-1 px-2 rounded-md hover:bg-gray-50 hover:text-blue-700 transition-colors cursor-pointer"
+                              >
+                                <span
+                                  dir="ltr"
+                                  style={{ unicodeBidi: "isolate" }}
+                                >
+                                  <PathDisplay path={p} />
+                                </span>
                               </button>
                             ))}
                           </div>
@@ -190,10 +193,10 @@ const SearchResultsPage = () => {
                   {item.label}
                 </Link>
 
-                <p className="text-[14px] text-[#4d5156] leading-relaxed line-clamp-2">
+                <p className="text-[14px] text-[#4d5156] leading-relaxed line-clamp-1">
                   {item.type === "product"
-                    ? `צפה בפרטי המוצר המלאים במערכת. מזהה פריט: ${item.id}.`
-                    : `עיון בקטגוריית ${item.label}. לחץ לצפייה בכל המוצרים והתת-קטגוריות המשוייכים לנתיב זה.`}
+                    ? item.description || "תיאור המוצר לא זמין."
+                    : `יש ללחוץ על הקישור לעיון בקטגוריית ${item.label}`}
                 </p>
                 <div className="border-b border-gray-100 my-4" />
               </div>

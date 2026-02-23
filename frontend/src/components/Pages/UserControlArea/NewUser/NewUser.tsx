@@ -12,30 +12,40 @@ import { X, UserRound } from "lucide-react";
 import { debounce } from "../../../../lib/utils";
 import { useUser } from "../../../../context/UserContext";
 import api from "../../../../services/axios";
+import isEmail from "validator/lib/isEmail";
 
 const userSchema = z.object({
   userName: z
     .string()
+    .trim()
     .min(1, "שם משתמש הוא שדה חובה")
-    .min(2, "שם משתמש חייב להכיל לפחות 2 תווים")
-    .regex(
-      /^[א-תa-zA-Z\s]+$/,
-      "שם משתמש יכול להכיל רק אותיות, מספרים וקו תחתון",
-    ),
-  firstName: z.string().min(1, "שם פרטי הוא שדה חובה"),
-  lastName: z.string().min(1, "שם משפחה הוא שדה חובה"),
+    .regex(/^[א-תa-zA-Z\u0600-\u06FF0-9]+$/, "רק אותיות ומספרים")
+    .regex(/^[א-ת0-9]+$|^[a-zA-Z0-9]+$|^[\u0600-\u06FF0-9]+$/, "לא ניתן לערבב שפות")
+    .refine((val) => (val.match(/[א-תa-zA-Z\u0600-\u06FF]/g) || []).length >= 2, "חייב להכיל לפחות 2 אותיות"),
+  firstName: z
+    .string()
+    .trim()
+    .min(1, "שם פרטי הוא שדה חובה")
+    .regex(/^[א-תa-zA-Z\u0600-\u06FF\s]+$/, "רק אותיות")
+    .regex(/^[א-ת\s]+$|^[a-zA-Z\s]+$|^[\u0600-\u06FF\s]+$/, "לא ניתן לערבב שפות")
+    .min(2, "שם פרטי חייב להכיל לפחות 2 אותיות"),
+  lastName: z
+    .string()
+    .trim()
+    .min(1, "שם משפחה הוא שדה חובה")
+    .regex(/^[א-תa-zA-Z\u0600-\u06FF\s]+$/, "רק אותיות")
+    .regex(/^[א-ת\s]+$|^[a-zA-Z\s]+$|^[\u0600-\u06FF\s]+$/, "לא ניתן לערבב שפות")
+    .min(2, "שם משפחה חייב להכיל לפחות 2 אותיות"),
   email: z
     .string()
+    .trim()
     .min(1, "כתובת מייל היא שדה חובה")
-    .email("פורמט מייל לא תקין")
-    .regex(
-      /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-      "כתובת מייל לא תקינה",
-    ),
+    .refine((val) => val.length === 0 || isEmail(val), "כתובת מייל לא תקינה"),
   companyName: z.string().optional(),
-
-  role: z.string().refine((val) => USER_ROLES.includes(val as any), {
-    message: "סוג משתמש לא חוקי",
+role: z
+  .string({ message: "חובה לבחור סוג משתמש" })
+  .refine((val) => val !== "" && USER_ROLES.includes(val as any), {
+    message: "חובה לבחור סוג משתמש",
   }),
 });
 
@@ -93,6 +103,9 @@ const NewUser: React.FC = () => {
   } = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
     mode: "onChange",
+    defaultValues: {
+      role: "",
+    },
   });
 
   const onSubmit = async (data: UserFormData) => {
@@ -125,9 +138,17 @@ const NewUser: React.FC = () => {
       reset();
       toast.success("משתמש נוסף בהצלחה!");
       navigate("/AllUsers");
-    } catch (error) {
+} catch (error: any) {
       console.error("שגיאה בשליחת הנתונים:", error);
-      toast.error("שגיאה בשליחת נתונים");
+      console.log("status:", error?.response?.status);
+      console.log("data:", error?.response?.data);
+      const status = error?.response?.status;
+      const message = error?.response?.data?.message || "";
+      if (status === 409 || message.toLowerCase().includes("exist") || message.includes("קיים")) {
+        toast.error("שם משתמש או אימייל כבר קיימים במערכת");
+      } else {
+        toast.error("שגיאה בשליחת נתונים");
+      }
     }
   };
 
