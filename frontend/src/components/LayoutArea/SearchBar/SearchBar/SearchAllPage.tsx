@@ -131,11 +131,11 @@ const SearchResultsPage = () => {
                       StockBox
                     </span>
                     <div className="flex flex-col">
+                    <div className="relative group/tooltip">
                       <small
                         className="text-gray-500 hover:text-blue-600 hover:underline cursor-pointer text-left max-w-xs truncate block"
                         dir="ltr"
                         style={{ unicodeBidi: "isolate" }}
-                        title={item.paths?.[0]}  
                         onClick={() => {
                           setPreviousPath(item.paths?.[0]);
                           navigate(
@@ -147,6 +147,12 @@ const SearchResultsPage = () => {
                       >
                         <PathDisplay path={item.paths[0]} />
                       </small>
+                      {item.paths?.[0]?.length > 40 && (
+                        <span className="absolute -top-6 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-50">
+                          {item.paths[0]}
+                        </span>
+                      )}
+                    </div>
                       {isEditor && item.paths && item.paths.length > 1 && (
                         <div className="relative inline-block group">
                           <span className="text-[12px] text-blue-600 w-fit cursor-pointer select-none">
