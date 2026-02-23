@@ -322,7 +322,7 @@ export const Favorites: React.FC = () => {
                   {product.productName}
                 </span>
                 {product.productDescription && (
-                  <small className="block text-sm text-gray-500">
+                  <small className="line-clamp-2 text-sm text-gray-500">
                     {product.productDescription}
                   </small>
                 )}
