@@ -622,7 +622,8 @@ const SingleCat: FC = () => {
 
         {/* Category Title and Stats */}
         <div className="flex flex-col">
-          <h1 className="text-[48px] font-light font-alef text-[#0D305B] border-b-4 border-gray-400 pb-1 mb-3 tracking-tight">
+          <h1 className="text-[48px] font-light font-alef text-[#0D305B] border-b-4 border-gray-400 pb-1 mb-3 tracking-tight whitespace-normal break-words">
+            {" "}
             {categoryInfo
               ? categoryInfo.categoryName
               : breadcrumbPathParts[breadcrumbPathParts.length - 1] ||
@@ -760,9 +761,11 @@ const SingleCat: FC = () => {
                   >
                     <FolderInput size={18} />
                   </button>
-                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+            
+                  <span className="absolute -top-8 -left-1 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
                     העברה לקטגוריה אחרת
                   </span>
+              
                 </div>
                 <div className="absolute bottom-5 left-3">
                   <button
@@ -870,7 +873,7 @@ const SingleCat: FC = () => {
                   {item.name}
                 </h2>
                 {item.name.length > 20 && (
-                  <span className="absolute -top-6 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 pointer-events-none z-50 max-w-xs whitespace-normal break-words">
+                  <span className="absolute -top-6 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-50">
                     {item.name}
                   </span>
                 )}
