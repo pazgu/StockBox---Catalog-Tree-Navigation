@@ -643,13 +643,14 @@ const SingleProd: FC<SingleProdProps> = () => {
           )}
         </div>
 
-        <div className="text-right mb-12">
+        <div className="text-right mb-12 mt-9">
           {isEditing ? (
             <textarea
               value={description}
+              placeholder="יש להוסיף תיאור מוצר"
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
-              className="bg-transparent border-b border-gray-400 w-full max-w-2xl text-gray-700 text-lg outline-none resize-none text-right"
+              className="bg-transparent border-b border-gray-400 w-full max-w-2xl text-gray-700 text-lg outline-none resize-none text-right "
             />
           ) : (
             <p className="text-gray-700 text-lg max-w-2xl">{description}</p>
