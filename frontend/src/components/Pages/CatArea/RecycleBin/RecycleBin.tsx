@@ -299,6 +299,13 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
             </div>
           )}
 
+          {activeFilter==='categories' && categoryItems.length ===0 && (
+            <div className="w-full h-40 flex flex-col justify-center items-center my-12 text-slate-500">
+              <Trash2 size={64} className="mb-4 text-slate-300" />
+              <p className="text-lg">אין קטגוריות בסל המיחזור</p>
+            </div>
+          )}
+
           {/* Products Section */}
           {showProducts && productItems.length > 0 && (
             <div className={activeFilter === "products" ? "mt-6" : "mt-16"}>
@@ -359,6 +366,13 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
                   </div>
                 ))}
               </main>
+            </div>
+          )}
+
+          {activeFilter==='products' && productItems.length ===0 && (
+            <div className="w-full h-40 flex flex-col justify-center items-center my-12 text-slate-500">
+              <Trash2 size={64} className="mb-4 text-slate-300" />
+              <p className="text-lg">אין מוצרים בסל המיחזור</p>
             </div>
           )}
         </>
