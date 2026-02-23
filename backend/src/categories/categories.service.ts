@@ -51,6 +51,17 @@ export class CategoriesService {
         'stockbox/categories',
       );
       createCategoryDto.categoryImage = uploaded.secure_url;
+    } else {
+      createCategoryDto.categoryImage =
+        process.env.DEFAULT_CATEGORY_IMAGE_URL || '';
+    }
+
+    if (file?.buffer) {
+      const uploaded = await uploadBufferToCloudinary(
+        file.buffer,
+        'stockbox/categories',
+      );
+      createCategoryDto.categoryImage = uploaded.secure_url;
     }
 
     const nameKey = normalizeName(createCategoryDto.categoryName);
