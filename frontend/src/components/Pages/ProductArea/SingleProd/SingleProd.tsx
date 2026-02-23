@@ -699,10 +699,16 @@ const SingleProd: FC<SingleProdProps> = () => {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
-              className="bg-transparent border-b border-gray-400 w-full max-w-2xl text-gray-700 text-lg outline-none resize-none text-right"
+              className="bg-transparent border-b border-gray-400 w-full max-w-2xl text-gray-700 text-lg outline-none resize-none text-right break-words"
+              style={{ overflowWrap: "anywhere" }}
             />
           ) : (
-            <p className="text-gray-700 text-lg max-w-2xl">{description}</p>
+            <p
+              className="text-gray-700 text-lg max-w-2xl break-words whitespace-pre-wrap"
+              style={{ overflowWrap: "anywhere" }}
+            >
+              {description}
+            </p>
           )}
         </div>
 
