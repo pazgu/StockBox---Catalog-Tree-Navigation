@@ -33,31 +33,21 @@ export function useDebouncedFavoriteSingle(delay = 500) {
 
       if (totalClicks % 2 === 0) return;
 
+      let currentlyFavorite = false;
+      setUser((prev: any) => {
+        currentlyFavorite = prev?.favorites?.some((fav: any) => fav.id === itemId) ?? false;
+        return prev;
+      });
+
       try {
         await userService.toggleFavorite(itemId, "product");
 
-        setUser((prev: any) => {
-          const isFavorite = prev?.favorites?.some((fav: any) => fav.id === itemId);
-          if (isFavorite) {
+          if (currentlyFavorite) {
             toast.success(`${itemName} נוסף למועדפים`);
           } else {
             toast.info(`${itemName} הוסר מהמועדפים`);
           }
-          return prev;
-        });
-      } catch {
-        // rollback
-        setUser((prev: any) => {
-          if (!prev) return prev;
-          const favorites = prev.favorites ?? [];
-          const isFavorite = favorites.some((fav: any) => fav.id === itemId);
-          return {
-            ...prev,
-            favorites: isFavorite
-              ? favorites.filter((fav: any) => fav.id !== itemId)
-              : [...favorites, { id: itemId, type: "product" }],
-          };
-        });
+      } catch (err) {
         toast.error("שגיאה בעדכון המועדפים");
       }
     }, delay);

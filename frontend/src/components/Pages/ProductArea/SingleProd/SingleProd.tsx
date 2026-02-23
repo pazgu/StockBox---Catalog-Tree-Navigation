@@ -699,10 +699,16 @@ const SingleProd: FC<SingleProdProps> = () => {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
-              className="bg-transparent border-b border-gray-400 w-full max-w-2xl text-gray-700 text-lg outline-none resize-none text-right"
+              className="bg-transparent border-b border-gray-400 w-full max-w-2xl text-gray-700 text-lg outline-none resize-none text-right break-words"
+              style={{ overflowWrap: "anywhere" }}
             />
           ) : (
-            <p className="text-gray-700 text-lg max-w-2xl">{description}</p>
+            <p
+              className="text-gray-700 text-lg max-w-2xl break-words whitespace-pre-wrap"
+              style={{ overflowWrap: "anywhere" }}
+            >
+              {description}
+            </p>
           )}
         </div>
 
@@ -763,7 +769,7 @@ ${isEditing ? "cursor-pointer" : "cursor-not-allowed opacity-80"}`}
 
                     {/* uploading overlay - ADD THIS BACK */}
                     {isUploadingImages && (
-                      <div className="absolute inset-0 z-50 grid place-items-center bg-white/60 backdrop-blur-sm rounded-[32px]">
+                      <div className="absolute inset-0 z-20 grid place-items-center bg-white/60 backdrop-blur-sm rounded-[32px]">
                         <div className="flex items-center gap-2 rounded-2xl bg-white/80 px-4 py-2 shadow">
                           <Spinner className="size-6 text-stockblue" />
                           <span className="text-sm font-semibold text-stockblue">
