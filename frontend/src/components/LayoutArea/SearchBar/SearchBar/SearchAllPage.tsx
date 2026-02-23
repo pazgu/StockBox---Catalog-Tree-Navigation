@@ -148,7 +148,7 @@ const SearchResultsPage = () => {
                         <PathDisplay path={item.paths[0]} />
                       </small>
                       {item.paths?.[0]?.length > 40 && (
-                        <span className="absolute -top-6 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-50">
+                        <span className="absolute -top-6 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 whitespace-normal break-all pointer-events-none z-50 max-w-xs">
                           {item.paths[0]}
                         </span>
                       )}
