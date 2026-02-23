@@ -41,7 +41,7 @@ export default function ImagePreviewHover({ images, alt, className = "" }) {
 
   return (
     <div
-      className={`relative overflow-hidden ${className}`}
+      className={`relative overflow-hidden w-40 h-40${className}`}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={reset}
     >
