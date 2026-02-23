@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  ConflictException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -28,6 +29,16 @@ export class AuthService {
       .select('_id role approved requestSent');
 
     if (!user) {
+      const emailExists = await this.userModel.findOne({ email: dto.email });
+      const userNameExists = await this.userModel.findOne({
+        userName: dto.userName,
+      });
+
+      if (emailExists || userNameExists) {
+        throw new ConflictException({
+          code: 'USER_CREDENTIALS_MISMATCH',
+        });
+      }
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
       const newUser = await this.usersService.createUserFromLogin({
         email: dto.email,
