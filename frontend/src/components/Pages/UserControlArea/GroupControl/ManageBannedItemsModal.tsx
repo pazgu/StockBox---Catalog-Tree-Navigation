@@ -607,6 +607,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
               <button
                 onClick={() => {
                   setActiveTab("banned");
+                  setSelectedItems(new Map());
                   scrollContainerRef.current &&
                     (scrollContainerRef.current.scrollTop = 0);
                 }}
@@ -625,6 +626,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
               <button
                 onClick={() => {
                   setActiveTab("available");
+                  setSelectedItems(new Map());
                   scrollContainerRef.current &&
                     (scrollContainerRef.current.scrollTop = 0);
                 }}
