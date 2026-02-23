@@ -15,6 +15,8 @@ interface ImageCarouselProps {
   handleDeleteImage?: () => void;
   title?: string;
   isUploading?: boolean;
+  isReplacingImage?: boolean;
+  setIsReplacingImage?: (v: boolean) => void;
 
 }
 
@@ -30,6 +32,8 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
   handleDeleteImage,
   title,
   isUploading = false,
+  isReplacingImage = false,
+  setIsReplacingImage,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const touchStartX = useRef<number | null>(null);
@@ -40,12 +44,13 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
     (u) => typeof u === "string" && u.trim().length > 0
   );
 
-    const hasImages = validImages.length > 0;
+    const hasImages = validImages.length > 0 && !isReplacingImage;
   const shownIndex = Math.min(
     currentImageIndex,
     Math.max(0, validImages.length - 1)
   );
   const shownSrc = hasImages ? validImages[shownIndex] : "";
+  const replaceInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
   if (currentImageIndex > validImages.length - 1) {
@@ -199,18 +204,30 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
         <>
           <label
             htmlFor={replaceId}
+             onClick={() => {
+    if (!isUploading) setIsReplacingImage?.(true);
+    setTimeout(() => {
+      const onFocusBack = () => {
+        const noFilePicked = !replaceInputRef.current?.files?.length;
+        if (noFilePicked) setIsReplacingImage?.(false);
+        window.removeEventListener("focus", onFocusBack);
+      };
+      window.addEventListener("focus", onFocusBack);
+    }, 0);
+  }}
             className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-stockblue bg-white/95 backdrop-blur-sm rounded-lg shadow-md border border-white/30 cursor-pointer hover:shadow-lg hover:bg-white"
           >
             <Upload size={14} />
             החלף
           </label>
           <input
-            type="file"
-            id={replaceId}
-            accept="image/*"
-            onChange={handleReplaceImage}
-            className="hidden"
-          />
+  ref={replaceInputRef}
+  type="file"
+  id={replaceId}
+  accept="image/*"
+  onChange={handleReplaceImage}
+  className="hidden"
+/>
 
           <label
             htmlFor={addId}
