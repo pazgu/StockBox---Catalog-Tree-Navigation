@@ -748,6 +748,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
                       ` (${selectedWithChildren.size} עם ילדים)`}
                   </span>
                   {viewMode === "grid" && (
+                  <div className="relative group/tooltip">
                     <button
                       onClick={() => handleBulkAction()}
                       disabled={isLoading}
@@ -756,11 +757,6 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
                           ? "bg-green-500 text-white hover:bg-green-600 disabled:bg-green-300"
                           : "bg-red-500 text-white hover:bg-red-600 disabled:bg-red-300"
                       }`}
-                      title={
-                        activeTab === "banned"
-                          ? "שחרר פריטים נבחרים"
-                          : "חסום פריטים נבחרים"
-                      }
                     >
                       {activeTab === "banned" ? (
                         <LockOpen className="w-3.5 h-3.5" />
@@ -768,6 +764,10 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
                         <Lock className="w-3.5 h-3.5" />
                       )}
                     </button>
+                    <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-50">
+                      {activeTab === "banned" ? "שחרר פריטים נבחרים" : "חסום פריטים נבחרים"}
+                    </span>
+                  </div>
                   )}
                   {viewMode === "tree" && (
                     <div className="flex items-center gap-2">
