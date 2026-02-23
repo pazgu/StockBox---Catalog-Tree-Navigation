@@ -24,12 +24,14 @@ interface Group {
   _id: string;
   groupName: string;
   members: boolean;
+  initialMembers: boolean;
 }
 
 interface ViewerUser {
   _id: string;
   userName: string;
   enabled: boolean;
+  initialEnabled: boolean;
   groupIds: string[];
 }
 
@@ -156,18 +158,16 @@ const ProductPermissions: React.FC = () => {
         );
 
         initialStates[pathData.path] = {
-          users: mappedUsers.map((u) => ({
-            ...u,
-            enabled:
-              productAllowedIds.includes(u._id) &&
-              categoryAllowedIds.includes(u._id),
-          })),
-          groups: mappedGroups.map((g) => ({
-            ...g,
-            members:
-              productAllowedIds.includes(g._id) &&
-              categoryAllowedIds.includes(g._id),
-          })),
+          users: mappedUsers.map((u) => {
+            const enabled = productAllowedIds.includes(u._id) &&
+             categoryAllowedIds.includes(u._id);
+            return { ...u, enabled, initialEnabled: enabled };
+          }),
+          groups: mappedGroups.map((g) => {
+            const members = productAllowedIds.includes(g._id) &&
+             categoryAllowedIds.includes(g._id);
+            return { ...g, members, initialMembers: members };
+          }),
           existingPermissions: pathData.categoryPermissions,
         };
       });
@@ -442,18 +442,16 @@ const ProductPermissions: React.FC = () => {
         );
         newPathStates[updatedPath.path] = {
           ...pathStates[updatedPath.path],
-          users: pathStates[updatedPath.path].users.map((u) => ({
-            ...u,
-            enabled:
-              newProductAllowedIds.includes(u._id) &&
-              categoryAllowedIds.includes(u._id),
-          })),
-          groups: pathStates[updatedPath.path].groups.map((g) => ({
-            ...g,
-            members:
-              newProductAllowedIds.includes(g._id) &&
-              categoryAllowedIds.includes(g._id),
-          })),
+          users: pathStates[updatedPath.path].users.map((u) => {
+            const enabled = newProductAllowedIds.includes(u._id) &&
+             categoryAllowedIds.includes(u._id);
+            return { ...u, enabled, initialEnabled: enabled };
+          }),
+          groups: pathStates[updatedPath.path].groups.map((g) => {
+            const members = newProductAllowedIds.includes(g._id) &&
+             categoryAllowedIds.includes(g._id);
+            return { ...g, members, initialMembers: members };
+          }),
           existingPermissions: updatedPath.categoryPermissions,
         };
       });
@@ -502,18 +500,9 @@ const ProductPermissions: React.FC = () => {
     const pathState = pathStates[path];
     if (!pathState) return false;
 
-    const usersToAllow = pathState.users
-      .filter((u) => u.enabled)
-      .map((u) => u._id);
-    const groupsToAllow = pathState.groups
-      .filter((g) => g.members)
-      .map((g) => g._id);
-    const finalAllowedIds = [...usersToAllow, ...groupsToAllow];
-    const currentProductIds = productPermissions.map((p) => p.allowed);
-
     return (
-      finalAllowedIds.length !== currentProductIds.length ||
-      finalAllowedIds.some((id) => !currentProductIds.includes(id))
+      pathState.users.some((u) => u.enabled !== u.initialEnabled) ||
+      pathState.groups.some((g) => g.members !== g.initialMembers)
     );
   };
 
