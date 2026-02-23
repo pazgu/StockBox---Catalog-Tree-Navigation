@@ -40,6 +40,24 @@ import { useDebouncedFavoriteSingle } from "../../../../hooks/useDebouncedFavori
 
 interface SingleProdProps {}
 
+const PLACEHOLDER_IMAGE_PATTERNS = [
+  "placeholder",
+  "default",
+  "no-image",
+  "image-not-found",
+];
+
+function isPlaceholderImage(url: string) {
+  const u = url.trim().toLowerCase();
+  return PLACEHOLDER_IMAGE_PATTERNS.some((p) => u.includes(p));
+}
+
+function normalizeImages(images: string[]) {
+  return (images || [])
+    .filter((u) => typeof u === "string" && u.trim().length > 0)
+    .filter((u) => !isPlaceholderImage(u));
+}
+
 const SingleProd: FC<SingleProdProps> = () => {
   const { role, id } = useUser();
   const [isEditing, setIsEditing] = useState(false);
@@ -72,6 +90,7 @@ const SingleProd: FC<SingleProdProps> = () => {
   const [user, setUser] = useState<User | null>(null);
   const { previousPath } = usePath();
   const [isLoading, setIsLoading] = useState(true);
+  const [isReplacingImage, setIsReplacingImage] = useState(false);
 
   useEffect(() => {
     if (!productId) {
@@ -228,7 +247,11 @@ const SingleProd: FC<SingleProdProps> = () => {
       const results = await Promise.all(uploads);
       const urls = results.map((r) => r.url);
 
-      setProductImages((prev) => [...prev, ...urls]);
+      setProductImages((prev) => {
+  const cleanedPrev = normalizeImages(prev);
+  if (cleanedPrev.length === 0) return urls;
+  return [...cleanedPrev, ...urls];
+});
     } catch (err) {
       console.error("Image upload failed", err);
       toast.error("העלאת תמונות נכשלה");
@@ -239,42 +262,63 @@ const SingleProd: FC<SingleProdProps> = () => {
   };
 
   const handleReplaceImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+  const files = e.target.files;
+  if (!files || files.length === 0) return;
 
-    setIsUploadingImages(true);
+  setIsUploadingImages(true);
 
-    try {
-      const result = await CloudinaryService.uploadFile(
-        files[0],
-        "products/images",
-      );
+  try {
+    const result = await CloudinaryService.uploadFile(files[0], "products/images");
 
-      setProductImages((prev) =>
-        prev.map((img, i) => (i === currentImageIndex ? result.url : img)),
-      );
-    } catch (err) {
-      console.error("Image replacement failed", err);
-      toast.error("החלפת תמונה נכשלה");
-    } finally {
-      setIsUploadingImages(false);
-      e.target.value = "";
-    }
-  };
+    const handleReplaceImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const files = e.target.files;
+  if (!files || files.length === 0) return;
+
+  const currentUrl = displayImages[currentImageIndex]; 
+  if (!currentUrl) return;
+
+  setIsUploadingImages(true);
+
+  try {
+    const result = await CloudinaryService.uploadFile(
+      files[0],
+      "products/images"
+    );
+
+    setProductImages((prev) =>
+      prev.map((img) => (img === currentUrl ? result.url : img))
+    );
+  } catch (err) {
+    console.error("Image replacement failed", err);
+    toast.error("החלפת תמונה נכשלה");
+  } finally {
+    setIsUploadingImages(false);
+    setIsReplacingImage(false);
+    e.target.value = "";
+  }
+};
+  } catch (err) {
+    console.error("Image replacement failed", err);
+    toast.error("החלפת תמונה נכשלה");
+  } finally {
+    setIsUploadingImages(false);
+    setIsReplacingImage(false);
+    e.target.value = "";
+  }
+};
 
   const handleDeleteImage = () => {
-    setProductImages((prev) => {
-      const updated = prev.filter((_, i) => i !== currentImageIndex);
-      if (updated.length === 0) {
-        setCurrentImageIndex(0);
-        return [];
-      }
-      setCurrentImageIndex((prevIndex) =>
-        prevIndex >= updated.length ? updated.length - 1 : prevIndex,
-      );
-      return updated;
-    });
-  };
+  const currentUrl = displayImages[currentImageIndex]; 
+  if (!currentUrl) return;
+
+  setProductImages((prev) => prev.filter((img) => img !== currentUrl));
+
+  setCurrentImageIndex((prevIndex) => {
+    const newLen = displayImages.length - 1;
+    if (newLen <= 0) return 0;
+    return prevIndex >= newLen ? newLen - 1 : prevIndex;
+  });
+};
   const handleAccordionContentChange = (uiId: string, newContent: string) => {
     setAccordionData((prevData) =>
       prevData.map((item) =>
@@ -422,13 +466,15 @@ const SingleProd: FC<SingleProdProps> = () => {
         ]
       : [];
 
+      const normalizedProductImages = normalizeImages(productImages);
+
     const payload = {
-      productName: title,
-      productDescription: description,
-      productImages,
-      customFields,
-      uploadFolders,
-    };
+  productName: title,
+  productDescription: description,
+  productImages: normalizedProductImages,
+  customFields,
+  uploadFolders,
+};
     // Check if anything changed
     const hasChanges =
       title !== originalProduct?.productName ||
@@ -572,6 +618,10 @@ const SingleProd: FC<SingleProdProps> = () => {
     return user?.favorites?.some((fav) => fav.id === product?._id) ?? false;
   }, [user?.favorites, product?._id]);
 
+  const displayImages = useMemo(() => {
+  return isEditing ? normalizeImages(productImages) : productImages;
+}, [isEditing, productImages]);
+
   if (isLoading) {
     return <SingleProdSkeleton />;
   }
@@ -661,7 +711,7 @@ const SingleProd: FC<SingleProdProps> = () => {
             <div className="group relative bg-white p-4 rounded-2xl border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-stockblue to-stockblue"></div>
 
-              {productImages.length > 0 ? (
+              {displayImages.length > 0 ? (
                 <div className="relative mb-4">
                   {isUploadingImages && (
                     <div className="absolute inset-0 z-50 grid place-items-center bg-white/60 backdrop-blur-sm rounded-2xl">
@@ -673,19 +723,31 @@ const SingleProd: FC<SingleProdProps> = () => {
                       </div>
                     </div>
                   )}
-                  <ImageCarousel
-                    productImages={productImages}
-                    currentImageIndex={currentImageIndex}
-                    setCurrentImageIndex={setCurrentImageIndex}
-                    prevImage={prevImage}
-                    nextImage={nextImage}
-                    isEditing={isEditing}
-                    handleReplaceImage={handleReplaceImage}
-                    handleAddImages={handleAddImages}
-                    handleDeleteImage={handleDeleteImage}
-                    isUploading={isUploadingImages}
-                    title={title}
-                  />
+                 <ImageCarousel
+  productImages={displayImages}
+  currentImageIndex={currentImageIndex}
+  setCurrentImageIndex={setCurrentImageIndex}
+  prevImage={() => {
+    if (displayImages.length === 0) return;
+    setCurrentImageIndex((prev) =>
+      prev === 0 ? displayImages.length - 1 : prev - 1
+    );
+  }}
+  nextImage={() => {
+    if (displayImages.length === 0) return;
+    setCurrentImageIndex((prev) =>
+      prev === displayImages.length - 1 ? 0 : prev + 1
+    );
+  }}
+  isEditing={isEditing}
+  handleReplaceImage={handleReplaceImage}
+  handleAddImages={handleAddImages}
+  handleDeleteImage={handleDeleteImage}
+  isUploading={isUploadingImages}
+  title={title}
+  isReplacingImage={isReplacingImage}
+  setIsReplacingImage={setIsReplacingImage}
+/>
                 </div>
               ) : (
                 <div className="relative mb-4">
