@@ -3,7 +3,7 @@ import Header from "../../../LayoutArea/Header/Header";
 import { useNavigate } from "react-router-dom";
 import { userService } from "../../../../services/UserService";
 import { toast } from "sonner";
-import { Ban } from "lucide-react";
+import { Ban, UsersRound } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { User } from "../../../models/user.models";
 import { groupService } from "../../../../services/GroupService";
@@ -38,8 +38,7 @@ const BTN_DANGER =
 const BTN_SUCCESS =
   "px-8 h-12 rounded-xl font-bold text-white transition-colors shadow-lg bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 hover:shadow-xl";
 
-
-interface AllUsersProps { }
+interface AllUsersProps {}
 
 const AllUsers: FC<AllUsersProps> = () => {
   const navigate = useNavigate();
@@ -57,7 +56,9 @@ const AllUsers: FC<AllUsersProps> = () => {
   const [userToEdit, setUserToEdit] = useState<User | null>(null);
   const [blockUserIndex, setBlockUserIndex] = useState<number | null>(null);
   const [approveUserIndex, setApproveUserIndex] = useState<number | null>(null);
-  const [editErrors, setEditErrors] = useState<Partial<Record<keyof User, string>>>({});
+  const [editErrors, setEditErrors] = useState<
+    Partial<Record<keyof User, string>>
+  >({});
 
   const usersPerPage = 8;
 
@@ -76,7 +77,6 @@ const AllUsers: FC<AllUsersProps> = () => {
         user.email.toLowerCase().includes(searchTerm.toLowerCase()),
     )
     .sort((a, b) => Number(a.approved) - Number(b.approved));
-
 
   const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
 
@@ -172,7 +172,6 @@ const AllUsers: FC<AllUsersProps> = () => {
               userIdStr,
             ]);
           }
-
         }
 
         setUsers((prev) =>
@@ -200,86 +199,99 @@ const AllUsers: FC<AllUsersProps> = () => {
     setShowEditModal(true);
   };
 
-const handleEditChange = (field: keyof User, value: string) => {
-  if (userToEdit) {
-    setUserToEdit({ ...userToEdit, [field]: value });
+  const handleEditChange = (field: keyof User, value: string) => {
+    if (userToEdit) {
+      setUserToEdit({ ...userToEdit, [field]: value });
 
-    const hebrewOnly = /^[א-ת\s]+$/;
-    const englishOnly = /^[a-zA-Z\s]+$/;
-    const arabicOnly = /^[\u0600-\u06FF\s]+$/;
-    const validChars = /^[א-תa-zA-Z\u0600-\u06FF\s]+$/;
-    const validUserNameChars = /^[א-תa-zA-Z\u0600-\u06FF0-9]+$/;
-    const validUserNameLang = /^[א-ת0-9]+$|^[a-zA-Z0-9]+$|^[\u0600-\u06FF0-9]+$/;
+      const hebrewOnly = /^[א-ת\s]+$/;
+      const englishOnly = /^[a-zA-Z\s]+$/;
+      const arabicOnly = /^[\u0600-\u06FF\s]+$/;
+      const validChars = /^[א-תa-zA-Z\u0600-\u06FF\s]+$/;
+      const validUserNameChars = /^[א-תa-zA-Z\u0600-\u06FF0-9]+$/;
+      const validUserNameLang =
+        /^[א-ת0-9]+$|^[a-zA-Z0-9]+$|^[\u0600-\u06FF0-9]+$/;
 
-    let error = "";
-    const trimmed = value.trim();
+      let error = "";
+      const trimmed = value.trim();
 
-    if (field === "firstName" || field === "lastName") {
-      if (!trimmed) {
-        error = field === "firstName" ? "שם פרטי הוא שדה חובה" : "שם משפחה הוא שדה חובה";
-      } else if (!validChars.test(trimmed)) {
-        error = "רק אותיות";
-      } else if (!hebrewOnly.test(trimmed) && !englishOnly.test(trimmed) && !arabicOnly.test(trimmed)) {
-        error = "לא ניתן לערבב שפות";
-      } else if (trimmed.length < 2) {
-        error = field === "firstName" ? "שם פרטי חייב להכיל לפחות 2 אותיות" : "שם משפחה חייב להכיל לפחות 2 אותיות";
+      if (field === "firstName" || field === "lastName") {
+        if (!trimmed) {
+          error =
+            field === "firstName"
+              ? "שם פרטי הוא שדה חובה"
+              : "שם משפחה הוא שדה חובה";
+        } else if (!validChars.test(trimmed)) {
+          error = "רק אותיות";
+        } else if (
+          !hebrewOnly.test(trimmed) &&
+          !englishOnly.test(trimmed) &&
+          !arabicOnly.test(trimmed)
+        ) {
+          error = "לא ניתן לערבב שפות";
+        } else if (trimmed.length < 2) {
+          error =
+            field === "firstName"
+              ? "שם פרטי חייב להכיל לפחות 2 אותיות"
+              : "שם משפחה חייב להכיל לפחות 2 אותיות";
+        }
+      }
+
+      if (field === "userName") {
+        if (!trimmed) {
+          error = "שם משתמש הוא שדה חובה";
+        } else if (!validUserNameChars.test(trimmed)) {
+          error = "רק אותיות ומספרים";
+        } else if (!validUserNameLang.test(trimmed)) {
+          error = "לא ניתן לערבב שפות";
+        } else if (
+          (trimmed.match(/[א-תa-zA-Z\u0600-\u06FF]/g) || []).length < 2
+        ) {
+          error = "חייב להכיל לפחות 2 אותיות";
+        }
+      }
+
+      if (field === "email") {
+        if (!trimmed) {
+          error = "כתובת מייל היא שדה חובה";
+        } else if (!isEmail(trimmed)) {
+          error = "כתובת מייל לא תקינה";
+        }
+      }
+
+      setEditErrors((prev) => ({ ...prev, [field]: error }));
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!userToEdit || !userToEdit._id) return;
+
+    const hasErrors = Object.values(editErrors).some((e) => e !== "");
+    if (hasErrors) return;
+
+    try {
+      const updatedUser = await userService.update(userToEdit._id, userToEdit);
+      setUsers((prev) =>
+        prev.map((u) => (u._id === updatedUser._id ? updatedUser : u)),
+      );
+      toast.success("המשתמש עודכן בהצלחה!");
+      setShowEditModal(false);
+      setUserToEdit(null);
+    } catch (error: any) {
+      console.error("שגיאה בעדכון משתמש:", error);
+      const status = error?.response?.status;
+      if (status === 409) {
+        toast.error("שם משתמש או אימייל כבר קיימים במערכת");
+      } else {
+        toast.error("שגיאה בעדכון המשתמש");
       }
     }
+  };
 
-    if (field === "userName") {
-      if (!trimmed) {
-        error = "שם משתמש הוא שדה חובה";
-      } else if (!validUserNameChars.test(trimmed)) {
-        error = "רק אותיות ומספרים";
-      } else if (!validUserNameLang.test(trimmed)) {
-        error = "לא ניתן לערבב שפות";
-      } else if ((trimmed.match(/[א-תa-zA-Z\u0600-\u06FF]/g) || []).length < 2) {
-        error = "חייב להכיל לפחות 2 אותיות";
-      }
-    }
-
-    if (field === "email") {
-      if (!trimmed) {
-        error = "כתובת מייל היא שדה חובה";
-      } else if (!isEmail(trimmed)) {
-        error = "כתובת מייל לא תקינה";
-      }
-    }
-
-    setEditErrors((prev) => ({ ...prev, [field]: error }));
-  }
-};
-
-const handleSaveEdit = async () => {
-  if (!userToEdit || !userToEdit._id) return;
-
-  const hasErrors = Object.values(editErrors).some((e) => e !== "");
-  if (hasErrors) return;
-
-  try {
-    const updatedUser = await userService.update(userToEdit._id, userToEdit);
-    setUsers((prev) =>
-      prev.map((u) => (u._id === updatedUser._id ? updatedUser : u)),
-    );
-    toast.success("המשתמש עודכן בהצלחה!");
+  const handleCancelEdit = () => {
     setShowEditModal(false);
     setUserToEdit(null);
-  } catch (error: any) {
-    console.error("שגיאה בעדכון משתמש:", error);
-    const status = error?.response?.status;
-    if (status === 409) {
-      toast.error("שם משתמש או אימייל כבר קיימים במערכת");
-    } else {
-      toast.error("שגיאה בעדכון המשתמש");
-    }
-  }
-};
-
-const handleCancelEdit = () => {
-  setShowEditModal(false);
-  setUserToEdit(null);
-  setEditErrors({});
-};
+    setEditErrors({});
+  };
 
   return (
     <div className=" font-sans text-[#0D305B] rtl bg-[#fffaf1]">
@@ -287,30 +299,32 @@ const handleCancelEdit = () => {
       <main className="px-7 md:px-5  relative pb-4">
         <div className="flex justify-between items-center mb-8">
           <div className="text-right flex-1">
-            <h1 className="text-3xl font-bold mb-4">כל המשתמשים</h1>
+            <h1 className="text-5xl font-light text-slate-700 mb-2 tracking-tight">כל המשתמשים</h1>
 
-            <div className="relative max-w-xs">
-              <input
-                type="text"
-                placeholder="חיפוש לפי שם או אימייל..."
-                value={searchTerm}
-                onChange={handleSearchChange}
-                className="w-full px-4 py-2 pr-10 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent text-right bg-[#fffdf8]"
-              />
-              <svg
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            {users.length > 0 && (
+              <div className="relative max-w-xs">
+                <input
+                  type="text"
+                  placeholder="חיפוש לפי שם או אימייל..."
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                  className="w-full px-4 py-2 pr-10 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent text-right bg-[#fffdf8]"
                 />
-              </svg>
-            </div>
+                <svg
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </div>
+            )}
           </div>
           <div
             className="w-15 h-15 bg-[#2c3e50] rounded-full flex items-center justify-center text-white text-3xl font-light cursor-pointer transition-transform hover:bg-[#34495e]"
@@ -342,8 +356,9 @@ const handleCancelEdit = () => {
           {currentUsers.map((user, index) => (
             <div
               key={user._id}
-              className={`rounded-xl p-4 text-center shadow-sm relative min-h-[110px] transition-transform hover:-translate-y-1 hover:shadow-md border-gray-100 ${user.approved ? "bg-[#fffdf8]" : "bg-gray-100"
-                }`}
+              className={`rounded-xl p-4 text-center shadow-sm relative min-h-[110px] transition-transform hover:-translate-y-1 hover:shadow-md border-gray-100 ${
+                user.approved ? "bg-[#fffdf8]" : "bg-gray-100"
+              }`}
             >
               {!user.approved && (
                 <div
@@ -400,18 +415,17 @@ const handleCancelEdit = () => {
                 </button>
 
                 {user.approved && user.role !== "editor" && (
-  <button
-    className={`p-1 rounded transition ${
-      user.isBlocked
-        ? "bg-red-600 text-white hover:bg-red-700"
-        : "hover:bg-gray-100 opacity-60 hover:opacity-100"
-    }`}
-    onClick={() => setBlockUserIndex(index)}
-  >
-    <Ban size={14} />
-  </button>
-)}
-
+                  <button
+                    className={`p-1 rounded transition ${
+                      user.isBlocked
+                        ? "bg-red-600 text-white hover:bg-red-700"
+                        : "hover:bg-gray-100 opacity-60 hover:opacity-100"
+                    }`}
+                    onClick={() => setBlockUserIndex(index)}
+                  >
+                    <Ban size={14} />
+                  </button>
+                )}
               </div>
 
               {/* Avatar */}
@@ -442,7 +456,9 @@ const handleCancelEdit = () => {
               </div>
 
               <div>
-                <div className="text-sm text-gray-600">{user.approved ? "שם:" : "שם משתמש:"}</div>
+                <div className="text-sm text-gray-600">
+                  {user.approved ? "שם:" : "שם משתמש:"}
+                </div>
                 <div className="font-semibold text-[#0D305B]">
                   {user.approved ? user.firstName : user.userName}
                 </div>
@@ -450,10 +466,11 @@ const handleCancelEdit = () => {
                 <div className="text-sm text-gray-600">{user.email}</div>
 
                 <div
-                  className={`inline-block mt-2 text-xs px-2 py-1 rounded-full font-semibold ${user.isBlocked
+                  className={`inline-block mt-2 text-xs px-2 py-1 rounded-full font-semibold ${
+                    user.isBlocked
                       ? "bg-red-200 text-red-700"
                       : "bg-[#0D305B]/10 text-[#0D305B]"
-                    }`}
+                  }`}
                 >
                   {user.isBlocked ? "משתמש חסום" : roleLabel(user.role)}
                 </div>
@@ -464,32 +481,35 @@ const handleCancelEdit = () => {
 
         {/* Approval Dialog */}
         {approveUserIndex !== null && (
-  <div className={MODAL_OVERLAY}>
-    <div className={MODAL_CARD}>
-      <div className="flex justify-start w-full mb-4">
-        <h3 className="text-2xl font-bold text-[#0D305B]">
-          לאשר משתמש זה?
-        </h3>
-      </div>
+          <div className={MODAL_OVERLAY}>
+            <div className={MODAL_CARD}>
+              <div className="flex justify-start w-full mb-4">
+                <h3 className="text-2xl font-bold text-[#0D305B]">
+                  לאשר משתמש זה?
+                </h3>
+              </div>
 
-      <p className="text-slate-700 mb-2">
-        האם אתה רוצה להכניס את המשתמש למערכת ולאפשר לו גישה לאתר?
-      </p>
-      <small className="text-gray-500 block mb-6">
-        המשתמש יתווסף למערכת ויוכל להתחבר
-      </small>
+              <p className="text-slate-700 mb-2">
+                האם אתה רוצה להכניס את המשתמש למערכת ולאפשר לו גישה לאתר?
+              </p>
+              <small className="text-gray-500 block mb-6">
+                המשתמש יתווסף למערכת ויוכל להתחבר
+              </small>
 
-      <div className={MODAL_FOOTER}>
-        <button className={BTN_CANCEL} onClick={() => setApproveUserIndex(null)}>
-          ביטול
-        </button>
-        <button className={BTN_SUCCESS} onClick={confirmApprove}>
-          כן, אשר
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+              <div className={MODAL_FOOTER}>
+                <button
+                  className={BTN_CANCEL}
+                  onClick={() => setApproveUserIndex(null)}
+                >
+                  ביטול
+                </button>
+                <button className={BTN_SUCCESS} onClick={confirmApprove}>
+                  כן, אשר
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="flex justify-center items-center gap-2 mt-8">
           {currentPage > 1 && (
@@ -505,10 +525,11 @@ const handleCancelEdit = () => {
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
             <button
               key={page}
-              className={`px-3 py-1 border rounded ${page === currentPage
+              className={`px-3 py-1 border rounded ${
+                page === currentPage
                   ? "bg-[#0D305B] text-[#F0E4D0]"
                   : "text-gray-600 hover:bg-[#0D305B] hover:text-[#F0E4D0]"
-                }`}
+              }`}
               onClick={() => goToPage(page)}
             >
               {page}
@@ -527,74 +548,84 @@ const handleCancelEdit = () => {
         </div>
 
         {deleteUserIndex !== null && (
-  <div className={MODAL_OVERLAY}>
-    <div className={MODAL_CARD}>
-      <div className="flex justify-start w-full mb-4">
-        <h3 className="text-2xl font-bold text-[#0D305B]">
-          למחוק משתמש זה?
-        </h3>
-      </div>
+          <div className={MODAL_OVERLAY}>
+            <div className={MODAL_CARD}>
+              <div className="flex justify-start w-full mb-4">
+                <h3 className="text-2xl font-bold text-[#0D305B]">
+                  למחוק משתמש זה?
+                </h3>
+              </div>
 
-      <p className="text-slate-700 mb-2">
-        פעולה זו לא ניתנת לביטול. האם ברצונך למחוק את המשתמש?
-      </p>
-      <small className="text-gray-500 block mb-6">
-        כל המידע המשויך למשתמש ימחק
-      </small>
+              <p className="text-slate-700 mb-2">
+                פעולה זו לא ניתנת לביטול. האם ברצונך למחוק את המשתמש?
+              </p>
+              <small className="text-gray-500 block mb-6">
+                כל המידע המשויך למשתמש ימחק
+              </small>
 
-      <div className={MODAL_FOOTER}>
-        <button className={BTN_DANGER} onClick={confirmDelete}>
-          מחיקה
-        </button>
-        <button className={BTN_CANCEL} onClick={cancelDelete}>
-          ביטול
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+              <div className={MODAL_FOOTER}>
+                <button className={BTN_DANGER} onClick={confirmDelete}>
+                  מחיקה
+                </button>
+                <button className={BTN_CANCEL} onClick={cancelDelete}>
+                  ביטול
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {blockUserIndex !== null && (
-  <div className={MODAL_OVERLAY}>
-    <div className={MODAL_CARD}>
-      <div className="flex justify-start w-full mb-4">
-        <h3 className="text-2xl font-bold text-[#0D305B]">
-          {currentUsers[blockUserIndex].isBlocked
-            ? "לבטל חסימת משתמש זה?"
-            : "לחסום משתמש זה?"}
-        </h3>
-      </div>
+          <div className={MODAL_OVERLAY}>
+            <div className={MODAL_CARD}>
+              <div className="flex justify-start w-full mb-4">
+                <h3 className="text-2xl font-bold text-[#0D305B]">
+                  {currentUsers[blockUserIndex].isBlocked
+                    ? "לבטל חסימת משתמש זה?"
+                    : "לחסום משתמש זה?"}
+                </h3>
+              </div>
 
-      <p className="text-slate-700 mb-2">
-        {currentUsers[blockUserIndex].isBlocked
-          ? "האם אתה בטוח שברצונך לבטל את חסימת המשתמש ולאפשר לו גישה מחדש לאתר?"
-        : "האם אתה בטוח שברצונך לחסום משתמש זה מגישה למערכת?"}
-      </p>
-      <small className="text-gray-500 block mb-6">
-        ניתן לשנות זאת בכל עת
-      </small>
+              <p className="text-slate-700 mb-2">
+                {currentUsers[blockUserIndex].isBlocked
+                  ? "האם אתה בטוח שברצונך לבטל את חסימת המשתמש ולאפשר לו גישה מחדש לאתר?"
+                  : "האם אתה בטוח שברצונך לחסום משתמש זה מגישה למערכת?"}
+              </p>
+              <small className="text-gray-500 block mb-6">
+                ניתן לשנות זאת בכל עת
+              </small>
 
-      <div className={MODAL_FOOTER}>
-      <button
-        className={
-          currentUsers[blockUserIndex].isBlocked ? BTN_SUCCESS : BTN_DANGER
-        }
-        onClick={confirmBlock}
-      >
-        {currentUsers[blockUserIndex].isBlocked ? "בטל חסימה" : "חסום"}
-      </button>
+              <div className={MODAL_FOOTER}>
+                <button
+                  className={
+                    currentUsers[blockUserIndex].isBlocked
+                      ? BTN_SUCCESS
+                      : BTN_DANGER
+                  }
+                  onClick={confirmBlock}
+                >
+                  {currentUsers[blockUserIndex].isBlocked
+                    ? "בטל חסימה"
+                    : "חסום"}
+                </button>
 
-      <button
-        className={BTN_CANCEL}
-        onClick={() => setBlockUserIndex(null)}
-      >
-        ביטול
-      </button>
-    </div>
-    </div>
-  </div>
-)}
+                <button
+                  className={BTN_CANCEL}
+                  onClick={() => setBlockUserIndex(null)}
+                >
+                  ביטול
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
+        {users.length === 0 && (
+          <div className="w-full flex flex-col justify-center items-center my-12 text-slate-500">
+            <UsersRound size={64} className="mb-4 text-slate-300" />
+            <p className="text-lg"> לא נמצאו משתמשים במערכת </p>
+          </div>
+        )}
 
         {/* EDIT MODAL */}
         {showEditModal && userToEdit && (
@@ -631,9 +662,6 @@ const handleCancelEdit = () => {
                 </h2>
               </div>
 
-
-
-
               {/* Form fields in 2 columns */}
               <div className="grid grid-cols-2 gap-x-6 gap-y-5">
                 <div className="group">
@@ -644,11 +672,15 @@ const handleCancelEdit = () => {
                   <input
                     type="text"
                     value={userToEdit.firstName}
-                    onChange={(e) => handleEditChange("firstName", e.target.value)}
+                    onChange={(e) =>
+                      handleEditChange("firstName", e.target.value)
+                    }
                     className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
                   />
                   {editErrors.firstName && (
-                    <span className="text-red-500 text-xs mt-1 block">{editErrors.firstName}</span>
+                    <span className="text-red-500 text-xs mt-1 block">
+                      {editErrors.firstName}
+                    </span>
                   )}
                 </div>
 
@@ -660,11 +692,15 @@ const handleCancelEdit = () => {
                   <input
                     type="text"
                     value={userToEdit.lastName}
-                    onChange={(e) => handleEditChange("lastName", e.target.value)}
+                    onChange={(e) =>
+                      handleEditChange("lastName", e.target.value)
+                    }
                     className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
                   />
                   {editErrors.lastName && (
-                    <span className="text-red-500 text-xs mt-1 block">{editErrors.lastName}</span>
+                    <span className="text-red-500 text-xs mt-1 block">
+                      {editErrors.lastName}
+                    </span>
                   )}
                 </div>
 
@@ -676,11 +712,15 @@ const handleCancelEdit = () => {
                   <input
                     type="text"
                     value={userToEdit.userName}
-                    onChange={(e) => handleEditChange("userName", e.target.value)}
+                    onChange={(e) =>
+                      handleEditChange("userName", e.target.value)
+                    }
                     className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
                   />
                   {editErrors.userName && (
-                    <span className="text-red-500 text-xs mt-1 block">{editErrors.userName}</span>
+                    <span className="text-red-500 text-xs mt-1 block">
+                      {editErrors.userName}
+                    </span>
                   )}
                 </div>
 
@@ -719,29 +759,30 @@ const handleCancelEdit = () => {
              transition-all bg-white shadow-sm hover:shadow-md text-left"
                   />
                   {editErrors.email && (
-                    <span className="text-red-500 text-xs mt-1 block">{editErrors.email}</span>
+                    <span className="text-red-500 text-xs mt-1 block">
+                      {editErrors.email}
+                    </span>
                   )}
-
                 </div>
               </div>
 
               {/* Action buttons */}
-      <div className="flex justify-end gap-4 mt-8 pt-6 border-t-2 border-gray-200">
-              <button
-                className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#0D305B] to-[#15457a] text-white hover:from-[#15457a] hover:to-[#1e5a9e] transition-colors font-bold shadow-lg hover:shadow-xl"
-                onClick={handleSaveEdit}
-              >
-                שמור שינויים
-              </button>
+              <div className="flex justify-end gap-4 mt-8 pt-6 border-t-2 border-gray-200">
+                <button
+                  className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#0D305B] to-[#15457a] text-white hover:from-[#15457a] hover:to-[#1e5a9e] transition-colors font-bold shadow-lg hover:shadow-xl"
+                  onClick={handleSaveEdit}
+                >
+                  שמור שינויים
+                </button>
 
-              <button
-                className="px-6 py-3 rounded-xl border-2 border-gray-300 hover:bg-gray-50 transition-colors font-bold text-gray-700"
-                onClick={handleCancelEdit}
-              >
-                ביטול
-              </button>
+                <button
+                  className="px-6 py-3 rounded-xl border-2 border-gray-300 hover:bg-gray-50 transition-colors font-bold text-gray-700"
+                  onClick={handleCancelEdit}
+                >
+                  ביטול
+                </button>
+              </div>
             </div>
-             </div>
           </div>
         )}
       </main>
