@@ -132,9 +132,10 @@ const SearchResultsPage = () => {
                     </span>
                     <div className="flex flex-col">
                       <small
-                        className="text-gray-500 hover:text-blue-600 hover:underline cursor-pointer text-left"
+                        className="text-gray-500 hover:text-blue-600 hover:underline cursor-pointer text-left max-w-xs truncate block"
                         dir="ltr"
                         style={{ unicodeBidi: "isolate" }}
+                        title={item.paths?.[0]}  
                         onClick={() => {
                           setPreviousPath(item.paths?.[0]);
                           navigate(
