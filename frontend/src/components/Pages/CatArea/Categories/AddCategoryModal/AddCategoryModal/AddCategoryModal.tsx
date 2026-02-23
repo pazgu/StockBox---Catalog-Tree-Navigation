@@ -188,22 +188,20 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
 };
 
   const handleSave = async () => {
-    if (!newCatName.trim()) {
-      toast.error("שם קטגוריה חובה");
-      return;
-    }
+  if (!newCatName.trim()) {
+    toast.error("שם קטגוריה חובה");
+    return;
+  }
 
-     if (FORBIDDEN_CHARS.test(newCatName)) {
+  if (FORBIDDEN_CHARS.test(newCatName)) {
     toast.error('שם קטגוריה מכיל תווים אסורים ; | " \' * < >');
     return;
   }
 
+  let file: File | undefined;
 
-    if (!rawImage) {
-      toast.error("נא לבחור תמונה");
-      return;
-    }
-
+  // ✅ Only crop if user actually uploaded an image
+  if (rawImage) {
     const croppedDataUrl = generateCroppedImage();
     if (!croppedDataUrl) {
       toast.error("שגיאה ביצירת התמונה");
@@ -211,26 +209,28 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     }
 
     const safeName = newCatName.trim().toLowerCase().replace(/\s+/g, "-");
-    const file = dataURLtoFile(croppedDataUrl, `${safeName}.jpg`);
+    file = dataURLtoFile(croppedDataUrl, `${safeName}.jpg`);
+  }
 
-    try {
-      setIsSaving(true);
-      await onSave({ name: newCatName.trim(), imageFile: file });
-    } catch (error: any) {
-      const serverMessage =
-        error?.response?.data?.message || error?.response?.data?.error;
+  try {
+    setIsSaving(true);
+    await onSave({ name: newCatName.trim(), imageFile: file });
+    handleClose(); // optional: close modal after success
+  } catch (error: any) {
+    const serverMessage =
+      error?.response?.data?.message || error?.response?.data?.error;
 
-      if (typeof serverMessage === "string" && serverMessage.trim()) {
-        toast.error(serverMessage);
-      } else {
-        toast.error("שגיאה בהוספת קטגוריה");
-      }
-
-      console.error("Add category failed:", error);
-    } finally {
-      setIsSaving(false);
+    if (typeof serverMessage === "string" && serverMessage.trim()) {
+      toast.error(serverMessage);
+    } else {
+      toast.error("שגיאה בהוספת קטגוריה");
     }
-  };
+
+    console.error("Add category failed:", error);
+  } finally {
+    setIsSaving(false);
+  }
+};
 
   return (
     <div
@@ -304,7 +304,7 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
             <div className="w-full flex flex-col items-center mb-4">
               <div
                 ref={cropRef}
-                className="relative overflow-hidden select-none touch-none bg-white shadow-lg ring-1 ring-gray-200"
+                className="relative overflow-hidden select-none touch-none bg-white shadow-lg"
                 style={{
                   width: CROP_BOX,
                   height: CROP_BOX,

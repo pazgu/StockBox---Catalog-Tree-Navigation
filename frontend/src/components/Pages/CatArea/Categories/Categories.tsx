@@ -475,7 +475,8 @@ export const Categories: FC<CategoriesProps> = () => {
                               : item.images?.[0]
                           }
                           alt={item.name}
-                          className="w-44 h-44 object-cover rounded-full shadow-md mt-2"
+                         className="w-44 h-44 object-cover rounded-full mt-2 "
+
                         />
 
                         {role === "editor" && category && (
