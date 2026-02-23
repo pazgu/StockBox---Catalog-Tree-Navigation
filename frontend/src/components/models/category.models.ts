@@ -22,6 +22,6 @@ export interface UpdateCategoryDTO {
 
 export type AddCategoryResult = {
   name: string;
-  imageFile: File;
+  imageFile?: File;
 };
 
