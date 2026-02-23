@@ -136,7 +136,7 @@ const SearchResultsPage = () => {
                         dir="ltr"
                         style={{ unicodeBidi: "isolate" }}
                         onClick={() => {
-                          setPreviousPath(location.pathname);
+                          setPreviousPath(item.paths?.[0]);
                           navigate(
                             item.type === "product"
                               ? `/products/${item.id}`
@@ -159,6 +159,8 @@ const SearchResultsPage = () => {
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
+                                  setPreviousPath(p.slice(0, p.lastIndexOf("/")));
+
                                   navigate(`/products/${item.id}`, {
                                     state: {
                                       searchBreadcrumbs: removeFirstSegment(p),
