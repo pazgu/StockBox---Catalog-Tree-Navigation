@@ -12,6 +12,7 @@ interface GroupListProps {
   onDeleteGroup: (group: Group) => void;
   onAddGroup: () => void;
 }
+const isNewUsersGroup = (name: string) => name === "New Users";
 
 const GroupList: React.FC<GroupListProps> = ({
   groups,
@@ -23,7 +24,6 @@ const GroupList: React.FC<GroupListProps> = ({
   onAddGroup,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
-
   const filteredGroups = groups.filter((group) =>
     group.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
@@ -89,50 +89,51 @@ const GroupList: React.FC<GroupListProps> = ({
                     {group.members.length} משתמשים
                   </span>
                 </div>
+                {!isNewUsersGroup(group.name) && (
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {/*  Edit group */}
+                    <div className="relative group/edit">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEditGroup(group);
+                        }}
+                        aria-label="עריכת שם קבוצה"
+                        className="p-1 rounded-full bg-white hover:bg-gray-300 hover:text-white transition-colors"
+                      >
+                        <Pen size={14} className="text-slate-600" />
+                      </button>
 
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  {/*  Edit group */}
-                  <div className="relative group/edit">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEditGroup(group);
-                      }}
-                      aria-label="עריכת שם קבוצה"
-                      className="p-1 rounded-full bg-white hover:bg-gray-300 hover:text-white transition-colors"
-                    >
-                      <Pen size={14} className="text-slate-600" />
-                    </button>
+                      <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover/edit:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-[9999]">
+                        עריכת שם קבוצה
+                      </span>
+                    </div>
 
-                    <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover/edit:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-[9999]">
-                      עריכת שם קבוצה
-                    </span>
+                    <div className="relative group/delete">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteGroup(group);
+                        }}
+                        aria-label="מחיקת קבוצה"
+                        className="p-1.5 rounded-full bg-white hover:bg-red-600 hover:text-white transition-colors"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+
+                      <span
+                        className={[
+                          "absolute bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0",
+                          "group-hover/delete:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-[9999]",
+                          "bottom-full mb-2",
+                          "right-0 translate-x-1/2",
+                        ].join(" ")}
+                      >
+                        מחיקת קבוצה
+                      </span>
+                    </div>
                   </div>
-
-                  <div className="relative group/delete">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteGroup(group);
-                      }}
-                      aria-label="מחיקת קבוצה"
-                      className="p-1.5 rounded-full bg-white hover:bg-red-600 hover:text-white transition-colors"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-
-                    <span
-                      className={[
-                        "absolute bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0",
-                        "group-hover/delete:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-[9999]",
-                        "bottom-full mb-2",
-                        "right-0 translate-x-1/2",
-                      ].join(" ")}
-                    >
-                      מחיקת קבוצה
-                    </span>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           ))}
