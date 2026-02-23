@@ -475,8 +475,7 @@ export const Categories: FC<CategoriesProps> = () => {
                               : item.images?.[0]
                           }
                           alt={item.name}
-                         className="w-44 h-44 object-cover rounded-full mt-2 "
-
+                          className="w-44 h-44 object-cover rounded-full mt-2 "
                         />
 
                         {role === "editor" && category && (
@@ -548,11 +547,11 @@ export const Categories: FC<CategoriesProps> = () => {
                       >
                         {item.name}
                       </span>
-                      {(item.name.length > 20) && (
-                    <span className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-50 shadow-md">
-                      {item.name}
-                    </span>
-                  )}
+                      {item.name.length > 20 && (
+                        <span className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-50 shadow-md">
+                          {item.name}
+                        </span>
+                      )}
                     </div>
                   </div>
                 );
@@ -659,9 +658,14 @@ export const Categories: FC<CategoriesProps> = () => {
                     </div>
 
                     <div className="w-full text-center pt-4 border-t border-gray-200">
-                      <h2 className="text-[1.1rem] text-[#0D305B] mb-2">
-                        {item.name}
-                      </h2>
+                      <div className="relative group/name max-w-xs">
+                        <h2 className="text-[1.1rem] text-[#0D305B] mb-2 truncate">
+                          {item.name}
+                        </h2>
+                        <span className="absolute top-full mt-1 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/name:opacity-100 transition-all duration-200 pointer-events-none z-50 whitespace-normal break-words max-w-xs">
+                          {item.name}
+                        </span>
+                      </div>
                       {role === "editor" && (
                         <div className="mt-2 flex justify-center">
                           <button

@@ -35,7 +35,7 @@ import DuplicateProductModal from "../../ProductArea/DuplicateProductModal/Dupli
 import MoveMultipleItemsModal from "./MoveMultipleItemsModal/MoveMultipleItemsModal";
 import { usePath } from "../../../../context/PathContext";
 import ImagePreviewHover from "../../ProductArea/ImageCarousel/ImageCarousel/ImagePreviewHover";
-import { useDebouncedFavorite } from "../../../../hooks/useDebouncedFavorite";  
+import { useDebouncedFavorite } from "../../../../hooks/useDebouncedFavorite";
 
 const hasImage = (images: any): boolean => {
   if (!images) return false;
@@ -609,15 +609,16 @@ const SingleCat: FC = () => {
       <header className="flex items-center gap-6 mb-10">
         {/* Category Image */}
         {categoryInfo && (
-  <img
-    src={categoryInfo.categoryImage || "/assets/images/placeholder.png"}
-    alt={categoryInfo.categoryName}
-    className="w-32 h-32 rounded-full object-cover mt-0 border-0 ring-0 outline-none bg-transparent focus:outline-none focus:ring-0 focus:ring-offset-0"
-    onError={(e) => {
-      (e.currentTarget as HTMLImageElement).src = "/assets/images/placeholder.png";
-    }}
-  />
-)}
+          <img
+            src={categoryInfo.categoryImage || "/assets/images/placeholder.png"}
+            alt={categoryInfo.categoryName}
+            className="w-32 h-32 rounded-full object-cover mt-0 border-0 ring-0 outline-none bg-transparent focus:outline-none focus:ring-0 focus:ring-offset-0"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src =
+                "/assets/images/placeholder.png";
+            }}
+          />
+        )}
 
         {/* Category Title and Stats */}
         <div className="flex flex-col">
@@ -797,26 +798,26 @@ const SingleCat: FC = () => {
             )}
 
             {!isSelectionMode && (
-            <div className="absolute right-3 top-3 z-10">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  toggleFavorite(item.id, item.name, item.type);
-                }}
-                className="peer transition-all duration-200 h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110 cursor-pointer"
-              >
-                <Heart
-                  size={22}
-                  strokeWidth={2}
-                  className={`pointer-events-none ${item.favorite ? "fill-red-500 text-red-500" : "text-gray-700"}`}
-                />
-              </button>
-              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                {item.favorite ? "הסר ממועדפים" : "הוסף למועדפים"}
-              </span>
-            </div>
-          )}
+              <div className="absolute right-3 top-3 z-10">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    toggleFavorite(item.id, item.name, item.type);
+                  }}
+                  className="peer transition-all duration-200 h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110 cursor-pointer"
+                >
+                  <Heart
+                    size={22}
+                    strokeWidth={2}
+                    className={`pointer-events-none ${item.favorite ? "fill-red-500 text-red-500" : "text-gray-700"}`}
+                  />
+                </button>
+                <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                  {item.favorite ? "הסר ממועדפים" : "הוסף למועדפים"}
+                </span>
+              </div>
+            )}
             <div
               className="h-[140px] w-full flex justify-center items-center p-2 cursor-pointer"
               onClick={() => {
@@ -829,49 +830,50 @@ const SingleCat: FC = () => {
               }}
             >
               {item.type === "category" ? (
-  <img
-    src={
-      (typeof item.images === "string" && item.images.trim())
-        ? item.images
-        : "/assets/images/placeholder.png"
-    }
-    alt={item.name}
-    className="max-h-full max-w-full object-contain"
-    onError={(e) => {
-      (e.currentTarget as HTMLImageElement).src = "/assets/images/placeholder.png";
-    }}
-  />
-) : (
-  hasImage(item.images) ? (
-    <div className="h-full w-full flex justify-center items-center">
-      <ImagePreviewHover
-        images={item.images}
-        alt={item.name}
-        className="w-full h-full"
-      />
-    </div>
-  ) : (
-    <NoImageCard label="אין תמונה למוצר" />
-  )
-)}
+                <img
+                  src={
+                    typeof item.images === "string" && item.images.trim()
+                      ? item.images
+                      : "/assets/images/placeholder.png"
+                  }
+                  alt={item.name}
+                  className="max-h-full max-w-full object-contain"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src =
+                      "/assets/images/placeholder.png";
+                  }}
+                />
+              ) : hasImage(item.images) ? (
+                <div className="h-full w-full flex justify-center items-center">
+                  <ImagePreviewHover
+                    images={item.images}
+                    alt={item.name}
+                    className="w-full h-full"
+                  />
+                </div>
+              ) : (
+                <NoImageCard label="אין תמונה למוצר" />
+              )}
             </div>
 
             <div className="w-full text-center pt-4 border-t border-gray-200">
               <div className="relative group/tooltip flex justify-center">
-                <h2 
+                <h2
                   className="text-[1.1rem] text-[#0D305B] mb-2 w-full line-clamp-2"
-                  style={{ 
-                    overflowWrap: 'anywhere',
-                    direction: /[\u0590-\u05FF]/.test(item.name) ? 'rtl' : 'ltr'
+                  style={{
+                    overflowWrap: "anywhere",
+                    direction: /[\u0590-\u05FF]/.test(item.name)
+                      ? "rtl"
+                      : "ltr",
                   }}
                 >
                   {item.name}
                 </h2>
-                 {(item.name.length > 20) && (
-                    <span className="absolute -top-6 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-50">
-                      {item.name}
-                    </span>
-                  )}
+                {item.name.length > 20 && (
+                  <span className="absolute -top-6 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 pointer-events-none z-50 max-w-xs whitespace-normal break-words">
+                    {item.name}
+                  </span>
+                )}
               </div>
 
               {role === "editor" && !isSelectionMode && (
