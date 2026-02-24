@@ -307,6 +307,13 @@ const SingleProd: FC<SingleProdProps> = () => {
   }
 };
 
+const handleDeleteAllImages = async () => {
+  setProductImages([]);
+  setCurrentImageIndex(0);
+
+  setIsReplacingImage(false);
+};
+
   const handleDeleteImage = () => {
   const currentUrl = displayImages[currentImageIndex]; 
   if (!currentUrl) return;
@@ -749,6 +756,7 @@ const SingleProd: FC<SingleProdProps> = () => {
   handleReplaceImage={handleReplaceImage}
   handleAddImages={handleAddImages}
   handleDeleteImage={handleDeleteImage}
+  handleDeleteAllImages={handleDeleteAllImages} 
   isUploading={isUploadingImages}
   title={title}
   isReplacingImage={isReplacingImage}
@@ -919,6 +927,9 @@ ${isEditing ? "cursor-pointer" : "cursor-not-allowed opacity-80"}`}
     </div>
   );
 };
+
+
+
 
 const SingleProdSkeleton: FC = () => {
   return (
