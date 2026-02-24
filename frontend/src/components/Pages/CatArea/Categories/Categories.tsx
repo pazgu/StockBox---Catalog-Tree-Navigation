@@ -335,22 +335,19 @@ export const Categories: FC<CategoriesProps> = () => {
     }
   };
 
- const handleSaveEdit = async (updatedCategory: CategoryEditPayload) => {
-  const original = categories.find(
-    (c) => c._id === updatedCategory._id,
-  );
+  const handleSaveEdit = async (updatedCategory: CategoryEditPayload) => {
+    const original = categories.find((c) => c._id === updatedCategory._id);
 
-  if (!original) return;
+    if (!original) return;
 
-  const noChanges =
-    original.categoryName.trim() ===
-      updatedCategory.categoryName.trim() &&
-    !updatedCategory.imageFile;
+    const noChanges =
+      original.categoryName.trim() === updatedCategory.categoryName.trim() &&
+      !updatedCategory.imageFile;
 
-  if (noChanges) {
-    toast.info("לא בוצעו שינויים");
-    return;
-  }
+    if (noChanges) {
+      toast.info("לא בוצעו שינויים");
+      return;
+    }
 
     try {
       const result = await categoriesService.updateCategory(
@@ -601,142 +598,142 @@ export const Categories: FC<CategoriesProps> = () => {
 
               <main className="grid grid-cols-[repeat(auto-fill,minmax(290px,1fr))] gap-24 my-12">
                 {productItems.map((item) => {
-                return (
-                  <div
-                    key={item.id}
-                    className="flex flex-col items-center p-5 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 border-gray-200 cursor-pointer"
-                    onClick={() => {
-                      setPreviousPath(location.pathname);
-                      navigate(`/products/${item.id}`);
-                    }}
-                  >
-                    <div className="absolute top-2 left-2 px-3 py-1 text-xs font-medium rounded-full">
-                      <div className="flex flex-col items-center text-green-700">
-                        <PackageCheck />
-                        <span>מוצר</span>
-                      </div>
-                    </div>
-
-                    <div className="absolute right-3 top-3">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          debouncedToggleFavorite(
-                            item.id,
-                            item.name,
-                            "product",
-                          );
-                        }}
-                        className="peer h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110 transition-all duration-200"
-                      >
-                        <Heart
-                          size={22}
-                          strokeWidth={2}
-                          className={
-                            item.favorite
-                              ? "fill-red-500 text-red-500"
-                              : "text-gray-700"
-                          }
-                        />
-                      </button>
-                      <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                        {item.favorite ? "הסר ממועדפים" : "הוסף למועדפים"}
-                      </span>
-                    </div>
-
-                    {role === "editor" && (
-                      <>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openMoveForItem(item);
-                          }}
-                          className="absolute bottom-3 right-3 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-blue-500 hover:scale-110"
-                          title="העבר מוצר"
-                        >
-                          <FolderInput size={18} />
-                        </button>
-
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openDuplicateForProduct(item);
-                          }}
-                          className="absolute bottom-3 right-12 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-purple-500 hover:scale-110"
-                          title="שכפל מוצר"
-                        >
-                          <Copy size={18} />
-                        </button>
-
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleMoveProductToRecycleBin(item);
-                          }}
-                          className="absolute bottom-3 left-3 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-orange-500 hover:scale-110"
-                          title="העבר לסל מיחזור"
-                        >
-                          <Trash size={18} />
-                        </button>
-                      </>
-                    )}
-
-                    <div className="h-36 w-full flex justify-center items-center p-5 rounded-none mr-2">
-                      {hasImage(item.images) ? (
-                        <div className="h-full w-full flex justify-center items-center">
-                      <ImagePreviewHover
-                        images={item.images}
-                        alt={item.name}
-                        className="w-full h-full"
-                      />
+                  return (
+                    <div
+                      key={item.id}
+                      className="flex flex-col items-center p-5 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 border-gray-200 cursor-pointer"
+                      onClick={() => {
+                        setPreviousPath(location.pathname);
+                        navigate(`/products/${item.id}`);
+                      }}
+                    >
+                      <div className="absolute top-2 left-2 px-3 py-1 text-xs font-medium rounded-full">
+                        <div className="flex flex-col items-center text-green-700">
+                          <PackageCheck />
+                          <span>מוצר</span>
                         </div>
-                      ) : (
-                        <NoImageCard label="אין תמונה למוצר" />
-                      )}
-                    </div>
+                      </div>
 
-                    <div className="w-full text-center pt-4 border-t border-gray-200">
-                      <div className="relative group/name max-w-xs">
-                        <div
-                          className="relative group/name max-w-xs"
-                          onMouseEnter={(e) => {
-                            const h2 = e.currentTarget.querySelector("h2");
-                            if (h2 && h2.scrollWidth > h2.clientWidth) {
-                              e.currentTarget.setAttribute(
-                                "data-truncated",
-                                "true",
-                              );
+                      <div className="absolute right-3 top-3">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            debouncedToggleFavorite(
+                              item.id,
+                              item.name,
+                              "product",
+                            );
+                          }}
+                          className="peer h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110 transition-all duration-200"
+                        >
+                          <Heart
+                            size={22}
+                            strokeWidth={2}
+                            className={
+                              item.favorite
+                                ? "fill-red-500 text-red-500"
+                                : "text-gray-700"
                             }
-                          }}
-                        >
-                          <h2 className="text-[1.1rem] text-[#0D305B] mb-2" title={item.name}>
-                            {truncateDisplay(item.name)}
-                          </h2>
-                          <span className="absolute top-full mt-1 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/name:[div[data-truncated='true']_&]:opacity-100 transition-all duration-200 pointer-events-none z-50 whitespace-normal break-words max-w-xs">
-                            {item.name}
-                          </span>
-                        </div>
+                          />
+                        </button>
+                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                          {item.favorite ? "הסר ממועדפים" : "הוסף למועדפים"}
+                        </span>
                       </div>
+
                       {role === "editor" && (
-                        <div className="mt-2 flex justify-center">
+                        <>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              setPreviousPath(location.pathname);
-                              navigate(`/permissions/product/${item.id}`);
+                              openMoveForItem(item);
                             }}
-                            className="flex items-center gap-2 text-sm font-medium text-white bg-[#0D305B] px-4 py-2 shadow-md transition-all duration-300 hover:bg-[#16447A] hover:shadow-lg focus:ring-2 focus:ring-[#0D305B]/40 border-none rounded"
+                            className="absolute bottom-3 right-3 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-blue-500 hover:scale-110"
+                            title="העבר מוצר"
                           >
-                            <Lock size={16} className="text-white" />
-                            ניהול הרשאות
+                            <FolderInput size={18} />
                           </button>
-                        </div>
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openDuplicateForProduct(item);
+                            }}
+                            className="absolute bottom-3 right-12 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-purple-500 hover:scale-110"
+                            title="שכפל מוצר"
+                          >
+                            <Copy size={18} />
+                          </button>
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMoveProductToRecycleBin(item);
+                            }}
+                            className="absolute bottom-3 left-3 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-orange-500 hover:scale-110"
+                            title="העבר לסל מיחזור"
+                          >
+                            <Trash size={18} />
+                          </button>
+                        </>
                       )}
+
+                      <div className="h-36 w-full flex justify-center items-center p-5 rounded-none mr-2">
+                        {hasImage(item.images) ? (
+                          <div className="h-full w-full flex justify-center items-center">
+                            <ImagePreviewHover
+                              images={item.images}
+                              alt={item.name}
+                              className="w-full h-full"
+                            />
+                          </div>
+                        ) : (
+                          <NoImageCard label="אין תמונה למוצר" />
+                        )}
+                      </div>
+
+                      <div className="w-full text-center pt-4 border-t border-gray-200">
+                        <div className="relative group/name max-w-xs">
+                          <div
+                            className="relative group/name max-w-xs"
+                            onMouseEnter={(e) => {
+                              const h2 = e.currentTarget.querySelector("h2");
+                              if (h2 && h2.scrollWidth > h2.clientWidth) {
+                                e.currentTarget.setAttribute(
+                                  "data-truncated",
+                                  "true",
+                                );
+                              }
+                            }}
+                          >
+                            <h2 className="text-[1.1rem] text-[#0D305B] mb-2" title={item.name}>
+                              {truncateDisplay(item.name)}
+                            </h2>
+                            <span className="absolute top-full mt-1 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/name:[div[data-truncated='true']_&]:opacity-100 transition-all duration-200 pointer-events-none z-50 whitespace-normal break-words max-w-xs">
+                              {item.name}
+                            </span>
+                          </div>
+                        </div>
+                        {role === "editor" && (
+                          <div className="mt-2 flex justify-center">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPreviousPath(location.pathname);
+                                navigate(`/permissions/product/${item.id}`);
+                              }}
+                              className="flex items-center gap-2 text-sm font-medium text-white bg-[#0D305B] px-4 py-2 shadow-md transition-all duration-300 hover:bg-[#16447A] hover:shadow-lg focus:ring-2 focus:ring-[#0D305B]/40 border-none rounded"
+                            >
+                              <Lock size={16} className="text-white" />
+                              ניהול הרשאות
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
               </main>
             </div>
           )}

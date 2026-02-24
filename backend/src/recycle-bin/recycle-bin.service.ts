@@ -171,6 +171,7 @@ export class RecycleBinService {
       categoryId,
       EntityType.CATEGORY,
     );
+    const trackMovedChildren = strategy !== 'move_up';
 
     const recycleBinEntry = new this.recycleBinModel({
       itemId: new Types.ObjectId(categoryId),
@@ -186,10 +187,9 @@ export class RecycleBinService {
         .permissionsInheritedToChildren,
       descendants,
       storedPermissions: permissions,
-      movedChildren: movedChildren,
-      movedChildrenCount: movedChildren.length,
+      movedChildren: trackMovedChildren ? movedChildren : [],
+      movedChildrenCount: trackMovedChildren ? movedChildren.length : 0,
     });
-
     await recycleBinEntry.save();
 
     if (strategy === 'cascade') {
