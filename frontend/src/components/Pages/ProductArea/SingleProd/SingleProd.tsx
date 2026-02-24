@@ -631,18 +631,19 @@ const handleDeleteAllImages = async () => {
     <div className="pt-16 px-6 pb-10 font-sans-['Noto_Sans_Hebrew'] rtl">
       <Breadcrumbs path={breadcrumbPath} />
       <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-4 text-right">
+        <div className="flex justify-between items-start mb-4 text-right">
           <div className="flex-1">
             {isEditing ? (
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="bg-transparent text-4xl font-bold text-stockblue border-b-2 border-stockblue w-full text-right outline-none"
+                className="bg-transparent text-4xl font-bold text-stockblue w-full text-right outline-none border-none"
+                style={{ boxShadow: "0 2px 0 0 #1e3a5f", lineHeight: "1.4", paddingBottom: "4px" }}
               />
             ) : (
               <h1
-                className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-stockblue to-stockblue break-words"
+                className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-stockblue to-stockblue break-words pb-2 overflow-visible"
                 style={{ overflowWrap: "anywhere" }}
               >
                 {title}
