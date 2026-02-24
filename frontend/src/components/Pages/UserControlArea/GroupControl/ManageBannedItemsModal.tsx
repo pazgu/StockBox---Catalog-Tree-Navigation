@@ -482,7 +482,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
         {currentItems.map((item) => (
           <div
             key={`${item.type}:${item.id}`}
-            className={`group relative rounded overflow-hidden transition-all cursor-pointer ${
+            className={`group relative rounded overflow-visible transition-all cursor-pointer ${
               selectedItems.has(item.id)
                 ? "ring-2 ring-blue-500 shadow-md"
                 : "hover:shadow-md shadow-sm"
@@ -521,11 +521,27 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
                 }}
               />
             </div>
-            <div className="p-1.5 bg-white">
-              <h4 className="font-semibold text-gray-800 text-[10px] line-clamp-2 text-center leading-tight">
+          <div className="p-1.5 bg-white">
+            <div className="relative group/tooltip flex justify-center">
+              <span
+                className="font-semibold text-gray-800 text-[10px] w-full line-clamp-2 text-center leading-tight"
+                style={{
+                  overflowWrap: "anywhere",
+                  wordBreak: "break-word",
+                  direction: /[\u0590-\u05FF]/.test(item.name) ? "rtl" : "ltr",
+                }}
+                title="" 
+              >
                 {item.name}
-              </h4>
+              </span>
+
+              {item.name.length > 20 && (
+                <span className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-50 shadow-md">
+                  {item.name}
+                </span>
+              )}
             </div>
+          </div>
           </div>
         ))}
       </div>
