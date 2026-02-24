@@ -390,7 +390,6 @@ const SingleCat: FC = () => {
 
   const handleMoveSuccess = async () => {
     await loadAllContent();
-    toast.success("הפריט הועבר בהצלחה!");
     setShowMoveModal(false);
     setItemToMove(null);
   };

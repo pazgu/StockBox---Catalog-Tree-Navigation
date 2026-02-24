@@ -360,18 +360,29 @@ const Permissions: React.FC = () => {
             </Label>
             <Switch
               checked={
-                usersWithGroupInfo.length > 0 &&
-                usersWithGroupInfo.every((u) => u.effectiveEnabled) &&
-                groups.every((g) => g.members)
+                groups.length > 0 &&
+                groups.every((g) => g.members) &&
+                users.every((u) =>
+                  u.groupIds.length === 0
+                    ? u.enabled === true
+                    : u.enabled === false
+                )
               }
-              onCheckedChange={(checked) => {
-                setUsers((prev) =>
-                  prev.map((u) => ({ ...u, enabled: checked })),
-                );
-                setGroups((prev) =>
-                  prev.map((g) => ({ ...g, members: checked })),
-                );
-              }}
+             onCheckedChange={(checked) => {
+              setUsers((prev) =>
+                prev.map((u) => ({
+                  ...u,
+                  enabled: u.groupIds.length === 0 ? checked : false,
+                })),
+              );
+
+              setGroups((prev) =>
+                prev.map((g) => ({
+                  ...g,
+                  members: checked,
+                })),
+              );
+            }}
             />
           </div>
           <div className="mb-4">
