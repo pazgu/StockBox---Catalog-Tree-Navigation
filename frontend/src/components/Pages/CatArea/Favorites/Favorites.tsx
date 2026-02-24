@@ -168,7 +168,7 @@ export const Favorites: React.FC = () => {
             הפריטים והקטגוריות המועדפים עליך
           </p>
         </div>
-        <div className="w-full h-40 flex flex-col justify-center items-center my-12 text-slate-500">
+        <div className="w-full flex flex-col justify-center items-center my-12 text-slate-500">
           <Heart size={64} className="mb-4 text-slate-300" />
           <p className="text-lg">אין מועדפים כרגע</p>
         </div>

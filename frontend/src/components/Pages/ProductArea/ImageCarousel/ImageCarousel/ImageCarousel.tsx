@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useCallback, useId, useState } from "react";
 import { Upload, ImageOff } from "lucide-react";
 import { Spinner } from "../../../../../components/ui/spinner";
 
-
 interface ImageCarouselProps {
   productImages: string[];
   currentImageIndex: number;
@@ -44,25 +43,24 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
   const [showClearDialog, setShowClearDialog] = useState(false);
   const [isDeletingAll, setIsDeletingAll] = useState(false);
 
-    const validImages = (productImages || []).filter(
-    (u) => typeof u === "string" && u.trim().length > 0
+  const validImages = (productImages || []).filter(
+    (u) => typeof u === "string" && u.trim().length > 0,
   );
     const imagesExist = validImages.length > 0;
 
-    const hasImages = validImages.length > 0 && !isReplacingImage;
+  const hasImages = validImages.length > 0 && !isReplacingImage;
   const shownIndex = Math.min(
     currentImageIndex,
-    Math.max(0, validImages.length - 1)
+    Math.max(0, validImages.length - 1),
   );
   const shownSrc = hasImages ? validImages[shownIndex] : "";
   const replaceInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-  if (currentImageIndex > validImages.length - 1) {
-    setCurrentImageIndex(Math.max(0, validImages.length - 1));
-  }
-}, [validImages.length, currentImageIndex, setCurrentImageIndex]);
-
+    if (currentImageIndex > validImages.length - 1) {
+      setCurrentImageIndex(Math.max(0, validImages.length - 1));
+    }
+  }, [validImages.length, currentImageIndex, setCurrentImageIndex]);
 
   const onKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -80,7 +78,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
         nextImage();
       }
     },
-    [prevImage, nextImage]
+    [prevImage, nextImage],
   );
 
   useEffect(() => {
@@ -187,26 +185,24 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
       )}
       <div className="relative w-full h-40 flex items-center justify-center">
         {hasImages ? (
-  <img
-    src={shownSrc}
-    alt={title || "תמונה"}
-    className="w-full h-52 object-contain relative z-10 transition-all duration-500 ease-in-out transform drop-shadow-md"
-    draggable={false}
-    onError={(e) => {
-      // if image breaks, hide it and show placeholder instead
-      (e.currentTarget as HTMLImageElement).style.display = "none";
-    }}
-  />
-) : (
-  <div className="w-full h-40 relative z-10 flex flex-col items-center justify-center gap-2 text-slate-500">
-    <div className="h-14 w-14 rounded-2xl bg-white shadow-sm grid place-items-center border border-slate-200">
-      <ImageOff className="h-7 w-7" />
-    </div>
-    <div className="text-sm font-semibold">אין תמונות עדיין</div>
-    <div className="text-xs text-slate-400">PNG · JPG · JPEG</div>
-  </div>
-)}
-
+          <img
+            src={shownSrc}
+            alt={title || "תמונה"}
+            className="w-full h-44 object-contain relative z-10 transition-all duration-500 ease-in-out transform drop-shadow-md"
+            draggable={false}
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).style.display = "none";
+            }}
+          />
+        ) : (
+          <div className="w-full h-40 relative z-10 flex flex-col items-center justify-center gap-2 text-slate-500">
+            <div className="h-14 w-14 rounded-2xl bg-white shadow-sm grid place-items-center border border-slate-200">
+              <ImageOff className="h-7 w-7" />
+            </div>
+            <div className="text-sm font-semibold">אין תמונות עדיין</div>
+            <div className="text-xs text-slate-400">PNG · JPG · JPEG</div>
+          </div>
+        )}
 
         {validImages.length > 1 && (
           <>
@@ -234,96 +230,102 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
       </div>
 
       {hasImages && validImages.length > 1 && (
-  <div className="flex justify-center gap-2 mt-2">
-    {validImages.map((_, index) => (
-      <button
-        type="button"
-        key={index}
-        onClick={() => setCurrentImageIndex(index)}
-        className={`w-2.5 h-2.5 rounded-full cursor-pointer transition-all duration-300 ${
-          index === shownIndex ? "bg-stockblue" : "bg-gray-300"
-        }`}
-        aria-label={`בחר תמונה ${index + 1}`}
-      />
-    ))}
-  </div>
-)}
-
+        <div className="flex justify-center gap-2 mt-10">
+          {validImages.map((_, index) => (
+            <button
+              type="button"
+              key={index}
+              onClick={() => setCurrentImageIndex(index)}
+              className={`w-2.5 h-2.5 rounded-full cursor-pointer transition-all duration-300 ${
+                index === shownIndex ? "bg-stockblue" : "bg-gray-300"
+              }`}
+              aria-label={`בחר תמונה ${index + 1}`}
+            />
+          ))}
+        </div>
+      )}
 
       {isEditing && (
-  <div className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-t from-black/70 via-black/30 to-transparent flex items-end justify-center pb-3 z-20 transition-all duration-300">
-    <div className={`pointer-events-auto flex gap-2 flex-wrap justify-center ${isUploading ? "opacity-60 pointer-events-none" : ""}`}>
-
-      {!hasImages ? (
-        <>
-          <label
-            htmlFor={addId}
-            className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-[#5A7863] bg-white/95 backdrop-blur-sm rounded-lg shadow-md border border-white/30 cursor-pointer hover:shadow-lg hover:bg-white"
+        <div className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-t from-black/70 via-black/30 to-transparent flex items-end justify-center pb-3 z-20 transition-all duration-300">
+          <div
+            className={`pointer-events-auto flex gap-2 flex-wrap justify-center ${isUploading ? "opacity-60 pointer-events-none" : ""}`}
           >
-            <Upload size={14} />
-            העלה תמונה
-          </label>
-          <input
-            type="file"
-            id={addId}
-            accept="image/*"
-            multiple
-            onChange={handleAddImages}
-            className="hidden"
-          />
-        </>
-      ) : (
-        <>
-          <label
-            htmlFor={replaceId}
-             onClick={() => {
-    if (!isUploading) setIsReplacingImage?.(true);
-    setTimeout(() => {
-      const onFocusBack = () => {
-        const noFilePicked = !replaceInputRef.current?.files?.length;
-        if (noFilePicked) setIsReplacingImage?.(false);
-        window.removeEventListener("focus", onFocusBack);
-      };
-      window.addEventListener("focus", onFocusBack);
-    }, 0);
-  }}
-            className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-stockblue bg-white/95 backdrop-blur-sm rounded-lg shadow-md border border-white/30 cursor-pointer hover:shadow-lg hover:bg-white"
-          >
-            <Upload size={14} />
-            החלף
-          </label>
-          <input
-  ref={replaceInputRef}
-  type="file"
-  id={replaceId}
-  accept="image/*"
-  onChange={handleReplaceImage}
-  className="hidden"
-/>
+            {!hasImages ? (
+              <>
+                <label
+                  htmlFor={addId}
+                  className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-[#5A7863] bg-white/95 backdrop-blur-sm rounded-lg shadow-md border border-white/30 cursor-pointer hover:shadow-lg hover:bg-white"
+                >
+                  <Upload size={14} />
+                  העלה תמונה
+                </label>
+                <input
+                  type="file"
+                  id={addId}
+                  accept="image/*"
+                  multiple
+                  onChange={handleAddImages}
+                  className="hidden"
+                />
+              </>
+            ) : (
+              <>
+                <label
+                  htmlFor={replaceId}
+                  onClick={() => {
+                    if (!isUploading) setIsReplacingImage?.(true);
+                    setTimeout(() => {
+                      const onFocusBack = () => {
+                        const noFilePicked =
+                          !replaceInputRef.current?.files?.length;
+                        if (noFilePicked) setIsReplacingImage?.(false);
+                        window.removeEventListener("focus", onFocusBack);
+                      };
+                      window.addEventListener("focus", onFocusBack);
+                    }, 0);
+                  }}
+                  className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-stockblue bg-white/95 backdrop-blur-sm rounded-lg shadow-md border border-white/30 cursor-pointer hover:shadow-lg hover:bg-white"
+                >
+                  <Upload size={14} />
+                  החלף
+                </label>
+                <input
+                  ref={replaceInputRef}
+                  type="file"
+                  id={replaceId}
+                  accept="image/*"
+                  onChange={handleReplaceImage}
+                  className="hidden"
+                />
 
-          <label
-            htmlFor={addId}
-            className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-[#5A7863] bg-white/95 backdrop-blur-sm rounded-lg shadow-md border border-white/30 cursor-pointer hover:shadow-lg hover:bg-white"
-          >
-            <Upload size={14} />
-            הוסף
-          </label>
-          <input
-            type="file"
-            id={addId}
-            accept="image/*"
-            multiple
-            onChange={handleAddImages}
-            className="hidden"
-          />
+                <label
+                  htmlFor={addId}
+                  className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-[#5A7863] bg-white/95 backdrop-blur-sm rounded-lg shadow-md border border-white/30 cursor-pointer hover:shadow-lg hover:bg-white"
+                >
+                  <Upload size={14} />
+                  הוסף
+                </label>
+                <input
+                  type="file"
+                  id={addId}
+                  accept="image/*"
+                  multiple
+                  onChange={handleAddImages}
+                  className="hidden"
+                />
 
-
-        </>
+                <button
+                  type="button"
+                  onClick={handleDeleteImage}
+                  className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-[#A91D3A] backdrop-blur-sm rounded-lg shadow-md border border-[#A91D3A] hover:shadow-lg hover:bg-[#A91D3A]/80"
+                >
+                  מחיקה
+                </button>
+              </>
+            )}
+          </div>
+        </div>
       )}
-    </div>
-  </div>
-)}
-
     </div>
   );
 };

@@ -122,7 +122,7 @@ const Header: React.FC<HeaderProps> = ({
 
             {/* Action Icons */}
             <div
-              className={`flex items-center gap-2 mr-4 ${isMobileMenuOpen ? "hidden" : ""}`}
+              className={`hidden lg:flex  items-center gap-2 mr-4 ${isMobileMenuOpen ? "hidden" : ""}`}
             >
               <button
                 aria-label="Favorites"
@@ -141,11 +141,11 @@ const Header: React.FC<HeaderProps> = ({
               {role === "editor" && (
                 <>
                   <div className="relative group">
-                    <button className="relative p-2 rounded-full text-white transition-all duration-300 hover:scale-110">
+                    <button className="relative p-2 rounded-full text-white transition-all duration-300 hover:scale-110 flex-shrink-0 w-14 h-14">
                       <img
                         src="https://img.icons8.com/?size=100&id=cykh8BZMTKkb&format=png&color=FFFFFF"
                         alt="User Avatar"
-                        className="w-10 h-10 rounded-full hover:bg-white/10 p-1"
+                        className="w-10 h-10 rounded-full hover:bg-white/10 p-1 flex-shrink-0"
                       />
                     </button>
                     <div className="absolute left-1/2 ml-3 -translate-x-1/2 mt-2 w-40 bg-[#beaa88] rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
@@ -188,17 +188,16 @@ const Header: React.FC<HeaderProps> = ({
                   </button>
                 </>
               )}
-
-              <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="lg:hidden p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 active:scale-95 ml-auto"
-              >
-                <Menu
-                  size={24}
-                  className={isMobileMenuOpen ? "opacity-0" : "opacity-100"}
-                />
-              </button>
             </div>
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="lg:hidden p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 active:scale-95 ml-auto"
+            >
+              <Menu
+                size={24}
+                className={isMobileMenuOpen ? "opacity-0" : "opacity-100"}
+              />
+            </button>
           </div>
         </div>
 
