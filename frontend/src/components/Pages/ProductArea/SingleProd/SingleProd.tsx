@@ -638,11 +638,11 @@ const handleDeleteAllImages = async () => {
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="bg-transparent text-4xl font-bold text-stockblue border-b-2 border-stockblue w-full text-right outline-none"
+                className="bg-transparent text-4xl font-bold text-stockblue border-b-2 border-stockblue w-full text-right outline-none pb-2"
               />
             ) : (
               <h1
-                className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-stockblue to-stockblue break-words pb-2"
+                className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-stockblue to-stockblue break-words pb-2 overflow-visible"
                 style={{ overflowWrap: "anywhere" }}
               >
                 {title}
