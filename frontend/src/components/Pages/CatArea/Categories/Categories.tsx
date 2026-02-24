@@ -652,8 +652,8 @@ export const Categories: FC<CategoriesProps> = () => {
                             className="absolute group bottom-3 right-3 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-blue-500 hover:scale-110"
                           >
                             <span className="absolute -bottom-8 -left-1 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                    העברה לקטגוריה אחרת
-                  </span>
+                              העברה לקטגוריה אחרת
+                            </span>
                             <FolderInput size={18} />
                           </button>
 
@@ -676,11 +676,10 @@ export const Categories: FC<CategoriesProps> = () => {
                               handleMoveProductToRecycleBin(item);
                             }}
                             className="absolute group bottom-3 left-3 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-orange-500 hover:scale-110"
-                          
                           >
                             <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                    העברה לסל מיחזור
-                  </span>
+                              העברה לסל מיחזור
+                            </span>
                             <Trash size={18} />
                           </button>
                         </>

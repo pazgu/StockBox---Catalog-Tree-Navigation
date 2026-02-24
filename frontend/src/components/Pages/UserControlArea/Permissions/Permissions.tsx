@@ -45,9 +45,9 @@ const Permissions: React.FC = () => {
   const [isExpandedGroups, setIsExpandedGroups] = useState(false);
   const [users, setUsers] = useState<ViewerUser[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
-  const [existingPermissions, setExistingPermissions] = useState<Permission[]>(
-    [],
-  );
+  const [existingPermissions, setExistingPermissions] = useState<Permission[]>([]);
+  const [initialUsers, setInitialUsers] = useState<ViewerUser[]>([]);
+  const [initialGroups, setInitialGroups] = useState<Group[]>([]);
   const [inheritanceApplied, setInheritanceApplied] = useState(false);
   const [isSyncingChildren, setIsSyncingChildren] = useState(false);
   const { previousPath } = usePath();
@@ -110,6 +110,8 @@ const Permissions: React.FC = () => {
 
         setUsers(mappedUsers);
         setGroups(mappedGroups);
+        setInitialUsers(mappedUsers);
+        setInitialGroups(mappedGroups);
       } catch (err) {
         console.error("Load Error:", err);
         toast.error("שגיאה בטעינת הנתונים");
@@ -204,17 +206,18 @@ const Permissions: React.FC = () => {
   };
 
   const hasLocalChanges = useMemo(() => {
-    const usersToAllow = users.filter((u) => u.enabled).map((u) => u._id);
-    const groupsToAllow = groups.filter((g) => g.members).map((g) => g._id);
-    const finalAllowedIds = [...usersToAllow, ...groupsToAllow];
-    const currentDbIds = existingPermissions.map((p) => p.allowed);
+    const usersChanged = users.some((u) => {
+      const initial = initialUsers.find((i) => i._id === u._id);
+      return initial?.enabled !== u.enabled;
+    });
 
-    const addedOrRemoved =
-      finalAllowedIds.length !== currentDbIds.length ||
-      finalAllowedIds.some((id) => !currentDbIds.includes(id));
+    const groupsChanged = groups.some((g) => {
+      const initial = initialGroups.find((i) => i._id === g._id);
+      return initial?.members !== g.members;
+    });
 
-    return addedOrRemoved;
-  }, [users, groups, existingPermissions]);
+    return usersChanged || groupsChanged;
+  }, [users, groups, initialUsers, initialGroups]);
 
   const savePermissions = async (inheritToChildren: boolean) => {
   if (!hasLocalChanges) {

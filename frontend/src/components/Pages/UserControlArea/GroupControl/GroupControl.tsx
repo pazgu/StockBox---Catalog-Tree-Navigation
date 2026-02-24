@@ -436,16 +436,7 @@ const [bannedItemsByGroup, setBannedItemsByGroup] = useState<Record<string, Bann
               </div>
             </div>
 
-            {/* Buttons */}
             <div className="flex justify-end gap-4 mt-6 pt-6 border-t-2 border-gray-200">
-              <button
-                type="button"
-                onClick={closeAddGroupModal}
-                className="px-6 h-12 rounded-xl border-2 border-gray-300 transition-colors font-bold bg-white text-gray-700 hover:bg-gray-50"
-              >
-                ביטול
-              </button>
-
               <button
                 type="button"
                 onClick={saveNewGroup}
@@ -458,6 +449,14 @@ const [bannedItemsByGroup, setBannedItemsByGroup] = useState<Record<string, Bann
             }`}
               >
                 הוסף קבוצה
+              </button>
+
+              <button
+                type="button"
+                onClick={closeAddGroupModal}
+                className="px-6 h-12 rounded-xl border-2 border-gray-300 transition-colors font-bold bg-white text-gray-700 hover:bg-gray-50"
+              >
+                ביטול
               </button>
             </div>
           </div>
