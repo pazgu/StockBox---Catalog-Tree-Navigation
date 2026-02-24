@@ -631,7 +631,7 @@ const handleDeleteAllImages = async () => {
     <div className="pt-16 px-6 pb-10 font-sans-['Noto_Sans_Hebrew'] rtl">
       <Breadcrumbs path={breadcrumbPath} />
       <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-4 text-right">
+        <div className="flex justify-between items-start mb-4 text-right">
           <div className="flex-1">
             {isEditing ? (
               <input
@@ -642,7 +642,7 @@ const handleDeleteAllImages = async () => {
               />
             ) : (
               <h1
-                className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-stockblue to-stockblue break-words"
+                className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-stockblue to-stockblue break-words pb-2"
                 style={{ overflowWrap: "anywhere" }}
               >
                 {title}
