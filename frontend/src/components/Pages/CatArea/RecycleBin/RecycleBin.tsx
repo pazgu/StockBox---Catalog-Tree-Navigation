@@ -97,9 +97,11 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
       });
 
       await loadRecycleBinItems();
-      toast.success(`<span className="inline-block max-w-full break-words">
-  "${selectedItem.itemName}"
-</span> נמחק לצמיתות`);
+      toast.success(
+        <span className="inline-block max-w-full break-words">
+          "{selectedItem.itemName}" נמחק לצמיתות
+        </span>
+      );
       setShowPermanentDeleteModal(false);
       setSelectedItem(null);
     } catch (error) {
@@ -177,7 +179,6 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
         </p>
       </div>
 
-      {/* Filter Buttons */}
       {hasItems && (
         <div className="flex justify-center gap-3 mb-8 flex-wrap mt-8">
           <button
@@ -247,7 +248,6 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
                         className="w-44 h-44 object-cover rounded-full shadow-md mt-2 grayscale"
                       />
 
-                      {/* Action Buttons */}
                       <div className="absolute inset-0 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity mb-28 mr-24">
                         <div className="relative">
                           <button
@@ -299,7 +299,6 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
             </div>
           )}
 
-          {/* Products Section */}
           {showProducts && productItems.length > 0 && (
             <div className={activeFilter === "products" ? "mt-6" : "mt-16"}>
               {activeFilter === "all" && (
@@ -322,7 +321,6 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
                     </div>
 
                     <div className="absolute right-3 top-3 flex gap-2">
-                      {/* Restore Button */}
                       <div className="relative group">
                         <button
                           onClick={() => handleRestoreClick(item)}
@@ -394,7 +392,6 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
         </>
       )}
 
-      {/* Restore Modal */}
       {showRestoreModal && selectedItem && (
         <div
           className="fixed inset-0 bg-slate-800 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 transition-all duration-300"
@@ -568,7 +565,6 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
         </div>
       )}
 
-      {/* Empty Bin Modal */}
       {showEmptyBinModal && (
         <div
           className="fixed inset-0 bg-slate-800 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 transition-all duration-300"
