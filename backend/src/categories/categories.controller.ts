@@ -96,16 +96,18 @@ export class CategoriesController {
   @UseInterceptors(FileInterceptor('categoryImageFile', categoryUploadsOptions))
   async updateCategory(
     @Param('id') id: string,
-    @Body() updateCategoryDto: UpdateCategoryDto,
+    @Body() updateCategoryDto: UpdateCategoryDto & { categoryImage?: string },
     @UploadedFile() file?: Express.Multer.File,
   ) {
-    return await this.categoriesService.updateCategory(
-      id,
-      updateCategoryDto,
-      file,
-    );
-  }
+    const categoryImage =
+      updateCategoryDto.categoryImage &&
+      typeof updateCategoryDto.categoryImage === 'string'
+        ? JSON.parse(updateCategoryDto.categoryImage)
+        : updateCategoryDto.categoryImage;
 
+    const finalDto = { ...updateCategoryDto, categoryImage };
+    return await this.categoriesService.updateCategory(id, finalDto, file);
+  }
   @Get(':id/has-descendants')
   async hasDescendants(@Param('id') id: string) {
     return this.categoriesService.hasDescendants(id);
