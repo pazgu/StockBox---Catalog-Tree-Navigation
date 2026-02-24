@@ -18,7 +18,7 @@ import Breadcrumbs from "../../../LayoutArea/Breadcrumbs/Breadcrumbs";
 import { ProductsService } from "../../../../services/ProductService";
 import { categoriesService } from "../../../../services/CategoryService";
 import { FilePlus2Icon } from "lucide-react";
-import { CategoryDTO } from "../../../../components/models/category.models";
+import { CategoryDTO, CategoryImageDTO } from "../../../../components/models/category.models";
 import { DisplayItem } from "../../../../components/models/item.models";
 import { ProductDto } from "../../../../components/models/product.models";
 import MoveProductModal from "../../ProductArea/MoveProductModal/MoveProductModal";
@@ -496,7 +496,7 @@ const SingleCat: FC = () => {
       const newItem: DisplayItem = {
         id: newCategory._id,
         name: newCategory.categoryName,
-        images: newCategory.categoryImage,
+        images: newCategory.categoryImage.Image_url,
         type: "category",
         path: [newCategory.categoryPath],
         favorite: false,
@@ -610,7 +610,7 @@ const SingleCat: FC = () => {
         {/* Category Image */}
         {categoryInfo && (
           <img
-            src={categoryInfo.categoryImage || "/assets/images/placeholder.png"}
+            src={categoryInfo.categoryImage.Image_url || "/assets/images/placeholder.png"}
             alt={categoryInfo.categoryName}
             className="w-32 h-32 rounded-full object-cover mt-0 border-0 ring-0 outline-none bg-transparent focus:outline-none focus:ring-0 focus:ring-offset-0"
             onError={(e) => {
@@ -1157,8 +1157,8 @@ const SingleCat: FC = () => {
                 _id: itemToMove.id,
                 categoryName: itemToMove.name,
                 categoryPath: itemToMove.path[0],
-                categoryImage:
-                  itemToMove.images[0] || "/assets/images/placeholder.png",
+                categoryImage: itemToMove.images as CategoryImageDTO,
+                      
               }}
               onClose={() => {
                 setShowMoveModal(false);
@@ -1204,9 +1204,7 @@ const SingleCat: FC = () => {
             _id: itemToEdit.id,
             categoryName: itemToEdit.name,
             categoryPath: itemToEdit.path[0],
-            categoryImage: Array.isArray(itemToEdit.images)
-              ? itemToEdit.images[0]
-              : itemToEdit.images,
+            categoryImage: itemToEdit.images as CategoryImageDTO,
           }}
           onClose={() => {
             setShowEditModal(false);

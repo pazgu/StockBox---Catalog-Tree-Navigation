@@ -17,16 +17,7 @@ const CROP_BOX = 256;
 function getBaseCoverScale(imgW: number, imgH: number, box: number) {
   return Math.max(box / imgW, box / imgH);
 }
-function dataURLtoFile(dataUrl: string, filename: string) {
-  const arr = dataUrl.split(",");
-  const mimeMatch = arr[0].match(/:(.*?);/);
-  const mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
-  const bstr = atob(arr[1]);
-  let n = bstr.length;
-  const u8arr = new Uint8Array(n);
-  while (n--) u8arr[n] = bstr.charCodeAt(n);
-  return new File([u8arr], filename, { type: mime });
-}
+
 
 
 function clampOffsetToCircle(
@@ -78,6 +69,7 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   const [errorMessage, setErrorMessage] = React.useState("");
   const FORBIDDEN_CHARS = /[;|"'*<>]/;
   const [rawImage, setRawImage] = React.useState<HTMLImageElement | null>(null);
+  const [imageFile, setImageFile] = React.useState<File | null>(null);
   const [zoom, setZoom] = React.useState(1);
   const [offset, setOffset] = React.useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = React.useState(false);
@@ -100,72 +92,37 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   if (!isOpen) return null;
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const file = e.target.files?.[0];
+  if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      toast.error("נא לבחור קובץ תמונה");
-      return;
-    }
-    const MAX_MB = 5;
-    if (file.size > MAX_MB * 1024 * 1024) {
-      toast.error(`התמונה גדולה מדי (מעל ${MAX_MB}MB)`);
-      return;
-    }
+  if (!file.type.startsWith("image/")) {
+    toast.error("Please select an image file");
+    return;
+  }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const img = new Image();
-      img.onload = () => {
-        setRawImage(img);
-        setZoom(1);
+  setImageFile(file); // ⭐ Save original file
 
-        const clamped = clampOffsetToCircle(
-          { x: 0, y: 0 },
-          img.naturalWidth,
-          img.naturalHeight,
-          1,
-          CROP_BOX
-        );
-        setOffset(clamped);
-      };
-      img.src = reader.result as string;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      setRawImage(img);
+      setZoom(1);
+
+      const clamped = clampOffsetToCircle(
+        { x: 0, y: 0 },
+        img.naturalWidth,
+        img.naturalHeight,
+        1,
+        CROP_BOX
+      );
+
+      setOffset(clamped);
     };
-    reader.readAsDataURL(file);
+    img.src = reader.result as string;
   };
-
-  const generateCroppedImage = () => {
-    if (!rawImage) return null;
-
-    const OUT = 512;
-    const out = document.createElement("canvas");
-    out.width = OUT;
-    out.height = OUT;
-
-    const ctx = out.getContext("2d");
-    if (!ctx) return null;
-
-    const iw = rawImage.naturalWidth;
-    const ih = rawImage.naturalHeight;
-    const baseScale = getBaseCoverScale(iw, ih, CROP_BOX);
-    const displayScale = baseScale * zoom;
-    const canvasScale = OUT / CROP_BOX;
-
-    ctx.clearRect(0, 0, OUT, OUT);
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, OUT, OUT);
-
-    ctx.save();
-    ctx.scale(canvasScale, canvasScale);
-
-    ctx.translate(CROP_BOX / 2, CROP_BOX / 2);
-    ctx.translate(offset.x, offset.y);
-    ctx.scale(displayScale, displayScale);
-    ctx.drawImage(rawImage, -iw / 2, -ih / 2);
-    ctx.restore();
-
-    return out.toDataURL("image/jpeg", 0.92);
-  };
+  reader.readAsDataURL(file);
+};
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   const value = e.target.value;
@@ -188,8 +145,8 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
 };
 
   const handleSave = async () => {
-  if (!newCatName.trim()) {
-    toast.error("שם קטגוריה חובה");
+    if (!newCatName.trim()) {
+    toast.error("Category name required");
     return;
   }
 
@@ -198,24 +155,22 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     return;
   }
 
-  let file: File | undefined;
 
-  // ✅ Only crop if user actually uploaded an image
-  if (rawImage) {
-    const croppedDataUrl = generateCroppedImage();
-    if (!croppedDataUrl) {
-      toast.error("שגיאה ביצירת התמונה");
-      return;
-    }
-
-    const safeName = newCatName.trim().toLowerCase().replace(/\s+/g, "-");
-    file = dataURLtoFile(croppedDataUrl, `${safeName}.jpg`);
-  }
-
-  try {
+     try {
     setIsSaving(true);
-    await onSave({ name: newCatName.trim(), imageFile: file });
-    handleClose(); // optional: close modal after success
+
+    await onSave({
+      name: newCatName.trim(),
+      imageFile: imageFile || undefined,
+      categoryImage: {
+        Image_url: "", 
+        zoom: zoom,
+        offsetX: offset.x,
+        offsetY: offset.y,
+      },
+    });
+
+    handleClose();
   } catch (error: any) {
     const serverMessage =
       error?.response?.data?.message || error?.response?.data?.error;
@@ -229,7 +184,7 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     console.error("Add category failed:", error);
   } finally {
     setIsSaving(false);
-  }
+  } 
 };
 
   return (

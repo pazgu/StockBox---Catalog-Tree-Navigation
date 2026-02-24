@@ -1,3 +1,4 @@
+import { c } from "framer-motion/dist/types.d-CSbqhfMB";
 import {
   CategoryDTO,
   CreateCategoryDTO,
@@ -53,26 +54,27 @@ class CategoriesService {
   }
 
   async createCategory(category: CreateCategoryDTO): Promise<CategoryDTO> {
-    try {
-      const fd = new FormData();
-      fd.append("categoryName", category.categoryName);
-      fd.append("categoryPath", category.categoryPath);
+    const fd = new FormData();
+    fd.append("categoryName", category.categoryName);
+    fd.append("categoryPath", category.categoryPath);
 
-      if (category.imageFile) {
-        fd.append("categoryImageFile", category.imageFile);
-      }
-
-      const response = await api.post<CategoryDTO>(this.baseUrl, fd, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      return response.data;
-    } catch (error) {
-      console.error("Error creating category:", error);
-      throw error;
+    if (category.imageFile) {
+      fd.append("categoryImageFile", category.imageFile);
     }
+    fd.append("categoryImage[zoom]", String(category.categoryImage?.zoom ?? 1));
+    fd.append(
+      "categoryImage[offsetX]",
+      String(category.categoryImage?.offsetX ?? 0),
+    );
+    fd.append(
+      "categoryImage[offsetY]",
+      String(category.categoryImage?.offsetY ?? 0),
+    );
+
+    const response = await api.post<CategoryDTO>(this.baseUrl, fd, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data;
   }
 
   async getCategoryByPath(path: string): Promise<CategoryDTO> {
@@ -83,7 +85,7 @@ class CategoriesService {
       }
 
       const response = await api.get<CategoryDTO>(
-        `${this.baseUrl}/by-path/${cleanPath}`
+        `${this.baseUrl}/by-path/${cleanPath}`,
       );
       return response.data;
     } catch (error) {
@@ -92,38 +94,28 @@ class CategoriesService {
     }
   }
 
-
   async updateCategory(
     id: string,
     category: UpdateCategoryDTO & { imageFile?: File },
   ): Promise<CategoryDTO> {
-    try {
-      const fd = new FormData();
+    const fd = new FormData();
 
-      if (category.categoryName)
-        fd.append("categoryName", category.categoryName);
-      if (category.categoryPath)
-        fd.append("categoryPath", category.categoryPath);
+    if (category.categoryName) fd.append("categoryName", category.categoryName);
+    if (category.categoryPath) fd.append("categoryPath", category.categoryPath);
 
-      if (category.imageFile) {
-        fd.append("categoryImageFile", category.imageFile);
-      }
-
-      const response = await api.patch<CategoryDTO>(
-        `${this.baseUrl}/${id}`,
-        fd,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        },
-      );
-
-      return response.data;
-    } catch (error) {
-      console.error("Error updating category:", error);
-      throw error;
+    if (category.imageFile) {
+      fd.append("categoryImageFile", category.imageFile);
     }
+
+    if (category.categoryImage) {
+      fd.append("categoryImage", JSON.stringify(category.categoryImage));
+    }
+
+    const response = await api.patch<CategoryDTO>(`${this.baseUrl}/${id}`, fd, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    return response.data;
   }
 
   async moveCategory(
@@ -151,12 +143,11 @@ class CategoriesService {
   }
 
   async hasDescendants(id: string): Promise<boolean> {
-  const res = await api.get<{ hasDescendants: boolean }>(
-    `${this.baseUrl}/${id}/has-descendants`,
-  );
-  return res.data.hasDescendants;
-}
-
+    const res = await api.get<{ hasDescendants: boolean }>(
+      `${this.baseUrl}/${id}/has-descendants`,
+    );
+    return res.data.hasDescendants;
+  }
 }
 
 export const categoriesService = new CategoriesService();

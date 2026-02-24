@@ -260,7 +260,7 @@ export const Favorites: React.FC = () => {
                 </div>
                 <Link to={`${cat.categoryPath}`}>
                   <img
-                    src={cat.categoryImage}
+                    src={cat.categoryImage.Image_url}
                     alt={cat.categoryName}
                     className="w-[100px] h-[100px] object-contain mx-auto mb-3"
                   />

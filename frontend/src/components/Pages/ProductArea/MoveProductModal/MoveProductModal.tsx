@@ -199,7 +199,7 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
           <div className="flex items-center gap-2 flex-1">
             {cat.categoryImage && (
               <img
-                src={cat.categoryImage}
+                src={cat.categoryImage.Image_url}
                 alt={cat.categoryName}
                 className="w-8 h-8 rounded-full object-cover"
               />

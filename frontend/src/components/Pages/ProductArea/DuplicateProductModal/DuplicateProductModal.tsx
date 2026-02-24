@@ -4,13 +4,9 @@ import { categoriesService } from "../../../../services/CategoryService";
 import { ProductsService } from "../../../../services/ProductService";
 import { Copy, ChevronLeft } from "lucide-react";
 import { PathDisplay } from "../../SharedComponents/PathDisplay/PathDisplay";
+import { Category } from "../../CatArea/Categories/Categories";
 
-interface Category {
-  _id: string;
-  categoryName: string;
-  categoryPath: string;
-  categoryImage: string;
-}
+
 
 interface DuplicateProductModalProps {
   isOpen: boolean;
@@ -185,7 +181,7 @@ const DuplicateProductModal: React.FC<DuplicateProductModalProps> = ({
           <div className="flex items-center gap-2 flex-1 text-right">
             {cat.categoryImage && (
               <img
-                src={cat.categoryImage}
+                src={cat.categoryImage.Image_url}
                 alt={cat.categoryName}
                 className="w-7 h-7 rounded object-cover"
               />
