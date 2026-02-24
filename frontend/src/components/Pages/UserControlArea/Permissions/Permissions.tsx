@@ -284,7 +284,6 @@ const Permissions: React.FC = () => {
   const handleSave = async () => {
   if (!cleanId) return;
 
-  /* === חסימה אם אין שינוי === */
   if (!hasLocalChanges) {
     toast.info("לא בוצעו שינויים");
     return;
