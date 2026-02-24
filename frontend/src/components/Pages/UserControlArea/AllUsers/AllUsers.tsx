@@ -798,7 +798,7 @@ const handleCancelEdit = () => {
                 onClick={handleSaveEdit}
                 disabled={!!isUnchanged}
               >
-                שמור שינויים
+                שמירת שינויים
               </button>
             );
           })()}
