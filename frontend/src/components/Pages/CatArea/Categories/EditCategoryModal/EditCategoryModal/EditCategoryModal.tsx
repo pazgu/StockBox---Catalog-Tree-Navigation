@@ -8,6 +8,7 @@ import {
 } from "../../cropMath/cropMath";
 import useBlockBrowserZoom from "../../useBlockBrowserZoom";
 import { Spinner } from "../../../../../ui/spinner";
+import { isLength } from "validator";
 
 
 type Props = {
@@ -183,10 +184,19 @@ const EditCategoryModal: React.FC<Props> = ({
      toast.error("שם קטגוריה חובה");
     return;
   }
+  
+  if (!isLength(trimmed, { max: 30 })) {
+    toast.error("שם קטגוריה לא יכול להיות ארוך מ-30 תווים");
+    return;}
 
   if (!hasChanges) {
   toast.info("לא בוצעו שינויים");
   return;
+  }
+
+  if (!isLength(trimmed, { max: 30 })) {
+    toast.error("שם קטגוריה לא יכול להיות ארוך מ-30 תווים");
+    return;
   }
 
   let finalImageFile = imageFile;

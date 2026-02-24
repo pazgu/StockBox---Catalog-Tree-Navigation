@@ -97,9 +97,11 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
       });
 
       await loadRecycleBinItems();
-      toast.success(`<span className="inline-block max-w-full break-words">
-  "${selectedItem.itemName}"
-</span> נמחק לצמיתות`);
+      toast.success(
+        <span className="inline-block max-w-full break-words">
+          "{selectedItem.itemName}" נמחק לצמיתות
+        </span>
+      );
       setShowPermanentDeleteModal(false);
       setSelectedItem(null);
     } catch (error) {

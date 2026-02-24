@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import useBlockBrowserZoom from "../../Categories/useBlockBrowserZoom";
 import { Spinner } from "../../../../ui/spinner";
 import { Asterisk } from "lucide-react";
+import { isLength } from "validator";
 
 
 type Props = {
@@ -216,6 +217,11 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
 
   if (FORBIDDEN_CHARS.test(productName)) {
     toast.error('שם מוצר מכיל תווים אסורים ; | " \' * < >');
+    return;
+  }
+
+  if (!isLength(productName.trim(), { max: 30 })) {
+    toast.error("שם מוצר לא יכול להיות ארוך מ-30 תווים");
     return;
   }
 

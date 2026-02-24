@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { FC, useState, useEffect, use, useMemo } from "react";
+import React, { FC, useState, useEffect } from "react";
 import {
   Pen,
   Trash,
@@ -29,6 +29,7 @@ import { usePath } from "../../../../context/PathContext";
 import ImagePreviewHover from "../../ProductArea/ImageCarousel/ImageCarousel/ImagePreviewHover";
 import { recycleBinService } from "../../../../services/RecycleBinService";
 import { useDebouncedFavorite } from "../../../../hooks/useDebouncedFavorite";
+import { truncateDisplay } from "../../../../lib/utils";
 
 interface CategoriesProps {}
 
@@ -576,9 +577,9 @@ export const Categories: FC<CategoriesProps> = () => {
                             : "ltr",
                         }}
                       >
-                        {item.name}
+                        {truncateDisplay(item.name)}
                       </span>
-                      {item.name.length > 20 && (
+                      {item.name.length > 18 && (
                         <span className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-50 shadow-md">
                           {item.name}
                         </span>
@@ -709,8 +710,8 @@ export const Categories: FC<CategoriesProps> = () => {
                             }
                           }}
                         >
-                          <h2 className="text-[1.1rem] text-[#0D305B] mb-2 truncate">
-                            {item.name}
+                          <h2 className="text-[1.1rem] text-[#0D305B] mb-2" title={item.name}>
+                            {truncateDisplay(item.name)}
                           </h2>
                           <span className="absolute top-full mt-1 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/name:[div[data-truncated='true']_&]:opacity-100 transition-all duration-200 pointer-events-none z-50 whitespace-normal break-words max-w-xs">
                             {item.name}

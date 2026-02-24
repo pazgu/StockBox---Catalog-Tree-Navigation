@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import useBlockBrowserZoom from "../../useBlockBrowserZoom";
 import { AddCategoryResult } from "../../../../../models/category.models";
 import { Spinner } from "../../../../../ui/spinner";
-
+import { isLength } from "validator";
 
 type Props = {
   isOpen: boolean;
@@ -198,9 +198,13 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     return;
   }
 
+  if (!isLength(newCatName.trim(), { max: 30 })) {
+    toast.error("שם קטגוריה לא יכול להיות ארוך מ-30 תווים");
+    return;
+  }
+
   let file: File | undefined;
 
-  // ✅ Only crop if user actually uploaded an image
   if (rawImage) {
     const croppedDataUrl = generateCroppedImage();
     if (!croppedDataUrl) {
