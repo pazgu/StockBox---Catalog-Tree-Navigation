@@ -638,7 +638,8 @@ const handleDeleteAllImages = async () => {
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="bg-transparent text-4xl font-bold text-stockblue border-b-2 border-stockblue w-full text-right outline-none pb-2"
+                className="bg-transparent text-4xl font-bold text-stockblue w-full text-right outline-none border-none"
+                style={{ boxShadow: "0 2px 0 0 #1e3a5f", lineHeight: "1.4", paddingBottom: "4px" }}
               />
             ) : (
               <h1
