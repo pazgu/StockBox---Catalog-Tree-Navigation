@@ -53,7 +53,6 @@ const SmartDeleteModal: React.FC<SmartDeleteModalProps> = ({
   return (
     <div
       className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-      onClick={onClose}
     >
       <div
         className="bg-white rounded-2xl w-full max-w-4xl shadow-xl transform transition-all max-h-[90vh] flex flex-col"

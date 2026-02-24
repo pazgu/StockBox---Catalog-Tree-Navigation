@@ -36,6 +36,7 @@ import { User } from "@/components/models/user.models";
 import { Skeleton } from "../../../ui/skeleton";
 import { usePath } from "../../../../context/PathContext";
 import { useDebouncedFavoriteSingle } from "../../../../hooks/useDebouncedFavoriteSingle";
+import { isLength } from "validator";
 
 interface SingleProdProps {}
 
@@ -431,6 +432,11 @@ const handleDeleteAllImages = async () => {
 
     if (hasEmptyFields) {
       toast.error("לא ניתן לשמור שדות ריקים");
+      return;
+    }
+
+    if(!isLength(title.trim(), { max: 30 })) {
+      toast.error("שם מוצר לא יכול להיות ארוך מ-30 תווים");
       return;
     }
 

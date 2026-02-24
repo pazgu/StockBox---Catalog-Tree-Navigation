@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { FC, useState, useEffect, use, useMemo } from "react";
+import React, { FC, useState, useEffect } from "react";
 import {
   Pen,
   Trash,
@@ -29,6 +29,7 @@ import { usePath } from "../../../../context/PathContext";
 import ImagePreviewHover from "../../ProductArea/ImageCarousel/ImageCarousel/ImagePreviewHover";
 import { recycleBinService } from "../../../../services/RecycleBinService";
 import { useDebouncedFavorite } from "../../../../hooks/useDebouncedFavorite";
+import { truncateDisplay } from "../../../../lib/utils";
 
 interface CategoriesProps {}
 
@@ -573,9 +574,9 @@ export const Categories: FC<CategoriesProps> = () => {
                             : "ltr",
                         }}
                       >
-                        {item.name}
+                        {truncateDisplay(item.name)}
                       </span>
-                      {item.name.length > 20 && (
+                      {item.name.length > 18 && (
                         <span className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-50 shadow-md">
                           {item.name}
                         </span>
@@ -692,47 +693,47 @@ export const Categories: FC<CategoriesProps> = () => {
                         )}
                       </div>
 
-                      <div className="w-full text-center pt-4 border-t border-gray-200">
-                        <div className="relative group/name max-w-xs">
-                          <div
-                            className="relative group/name max-w-xs"
-                            onMouseEnter={(e) => {
-                              const h2 = e.currentTarget.querySelector("h2");
-                              if (h2 && h2.scrollWidth > h2.clientWidth) {
-                                e.currentTarget.setAttribute(
-                                  "data-truncated",
-                                  "true",
-                                );
-                              }
-                            }}
-                          >
-                            <h2 className="text-[1.1rem] text-[#0D305B] mb-2 truncate">
-                              {item.name}
-                            </h2>
-                            <span className="absolute top-full mt-1 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/name:[div[data-truncated='true']_&]:opacity-100 transition-all duration-200 pointer-events-none z-50 whitespace-normal break-words max-w-xs">
-                              {item.name}
-                            </span>
-                          </div>
+                    <div className="w-full text-center pt-4 border-t border-gray-200">
+                      <div className="relative group/name max-w-xs">
+                        <div
+                          className="relative group/name max-w-xs"
+                          onMouseEnter={(e) => {
+                            const h2 = e.currentTarget.querySelector("h2");
+                            if (h2 && h2.scrollWidth > h2.clientWidth) {
+                              e.currentTarget.setAttribute(
+                                "data-truncated",
+                                "true",
+                              );
+                            }
+                          }}
+                        >
+                          <h2 className="text-[1.1rem] text-[#0D305B] mb-2" title={item.name}>
+                            {truncateDisplay(item.name)}
+                          </h2>
+                          <span className="absolute top-full mt-1 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/name:[div[data-truncated='true']_&]:opacity-100 transition-all duration-200 pointer-events-none z-50 whitespace-normal break-words max-w-xs">
+                            {item.name}
+                          </span>
                         </div>
-                        {role === "editor" && (
-                          <div className="mt-2 flex justify-center">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setPreviousPath(location.pathname);
-                                navigate(`/permissions/product/${item.id}`);
-                              }}
-                              className="flex items-center gap-2 text-sm font-medium text-white bg-[#0D305B] px-4 py-2 shadow-md transition-all duration-300 hover:bg-[#16447A] hover:shadow-lg focus:ring-2 focus:ring-[#0D305B]/40 border-none rounded"
-                            >
-                              <Lock size={16} className="text-white" />
-                              ניהול הרשאות
-                            </button>
-                          </div>
-                        )}
                       </div>
+                      {role === "editor" && (
+                        <div className="mt-2 flex justify-center">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPreviousPath(location.pathname);
+                              navigate(`/permissions/product/${item.id}`);
+                            }}
+                            className="flex items-center gap-2 text-sm font-medium text-white bg-[#0D305B] px-4 py-2 shadow-md transition-all duration-300 hover:bg-[#16447A] hover:shadow-lg focus:ring-2 focus:ring-[#0D305B]/40 border-none rounded"
+                          >
+                            <Lock size={16} className="text-white" />
+                            ניהול הרשאות
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  );
-                })}
+                  </div>
+                );
+              })}
               </main>
             </div>
           )}
