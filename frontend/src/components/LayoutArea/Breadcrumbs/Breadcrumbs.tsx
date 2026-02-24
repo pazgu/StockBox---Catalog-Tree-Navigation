@@ -97,7 +97,7 @@ const Breadcrumbs: FC<BreadcrumbsProps> = ({ path }) => {
           const isLast = index === pathSegments.length - 1;
           const finalDisplayName =
             segmentMap[lower] || decoded.replace(/-/g, " ");
-          const showTooltip = finalDisplayName.length > 14;
+          const showTooltip = finalDisplayName.length >= 18;
 
           return (
             <span
