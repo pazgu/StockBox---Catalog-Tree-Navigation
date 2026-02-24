@@ -680,23 +680,27 @@ export const Categories: FC<CategoriesProps> = () => {
                     </div>
 
                     <div className="w-full text-center pt-4 border-t border-gray-200">
-                      <div className="relative group/tooltip flex justify-center">
-                        <h2 
-                          className="text-[1.1rem] text-[#0D305B] mb-2 w-full line-clamp-2"
-                          style={{ 
-                            overflowWrap: 'anywhere',
-                            direction: /[\u0590-\u05FF]/.test(item.name) ? 'rtl' : 'ltr'
+                      <div className="relative group/name max-w-xs">
+                        <div
+                          className="relative group/name max-w-xs"
+                          onMouseEnter={(e) => {
+                            const h2 = e.currentTarget.querySelector("h2");
+                            if (h2 && h2.scrollWidth > h2.clientWidth) {
+                              e.currentTarget.setAttribute(
+                                "data-truncated",
+                                "true",
+                              );
+                            }
                           }}
                         >
-                          {item.name}
-                        </h2>
-                        {(item.name.length > 20) && (
-                          <span className="absolute -top-6 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-50">
+                          <h2 className="text-[1.1rem] text-[#0D305B] mb-2 truncate">
+                            {item.name}
+                          </h2>
+                          <span className="absolute top-full mt-1 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/name:[div[data-truncated='true']_&]:opacity-100 transition-all duration-200 pointer-events-none z-50 whitespace-normal break-words max-w-xs">
                             {item.name}
                           </span>
-                        )}
+                        </div>
                       </div>
-
                       {role === "editor" && (
                         <div className="mt-2 flex justify-center">
                           <button
