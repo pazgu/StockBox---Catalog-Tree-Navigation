@@ -55,6 +55,7 @@ const AllUsers: FC<AllUsersProps> = () => {
   const [searchParams] = useSearchParams();
   const [showEditModal, setShowEditModal] = useState(false);
   const [userToEdit, setUserToEdit] = useState<User | null>(null);
+  const [originalUser, setOriginalUser] = useState<User | null>(null);
   const [blockUserIndex, setBlockUserIndex] = useState<number | null>(null);
   const [approveUserIndex, setApproveUserIndex] = useState<number | null>(null);
   const [editErrors, setEditErrors] = useState<
@@ -197,6 +198,7 @@ const AllUsers: FC<AllUsersProps> = () => {
 
   const handleEditClick = (user: User) => {
     setUserToEdit(user);
+    setOriginalUser(user);
     setShowEditModal(true);
   };
 
@@ -288,11 +290,12 @@ const AllUsers: FC<AllUsersProps> = () => {
     }
   };
 
-  const handleCancelEdit = () => {
-    setShowEditModal(false);
-    setUserToEdit(null);
-    setEditErrors({});
-  };
+const handleCancelEdit = () => {
+  setShowEditModal(false);
+  setUserToEdit(null);
+  setOriginalUser(null);
+  setEditErrors({});
+};
 
   return (
     <div className=" font-sans text-[#0D305B] rtl bg-[#fffaf1]">
@@ -775,13 +778,30 @@ const AllUsers: FC<AllUsersProps> = () => {
               </div>
 
               {/* Action buttons */}
-              <div className="flex justify-end gap-4 mt-8 pt-6 border-t-2 border-gray-200">
-                <button
-                  className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#0D305B] to-[#15457a] text-white hover:from-[#15457a] hover:to-[#1e5a9e] transition-colors font-bold shadow-lg hover:shadow-xl"
-                  onClick={handleSaveEdit}
-                >
-                  שמור שינויים
-                </button>
+        <div className="flex justify-end gap-4 mt-8 pt-6 border-t-2 border-gray-200">
+          {(() => {
+            const isUnchanged =
+              originalUser &&
+              userToEdit.firstName === originalUser.firstName &&
+              userToEdit.lastName === originalUser.lastName &&
+              userToEdit.userName === originalUser.userName &&
+              userToEdit.email === originalUser.email &&
+              userToEdit.role === originalUser.role;
+
+            return (
+              <button
+                className={`px-8 py-3 rounded-xl bg-gradient-to-r from-[#0D305B] to-[#15457a] text-white font-bold shadow-lg transition-all ${
+                  isUnchanged
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:from-[#15457a] hover:to-[#1e5a9e] hover:shadow-xl"
+                }`}
+                onClick={handleSaveEdit}
+                disabled={!!isUnchanged}
+              >
+                שמירת שינויים
+              </button>
+            );
+          })()}
 
                 <button
                   className="px-6 py-3 rounded-xl border-2 border-gray-300 hover:bg-gray-50 transition-colors font-bold text-gray-700"

@@ -335,7 +335,23 @@ export const Categories: FC<CategoriesProps> = () => {
     }
   };
 
-  const handleSaveEdit = async (updatedCategory: CategoryEditPayload) => {
+ const handleSaveEdit = async (updatedCategory: CategoryEditPayload) => {
+  const original = categories.find(
+    (c) => c._id === updatedCategory._id,
+  );
+
+  if (!original) return;
+
+  const noChanges =
+    original.categoryName.trim() ===
+      updatedCategory.categoryName.trim() &&
+    !updatedCategory.imageFile;
+
+  if (noChanges) {
+    toast.info("לא בוצעו שינויים");
+    return;
+  }
+
     try {
       const result = await categoriesService.updateCategory(
         updatedCategory._id,
