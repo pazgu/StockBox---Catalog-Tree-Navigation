@@ -1,6 +1,27 @@
-import { IsOptional, IsString, ValidateNested } from 'class-validator';
+import {
+  IsNumber,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
-import { ImageDto } from 'src/common/dtos/Image.dto'; // ← הנתיב שלך
+
+class CategoryImageDto {
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  zoom?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  offsetX?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  offsetY?: number;
+}
 
 export class CreateCategoryDto {
   @IsString()
@@ -11,6 +32,6 @@ export class CreateCategoryDto {
 
   @IsOptional()
   @ValidateNested()
-  @Type(() => ImageDto)
-  categoryImage?: ImageDto;
+  @Type(() => CategoryImageDto)
+  categoryImage?: CategoryImageDto;
 }
