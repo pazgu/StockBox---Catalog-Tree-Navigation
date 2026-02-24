@@ -87,6 +87,23 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
 
   const { setPreviousPath, previousPath } = usePath();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [cardWidth, setCardWidth] = useState<number>(0);
+
+  // Measure the scroll container's visible width so level-0 cards fill it exactly.
+  // We observe the scroll container (fixed viewport), NOT the tree wrapper (expands with content),
+  // so the measurement never grows once a child is expanded.
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        // subtract p-4 (16px) padding on each side
+        setCardWidth(entry.contentRect.width - 32);
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
   const keyOf = (type: "product" | "category", id: string | number) =>
     `${type}:${String(id)}`;
 
@@ -514,6 +531,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
       </div>
     );
   };
+
   const renderTreeView = () => {
     const currentTree = filteredTree;
     if (currentTree.length === 0) {
@@ -527,7 +545,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
       );
     }
     return (
-      <div className="space-y-0.5">
+      <div className="min-w-max">
         <div className="space-y-1 p-4">
           {currentTree.map((node) => (
             <TreeNode
@@ -540,6 +558,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
               onToggleExpand={handleToggleExpand}
               expandedNodes={expandedNodes}
               isCategory={node.type === "category"}
+              cardWidth={cardWidth}
             />
           ))}
         </div>
@@ -797,9 +816,12 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
               <p>טוען נתונים...</p>
             </div>
           ) : (
+            // ✅ FIX: overflow-x-auto enables horizontal scrollbar when content overflows.
+            // The inner tree wrapper uses min-w-max to push past the container width
+            // so the browser actually detects the overflow and shows the scrollbar.
             <div
               ref={scrollContainerRef}
-              className="flex-1 overflow-y-auto min-h-0 pr-1"
+              className="flex-1 overflow-y-auto overflow-x-auto min-h-0"
             >
               {viewMode === "tree" ? renderTreeView() : renderGridView()}
             </div>

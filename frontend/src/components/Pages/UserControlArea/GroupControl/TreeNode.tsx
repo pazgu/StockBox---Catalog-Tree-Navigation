@@ -39,6 +39,7 @@ interface TreeNodeProps {
   isCategory?: boolean;
   parentHovered?: boolean;
   parentBulkSelected?: boolean;
+  cardWidth?: number;
 }
 
 const TreeNode: React.FC<TreeNodeProps> = ({
@@ -52,6 +53,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
   isCategory = true,
   parentHovered = false,
   parentBulkSelected = false,
+  cardWidth = 0,
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -98,7 +100,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
   };
 
   return (
-    <div className="select-none relative">
+    <div className="select-none relative min-w-max">
       {level > 0 && (
         <div
           className="absolute border-r-2 border-gray-200/60"
@@ -112,12 +114,18 @@ const TreeNode: React.FC<TreeNodeProps> = ({
       )}
 
       <div
-        className={`flex items-center gap-3 py-2 px-3 my-1 rounded-2xl border transition-all duration-300 group relative
+        className={`flex items-center gap-3 py-2 px-3 my-1 rounded-2xl border transition-all duration-300 group relative flex-shrink-0
           ${styles.container}
           ${isSelected || isSelectedWithChildren ? `ring-2 ring-blue-500 shadow-md z-10` : "shadow-sm"}
           ${shouldHighlightFromParent ? "!bg-blue-50/60 !border-blue-200" : ""}
         `}
-        style={{ marginRight: `${level * 32}px` }}
+        style={{
+          marginRight: `${level * 32}px`,
+          // All cards share the same fixed width (measured from the container at level 0).
+          // Children are pushed right via marginRight, which causes the parent to overflow
+          // and the horizontal scrollbar to appear naturally.
+          width: cardWidth > 0 ? `${cardWidth}px` : "100%",
+        }}
       >
         {level > 0 && (
           <div
@@ -146,7 +154,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
           )}
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 flex-shrink-0">
           <div className="relative group/btn">
             <button
               onClick={(e) => {
@@ -202,9 +210,14 @@ const TreeNode: React.FC<TreeNodeProps> = ({
           />
         </div>
 
-        <div className="flex-1 min-w-0 flex items-center justify-between">
-          <div className="flex flex-col">
-            <span className={`text-sm font-bold truncate ${styles.text}`}>
+        {/* ✅ FIX: min-w-0 allows flex child to shrink, enabling truncation.
+            The name span has max-w-xs + truncate to cap and clip long names. */}
+        <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+          <div className="flex flex-col min-w-0">
+            <span
+              className={`text-sm font-bold truncate max-w-xs ${styles.text}`}
+              title={node.name}
+            >
               {node.name}
             </span>
             <span className="text-[10px] text-gray-400 flex items-center gap-1 font-medium">
@@ -216,7 +229,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               {node.type === "product" ? "מוצר" : "קטגוריה"}
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <div
               className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black shadow-sm ${styles.badge}`}
             >
@@ -248,6 +261,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               isCategory={true}
               parentHovered={shouldHighlightFromParent}
               parentBulkSelected={parentBulkSelected || isSelectedWithChildren}
+              cardWidth={cardWidth}
             />
           ))}
           {node.products?.map((product: TreeItem) => (
@@ -263,6 +277,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               isCategory={false}
               parentHovered={shouldHighlightFromParent}
               parentBulkSelected={parentBulkSelected || isSelectedWithChildren}
+              cardWidth={cardWidth}
             />
           ))}
         </div>
