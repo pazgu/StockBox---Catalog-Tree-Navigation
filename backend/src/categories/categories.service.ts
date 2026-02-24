@@ -45,24 +45,27 @@ export class CategoriesService {
     createCategoryDto: CreateCategoryDto,
     file?: Express.Multer.File,
   ) {
+    let finalCategoryImage;
     if (file?.buffer) {
       const uploaded = await uploadBufferToCloudinary(
         file.buffer,
         'stockbox/categories',
       );
-      createCategoryDto.categoryImage = {
+      const categoryImage = {
         Image_url: uploaded.secure_url,
-        zoom: 1,
-        offsetX: 0,
-        offsetY: 0,
+        zoom: createCategoryDto.categoryImage?.zoom || 1,
+        offsetX: createCategoryDto.categoryImage?.offsetX || 0,
+        offsetY: createCategoryDto.categoryImage?.offsetY || 0,
       };
+      finalCategoryImage = categoryImage;
     } else {
-      createCategoryDto.categoryImage = {
+      const categoryImage = {
         Image_url: process.env.DEFAULT_CATEGORY_IMAGE_URL || '',
-        zoom: 1,
-        offsetX: 0,
-        offsetY: 0,
+        zoom: createCategoryDto.categoryImage?.zoom || 1,
+        offsetX: createCategoryDto.categoryImage?.offsetX || 0,
+        offsetY: createCategoryDto.categoryImage?.offsetY || 0,
       };
+      finalCategoryImage = categoryImage;
     }
 
     const nameKey = normalizeName(createCategoryDto.categoryName);
@@ -80,8 +83,13 @@ export class CategoriesService {
       }
       throw err;
     }
+    const finalCategoryDto = {
+      categoryName: createCategoryDto.categoryName,
+      categoryPath: createCategoryDto.categoryPath,
+      categoryImage: finalCategoryImage,
+    };
     const newCategory = new this.categoryModel({
-      ...createCategoryDto,
+      ...finalCategoryDto,
       nameKey,
     });
 
@@ -299,9 +307,19 @@ export class CategoriesService {
       );
       updateCategoryDto.categoryImage = {
         Image_url: uploaded.secure_url,
-        zoom: 1,
-        offsetX: 0,
-        offsetY: 0,
+        zoom: updateCategoryDto.categoryImage?.zoom || 1,
+        offsetX: updateCategoryDto.categoryImage?.offsetX || 0,
+        offsetY: updateCategoryDto.categoryImage?.offsetY || 0,
+      };
+    } else {
+      updateCategoryDto.categoryImage = {
+        Image_url:
+          updateCategoryDto.categoryImage?.Image_url ||
+          category.categoryImage?.Image_url ||
+          '',
+        zoom: updateCategoryDto.categoryImage?.zoom || 1,
+        offsetX: updateCategoryDto.categoryImage?.offsetX || 0,
+        offsetY: updateCategoryDto.categoryImage?.offsetY || 0,
       };
     }
 
