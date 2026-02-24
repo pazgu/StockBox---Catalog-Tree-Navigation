@@ -1,14 +1,7 @@
 import React, { FC, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import {
-  Trash2,
-  RotateCcw,
-  PackageX,
-  FolderX,
-  AlertTriangle,
-  Loader2,
-} from "lucide-react";
+import { Trash2, RotateCcw, PackageX, AlertTriangle } from "lucide-react";
 import { useUser } from "../../../../context/UserContext";
 import { recycleBinService } from "../../../../services/RecycleBinService";
 import { RecycleBinItemDTO } from "../../../models/recycleBin.models";
@@ -25,8 +18,6 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const { role } = useUser();
-  const navigate = useNavigate();
-
   const [showRestoreModal, setShowRestoreModal] = useState(false);
   const [showPermanentDeleteModal, setShowPermanentDeleteModal] =
     useState(false);
@@ -257,16 +248,15 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
                       />
 
                       {/* Action Buttons */}
-                      <div className="absolute inset-0 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="absolute inset-0 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity mb-28 mr-24">
                         <div className="relative">
                           <button
                             onClick={() => handleRestoreClick(item)}
-                            className="peer h-12 w-12 rounded-full bg-green-600 hover:bg-green-700 text-white flex items-center justify-center shadow-lg transition-all"
-                            title="שחזור"
+                            className="peer h-10 w-10 rounded-full bg-green-600 hover:bg-green-700 text-white flex items-center justify-center shadow-lg transition-all mb-10"
                           >
                             <RotateCcw size={20} />
                           </button>
-                          <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap">
+                          <span className="absolute -top-7 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap">
                             שחזור קטגוריה
                           </span>
                         </div>
@@ -274,12 +264,11 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
                         <div className="relative">
                           <button
                             onClick={() => handlePermanentDeleteClick(item)}
-                            className="peer h-12 w-12 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center shadow-lg transition-all"
-                            title="מחיקה לצמיתות"
+                            className="peer h-10 w-10 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center shadow-lg transition-all mt-2"
                           >
                             <Trash2 size={20} />
                           </button>
-                          <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap">
+                          <span className="absolute -top-7 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap">
                             מחיקה לצמיתות
                           </span>
                         </div>
@@ -333,21 +322,44 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
                     </div>
 
                     <div className="absolute right-3 top-3 flex gap-2">
-                      <button
-                        onClick={() => handleRestoreClick(item)}
-                        className="h-9 w-9 rounded-full bg-green-600 hover:bg-green-700 text-white flex items-center justify-center hover:scale-110 transition-all duration-200"
-                        title="שחזור מוצר"
-                      >
-                        <RotateCcw size={18} />
-                      </button>
+                      {/* Restore Button */}
+                      <div className="relative group">
+                        <button
+                          onClick={() => handleRestoreClick(item)}
+                          className="h-8 w-8 rounded-full bg-green-600 hover:bg-green-700 text-white flex items-center justify-center hover:scale-110 transition-all duration-200"
+                        >
+                          <RotateCcw size={18} />
+                        </button>
 
-                      <button
-                        onClick={() => handlePermanentDeleteClick(item)}
-                        className="h-9 w-9 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center hover:scale-110 transition-all duration-200"
-                        title="מחיקה לצמיתות"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                        <span
+                          className="absolute -bottom-9 left-1 -translate-x-1/2
+      bg-gray-800 text-white text-xs px-2 py-1 rounded
+      opacity-0 group-hover:opacity-100
+      transition-all duration-200 whitespace-nowrap
+      pointer-events-none shadow-lg z-50"
+                        >
+                          שחזור מוצר
+                        </span>
+                      </div>
+
+                      <div className="relative group">
+                        <button
+                          onClick={() => handlePermanentDeleteClick(item)}
+                          className="h-8 w-8 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center hover:scale-110 transition-all duration-200"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+
+                        <span
+                          className="absolute -bottom-9 left-1/2 -translate-x-1/2
+      bg-gray-800 text-white text-xs px-2 py-1 rounded
+      opacity-0 group-hover:opacity-100
+      transition-all duration-200 whitespace-nowrap
+      pointer-events-none shadow-lg z-50"
+                        >
+                          מחיקה לצמיתות
+                        </span>
+                      </div>
                     </div>
 
                     <div className="h-36 w-full flex justify-center items-center p-5 rounded-none mr-2 grayscale pointer-events-none">
