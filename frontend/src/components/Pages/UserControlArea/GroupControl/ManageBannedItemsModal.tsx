@@ -89,15 +89,11 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [cardWidth, setCardWidth] = useState<number>(0);
 
-  // Measure the scroll container's visible width so level-0 cards fill it exactly.
-  // We observe the scroll container (fixed viewport), NOT the tree wrapper (expands with content),
-  // so the measurement never grows once a child is expanded.
   useEffect(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        // subtract p-4 (16px) padding on each side
         setCardWidth(entry.contentRect.width - 32);
       }
     });
