@@ -121,9 +121,6 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         `}
         style={{
           marginRight: `${level * 32}px`,
-          // All cards share the same fixed width (measured from the container at level 0).
-          // Children are pushed right via marginRight, which causes the parent to overflow
-          // and the horizontal scrollbar to appear naturally.
           width: cardWidth > 0 ? `${cardWidth}px` : "100%",
         }}
       >
@@ -209,9 +206,6 @@ const TreeNode: React.FC<TreeNodeProps> = ({
             }
           />
         </div>
-
-        {/* ✅ FIX: min-w-0 allows flex child to shrink, enabling truncation.
-            The name span has max-w-xs + truncate to cap and clip long names. */}
         <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
           <div className="flex flex-col min-w-0">
             <span
