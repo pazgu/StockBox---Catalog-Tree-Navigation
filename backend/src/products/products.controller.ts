@@ -39,6 +39,7 @@ import { ParseObjectIdPipe } from 'src/pipes/parse-object-id.pipe';
 import { UpdateProductDto } from './dtos/UpdateProduct.dto';
 import { AuthGuard as ProductAuthGuard } from '@nestjs/passport';
 import { PermissionGuard as ProductPermissionGuard } from 'src/gaurds/permission.guard';
+import { ProductImage } from 'src/schemas/Products.schema';
 
 @ProductController('products')
 export class ProductsController {
@@ -112,7 +113,7 @@ export class ProductsController {
     @UploadedFiles() files: Express.Multer.File[],
     @ProductBody() body: any,
   ) {
-    const existingImages: string[] = body.existingProductImages
+    const existingImages: ProductImage[] = body.existingProductImages
       ? JSON.parse(body.existingProductImages)
       : [];
 

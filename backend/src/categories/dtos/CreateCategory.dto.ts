@@ -1,4 +1,6 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
+import { ImageDto } from 'src/common/dtos/Image.dto'; // ← הנתיב שלך
 
 export class CreateCategoryDto {
   @IsString()
@@ -8,6 +10,7 @@ export class CreateCategoryDto {
   categoryPath: string;
 
   @IsOptional()
-  @IsString()
-  categoryImage: string;
+  @ValidateNested()
+  @Type(() => ImageDto)
+  categoryImage?: ImageDto;
 }

@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
-import { IsArray, IsOptional, IsString } from 'class-validator';
-import { Transform } from 'class-transformer';
+// src/products/dtos/UpdateProduct.dto.ts
+import { IsArray, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import { ImageDto } from 'src/common/dtos/Image.dto';
 
 export class UpdateProductDto {
   @IsOptional()
@@ -34,7 +36,9 @@ export class UpdateProductDto {
   }>;
 
   @IsOptional()
-  productImages?: string[];
+  @ValidateNested({ each: true })
+  @Type(() => ImageDto)
+  productImages?: ImageDto[];
 
   @IsOptional()
   @Transform(({ value }) => {
@@ -50,10 +54,7 @@ export class UpdateProductDto {
     folders: Array<{
       _id?: string;
       folderName: string;
-      files: Array<{
-        _id?: string;
-        link: string;
-      }>;
+      files: Array<{ _id?: string; link: string }>;
     }>;
   }>;
 }

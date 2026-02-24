@@ -50,18 +50,19 @@ export class CategoriesService {
         file.buffer,
         'stockbox/categories',
       );
-      createCategoryDto.categoryImage = uploaded.secure_url;
+      createCategoryDto.categoryImage = {
+        Image_url: uploaded.secure_url,
+        zoom: 1,
+        offsetX: 0,
+        offsetY: 0,
+      };
     } else {
-      createCategoryDto.categoryImage =
-        process.env.DEFAULT_CATEGORY_IMAGE_URL || '';
-    }
-
-    if (file?.buffer) {
-      const uploaded = await uploadBufferToCloudinary(
-        file.buffer,
-        'stockbox/categories',
-      );
-      createCategoryDto.categoryImage = uploaded.secure_url;
+      createCategoryDto.categoryImage = {
+        Image_url: process.env.DEFAULT_CATEGORY_IMAGE_URL || '',
+        zoom: 1,
+        offsetX: 0,
+        offsetY: 0,
+      };
     }
 
     const nameKey = normalizeName(createCategoryDto.categoryName);
@@ -296,7 +297,12 @@ export class CategoriesService {
         file.buffer,
         'stockbox/categories',
       );
-      updateCategoryDto.categoryImage = uploaded.secure_url;
+      updateCategoryDto.categoryImage = {
+        Image_url: uploaded.secure_url,
+        zoom: 1,
+        offsetX: 0,
+        offsetY: 0,
+      };
     }
 
     let updatedCategory;

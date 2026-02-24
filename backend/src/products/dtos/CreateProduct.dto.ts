@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
-import { IsString, IsOptional } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { IsString, IsOptional, ValidateNested } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import { ImageDto } from 'src/common/dtos/Image.dto';
 
 export class CreateProductDto {
   @IsString()
@@ -31,6 +32,8 @@ export class CreateProductDto {
   }>;
 
   @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => ImageDto)
   @Transform(({ value }) => {
     if (!value) return [];
     try {
@@ -39,5 +42,5 @@ export class CreateProductDto {
       return value;
     }
   })
-  productImages?: string[];
+  productImages?: ImageDto[];
 }

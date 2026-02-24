@@ -3,13 +3,29 @@ import { CustomField } from './CustomFields.schema';
 import { UploadGroup } from './UploadGroup.schema';
 import { HydratedDocument } from 'mongoose';
 
+@Schema({ _id: false })
+export class ProductImage {
+  @Prop({ required: true })
+  Image_url: string;
+
+  @Prop({ default: 1 })
+  zoom: number;
+
+  @Prop({ default: 0 })
+  offsetX: number;
+
+  @Prop({ default: 0 })
+  offsetY: number;
+}
+const ProductImageSchema = SchemaFactory.createForClass(ProductImage);
+
 @Schema({ timestamps: true })
 export class Product {
   @Prop({ required: true, unique: true })
   productName: string;
 
-  @Prop({ type: [String], default: [] })
-  productImages: string[];
+  @Prop({ type: [ProductImageSchema], default: [] })
+  productImages: ProductImage[];
 
   @Prop({ required: false })
   productDescription: string;

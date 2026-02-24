@@ -1,4 +1,6 @@
-import { IsString, IsOptional } from 'class-validator';
+import { IsOptional, IsString, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
+import { ImageDto } from 'src/common/dtos/Image.dto';
 
 export class UpdateCategoryDto {
   @IsOptional()
@@ -10,6 +12,7 @@ export class UpdateCategoryDto {
   categoryPath?: string;
 
   @IsOptional()
-  @IsString()
-  categoryImage?: string;
+  @ValidateNested()
+  @Type(() => ImageDto)
+  categoryImage?: ImageDto;
 }
