@@ -217,8 +217,13 @@ const Permissions: React.FC = () => {
   }, [users, groups, existingPermissions]);
 
   const savePermissions = async (inheritToChildren: boolean) => {
-    setIsSaving(true);
-    try {
+  if (!hasLocalChanges) {
+    toast.info("לא בוצעו שינויים");
+    return;
+  }
+
+  setIsSaving(true);
+  try {
       if (!cleanId) return;
 
       const usersToAllow = users.filter((u) => u.enabled).map((u) => u._id);
@@ -277,27 +282,32 @@ const Permissions: React.FC = () => {
     }
   };
   const handleSave = async () => {
-    if (!cleanId) return;
+  if (!cleanId) return;
 
-    const usersToAllow = users.filter((u) => u.enabled).map((u) => u._id);
-    const groupsToAllow = groups.filter((g) => g.members).map((g) => g._id);
-    const finalAllowedIds = [...usersToAllow, ...groupsToAllow];
+  if (!hasLocalChanges) {
+    toast.info("לא בוצעו שינויים");
+    return;
+  }
 
-    const currentDbIds = existingPermissions.map((p) => p.allowed);
-    const toCreate = finalAllowedIds.filter((id) => !currentDbIds.includes(id));
-    const toDelete = existingPermissions.filter(
-      (p) => !finalAllowedIds.includes(p.allowed),
-    );
+  const usersToAllow = users.filter((u) => u.enabled).map((u) => u._id);
+  const groupsToAllow = groups.filter((g) => g.members).map((g) => g._id);
+  const finalAllowedIds = [...usersToAllow, ...groupsToAllow];
 
-    if (toCreate.length === 0 && toDelete.length > 0) {
-      setIsSaving(true);
-      await savePermissions(false);
-      setIsSaving(false);
-      return;
-    }
+  const currentDbIds = existingPermissions.map((p) => p.allowed);
+  const toCreate = finalAllowedIds.filter((id) => !currentDbIds.includes(id));
+  const toDelete = existingPermissions.filter(
+    (p) => !finalAllowedIds.includes(p.allowed),
+  );
 
-    setShowInheritanceModal(true);
-  };
+  if (toCreate.length === 0 && toDelete.length > 0) {
+    setIsSaving(true);
+    await savePermissions(false);
+    setIsSaving(false);
+    return;
+  }
+
+  setShowInheritanceModal(true);
+};
 
   const showManualInheritButton =
     entityData?.permissionsInheritedToChildren === false &&
