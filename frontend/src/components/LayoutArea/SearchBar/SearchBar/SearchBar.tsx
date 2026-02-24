@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { searchService } from "../../../../services/search.service";
 import type { SearchResult } from "../../../../types/types";
 import { useUser } from "../../../../context/UserContext";
+import { PathDisplay } from "../../../../components/Pages/SharedComponents/PathDisplay/PathDisplay";
 
 export interface SearchHeaderProps {
   placeholder?: string;
@@ -197,7 +198,6 @@ const SearchBar: React.FC<SearchHeaderProps> = ({
         </button>
       </div>
 
-      {/* Results Dropdown */}
       {showResults && (
         <div
           ref={dropdownRef}
@@ -229,7 +229,7 @@ const SearchBar: React.FC<SearchHeaderProps> = ({
                       <div className="text-sm text-gray-500 flex items-center gap-2 min-w-0">
                         <span className="truncate">
                           {item.type === "product" ? "מוצר" : "קטגוריה"} •{" "}
-                          {item.paths?.[0] ?? ""}
+                          <PathDisplay path={item.paths?.[0] ?? ""} />
                         </span>
 
                         {isEditor && item.paths && item.paths.length > 1 && (

@@ -274,27 +274,34 @@ const SingleProd: FC<SingleProdProps> = () => {
             "products/images",
           );
 
-          setProductImages((prev) =>
-            prev.map((img) => (img === currentUrl ? result.url : img)),
-          );
-        } catch (err) {
-          console.error("Image replacement failed", err);
-          toast.error("החלפת תמונה נכשלה");
-        } finally {
-          setIsUploadingImages(false);
-          setIsReplacingImage(false);
-          e.target.value = "";
-        }
-      };
-    } catch (err) {
-      console.error("Image replacement failed", err);
-      toast.error("החלפת תמונה נכשלה");
-    } finally {
-      setIsUploadingImages(false);
-      setIsReplacingImage(false);
-      e.target.value = "";
-    }
-  };
+    setProductImages((prev) =>
+      prev.map((img) => (img === currentUrl ? result.url : img))
+    );
+  } catch (err) {
+    console.error("Image replacement failed", err);
+    toast.error("החלפת תמונה נכשלה");
+  } finally {
+    setIsUploadingImages(false);
+    setIsReplacingImage(false);
+    e.target.value = "";
+  }
+};
+  } catch (err) {
+    console.error("Image replacement failed", err);
+    toast.error("החלפת תמונה נכשלה");
+  } finally {
+    setIsUploadingImages(false);
+    setIsReplacingImage(false);
+    e.target.value = "";
+  }
+};
+
+const handleDeleteAllImages = async () => {
+  setProductImages([]);
+  setCurrentImageIndex(0);
+
+  setIsReplacingImage(false);
+};
 
   const handleDeleteImage = () => {
     const currentUrl = displayImages[currentImageIndex];
@@ -721,31 +728,32 @@ const SingleProd: FC<SingleProdProps> = () => {
                       </div>
                     </div>
                   )}
-                  <ImageCarousel
-                    productImages={displayImages}
-                    currentImageIndex={currentImageIndex}
-                    setCurrentImageIndex={setCurrentImageIndex}
-                    prevImage={() => {
-                      if (displayImages.length === 0) return;
-                      setCurrentImageIndex((prev) =>
-                        prev === 0 ? displayImages.length - 1 : prev - 1,
-                      );
-                    }}
-                    nextImage={() => {
-                      if (displayImages.length === 0) return;
-                      setCurrentImageIndex((prev) =>
-                        prev === displayImages.length - 1 ? 0 : prev + 1,
-                      );
-                    }}
-                    isEditing={isEditing}
-                    handleReplaceImage={handleReplaceImage}
-                    handleAddImages={handleAddImages}
-                    handleDeleteImage={handleDeleteImage}
-                    isUploading={isUploadingImages}
-                    title={title}
-                    isReplacingImage={isReplacingImage}
-                    setIsReplacingImage={setIsReplacingImage}
-                  />
+                 <ImageCarousel
+  productImages={displayImages}
+  currentImageIndex={currentImageIndex}
+  setCurrentImageIndex={setCurrentImageIndex}
+  prevImage={() => {
+    if (displayImages.length === 0) return;
+    setCurrentImageIndex((prev) =>
+      prev === 0 ? displayImages.length - 1 : prev - 1
+    );
+  }}
+  nextImage={() => {
+    if (displayImages.length === 0) return;
+    setCurrentImageIndex((prev) =>
+      prev === displayImages.length - 1 ? 0 : prev + 1
+    );
+  }}
+  isEditing={isEditing}
+  handleReplaceImage={handleReplaceImage}
+  handleAddImages={handleAddImages}
+  handleDeleteImage={handleDeleteImage}
+  handleDeleteAllImages={handleDeleteAllImages} 
+  isUploading={isUploadingImages}
+  title={title}
+  isReplacingImage={isReplacingImage}
+  setIsReplacingImage={setIsReplacingImage}
+/>
                 </div>
               ) : (
                 <div className="relative mb-4">
@@ -917,6 +925,9 @@ ${isEditing ? "cursor-pointer" : "cursor-not-allowed opacity-80"}`}
     </div>
   );
 };
+
+
+
 
 const SingleProdSkeleton: FC = () => {
   return (
