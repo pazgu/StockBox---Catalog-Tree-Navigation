@@ -267,9 +267,6 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   return (
     <div
       className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-      onClick={() => {
-        if (!isSaving) onClose();
-      }}
     >
       <div
         className="bg-gradient-to-br from-white via-[#fffdf8] to-[#fff9ed] rounded-2xl w-full max-w-3xl max-h-[90vh] shadow-2xl border border-gray-100 text-right overflow-hidden"

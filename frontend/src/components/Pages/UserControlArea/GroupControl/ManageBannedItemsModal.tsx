@@ -87,6 +87,19 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
 
   const { setPreviousPath, previousPath } = usePath();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [cardWidth, setCardWidth] = useState<number>(0);
+
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setCardWidth(entry.contentRect.width - 32);
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
   const keyOf = (type: "product" | "category", id: string | number) =>
     `${type}:${String(id)}`;
 
@@ -530,6 +543,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
       </div>
     );
   };
+
   const renderTreeView = () => {
     const currentTree = filteredTree;
     if (currentTree.length === 0) {
@@ -543,7 +557,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
       );
     }
     return (
-      <div className="space-y-0.5">
+      <div className="min-w-max">
         <div className="space-y-1 p-4">
           {currentTree.map((node) => (
             <TreeNode
@@ -556,6 +570,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
               onToggleExpand={handleToggleExpand}
               expandedNodes={expandedNodes}
               isCategory={node.type === "category"}
+              cardWidth={cardWidth}
             />
           ))}
         </div>
@@ -566,16 +581,11 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
   return (
     <div
       className="fixed inset-0  bg-slate-900/90 backdrop-blur-sm flex items-center justify-center z-50 p-2 overflow-y-auto"
-      onClick={() => {
-        if (showInheritanceModal) return;
-        onClose();
-      }}
     >
       <div
         className="bg-white rounded-xl w-full max-w-5xl shadow-2xl text-right flex flex-col my-auto h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="bg-slate-700 text-white p-3 flex justify-between items-center rounded-t-xl flex-shrink-0">
           <div>
             <h3 className="text-lg font-bold flex items-center gap-2 mb-1">
@@ -616,7 +626,6 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
             </button>
           </div>
         </div>
-        {/* Tabs */}
         {viewMode === "grid" && (
           <>
             <div className="flex border-b border-gray-200 flex-shrink-0">
@@ -662,7 +671,6 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
         )}
 
         <div className="p-3 flex-1 flex flex-col overflow-hidden min-h-0">
-          {/* Search and View Mode Toggle */}
           <div className="flex gap-2 mb-3">
             <div className="relative flex-1">
               <Search className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3" />
@@ -679,9 +687,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
                 autoFocus
               />
             </div>
-            {/* View Mode Toggle */}
           </div>
-          {/* Filters */}
           <div className="flex gap-3 mb-2 flex-wrap flex-shrink-0">
             {viewMode === "grid" && (
               <>
@@ -744,7 +750,6 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
             )}
           </div>
 
-          {/* Selection Controls */}
           {(activeTab === "banned"
             ? filteredBannedItems.length
             : availableItems.length) > 0 && (
@@ -787,14 +792,12 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
                   )}
                   {viewMode === "tree" && (
                     <div className="flex items-center gap-2">
-                      {/* Unblock Button (Green) */}
                       <div className="flex items-center justify-center py-1 px-3 bg-green-500 hover:bg-green-600 rounded-md transition-colors">
                         <button onClick={() => handleBulkAction("banned")}>
                           <LockOpen className="w-3.5 h-3.5 text-white" />
                         </button>
                       </div>
 
-                      {/* Block Button (Red) */}
                       <div className="flex items-center justify-center py-1 px-3 bg-red-500 hover:bg-red-600 rounded-md transition-colors">
                         <button onClick={() => handleBulkAction("available")}>
                           <Lock className="w-3.5 h-3.5 text-white" />
@@ -815,7 +818,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
           ) : (
             <div
               ref={scrollContainerRef}
-              className="flex-1 overflow-y-auto min-h-0 pr-1"
+              className="flex-1 overflow-y-auto overflow-x-auto min-h-0"
             >
               {viewMode === "tree" ? renderTreeView() : renderGridView()}
             </div>
