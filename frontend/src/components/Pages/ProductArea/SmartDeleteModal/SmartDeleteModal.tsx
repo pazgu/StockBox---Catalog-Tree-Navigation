@@ -227,7 +227,7 @@ const SmartDeleteModal: React.FC<SmartDeleteModalProps> = ({
                                 : "text-slate-800"
                             }`}
                           >
-                             מחק מיקומים נבחרים ({selectedPaths.length})
+                             מחיקת מיקומים נבחרים ({selectedPaths.length})
 
                           </div>
                           <p
@@ -290,7 +290,7 @@ const SmartDeleteModal: React.FC<SmartDeleteModalProps> = ({
                                 : "text-slate-800"
                             }`}
                           >
-                              העבר מוצר לסל מחזור
+                              העברת מוצר לסל מחזור
 
                           </div>
                           <p
