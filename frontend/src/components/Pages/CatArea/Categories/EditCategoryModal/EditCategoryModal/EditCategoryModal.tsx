@@ -8,6 +8,7 @@ import {
 } from "../../cropMath/cropMath";
 import useBlockBrowserZoom from "../../useBlockBrowserZoom";
 import { Spinner } from "../../../../../ui/spinner";
+import { isLength } from "validator";
 
 
 type Props = {
@@ -42,9 +43,6 @@ const EditCategoryModal: React.FC<Props> = ({
 
   const [imageFile, setImageFile] = React.useState<File | undefined>(undefined); 
   const [isSaving, setIsSaving] = React.useState(false);
-
-
-
   const [isEditCropperOpen, setIsEditCropperOpen] = React.useState(false);
   const [editRawImage, setEditRawImage] =
     React.useState<HTMLImageElement | null>(null);
@@ -52,6 +50,11 @@ const EditCategoryModal: React.FC<Props> = ({
   const [editOffset, setEditOffset] = React.useState({ x: 0, y: 0 });
   const [isEditPanning, setIsEditPanning] = React.useState(false);
   const [editStartPan, setEditStartPan] = React.useState({ x: 0, y: 0 });
+
+  const hasChanges =
+  name.trim() !== category.categoryName.trim() ||
+  imageFile !== undefined ||
+  isEditCropperOpen;
 
   const editCropRef = React.useRef<HTMLDivElement>(null!);
   useBlockBrowserZoom(editCropRef);
@@ -181,6 +184,20 @@ const EditCategoryModal: React.FC<Props> = ({
      toast.error("שם קטגוריה חובה");
     return;
   }
+  
+  if (!isLength(trimmed, { max: 30 })) {
+    toast.error("שם קטגוריה לא יכול להיות ארוך מ-30 תווים");
+    return;}
+
+  if (!hasChanges) {
+  toast.info("לא בוצעו שינויים");
+  return;
+  }
+
+  if (!isLength(trimmed, { max: 30 })) {
+    toast.error("שם קטגוריה לא יכול להיות ארוך מ-30 תווים");
+    return;
+  }
 
   let finalImageFile = imageFile;
 
@@ -215,9 +232,6 @@ const EditCategoryModal: React.FC<Props> = ({
  return (
   <div
     className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-    onClick={() => {
-      if (!isSaving) onClose();
-    }}
   >
     <div
   className="bg-gradient-to-br from-white via-[#fffdf8] to-[#fff9ed] rounded-2xl w-full max-w-3xl max-h-[90vh] shadow-2xl border border-gray-100 text-right overflow-hidden"
@@ -454,10 +468,10 @@ const EditCategoryModal: React.FC<Props> = ({
       <div className="flex justify-end gap-4 mt-8 pt-6 border-t-2 border-gray-200">
       <button
         onClick={handleSave}
-        disabled={isSaving}
+        disabled={isSaving || !hasChanges}
         className={`px-8 py-3 rounded-xl text-white transition-colors font-bold shadow-lg
           ${
-            isSaving
+            isSaving || !hasChanges
               ? "bg-slate-400 cursor-not-allowed"
               : "bg-[#0D305B] hover:bg-[#15457a] hover:to-[#1e5a9e] hover:shadow-xl"
           }`}

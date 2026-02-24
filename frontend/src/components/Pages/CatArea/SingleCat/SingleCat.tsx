@@ -36,6 +36,7 @@ import MoveMultipleItemsModal from "./MoveMultipleItemsModal/MoveMultipleItemsMo
 import { usePath } from "../../../../context/PathContext";
 import ImagePreviewHover from "../../ProductArea/ImageCarousel/ImageCarousel/ImagePreviewHover";
 import { useDebouncedFavorite } from "../../../../hooks/useDebouncedFavorite";
+import {truncateDisplay} from "../../../../lib/utils";
 
 const hasImage = (images: any): boolean => {
   if (!images) return false;
@@ -870,9 +871,9 @@ const SingleCat: FC = () => {
                       : "ltr",
                   }}
                 >
-                  {item.name}
+                  {truncateDisplay(item.name)}
                 </h2>
-                {item.name.length > 20 && (
+                {item.name.length > 18 && (
                   <span className="absolute -top-6 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-50">
                     {item.name}
                   </span>
