@@ -3,7 +3,6 @@ import {
   Heart,
   PencilLine,
   MailQuestionIcon,
-  Check,
   Upload,
   X,
   File,
@@ -83,7 +82,6 @@ const SingleProd: FC<SingleProdProps> = () => {
   const bulletsIconUrl = bulletIcon;
   const [isSaving, setIsSaving] = useState(false);
   const addImagesInputRef = React.useRef<HTMLInputElement>(null);
-  const favoriteTimerRef = useRef<NodeJS.Timeout | null>(null);
   const navigate = useNavigate();
   const [isUploadingImages, setIsUploadingImages] = useState(false);
   const { productId } = useParams<{ productId: string }>();
@@ -219,20 +217,6 @@ const SingleProd: FC<SingleProdProps> = () => {
     toast.success("העריכה בוטלה בהצלחה");
   };
 
-  const nextImage = () => {
-    if (productImages.length === 0) return;
-    setCurrentImageIndex((prev) =>
-      prev === productImages.length - 1 ? 0 : prev + 1,
-    );
-  };
-
-  const prevImage = () => {
-    if (productImages.length === 0) return;
-    setCurrentImageIndex((prev) =>
-      prev === 0 ? productImages.length - 1 : prev - 1,
-    );
-  };
-
   const handleAddImages = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -248,10 +232,10 @@ const SingleProd: FC<SingleProdProps> = () => {
       const urls = results.map((r) => r.url);
 
       setProductImages((prev) => {
-  const cleanedPrev = normalizeImages(prev);
-  if (cleanedPrev.length === 0) return urls;
-  return [...cleanedPrev, ...urls];
-});
+        const cleanedPrev = normalizeImages(prev);
+        if (cleanedPrev.length === 0) return urls;
+        return [...cleanedPrev, ...urls];
+      });
     } catch (err) {
       console.error("Image upload failed", err);
       toast.error("העלאת תמונות נכשלה");
@@ -262,28 +246,33 @@ const SingleProd: FC<SingleProdProps> = () => {
   };
 
   const handleReplaceImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const files = e.target.files;
-  if (!files || files.length === 0) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-  setIsUploadingImages(true);
+    setIsUploadingImages(true);
 
-  try {
-    const result = await CloudinaryService.uploadFile(files[0], "products/images");
+    try {
+      const result = await CloudinaryService.uploadFile(
+        files[0],
+        "products/images",
+      );
 
-    const handleReplaceImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const files = e.target.files;
-  if (!files || files.length === 0) return;
+      const handleReplaceImage = async (
+        e: React.ChangeEvent<HTMLInputElement>,
+      ) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
 
-  const currentUrl = displayImages[currentImageIndex]; 
-  if (!currentUrl) return;
+        const currentUrl = displayImages[currentImageIndex];
+        if (!currentUrl) return;
 
-  setIsUploadingImages(true);
+        setIsUploadingImages(true);
 
-  try {
-    const result = await CloudinaryService.uploadFile(
-      files[0],
-      "products/images"
-    );
+        try {
+          const result = await CloudinaryService.uploadFile(
+            files[0],
+            "products/images",
+          );
 
     setProductImages((prev) =>
       prev.map((img) => (img === currentUrl ? result.url : img))
@@ -307,18 +296,25 @@ const SingleProd: FC<SingleProdProps> = () => {
   }
 };
 
-  const handleDeleteImage = () => {
-  const currentUrl = displayImages[currentImageIndex]; 
-  if (!currentUrl) return;
+const handleDeleteAllImages = async () => {
+  setProductImages([]);
+  setCurrentImageIndex(0);
 
-  setProductImages((prev) => prev.filter((img) => img !== currentUrl));
-
-  setCurrentImageIndex((prevIndex) => {
-    const newLen = displayImages.length - 1;
-    if (newLen <= 0) return 0;
-    return prevIndex >= newLen ? newLen - 1 : prevIndex;
-  });
+  setIsReplacingImage(false);
 };
+
+  const handleDeleteImage = () => {
+    const currentUrl = displayImages[currentImageIndex];
+    if (!currentUrl) return;
+
+    setProductImages((prev) => prev.filter((img) => img !== currentUrl));
+
+    setCurrentImageIndex((prevIndex) => {
+      const newLen = displayImages.length - 1;
+      if (newLen <= 0) return 0;
+      return prevIndex >= newLen ? newLen - 1 : prevIndex;
+    });
+  };
   const handleAccordionContentChange = (uiId: string, newContent: string) => {
     setAccordionData((prevData) =>
       prevData.map((item) =>
@@ -466,16 +462,15 @@ const SingleProd: FC<SingleProdProps> = () => {
         ]
       : [];
 
-      const normalizedProductImages = normalizeImages(productImages);
+    const normalizedProductImages = normalizeImages(productImages);
 
     const payload = {
-  productName: title,
-  productDescription: description,
-  productImages: normalizedProductImages,
-  customFields,
-  uploadFolders,
-};
-    // Check if anything changed
+      productName: title,
+      productDescription: description,
+      productImages: normalizedProductImages,
+      customFields,
+      uploadFolders,
+    };
     const hasChanges =
       title !== originalProduct?.productName ||
       description !== originalProduct?.productDescription ||
@@ -619,8 +614,8 @@ const SingleProd: FC<SingleProdProps> = () => {
   }, [user?.favorites, product?._id]);
 
   const displayImages = useMemo(() => {
-  return isEditing ? normalizeImages(productImages) : productImages;
-}, [isEditing, productImages]);
+    return isEditing ? normalizeImages(productImages) : productImages;
+  }, [isEditing, productImages]);
 
   if (isLoading) {
     return <SingleProdSkeleton />;
@@ -640,7 +635,10 @@ const SingleProd: FC<SingleProdProps> = () => {
                 className="bg-transparent text-4xl font-bold text-stockblue border-b-2 border-stockblue w-full text-right outline-none"
               />
             ) : (
-              <h1 className="text-4xl font-bold text-stockblue bg-clip-text text-transparent bg-gradient-to-r from-stockblue to-stockblue">
+              <h1
+                className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-stockblue to-stockblue break-words"
+                style={{ overflowWrap: "anywhere" }}
+              >
                 {title}
               </h1>
             )}
@@ -693,10 +691,11 @@ const SingleProd: FC<SingleProdProps> = () => {
           )}
         </div>
 
-        <div className="text-right mb-12">
+        <div className="text-right mb-12 mt-9">
           {isEditing ? (
             <textarea
               value={description}
+              placeholder="יש להוסיף תיאור מוצר"
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
               className="bg-transparent border-b border-gray-400 w-full max-w-2xl text-gray-700 text-lg outline-none resize-none text-right break-words"
@@ -749,6 +748,7 @@ const SingleProd: FC<SingleProdProps> = () => {
   handleReplaceImage={handleReplaceImage}
   handleAddImages={handleAddImages}
   handleDeleteImage={handleDeleteImage}
+  handleDeleteAllImages={handleDeleteAllImages} 
   isUploading={isUploadingImages}
   title={title}
   isReplacingImage={isReplacingImage}
@@ -854,7 +854,13 @@ ${isEditing ? "cursor-pointer" : "cursor-not-allowed opacity-80"}`}
                     <button
                       className={`peer w-14 h-12 flex items-center justify-center rounded-lg hover:scale-105 transition-all duration-300 transform
                       ${isFavorite ? "text-red-600" : "text-gray-700"}`}
-                     onClick={() => toggleFavorite(product?._id || "", product?.productName || "", setUser)}
+                      onClick={() =>
+                        toggleFavorite(
+                          product?._id || "",
+                          product?.productName || "",
+                          setUser,
+                        )
+                      }
                     >
                       <Heart
                         size={24}
@@ -919,6 +925,9 @@ ${isEditing ? "cursor-pointer" : "cursor-not-allowed opacity-80"}`}
     </div>
   );
 };
+
+
+
 
 const SingleProdSkeleton: FC = () => {
   return (
