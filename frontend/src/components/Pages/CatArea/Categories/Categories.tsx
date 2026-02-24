@@ -521,7 +521,7 @@ export const Categories: FC<CategoriesProps> = () => {
                                 <Trash size={18} />
                               </button>
                               <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                                העבר לסל מיחזור
+                                העברה לסל מיחזור
                               </span>
                             </div>
 
@@ -649,9 +649,11 @@ export const Categories: FC<CategoriesProps> = () => {
                               e.stopPropagation();
                               openMoveForItem(item);
                             }}
-                            className="absolute bottom-3 right-3 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-blue-500 hover:scale-110"
-                            title="העבר מוצר"
+                            className="absolute group bottom-3 right-3 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-blue-500 hover:scale-110"
                           >
+                            <span className="absolute -bottom-8 -left-1 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                              העברה לקטגוריה אחרת
+                            </span>
                             <FolderInput size={18} />
                           </button>
 
@@ -660,9 +662,11 @@ export const Categories: FC<CategoriesProps> = () => {
                               e.stopPropagation();
                               openDuplicateForProduct(item);
                             }}
-                            className="absolute bottom-3 right-12 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-purple-500 hover:scale-110"
-                            title="שכפל מוצר"
+                            className="group absolute bottom-3 right-12 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-purple-500 hover:scale-110"
                           >
+                            <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none">
+                              שכפול לקטגוריות נוספות
+                            </span>
                             <Copy size={18} />
                           </button>
 
@@ -671,9 +675,11 @@ export const Categories: FC<CategoriesProps> = () => {
                               e.stopPropagation();
                               handleMoveProductToRecycleBin(item);
                             }}
-                            className="absolute bottom-3 left-3 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-orange-500 hover:scale-110"
-                            title="העבר לסל מיחזור"
+                            className="absolute group bottom-3 left-3 transition-all duration-200 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-orange-500 hover:scale-110"
                           >
+                            <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                              העברה לסל מיחזור
+                            </span>
                             <Trash size={18} />
                           </button>
                         </>
@@ -707,7 +713,10 @@ export const Categories: FC<CategoriesProps> = () => {
                               }
                             }}
                           >
-                            <h2 className="text-[1.1rem] text-[#0D305B] mb-2" title={item.name}>
+                            <h2
+                              className="text-[1.1rem] text-[#0D305B] mb-2"
+                              title={item.name}
+                            >
                               {truncateDisplay(item.name)}
                             </h2>
                             <span className="absolute top-full mt-1 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/name:[div[data-truncated='true']_&]:opacity-100 transition-all duration-200 pointer-events-none z-50 whitespace-normal break-words max-w-xs">
@@ -872,7 +881,7 @@ ${isMovingToRecycleBin ? "bg-orange-400 cursor-not-allowed text-white" : "bg-ora
                               מעביר לסל...
                             </span>
                           ) : (
-                            "העבר לסל מיחזור"
+                            "העברה לסל מיחזור"
                           )}
                         </button>
                       </>

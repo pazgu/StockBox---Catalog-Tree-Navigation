@@ -670,7 +670,7 @@ const SingleCat: FC = () => {
                     onClick={handleMoveSelectedToRecycleBin}
                     className="text-base hover:underline text-orange-600 hover:text-orange-700 transition-colors"
                   >
-                    העבר לסל ({selectedItems.length})
+                    העברה לסל ({selectedItems.length})
                   </button>
                   <span className="text-gray-400">|</span>
                   <button
@@ -747,7 +747,7 @@ const SingleCat: FC = () => {
                     >
                       <Copy size={18} />
                     </button>
-                    <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                    <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
                       שכפול לקטגוריות נוספות
                     </span>
                   </div>
@@ -763,7 +763,7 @@ const SingleCat: FC = () => {
                     <FolderInput size={18} />
                   </button>
             
-                  <span className="absolute -top-8 -left-1 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                  <span className="absolute -bottom-8 -left-1 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
                     העברה לקטגוריה אחרת
                   </span>
               
@@ -778,8 +778,8 @@ const SingleCat: FC = () => {
                   >
                     <Trash size={18} />
                   </button>
-                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                    העבר לסל מיחזור
+                  <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                    העברה לסל מיחזור
                   </span>
                 </div>
                 {item.type === "category" && (
@@ -793,7 +793,7 @@ const SingleCat: FC = () => {
                     >
                       <Pen size={18} />
                     </button>
-                    <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                    <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
                       עריכת קטגוריה
                     </span>
                   </div>
@@ -1003,7 +1003,7 @@ const SingleCat: FC = () => {
                     מעביר לסל...
                   </span>
                 ) : (
-                  "העבר לסל מיחזור"
+                  "העברה לסל מיחזור"
                 )}
               </button>
 
@@ -1120,7 +1120,7 @@ const SingleCat: FC = () => {
                 onClick={confirmMoveSelectedToRecycleBin}
                 className="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 transition-colors"
               >
-                העבר לסל מיחזור
+                העברה לסל מיחזור
               </button>
               <button
                 onClick={closeAllModals}
