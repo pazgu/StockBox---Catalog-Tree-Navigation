@@ -585,10 +585,6 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
   return (
     <div
       className="fixed inset-0  bg-slate-900/90 backdrop-blur-sm flex items-center justify-center z-50 p-2 overflow-y-auto"
-      onClick={() => {
-        if (showInheritanceModal) return;
-        onClose();
-      }}
     >
       <div
         className="bg-white rounded-xl w-full max-w-5xl shadow-2xl text-right flex flex-col my-auto h-[90vh]"
