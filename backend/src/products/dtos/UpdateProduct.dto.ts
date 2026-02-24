@@ -1,23 +1,18 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
-// src/products/dtos/UpdateProduct.dto.ts
-import { IsArray, IsOptional, IsString, ValidateNested } from 'class-validator';
-import { Transform, Type } from 'class-transformer';
-import { ImageDto } from 'src/common/dtos/Image.dto';
+import { IsArray, IsOptional, IsString } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class UpdateProductDto {
   @IsOptional()
   @IsString()
   productName?: string;
-
   @IsOptional()
   @IsString()
   productDescription?: string;
-
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   productPath?: Array<string>;
-
   @IsOptional()
   @Transform(({ value }) => {
     if (!value) return [];
@@ -36,9 +31,7 @@ export class UpdateProductDto {
   }>;
 
   @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => ImageDto)
-  productImages?: ImageDto[];
+  productImages?: string[];
 
   @IsOptional()
   @Transform(({ value }) => {
@@ -54,7 +47,10 @@ export class UpdateProductDto {
     folders: Array<{
       _id?: string;
       folderName: string;
-      files: Array<{ _id?: string; link: string }>;
+      files: Array<{
+        _id?: string;
+        link: string;
+      }>;
     }>;
   }>;
 }

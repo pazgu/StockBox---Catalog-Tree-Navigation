@@ -39,12 +39,10 @@ import { ParseObjectIdPipe } from 'src/pipes/parse-object-id.pipe';
 import { UpdateProductDto } from './dtos/UpdateProduct.dto';
 import { AuthGuard as ProductAuthGuard } from '@nestjs/passport';
 import { PermissionGuard as ProductPermissionGuard } from 'src/gaurds/permission.guard';
-import { ProductImage } from 'src/schemas/Products.schema';
 
 @ProductController('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
-
   @ProductGet()
   findAll() {
     return this.productsService.findAll();
@@ -59,13 +57,10 @@ export class ProductsController {
     const pathPart = fullUrl.split('by-path/')[1];
     const decodedPath = decodeURIComponent(pathPart);
     const fullPath = `/${decodedPath}`;
-
     if (!request.user) {
       return [];
     }
-
     const user = { userId: request.user.userId, role: request.user.role };
-
     return this.productsService.findByPath(fullPath, user);
   }
   @ProductPost()
@@ -81,7 +76,6 @@ export class ProductsController {
   ) {
     return this.productsService.create(createProductDto, file);
   }
-
   @ProductPost(':id/move')
   @ProductUseGuards(JwtAuthGuard, EditorGuard)
   @HttpCode(HttpStatus.OK)
@@ -92,7 +86,6 @@ export class ProductsController {
   ) {
     return this.productsService.moveProduct(id, moveProductDto);
   }
-
   @ProductPost(':id/duplicate')
   @ProductUseGuards(JwtAuthGuard, EditorGuard)
   @HttpCode(HttpStatus.OK)
@@ -103,7 +96,6 @@ export class ProductsController {
   ) {
     return this.productsService.duplicateProduct(id, duplicateProductDto);
   }
-
   @ProductPatch(':id')
   @ProductUseInterceptors(
     FilesInterceptor('newProductImages', 20, productUploadsOptions),
@@ -113,7 +105,7 @@ export class ProductsController {
     @UploadedFiles() files: Express.Multer.File[],
     @ProductBody() body: any,
   ) {
-    const existingImages: ProductImage[] = body.existingProductImages
+    const existingImages: string[] = body.existingProductImages
       ? JSON.parse(body.existingProductImages)
       : [];
 
@@ -141,7 +133,6 @@ export class ProductsController {
     };
     return this.productsService.update(id, dto);
   }
-
   @ProductUseGuards(ProductAuthGuard('jwt'), ProductPermissionGuard)
   @ProductGet(':id')
   getProductById(
@@ -151,7 +142,6 @@ export class ProductsController {
   ) {
     return this.productsService.getById(id, request.user);
   }
-
   @ProductDelete(':id/paths')
   @ProductUseGuards(JwtAuthGuard, EditorGuard)
   @HttpCode(HttpStatus.OK)

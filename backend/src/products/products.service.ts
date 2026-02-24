@@ -15,7 +15,7 @@ import {
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Product, ProductImage } from '../schemas/Products.schema';
+import { Product } from '../schemas/Products.schema';
 import { CreateProductDto } from './dtos/CreateProduct.dto';
 import { MoveProductDto } from './dtos/MoveProduct.dto';
 import { DuplicateProductDto } from './dtos/DuplicateProduct.dto';
@@ -37,6 +37,7 @@ export class ProductsService {
     @InjectModel(Group.name) private groupModel: Model<Group>,
     @InjectModel(NameLock.name) private nameLockModel: Model<NameLock>,
     private usersService: UsersService,
+
     private permissionsService: PermissionsService,
   ) {}
 
@@ -121,7 +122,7 @@ export class ProductsService {
   }
 
   async create(createProductDto: CreateProductDto, file?: Express.Multer.File) {
-    let productImages: ProductImage[] = [];
+    let productImages: string[] = [];
 
     if (file?.buffer) {
       try {
@@ -129,9 +130,7 @@ export class ProductsService {
           file.buffer,
           'stockbox/products',
         );
-        productImages = [
-          { Image_url: uploaded.secure_url, zoom: 1, offsetX: 0, offsetY: 0 },
-        ];
+        productImages = [uploaded.secure_url];
       } catch (error) {
         console.error('Cloudinary Upload Error:', error);
         throw new ServiceUnavailableException(
@@ -140,11 +139,7 @@ export class ProductsService {
       }
     } else {
       const defaultUrl = process.env.DEFAULT_PRODUCT_IMAGE_URL;
-      if (defaultUrl) {
-        productImages = [
-          { Image_url: defaultUrl, zoom: 1, offsetX: 0, offsetY: 0 },
-        ];
-      }
+      if (defaultUrl) productImages = [defaultUrl];
     }
 
     let cleanCustomFields: any[] = [];
@@ -163,7 +158,7 @@ export class ProductsService {
         cleanCustomFields = [];
       }
     }
-    const nameKey = normalizeName(createProductDto.productName);
+    const nameKey = normalizeName(createProductDto.productName); // NEW
     try {
       await this.nameLockModel.create({
         nameKey,
@@ -515,9 +510,7 @@ export class ProductsService {
       if (updatedPaths.length === 0) {
         if (product.productImages && product.productImages.length > 0) {
           await Promise.all(
-            product.productImages.map((img) =>
-              this.deleteProductImage(img.Image_url),
-            ),
+            product.productImages.map((url) => this.deleteProductImage(url)),
           );
         }
         await this.productModel.findByIdAndDelete(id);
