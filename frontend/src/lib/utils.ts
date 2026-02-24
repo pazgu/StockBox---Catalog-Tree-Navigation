@@ -19,3 +19,6 @@ export function debounce<T extends (...args: any[]) => void>(
     }, delay)
   }
 }
+
+export const truncateDisplay = (name: string, max = 18): string =>
+  name.length > max ? name.slice(0, max) + "…" : name;

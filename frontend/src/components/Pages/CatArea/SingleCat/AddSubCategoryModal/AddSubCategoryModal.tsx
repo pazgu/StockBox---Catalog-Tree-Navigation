@@ -2,6 +2,7 @@ import React from "react";
 import { toast } from "sonner";
 import useBlockBrowserZoom from "../../Categories/useBlockBrowserZoom";
 import { Spinner } from "../../../../ui/spinner";
+import { isLength } from "validator";
 
 type Props = {
   isOpen: boolean;
@@ -198,6 +199,11 @@ const handleClose = () => {
 
   if (FORBIDDEN_CHARS.test(categoryName)) {
     toast.error('שם תת-קטגוריה מכיל תווים אסורים ; | " \' * < >');
+    return;
+  }
+
+  if (!isLength(categoryName.trim(), { max: 30 })) {
+    toast.error("שם תת-קטגוריה לא יכול להיות ארוך מ-30 תווים");
     return;
   }
 
