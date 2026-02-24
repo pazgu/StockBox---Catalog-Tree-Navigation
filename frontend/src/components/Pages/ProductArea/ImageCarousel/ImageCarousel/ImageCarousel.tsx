@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback, useId } from "react";
+import React, { useEffect, useRef, useCallback, useId, useState } from "react";
 import { Upload, ImageOff } from "lucide-react";
 import { Spinner } from "../../../../../components/ui/spinner";
 
@@ -16,6 +16,8 @@ interface ImageCarouselProps {
   isUploading?: boolean;
   isReplacingImage?: boolean;
   setIsReplacingImage?: (v: boolean) => void;
+  handleDeleteAllImages?: () => void;
+
 }
 
 const ImageCarousel: React.FC<ImageCarouselProps> = ({
@@ -28,6 +30,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
   handleReplaceImage,
   handleAddImages,
   handleDeleteImage,
+  handleDeleteAllImages, 
   title,
   isUploading = false,
   isReplacingImage = false,
@@ -37,10 +40,13 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
   const touchStartX = useRef<number | null>(null);
   const replaceId = useId();
   const addId = useId();
+  const [showClearDialog, setShowClearDialog] = useState(false);
+  const [isDeletingAll, setIsDeletingAll] = useState(false);
 
   const validImages = (productImages || []).filter(
     (u) => typeof u === "string" && u.trim().length > 0,
   );
+    const imagesExist = validImages.length > 0;
 
   const hasImages = validImages.length > 0 && !isReplacingImage;
   const shownIndex = Math.min(
@@ -101,15 +107,81 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
       onTouchEnd={onTouchEnd}
       aria-label={`${title || "גלריה"} - גלריית תמונות`}
     >
-      {isUploading && (
-        <div className="absolute inset-0 z-20 grid place-items-center bg-white/60 backdrop-blur-sm">
-          <div className="flex items-center gap-2 rounded-2xl bg-white/80 px-4 py-2 shadow">
-            <Spinner className="size-6 text-stockblue" />
-            <span className="text-sm font-semibold text-stockblue">
-              מעלה תמונות…
-            </span>
-          </div>
+
+       {isUploading && (
+      <div className="absolute inset-0 z-20 grid place-items-center bg-white/60 backdrop-blur-sm">
+        <div className="flex items-center gap-2 rounded-2xl bg-white/80 px-4 py-2 shadow">
+          <Spinner className="size-6 text-stockblue" />
+          <span className="text-sm font-semibold text-stockblue">מעלה תמונות…</span>
         </div>
+      </div>
+    )}
+          {/* TOP delete + delete all (AboutImagesPanel style) */}
+      {isEditing && imagesExist && (
+        <>
+          <button
+            disabled={isUploading || isDeletingAll}
+            onClick={handleDeleteImage}
+            className={`absolute top-4 right-4 z-[60] pointer-events-auto inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold text-white bg-red-600/90 hover:bg-red-700 shadow-xl transition-all
+              ${isUploading || isDeletingAll ? "opacity-50 pointer-events-none" : ""}
+            `}
+          >
+            מחיקת תמונה
+          </button>
+
+          <button
+  disabled={isUploading || isDeletingAll || !handleDeleteAllImages}
+  onClick={() => {
+    if (!handleDeleteAllImages) return; // safety
+    setShowClearDialog(true);
+  }}
+  className={`absolute top-4 left-4 z-[60] pointer-events-auto inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold text-red-700 bg-white/90 border border-red-200 hover:bg-red-50 shadow transition-all
+    ${
+      isUploading || isDeletingAll || !handleDeleteAllImages
+        ? "opacity-50 pointer-events-none"
+        : ""
+    }
+  `}
+  title="מחק את כל התמונות"
+>
+  מחיקת הכל
+</button>
+          {showClearDialog && (
+  <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-[80] rounded-xl">
+    <div className="bg-white rounded-xl p-6 w-60 text-right shadow-lg">
+      <h2 className="text-xl font-semibold mb-4">למחוק את כל התמונות?</h2>
+
+      <div className="flex justify-end gap-3">
+        <button
+          className="px-4 py-2 rounded border border-gray-300 hover:bg-gray-100"
+          onClick={() => setShowClearDialog(false)}
+          disabled={isDeletingAll}
+        >
+          ביטול
+        </button>
+
+        <button
+          className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+          onClick={async () => {
+            if (!handleDeleteAllImages) return;
+
+            try {
+              setIsDeletingAll(true);
+              await Promise.resolve(handleDeleteAllImages());
+              setShowClearDialog(false);
+            } finally {
+              setIsDeletingAll(false);
+            }
+          }}
+          disabled={isDeletingAll || !handleDeleteAllImages}
+        >
+          כן, למחוק
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+        </>
       )}
       <div className="relative w-full h-40 flex items-center justify-center">
         {hasImages ? (
