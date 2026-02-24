@@ -1,7 +1,7 @@
-import { FC } from "react";
+import { FC, useRef, useState, useEffect, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import catIcon from "../../../assets/newcat.png";
-import { FolderOpen } from "lucide-react";
+import { ChevronLeft, ChevronRight, FolderOpen } from "lucide-react";
 
 interface BreadcrumbsProps {
   path?: string[];
@@ -10,81 +10,153 @@ interface BreadcrumbsProps {
 const Breadcrumbs: FC<BreadcrumbsProps> = ({ path }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
 
-  const segmentMap: { [key: string]: string } = {
+  const segmentMap: Record<string, string> = {
     categories: "תכולות ואמצעים",
-    "single-cat": "קטגוריה",
-    subcat: "תת-קטגוריה",
-    "new-user": "משתמש חדש",
-    "product-details": "פרטי מוצר",
-    allusers: "כל המשתמשים",
-    permissions: "הרשאות",
-    favorites: "מועדפים",
-    groupcontrol: "ניהול קבוצות",
-    login: "התחברות",
   };
 
   const pathSegments = path || location.pathname.split("/").filter(Boolean);
 
+  const checkScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const scrollLeftAbs = Math.abs(el.scrollLeft);
+
+    setCanScrollRight(scrollLeftAbs > 4);
+    setCanScrollLeft(scrollLeftAbs + el.clientWidth < el.scrollWidth - 4);
+  }, []);
+
+  const triggerRafCheck = useCallback(() => {
+    let frames = 0;
+    const tick = () => {
+      checkScroll();
+      frames += 1;
+      if (frames < 25) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }, [checkScroll]);
+
+  const scroll = (dir: "left" | "right") => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const moveAmount = dir === "left" ? -120 : 120;
+    el.scrollBy({ left: moveAmount, behavior: "smooth" });
+
+    triggerRafCheck();
+  };
+
+  useEffect(() => {
+    checkScroll();
+    triggerRafCheck();
+    const el = scrollRef.current;
+    if (!el) return;
+    el.addEventListener("scroll", checkScroll, { passive: true });
+    const ro = new ResizeObserver(checkScroll);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener("scroll", checkScroll);
+      ro.disconnect();
+    };
+  }, [checkScroll, pathSegments, triggerRafCheck]);
+
   return (
-    <div className="relative group mb-4 mt-14">
-      {/* Breadcrumbs */}
-      <div
-        className="text-sm text-gray-700 flex gap-1 items-center relative z-20"
-        dir="rtl"
+    <div
+      className="group relative mb-4 mt-14 flex items-center gap-1"
+      dir="rtl"
+    >
+      <FolderOpen className="size-8 shrink-0 fill-[#e7d6ba] text-amber-700" />
+
+      <button
+        onClick={() => scroll("right")}
+        disabled={!canScrollRight}
+        className={`shrink-0 rounded-full p-0.5 transition-all duration-200
+          disabled:cursor-not-allowed disabled:text-gray-200
+          ${canScrollRight ? "text-gray-500 hover:bg-gray-100 hover:text-gray-800" : ""}
+        `}
+        aria-label="scroll right"
       >
-        <FolderOpen className="size-8 fill-[#e7d6ba]"></FolderOpen>
+        <ChevronRight className="size-4" />
+      </button>
+
+      <div
+        ref={scrollRef}
+        className="flex items-center gap-1 overflow-x-auto scroll-smooth"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+      >
+        <style>{`div::-webkit-scrollbar { display: none; }`}</style>
+
         {pathSegments.map((segment, index) => {
           const pathToHere = "/" + pathSegments.slice(0, index + 1).join("/");
           const decoded = decodeURIComponent(segment);
-          const displayName = decoded.replace(/-/g, " ");
           const lower = decoded.toLowerCase();
-
           const isLast = index === pathSegments.length - 1;
-          const finalDisplayName = segmentMap[lower] || displayName;
+          const finalDisplayName =
+            segmentMap[lower] || decoded.replace(/-/g, " ");
+          const showTooltip = finalDisplayName.length > 14;
 
           return (
             <span
               key={`${segment}-${index}`}
-              className="flex items-center gap-1"
+              className="flex items-center gap-1 shrink-0 h-20"
             >
-              <span
-                role="img"
-                aria-label="Cute cat peeking"
-                className="
-          absolute
-          right-1.5
-          translate-y-[20%] 
-          opacity-0
-          transition-transform duration-100 ease-out
-          group-hover:translate-y-0
-          top-[-3px] 
-          group-hover:opacity-100
-          z-2000
-        "
-              >
-                <img
-                  src={catIcon}
-                  alt="Cute cat peeking"
-                  className="w-4 h-4 object-cover"
-                />
-              </span>
+              <span className="relative group/text shrink-0">
+                <span
+                  role={isLast ? undefined : "button"}
+                  onClick={() => !isLast && navigate(encodeURI(pathToHere))}
+                  className={`
+                    inline-block max-w-[120px] truncate align-bottom text-sm
+                    transition-colors duration-150
+                    ${isLast ? "font-semibold text-gray-800" : "text-gray-500 cursor-pointer hover:text-gray-900 hover:underline"}
+                  `}
+                >
+                  {finalDisplayName}
+                </span>
 
-              <span
-                className={`${
-                  !isLast
-                    ? "cursor-pointer hover:underline"
-                    : "font-semibold text-gray-700"
-                } transition-colors duration-200`}
-                onClick={() => !isLast && navigate(encodeURI(pathToHere))}
-              >
-                {finalDisplayName}
+                {showTooltip && (
+                  <span
+                    className="absolute bottom-full -right-3 mt-2 z-50 hidden group-hover/text:block whitespace-nowrap rounded-md bg-gray-800 px-2.5 py-1 text-xs text-white shadow-lg pointer-events-none"
+                    style={{
+                      direction: /[\u0590-\u05FF]/.test(finalDisplayName)
+                        ? "rtl"
+                        : "ltr",
+                    }}
+                  >
+                    {finalDisplayName}
+                    <span className="absolute top-full right-3 border-4 border-transparent border-t-gray-800" />
+                  </span>
+                )}
               </span>
-              {!isLast && <span className="mx-1">{">"}</span>}
+              {!isLast && (
+                <ChevronLeft className="size-3 text-gray-300 shrink-0" />
+              )}
             </span>
           );
         })}
       </div>
+
+      <button
+        onClick={() => scroll("left")}
+        disabled={!canScrollLeft}
+        className={`shrink-0 rounded-full p-0.5 transition-all duration-200
+          disabled:cursor-not-allowed disabled:text-gray-200
+          ${canScrollLeft ? "text-gray-500 hover:bg-gray-100 hover:text-gray-800" : ""}
+        `}
+        aria-label="scroll left"
+      >
+        <ChevronLeft className="size-4" />
+      </button>
+
+      <span
+        aria-label="Cute cat peeking"
+        className="absolute mb-6 right-1 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-150 pointer-events-none"
+      >
+        <img src={catIcon} alt="cat" className="w-4 h-4 object-cover" />
+      </span>
     </div>
   );
 };
