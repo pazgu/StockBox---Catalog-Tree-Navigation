@@ -137,7 +137,9 @@ const SearchResultsPage = () => {
                         dir="ltr"
                         style={{ unicodeBidi: "isolate" }}
                         onClick={() => {
-                          setPreviousPath(item.paths?.[0]);
+                          item.type === "product"? 
+                          setPreviousPath(item.paths?.[0].slice(0, item.paths?.[0].lastIndexOf("/")))
+                          : setPreviousPath(item.paths?.[0]);
                           navigate(
                             item.type === "product"
                               ? `/products/${item.id}`
