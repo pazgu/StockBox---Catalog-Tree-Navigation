@@ -69,7 +69,16 @@ const GroupList: React.FC<GroupListProps> = ({
             >
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2 min-w-0">
-                  <div className="relative flex-1 min-w-0 group/name">
+                  <div
+                    className="relative flex-1 min-w-0"
+                    onMouseEnter={(e) => {
+                      const h4 = e.currentTarget.querySelector("h4")!;
+                      e.currentTarget.classList.toggle(
+                        "show-tip",
+                        h4.scrollWidth > h4.offsetWidth,
+                      );
+                    }}
+                  >
                     <h4
                       className="font-semibold text-gray-800 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap"
                       style={{
@@ -80,7 +89,7 @@ const GroupList: React.FC<GroupListProps> = ({
                     >
                       {group.name}
                     </h4>
-                    <span className="absolute right-0 bottom-full mb-2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover/name:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-[9999]">
+                    <span className="absolute right-0 bottom-full mb-2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-[9999] opacity-0 [.show-tip:hover_&]:opacity-100">
                       {group.name}
                     </span>
                   </div>
