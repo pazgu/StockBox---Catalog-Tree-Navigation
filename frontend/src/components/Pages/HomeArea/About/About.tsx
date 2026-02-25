@@ -4,7 +4,19 @@ import React, { FC, useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
-import { Compass, Edit2, Check, GripVertical, Trash2, X, Save,FileText, ListChecks, LayoutGrid, Plus } from "lucide-react";
+import {
+  Compass,
+  Edit2,
+  Check,
+  GripVertical,
+  Trash2,
+  X,
+  Save,
+  FileText,
+  ListChecks,
+  LayoutGrid,
+  Plus,
+} from "lucide-react";
 import { ICONS_HE } from "../../../../mockdata/icons";
 import FeaturesSection from "./FeaturesSection/FeaturesSection";
 import AboutImagesPanel from "./AboutImagesPanel/AboutImagesPanel";
@@ -15,12 +27,8 @@ import { AboutBlock } from "@/components/models/about.models";
 import { debounce } from "../../../../lib/utils";
 import AboutSkeleton from "./AboutSkeleton/AboutSkeleton";
 
-
-
 const uid = () => crypto.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
 const CTA_SECTION_ID = "__cta_section__";
-
-
 
 type FeatureItem = {
   id: string;
@@ -47,15 +55,12 @@ type SectionType = {
 const getHeaderOffset = () => {
   const header = document.querySelector("header");
   const h = header?.getBoundingClientRect().height ?? 0;
-  return h + 16; 
+  return h + 16;
 };
-
 
 const clampDropIndex = (arr: SectionType[], dropIndex: number) => {
   return Math.max(0, Math.min(dropIndex, arr.length));
 };
-
-
 
 const blocksToSections = (blocks: AboutBlock[]): SectionType[] => {
   return blocks.map((b) => {
@@ -82,7 +87,7 @@ const blocksToSections = (blocks: AboutBlock[]): SectionType[] => {
       };
     }
 
-        if (b.type === "paragraph") {
+    if (b.type === "paragraph") {
       return {
         id: b.id,
         type: "paragraph",
@@ -108,7 +113,6 @@ const blocksToSections = (blocks: AboutBlock[]): SectionType[] => {
         text: x.text ?? "",
       })),
     };
-
   });
 };
 
@@ -138,7 +142,7 @@ const sectionsToBlocks = (sections: SectionType[]): AboutBlock[] => {
       };
     }
 
-     if (s.type === "cta") {
+    if (s.type === "cta") {
       return {
         id: s.id,
         type: "cta",
@@ -160,7 +164,6 @@ const IconMap: { [key: string]: FC<any> } = Object.fromEntries(
 
 const iconOptions = ICONS_HE.map((i) => ({ value: i.value, label: i.label }));
 
-
 type FieldKind =
   | "sectionTitle"
   | "introContent"
@@ -175,7 +178,6 @@ type FieldKind =
 
 const mkKey = (kind: FieldKind, sectionId: string, itemId?: string) =>
   [kind, sectionId, itemId].filter(Boolean).join("::");
-
 
 const isBlank = (v?: string | null) => !v || v.trim().length === 0;
 
@@ -207,7 +209,7 @@ interface AboutProps {}
 const About: FC<AboutProps> = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
-  const [isPageLoading, setIsPageLoading] = useState(true); 
+  const [isPageLoading, setIsPageLoading] = useState(true);
 
   const [editableImages, setEditableImages] = useState<ImageItem[]>([]);
 
@@ -221,12 +223,11 @@ const About: FC<AboutProps> = () => {
   const [sections, setSections] = useState<SectionType[]>([]);
 
   const contentSectionsCount = useMemo(
-  () => sections.filter((s) => s.type !== "cta").length,
-  [sections]
-);
+    () => sections.filter((s) => s.type !== "cta").length,
+    [sections],
+  );
 
-const isEmptyContent = contentSectionsCount === 0;
-
+  const isEmptyContent = contentSectionsCount === 0;
 
   const [dirtyKeys, setDirtyKeys] = useState<Set<string>>(new Set());
   const [isImagesLoading, setIsImagesLoading] = useState(false);
@@ -242,11 +243,8 @@ const isEmptyContent = contentSectionsCount === 0;
 
   const realSections = useMemo(() => sections, [sections]);
 
-
-
   const markDirty = (key: string, currentValue: string) => {
     const snap = getSnapshotValue(key);
-    
 
     setDirtyKeys((prev) => {
       const next = new Set(prev);
@@ -306,36 +304,36 @@ const isEmptyContent = contentSectionsCount === 0;
   const draggedIndexRef = React.useRef<number | null>(null);
   const pendingScrollToSectionIdRef = React.useRef<string | null>(null);
 
-const scrollToSectionById = (id: string) => {
-  const idx = sections.findIndex((s) => s.id === id);
-  if (idx === -1) return;
+  const scrollToSectionById = (id: string) => {
+    const idx = sections.findIndex((s) => s.id === id);
+    if (idx === -1) return;
 
-  const el = sectionRefs.current[idx];
-  if (!el) return;
+    const el = sectionRefs.current[idx];
+    if (!el) return;
 
-  const y = el.getBoundingClientRect().top + window.scrollY - getHeaderOffset();
-  window.scrollTo({ top: y, behavior: "smooth" });
-};
-const focusFirstFieldInSection = (el: HTMLDivElement) => {
-  const field = el.querySelector("input, textarea, select") as
-    | HTMLInputElement
-    | HTMLTextAreaElement
-    | HTMLSelectElement
-    | null;
+    const y =
+      el.getBoundingClientRect().top + window.scrollY - getHeaderOffset();
+    window.scrollTo({ top: y, behavior: "smooth" });
+  };
+  const focusFirstFieldInSection = (el: HTMLDivElement) => {
+    const field = el.querySelector("input, textarea, select") as
+      | HTMLInputElement
+      | HTMLTextAreaElement
+      | HTMLSelectElement
+      | null;
 
-  if (!field) return;
+    if (!field) return;
 
-  field.focus();
+    field.focus();
 
-  // select text only for input/textarea
-  if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) {
-    field.select?.();
-  }
-};
-
-
-
-
+    // select text only for input/textarea
+    if (
+      field instanceof HTMLInputElement ||
+      field instanceof HTMLTextAreaElement
+    ) {
+      field.select?.();
+    }
+  };
 
   const imageWrapRef = React.useRef<HTMLDivElement | null>(null);
   const goPrev = React.useCallback(() => {
@@ -355,70 +353,69 @@ const focusFirstFieldInSection = (el: HTMLDivElement) => {
   const touchStartXRef = React.useRef<number | null>(null);
 
   React.useEffect(() => {
-  (async () => {
-    try {
-      setIsPageLoading(true); 
-      const res = await aboutApi.get();
+    (async () => {
+      try {
+        setIsPageLoading(true);
+        const res = await aboutApi.get();
 
-     const loadedSections = blocksToSections(res.blocks ?? []);
+        const loadedSections = blocksToSections(res.blocks ?? []);
 
-const loadedImages: ImageItem[] = (res.images ?? []).map((url) => ({ url }));
+        const loadedImages: ImageItem[] = (res.images ?? []).map((url) => ({
+          url,
+        }));
 
-const hasCta = loadedSections.some((s) => s.type === "cta");
+        const hasCta = loadedSections.some((s) => s.type === "cta");
 
-const withCta: SectionType[] = hasCta
-  ? loadedSections
-  : [...loadedSections, { id: CTA_SECTION_ID, type: "cta", title: "" }];
+        const withCta: SectionType[] = hasCta
+          ? loadedSections
+          : [...loadedSections, { id: CTA_SECTION_ID, type: "cta", title: "" }];
 
-setSections(withCta);
-setEditableImages(loadedImages);
+        setSections(withCta);
+        setEditableImages(loadedImages);
 
-setOriginalData({
-  sections: withCta,
-  images: loadedImages,
-});
+        setOriginalData({
+          sections: withCta,
+          images: loadedImages,
+        });
 
+        const snap: Record<string, string> = {};
 
+        withCta.forEach((s) => {
+          snap[mkKey("sectionTitle", s.id)] = s.title ?? "";
 
+          if (s.type === "intro")
+            snap[mkKey("introContent", s.id)] = s.content ?? "";
+          if (s.type === "paragraph")
+            snap[mkKey("paragraphContent", s.id)] = s.content ?? "";
 
-      const snap: Record<string, string> = {};
-
-      withCta.forEach((s) => {
-        snap[mkKey("sectionTitle", s.id)] = s.title ?? "";
-
-        if (s.type === "intro") snap[mkKey("introContent", s.id)] = s.content ?? "";
-        if (s.type === "paragraph") snap[mkKey("paragraphContent", s.id)] = s.content ?? "";
-
-        if (s.type === "features") {
-          snap[mkKey("featuresTitle", s.id)] = s.title ?? "";
-          (s.features ?? []).forEach((f) => {
-            snap[mkKey("featureCard", s.id, f.id)] = JSON.stringify({
-              title: f.title ?? "",
-              description: f.description ?? "",
-              icon: f.icon ?? "",
+          if (s.type === "features") {
+            snap[mkKey("featuresTitle", s.id)] = s.title ?? "";
+            (s.features ?? []).forEach((f) => {
+              snap[mkKey("featureCard", s.id, f.id)] = JSON.stringify({
+                title: f.title ?? "",
+                description: f.description ?? "",
+                icon: f.icon ?? "",
+              });
             });
-          });
-        }
+          }
 
-        if (s.type === "bullets") {
-          snap[mkKey("bulletsTitle", s.id)] = s.title ?? "";
-          (s.bullets ?? []).forEach((b) => {
-            snap[mkKey("bulletText", s.id, b.id)] = b.text ?? "";
-          });
-        }
-      });
+          if (s.type === "bullets") {
+            snap[mkKey("bulletsTitle", s.id)] = s.title ?? "";
+            (s.bullets ?? []).forEach((b) => {
+              snap[mkKey("bulletText", s.id, b.id)] = b.text ?? "";
+            });
+          }
+        });
 
-      setConfirmedSnapshot(snap);
-      setDirtyKeys(new Set());
-    } catch (e) {
-      toast.error(TOAST.loadError);
-    } finally {
-      setIsPageLoading(false); 
-    }
-  })();
-}, []);
-
-
+        setConfirmedSnapshot(snap);
+        setDirtyKeys(new Set());
+      } catch (e) {
+        toast.error(TOAST.loadError);
+      } finally {
+        setIsPageLoading(false);
+      }
+    })();
+  }, []);
 
   const handleAddSection = (
     afterIndex: number,
@@ -458,26 +455,24 @@ setOriginalData({
               content: "",
             };
 
-              pendingScrollToSectionIdRef.current = newSection.id;
-
+    pendingScrollToSectionIdRef.current = newSection.id;
 
     setSections((prev) => {
-  const ctaIndex = prev.findIndex((s) => s.type === "cta");
+      const ctaIndex = prev.findIndex((s) => s.type === "cta");
 
-  const safeAfterIndex =
-    ctaIndex !== -1 && afterIndex >= ctaIndex ? ctaIndex - 1 : afterIndex;
+      const safeAfterIndex =
+        ctaIndex !== -1 && afterIndex >= ctaIndex ? ctaIndex - 1 : afterIndex;
 
-  return [
-    ...prev.slice(0, safeAfterIndex + 1),
-    newSection,
-    ...prev.slice(safeAfterIndex + 1),
-  ];
-});
-
+      return [
+        ...prev.slice(0, safeAfterIndex + 1),
+        newSection,
+        ...prev.slice(safeAfterIndex + 1),
+      ];
+    });
   };
 
   const removeSection = (index: number) => {
-     if (sections[index]?.type === "cta") return;
+    if (sections[index]?.type === "cta") return;
     if (sections.length <= 1) {
       toast.error("לא ניתן למחוק את כל המקטעים");
       return;
@@ -502,70 +497,64 @@ setOriginalData({
   };
 
   const handleSectionDragStart = (index: number) => {
-  if (hasUnconfirmedChanges) {
-    toastErrorOnce(TOAST.unconfirmedChangesBlocked);
-    return;
-  }
-  setDraggedSectionIndex(index);
-  setDragOverIndex(index); 
-  draggedIndexRef.current = index; 
-  dragCounterRef.current = 0;
-};
+    if (hasUnconfirmedChanges) {
+      toastErrorOnce(TOAST.unconfirmedChangesBlocked);
+      return;
+    }
+    setDraggedSectionIndex(index);
+    setDragOverIndex(index);
+    draggedIndexRef.current = index;
+    dragCounterRef.current = 0;
+  };
 
+  const handleSectionDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
 
-const handleSectionDragOver = (e: React.DragEvent, index: number) => {
-  e.preventDefault();
+    const from = draggedIndexRef.current;
+    if (from === null || from === index) return;
 
-  const from = draggedIndexRef.current;
-  if (from === null || from === index) return;
+    setDragOverIndex(index);
 
-  setDragOverIndex(index);
+    const headerOffset = getHeaderOffset();
+    const topThreshold = headerOffset + 40;
+    const bottomThreshold = 140;
+    const speed = 24;
+    const y = e.clientY;
 
-  const headerOffset = getHeaderOffset();
-  const topThreshold = headerOffset + 40;   
-  const bottomThreshold = 140;
-  const speed = 24;
-  const y = e.clientY;
+    if (y < topThreshold) {
+      window.scrollBy({ top: -speed, behavior: "auto" });
+    } else if (window.innerHeight - y < bottomThreshold) {
+      window.scrollBy({ top: speed, behavior: "auto" });
+    }
+  };
 
-  if (y < topThreshold) {
-    window.scrollBy({ top: -speed, behavior: "auto" }); 
-  } else if (window.innerHeight - y < bottomThreshold) {
-    window.scrollBy({ top: speed, behavior: "auto" });
-  }
-};
+  const handleSectionDragEnd = () => {
+    const from = draggedIndexRef.current;
+    const toRaw = dragOverIndex;
 
+    setDraggedSectionIndex(null);
+    setDragOverIndex(null);
+    dragCounterRef.current = 0;
+    draggedIndexRef.current = null;
 
+    if (from === null || toRaw === null || from === toRaw) return;
 
+    setSections((prev) => {
+      const arr = [...prev];
+      const [moved] = arr.splice(from, 1);
 
+      const adjustedTo =
+        toRaw === prev.length ? arr.length : from < toRaw ? toRaw - 1 : toRaw;
 
-const handleSectionDragEnd = () => {
-  const from = draggedIndexRef.current;
-  const toRaw = dragOverIndex;
-
-  setDraggedSectionIndex(null);
-  setDragOverIndex(null);
-  dragCounterRef.current = 0;
-  draggedIndexRef.current = null;
-
-  if (from === null || toRaw === null || from === toRaw) return;
-
-  setSections((prev) => {
-    const arr = [...prev];
-    const [moved] = arr.splice(from, 1);
-
-    const adjustedTo =
-      toRaw === prev.length ? arr.length : from < toRaw ? toRaw - 1 : toRaw;
-
-    const to = clampDropIndex(arr, adjustedTo);
-    arr.splice(to, 0, moved);
-    return arr;
-  });
-};
+      const to = clampDropIndex(arr, adjustedTo);
+      arr.splice(to, 0, moved);
+      return arr;
+    });
+  };
 
   const handleSectionDragEnter = (index: number) => {
     setDragOverIndex(index);
   };
-
 
   const onTouchStart = (e: React.TouchEvent) => {
     touchStartXRef.current = e.touches[0].clientX;
@@ -610,54 +599,50 @@ const handleSectionDragEnd = () => {
   }, [images.length, currentImageIndex]);
 
   useEffect(() => {
-  const id = pendingScrollToSectionIdRef.current;
-  if (!id) return;
+    const id = pendingScrollToSectionIdRef.current;
+    if (!id) return;
 
-  requestAnimationFrame(() => {
-  const idx = sections.findIndex((s) => s.id === id);
-  const el = idx === -1 ? null : sectionRefs.current[idx];
+    requestAnimationFrame(() => {
+      const idx = sections.findIndex((s) => s.id === id);
+      const el = idx === -1 ? null : sectionRefs.current[idx];
 
-  if (el) {
-    const y = el.getBoundingClientRect().top + window.scrollY - getHeaderOffset();
-    window.scrollTo({ top: y, behavior: "smooth" });
+      if (el) {
+        const y =
+          el.getBoundingClientRect().top + window.scrollY - getHeaderOffset();
+        window.scrollTo({ top: y, behavior: "smooth" });
 
-    setTimeout(() => focusFirstFieldInSection(el), 250);
-  }
+        setTimeout(() => focusFirstFieldInSection(el), 250);
+      }
 
-  pendingScrollToSectionIdRef.current = null;
-});
-}, [sections]);
+      pendingScrollToSectionIdRef.current = null;
+    });
+  }, [sections]);
 
+  const hasActualChanges = useCallback(() => {
+    const currentBlocks = sectionsToBlocks(realSections);
+    const originalBlocks = sectionsToBlocks(originalData.sections);
 
+    const currentImages = editableImages
+      .filter((i) => !i.isPreview)
+      .map((i) => i.url);
 
+    const originalImages = originalData.images.map((i) => i.url);
 
- const hasActualChanges = useCallback(() => {
-  const currentBlocks = sectionsToBlocks(realSections);
-  const originalBlocks = sectionsToBlocks(originalData.sections);
-
-  const currentImages = editableImages
-    .filter((i) => !i.isPreview)
-    .map((i) => i.url);
-
-  const originalImages = originalData.images.map((i) => i.url);
-
-  return (
-    JSON.stringify(currentBlocks) !== JSON.stringify(originalBlocks) ||
-    JSON.stringify(currentImages) !== JSON.stringify(originalImages)
-  );
-}, [sections, editableImages, originalData.sections, originalData.images]);
-
-
+    return (
+      JSON.stringify(currentBlocks) !== JSON.stringify(originalBlocks) ||
+      JSON.stringify(currentImages) !== JSON.stringify(originalImages)
+    );
+  }, [sections, editableImages, originalData.sections, originalData.images]);
 
   const handleSaveChanges = useCallback(async () => {
+    if (!hasActualChanges()) {
+      setIsEditing(false);
+      return;
+    }
 
-
-  if (!hasActualChanges()) {
-    setIsEditing(false);
-    return;
-  }
-
-    const invalidIndex = realSections.findIndex((s) => !isSectionFilledEnough(s));
+    const invalidIndex = realSections.findIndex(
+      (s) => !isSectionFilledEnough(s),
+    );
 
     if (invalidIndex !== -1) {
       toast.error("אי אפשר לשמור כשיש מקטע ריק. מלא כותרת ותוכן ואז שמור.");
@@ -709,12 +694,11 @@ const handleSectionDragEnd = () => {
       setDirtyKeys(new Set());
 
       setOriginalData({
-  sections: realSections,
-  images: editableImages
-    .filter((i) => !i.isPreview)
-    .map((i) => ({ url: i.url })),
-});
-
+        sections: realSections,
+        images: editableImages
+          .filter((i) => !i.isPreview)
+          .map((i) => ({ url: i.url })),
+      });
 
       setIsEditing(false);
       toast.success(TOAST.saveSuccess);
@@ -722,26 +706,23 @@ const handleSectionDragEnd = () => {
       toast.error(TOAST.saveError);
     }
   }, [
-  sections,
-  editableImages,
-  originalData.sections,
-  originalData.images,
-  hasActualChanges,
-  TOAST.saveSuccess,
-  TOAST.saveError,
-]);
-
+    sections,
+    editableImages,
+    originalData.sections,
+    originalData.images,
+    hasActualChanges,
+    TOAST.saveSuccess,
+    TOAST.saveError,
+  ]);
 
   const cancelEdit = useCallback(async () => {
-
     try {
       await aboutApi.replace({
         blocks: sectionsToBlocks(originalData.sections),
         images: originalData.images.map((i) => i.url),
       });
 
-    setSections(originalData.sections);
-
+      setSections(originalData.sections);
 
       setEditableImages(originalData.images);
 
@@ -751,13 +732,10 @@ const handleSectionDragEnd = () => {
 
       setCurrentImageIndex(0);
       setIsEditing(false);
-
-      toast.success("העריכה בוטלה בהצלחה");
     } catch (e) {
       toast.error("שגיאה בביטול העריכה. נסה שוב.");
     }
- }, [originalData.sections, originalData.images]);
-
+  }, [originalData.sections, originalData.images]);
 
   const buildSnapshotFromSections = (secs: SectionType[]) => {
     const snap: Record<string, string> = {};
@@ -868,31 +846,31 @@ const handleSectionDragEnd = () => {
     }
   };
 
-  const removeImage = useCallback(async (index: number) => {
+  const removeImage = useCallback(
+    async (index: number) => {
+      if (!isEditing) return;
 
-    if (!isEditing) return;
+      setIsImagesLoading(true);
+      try {
+        const res = await aboutApi.deleteImageAt(index);
+        const nextImgs = (res.images ?? []).map((url) => ({ url }));
+        setEditableImages(nextImgs);
 
-    setIsImagesLoading(true);
-    try {
-      const res = await aboutApi.deleteImageAt(index);
-      const nextImgs = (res.images ?? []).map((url) => ({ url }));
-      setEditableImages(nextImgs);
-
-      setCurrentImageIndex((cur) => {
-        const len = nextImgs.length;
-        if (len === 0) return 0;
-        return Math.min(cur, len - 1);
-      });
-    } catch (e) {
-      toast.error("Failed to delete image");
-    } finally {
-      setIsImagesLoading(false);
-    }
- }, [isEditing]);
-
+        setCurrentImageIndex((cur) => {
+          const len = nextImgs.length;
+          if (len === 0) return 0;
+          return Math.min(cur, len - 1);
+        });
+      } catch (e) {
+        toast.error("Failed to delete image");
+      } finally {
+        setIsImagesLoading(false);
+      }
+    },
+    [isEditing],
+  );
 
   const clearAllImages = useCallback(async () => {
-
     if (!isEditing) return;
 
     setIsImagesLoading(true);
@@ -907,27 +885,37 @@ const handleSectionDragEnd = () => {
     }
   }, [isEditing]);
 
+  const debouncedSaveChanges = useMemo(
+    () =>
+      debounce(() => {
+        void handleSaveChanges();
+      }, 600),
+    [handleSaveChanges],
+  );
 
-const debouncedSaveChanges = useMemo(
-  () => debounce(() => { void handleSaveChanges(); }, 600),
-  [handleSaveChanges]
-);
+  const debouncedCancelEdit = useMemo(
+    () =>
+      debounce(() => {
+        void cancelEdit();
+      }, 600),
+    [cancelEdit],
+  );
 
-const debouncedCancelEdit = useMemo(
-  () => debounce(() => { void cancelEdit(); }, 600),
-  [cancelEdit]
-);
+  const debouncedClearAllImages = useMemo(
+    () =>
+      debounce(() => {
+        void clearAllImages();
+      }, 600),
+    [clearAllImages],
+  );
 
-const debouncedClearAllImages = useMemo(
-  () => debounce(() => { void clearAllImages(); }, 600),
-  [clearAllImages]
-);
-
-const debouncedRemoveImage = useMemo(
-  () => debounce((index: number) => { void removeImage(index); }, 400),
-  [removeImage]
-);
-
+  const debouncedRemoveImage = useMemo(
+    () =>
+      debounce((index: number) => {
+        void removeImage(index);
+      }, 400),
+    [removeImage],
+  );
 
   const handleDragOverContainer = (e: React.DragEvent) => {
     if (!isEditing) return;
@@ -948,13 +936,12 @@ const debouncedRemoveImage = useMemo(
   };
 
   if (isPageLoading) {
-  return (
-    <div className="pt-8 min-h-screen font-['Arial'] direction-rtl" dir="rtl">
-      <AboutSkeleton />
-    </div>
-  );
-}
-
+    return (
+      <div className="pt-8 min-h-screen font-['Arial'] direction-rtl" dir="rtl">
+        <AboutSkeleton />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -985,7 +972,7 @@ const debouncedRemoveImage = useMemo(
                 <button
                   onClick={() => {
                     if (isEditing) {
-                        debouncedSaveChanges();
+                      debouncedSaveChanges();
                       return;
                     }
                     setIsEditing(true);
@@ -1028,33 +1015,33 @@ const debouncedRemoveImage = useMemo(
                   : ""
               }`}
             >
-            {isEditing && section.type !== "cta" && (
-              <div className="absolute -right-3 -top-3 flex gap-2 z-20">
-                <div className="group relative">
-                  <div className="p-2 bg-stockblue text-white rounded-lg cursor-grab active:cursor-grabbing shadow-md hover:bg-stockblue/90 transition">
-                    <GripVertical size={20} />
-                  </div>
-                  <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-50">
-                    גרור לשינוי סדר
-                  </span>
-                </div>
-                {isEditing && (
+              {isEditing && section.type !== "cta" && (
+                <div className="absolute -right-3 -top-3 flex gap-2 z-20">
                   <div className="group relative">
-                    <button
-                      onClick={() => {
-                        removeSection(sectionIndex);
-                      }}
-                      className="p-2 bg-red-500 text-white rounded-lg transition shadow-md hover:bg-red-600"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                    <span className="absolute top-1/2 -translate-y-1/2 right-full mr-2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-50">
-                      מחיקת מקטע
+                    <div className="p-2 bg-stockblue text-white rounded-lg cursor-grab active:cursor-grabbing shadow-md hover:bg-stockblue/90 transition">
+                      <GripVertical size={20} />
+                    </div>
+                    <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-50">
+                      יש לגרור לשינוי סדר
                     </span>
                   </div>
-                )}
-              </div>
-            )}
+                  {isEditing && (
+                    <div className="group relative">
+                      <button
+                        onClick={() => {
+                          removeSection(sectionIndex);
+                        }}
+                        className="p-2 bg-red-500 text-white rounded-lg transition shadow-md hover:bg-red-600"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                      <span className="absolute top-1/2 -translate-y-1/2 right-full mr-2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-50">
+                        מחיקת מקטע
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* INTRO SECTION */}
               {section.type === "intro" && (
@@ -1390,48 +1377,44 @@ const debouncedRemoveImage = useMemo(
                 </>
               )}
 
-             {section.type === "cta" && (
- <div className="flex justify-center my-10">
+              {section.type === "cta" && (
+                <div className="flex justify-center my-10">
+                  {isEditing && (
+                    <div className="absolute -top-4 -right-4 group">
+                      <div className="bg-stockblue text-white p-3 rounded-xl shadow-lg cursor-move transition hover:bg-stockblue/90">
+                        <GripVertical size={18} />
+                      </div>
 
-    {isEditing && (
-      <div className="absolute -top-4 -right-4 group">
-        <div className="bg-stockblue text-white p-3 rounded-xl shadow-lg cursor-move transition hover:bg-stockblue/90">
-          <GripVertical size={18} />
-        </div>
+                      <span className="absolute top-1/2 -translate-y-1/2 right-full mr-3 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-50">
+                        יש לגרור לשינוי סדר
+                      </span>
+                    </div>
+                  )}
 
-        <span className="absolute top-1/2 -translate-y-1/2 right-full mr-3 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-50">
-          גרור לשינוי סדר
-        </span>
-      </div>
-    )}
-
-    <button
-      onClick={handleNavigateToCategories}
-      className="group inline-flex items-center gap-3 rounded-2xl border border-stockblue/20 bg-gradient-to-r from-white/90 via-white/80 to-blue-50/60 px-10 py-4 text-[1.15rem] font-bold text-stockblue backdrop-blur-sm shadow-[0_8px_28px_rgba(13,48,91,0.18)] hover:shadow-[0_12px_38px_rgba(13,48,91,0.3)] hover:scale-105 active:scale-95 transition-all duration-300 ease-out"
-    >
-      <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-stockblue text-white shadow-[0_4px_14px_rgba(13,48,91,0.35)] group-hover:rotate-12 transition-transform duration-300">
-        <Compass size={22} />
-      </span>
-
-      גלו את התכולות והאמצעים
-
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-[22px] w-[22px] -scale-x-100 transition-transform duration-300 group-hover:translate-x-1"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M5 12h14" />
-        <path d="m12 5 7 7-7 7" />
-      </svg>
-    </button>
-  </div>
-)}
-
+                  <button
+                    onClick={handleNavigateToCategories}
+                    className="group inline-flex items-center gap-3 rounded-2xl border border-stockblue/20 bg-gradient-to-r from-white/90 via-white/80 to-blue-50/60 px-10 py-4 text-[1.15rem] font-bold text-stockblue backdrop-blur-sm shadow-[0_8px_28px_rgba(13,48,91,0.18)] hover:shadow-[0_12px_38px_rgba(13,48,91,0.3)] hover:scale-105 active:scale-95 transition-all duration-300 ease-out"
+                  >
+                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-stockblue text-white shadow-[0_4px_14px_rgba(13,48,91,0.35)] group-hover:rotate-12 transition-transform duration-300">
+                      <Compass size={22} />
+                    </span>
+                    גלו את התכולות והאמצעים
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-[22px] w-[22px] -scale-x-100 transition-transform duration-300 group-hover:translate-x-1"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M5 12h14" />
+                      <path d="m12 5 7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              )}
 
               {isEditing && section.type !== "cta" && (
                 <div className="mt-6 flex justify-center">
@@ -1453,124 +1436,143 @@ const debouncedRemoveImage = useMemo(
             </div>
           ))}
 
-        {isEditing && isEmptyContent && (
-  <div className="my-6 border-2 border-dashed border-stockblue/20 rounded-2xl p-10 bg-white/50 backdrop-blur-sm shadow-sm">
-    <div className="text-center mb-6">
-      <h3 className="text-stockblue font-bold text-xl mb-2">
-הוספת תוכן לעמוד      </h3>
-      <p className="text-stockblue/70 text-sm">
-יש לבחור סוג מקטע להתחלה :       </p>
-    </div>
+          {isEditing && isEmptyContent && (
+            <div className="my-6 border-2 border-dashed border-stockblue/20 rounded-2xl p-10 bg-white/50 backdrop-blur-sm shadow-sm">
+              <div className="text-center mb-6">
+                <h3 className="text-stockblue font-bold text-xl mb-2">
+                  הוספת תוכן לעמוד{" "}
+                </h3>
+                <p className="text-stockblue/70 text-sm">
+                  יש לבחור סוג מקטע להתחלה :{" "}
+                </p>
+              </div>
 
-    <div className="flex flex-wrap justify-center gap-3">
-      {/* Paragraph */}
-      <button
-        type="button"
-        disabled={hasUnconfirmedChanges}
-        onClick={() => handleAddSection(-1, "paragraph")}
-        title={hasUnconfirmedChanges ? TOAST.unconfirmedChangesBlocked : "הוסף מקטע פסקה"}
-        className={`group inline-flex items-center gap-2 rounded-full px-5 py-2 font-semibold border shadow-md transition-all duration-300
+              <div className="flex flex-wrap justify-center gap-3">
+                {/* Paragraph */}
+                <button
+                  type="button"
+                  disabled={hasUnconfirmedChanges}
+                  onClick={() => handleAddSection(-1, "paragraph")}
+                  title={
+                    hasUnconfirmedChanges
+                      ? TOAST.unconfirmedChangesBlocked
+                      : "הוסף מקטע פסקה"
+                  }
+                  className={`group inline-flex items-center gap-2 rounded-full px-5 py-2 font-semibold border shadow-md transition-all duration-300
           ${
             hasUnconfirmedChanges
               ? "text-gray-400 border-gray-200 bg-white cursor-not-allowed opacity-60"
               : "text-stockblue border-stockblue/30 bg-white hover:bg-stockblue hover:text-white"
           }`}
-      >
-        <span
-          className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition-all duration-300
+                >
+                  <span
+                    className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition-all duration-300
             ${
               hasUnconfirmedChanges
                 ? "border-gray-200 bg-gray-50"
                 : "border-stockblue/20 bg-stockblue/5 group-hover:bg-white/10 group-hover:border-white/30"
             }`}
-        >
-          <FileText size={18} />
-        </span>
-        פסקה
-        <Plus size={16} className="opacity-70 group-hover:opacity-100" />
-      </button>
+                  >
+                    <FileText size={18} />
+                  </span>
+                  פסקה
+                  <Plus
+                    size={16}
+                    className="opacity-70 group-hover:opacity-100"
+                  />
+                </button>
 
-      {/* Bullets */}
-      <button
-        type="button"
-        disabled={hasUnconfirmedChanges}
-        onClick={() => handleAddSection(-1, "bullets")}
-        title={hasUnconfirmedChanges ? TOAST.unconfirmedChangesBlocked : "הוסף מקטע נקודות"}
-        className={`group inline-flex items-center gap-2 rounded-full px-5 py-2 font-semibold border shadow-md transition-all duration-300
+                {/* Bullets */}
+                <button
+                  type="button"
+                  disabled={hasUnconfirmedChanges}
+                  onClick={() => handleAddSection(-1, "bullets")}
+                  title={
+                    hasUnconfirmedChanges
+                      ? TOAST.unconfirmedChangesBlocked
+                      : "הוסף מקטע נקודות"
+                  }
+                  className={`group inline-flex items-center gap-2 rounded-full px-5 py-2 font-semibold border shadow-md transition-all duration-300
           ${
             hasUnconfirmedChanges
               ? "text-gray-400 border-gray-200 bg-white cursor-not-allowed opacity-60"
               : "text-stockblue border-stockblue/30 bg-white hover:bg-stockblue hover:text-white"
           }`}
-      >
-        <span
-          className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition-all duration-300
+                >
+                  <span
+                    className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition-all duration-300
             ${
               hasUnconfirmedChanges
                 ? "border-gray-200 bg-gray-50"
                 : "border-stockblue/20 bg-stockblue/5 group-hover:bg-white/10 group-hover:border-white/30"
             }`}
-        >
-          <ListChecks size={18} />
-        </span>
-        נקודות
-        <Plus size={16} className="opacity-70 group-hover:opacity-100" />
-      </button>
+                  >
+                    <ListChecks size={18} />
+                  </span>
+                  נקודות
+                  <Plus
+                    size={16}
+                    className="opacity-70 group-hover:opacity-100"
+                  />
+                </button>
 
-      {/* Features */}
-      <button
-        type="button"
-        disabled={hasUnconfirmedChanges}
-        onClick={() => handleAddSection(-1, "features")}
-        title={hasUnconfirmedChanges ? TOAST.unconfirmedChangesBlocked : "הוסף מקטע פיצ'רים"}
-        className={`group inline-flex items-center gap-2 rounded-full px-5 py-2 font-semibold border shadow-md transition-all duration-300
+                {/* Features */}
+                <button
+                  type="button"
+                  disabled={hasUnconfirmedChanges}
+                  onClick={() => handleAddSection(-1, "features")}
+                  title={
+                    hasUnconfirmedChanges
+                      ? TOAST.unconfirmedChangesBlocked
+                      : "הוסף מקטע פיצ'רים"
+                  }
+                  className={`group inline-flex items-center gap-2 rounded-full px-5 py-2 font-semibold border shadow-md transition-all duration-300
           ${
             hasUnconfirmedChanges
               ? "text-gray-400 border-gray-200 bg-white cursor-not-allowed opacity-60"
               : "text-stockblue border-stockblue/30 bg-white hover:bg-stockblue hover:text-white"
           }`}
-      >
-        <span
-          className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition-all duration-300
+                >
+                  <span
+                    className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition-all duration-300
             ${
               hasUnconfirmedChanges
                 ? "border-gray-200 bg-gray-50"
                 : "border-stockblue/20 bg-stockblue/5 group-hover:bg-white/10 group-hover:border-white/30"
             }`}
-        >
-          <LayoutGrid size={18} />
-        </span>
-        פיצ׳רים
-        <Plus size={16} className="opacity-70 group-hover:opacity-100" />
-      </button>
-    </div>
-  </div>
-)}
-
-
+                  >
+                    <LayoutGrid size={18} />
+                  </span>
+                  פיצ׳רים
+                  <Plus
+                    size={16}
+                    className="opacity-70 group-hover:opacity-100"
+                  />
+                </button>
+              </div>
+            </div>
+          )}
 
           {isEditing && !hasUnconfirmedChanges && (
-  <div
-    onDragOver={(e) => {
-      e.preventDefault();
-      const from = draggedIndexRef.current;
-      if (from === null) return;
-      setDragOverIndex(sections.length);
-    }}
-    onDragEnter={() => {
-      const from = draggedIndexRef.current;
-      if (from === null) return;
-      setDragOverIndex(sections.length);
-    }}
-    className={`my-6 h-12 rounded-xl transition-all duration-200 ${
-      dragOverIndex === sections.length
-        ? "border-2 border-solid border-stockblue bg-stockblue/5"
-        : "border-2 border-dashed border-stockblue/15"
-    }`}
-  />
-)}
-
-
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                const from = draggedIndexRef.current;
+                if (from === null) return;
+                setDragOverIndex(sections.length);
+              }}
+              onDragEnter={() => {
+                const from = draggedIndexRef.current;
+                if (from === null) return;
+                setDragOverIndex(sections.length);
+              }}
+              className={`my-6 h-12 rounded-xl transition-all duration-200 ${
+                dragOverIndex === sections.length
+                  ? "border-2 border-solid border-stockblue bg-stockblue/5"
+                  : "border-2 border-dashed border-stockblue/15"
+              }`}
+            />
+          )}
         </div>
 
         {/* Image Panel */}

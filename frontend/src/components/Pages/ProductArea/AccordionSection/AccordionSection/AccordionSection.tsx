@@ -125,31 +125,31 @@ const AccordionSection: FC<AccordionSectionProps> = ({
               </div>
             )}
             <AccordionTrigger className="w-full text-right text-lg font-semibold text-stockblue py-4 px-2 rounded-lg hover:bg-stockblue/5 transition-colors [&>svg]:text-stockblue">
-            {isEditing && (
-              <div className="flex items-center gap-2 ml-3 text-gray-500">
-                <div className="group relative cursor-grab">
-                  <GripVertical size={18} className="cursor-grab" />
-                  <span className="absolute top-1/2 -translate-y-1/2 left-8 bg-gray-900 text-white text-xs px-3 py-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-lg z-50">
-                    גרור לשינוי סדר
-                  </span>
+              {isEditing && (
+                <div className="flex items-center gap-2 ml-3 text-gray-500">
+                  <div className="group relative cursor-grab">
+                    <GripVertical size={18} className="cursor-grab" />
+                    <span className="absolute top-1/2 -translate-y-1/2 left-8 bg-gray-900 text-white text-xs px-3 py-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-lg z-50">
+                      יש לגרור לשינוי סדר
+                    </span>
+                  </div>
+                  <div className="group relative">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        removeAccordion(item.uiId);
+                      }}
+                      className="text-black hover:text-gray-700 transition-colors font-bold"
+                    >
+                      ✕
+                    </button>
+                    <span className="absolute top-1/2 -translate-y-1/2 left-8 bg-gray-900 text-white text-xs px-3 py-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-lg z-50">
+                      הסר אקורדיון
+                    </span>
+                  </div>
                 </div>
-                <div className="group relative">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      removeAccordion(item.uiId);
-                    }}
-                    className="text-black hover:text-gray-700 transition-colors font-bold"
-                  >
-                    ✕
-                  </button>
-                  <span className="absolute top-1/2 -translate-y-1/2 left-8 bg-gray-900 text-white text-xs px-3 py-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-lg z-50">
-                    הסר אקורדיון
-                  </span>
-                </div>
-              </div>
-            )}
+              )}
               {isEditing ? (
                 <input
                   type="text"
