@@ -320,7 +320,7 @@ export const Categories: FC<CategoriesProps> = () => {
 
       setCategories((prev) => [...prev, newCategory]);
       setShowAddCatModal(false);
-      toast.success(`הקטגוריה "${name}" נוספה בהצלחה!`);
+      toast.success(`הקטגוריה "${name}" נוצרה בהצלחה!`);
     } catch (error: any) {
       const serverMessage =
         error?.response?.data?.message || error?.response?.data?.error;

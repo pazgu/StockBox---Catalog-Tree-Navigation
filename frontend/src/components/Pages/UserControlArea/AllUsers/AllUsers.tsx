@@ -276,6 +276,28 @@ const AllUsers: FC<AllUsersProps> = () => {
       setUsers((prev) =>
         prev.map((u) => (u._id === updatedUser._id ? updatedUser : u)),
       );
+
+      if (originalUser?.role !== "editor" && userToEdit.role === "editor") {
+        try {
+          const groups = await groupService.getGroups();
+          const userIdStr = String(userToEdit._id);
+
+          const removalPromises = groups
+            .filter((g) => g.members.includes(userIdStr))
+            .map((g) =>
+              groupService.updateGroupMembers(
+                g.id,
+                g.members.filter((memberId) => memberId !== userIdStr),
+              ),
+            );
+
+          await Promise.all(removalPromises);
+        } catch (groupError) {
+          console.error("שגיאה בהסרת המשתמש מהקבוצות:", groupError);
+          toast.error("המשתמש עודכן, אך אירעה שגיאה בהסרה מהקבוצות");
+        }
+      }
+
       toast.success("המשתמש עודכן בהצלחה!");
       setShowEditModal(false);
       setUserToEdit(null);

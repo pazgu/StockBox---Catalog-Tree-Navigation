@@ -466,7 +466,7 @@ const SingleCat: FC = () => {
       };
 
       setItems((prev) => [...prev, newItem]);
-      toast.success(`המוצר "${data.name}" נוסף בהצלחה!`);
+      toast.success(`המוצר "${data.name}" נוצר בהצלחה!`);
       setShowAddProductModal(false);
     } catch (error: any) {
       console.error("Save Error:", error);
@@ -507,7 +507,7 @@ const SingleCat: FC = () => {
         favorite: false,
       };
       setItems([...items, newItem]);
-      toast.success(`הקטגוריה "${data.name}" נוספה בהצלחה!`);
+      toast.success(`הקטגוריה "${data.name}" נוצרה בהצלחה!`);
       setShowAddSubCategoryModal(false);
     } catch (error) {
       const serverMessage =
