@@ -166,7 +166,7 @@ const Header: React.FC<HeaderProps> = ({
                   <button
                     aria-label="Recycle Bin"
                     className="relative p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 group"
-                    onClick={() => navigate("/recycle-bin")}
+                    onClick={() => navigate("/recycleBin")}
                   >
                     <div className="group relative w-8 h-9">
                       <img
@@ -249,7 +249,7 @@ const Header: React.FC<HeaderProps> = ({
               {role === "editor" && (
                 <>
                   <button
-                    onClick={() => navigate("/recycle-bin")}
+                    onClick={() => navigate("/recycleBin")}
                     className="flex flex-col items-center gap-1 text-white/80"
                   >
                     <Trash2 size={20} />
