@@ -214,8 +214,6 @@ const SingleProd: FC<SingleProdProps> = () => {
     setCurrentImageIndex(0);
     setIsEditing(false);
     setEditSnapshot(null);
-
-    toast.success("העריכה בוטלה בהצלחה");
   };
 
   const handleAddImages = async (e: React.ChangeEvent<HTMLInputElement>) => {

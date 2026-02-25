@@ -70,7 +70,7 @@ const BulletsSection: React.FC<BulletsSectionProps> = ({
           "ring-stockblue",
           "ring-offset-2",
           "ring-offset-white",
-          "rounded-lg"
+          "rounded-lg",
         );
         setTimeout(() => {
           el.classList.remove(
@@ -78,7 +78,7 @@ const BulletsSection: React.FC<BulletsSectionProps> = ({
             "ring-stockblue",
             "ring-offset-2",
             "ring-offset-white",
-            "rounded-lg"
+            "rounded-lg",
           );
         }, 1200);
       }
@@ -158,7 +158,11 @@ const BulletsSection: React.FC<BulletsSectionProps> = ({
                 ? "text-gray-400 cursor-not-allowed"
                 : "text-stockblue hover:text-blue-700"
             }`}
-            title={hasUnconfirmedChanges ? "יש לאשר שינויים (✓) לפני הוספת נקודה" : "הוסף נקודה"}
+            title={
+              hasUnconfirmedChanges
+                ? "יש לאשר שינויים (✓) לפני הוספת נקודה"
+                : "הוסף נקודה"
+            }
           >
             הוסף נקודה
             <Plus size={16} />
@@ -186,7 +190,7 @@ const BulletsSection: React.FC<BulletsSectionProps> = ({
                 <div className="flex-shrink-0 text-stockblue/40 cursor-move mt-1 group relative">
                   <GripVertical size={18} />
                   <span className="absolute top-1/2 -translate-y-1/2 left-7 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-50">
-                    גרור לשינוי סדר
+                    יש לגרור לשינוי סדר
                   </span>
                 </div>
               )}
@@ -233,7 +237,9 @@ const BulletsSection: React.FC<BulletsSectionProps> = ({
                   )}
                 </div>
               ) : (
-                <span className="text-slate-700 text-base leading-[1.7]">{b.text}</span>
+                <span className="text-slate-700 text-base leading-[1.7]">
+                  {b.text}
+                </span>
               )}
             </li>
           );
