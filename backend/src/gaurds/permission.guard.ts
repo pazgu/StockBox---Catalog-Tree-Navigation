@@ -48,18 +48,11 @@ export class PermissionGuard implements CanActivate {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     const userObjectId = new Types.ObjectId(user.userId);
 
-    /**
-     * 1️⃣ Find all groups the user belongs to
-     */
     const userGroups = await this.groupModel
       .find({ members: { $in: [userObjectId.toString()] } })
       .select('_id')
       .lean();
 
-    /**
-     * 2️⃣ CASE: User is NOT in any group
-     * → check user permission only
-     */
     if (userGroups.length === 0) {
       const userPermission = await this.permissionModel.findOne({
         entityId: entityObjectId,
@@ -76,10 +69,6 @@ export class PermissionGuard implements CanActivate {
       return true;
     }
 
-    /**
-     * 3️⃣ CASE: User IS in one or more groups
-     * → ALL groups must have permission
-     */
     const groupIds = userGroups.map((g) => g._id);
 
     const groupPermissions = await this.permissionModel
