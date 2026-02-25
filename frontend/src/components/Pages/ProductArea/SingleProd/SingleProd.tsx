@@ -40,22 +40,9 @@ import { isLength } from "validator";
 
 interface SingleProdProps {}
 
-const PLACEHOLDER_IMAGE_PATTERNS = [
-  "placeholder",
-  "default",
-  "no-image",
-  "image-not-found",
-];
-
-function isPlaceholderImage(url: string) {
-  const u = url.trim().toLowerCase();
-  return PLACEHOLDER_IMAGE_PATTERNS.some((p) => u.includes(p));
-}
-
 function normalizeImages(images: string[]) {
   return (images || [])
-    .filter((u) => typeof u === "string" && u.trim().length > 0)
-    .filter((u) => !isPlaceholderImage(u));
+    .filter((u) => typeof u === "string" && u.trim().length > 0);
 }
 
 const SingleProd: FC<SingleProdProps> = () => {
@@ -248,6 +235,9 @@ const SingleProd: FC<SingleProdProps> = () => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
+    const currentUrl = displayImages[currentImageIndex];
+    if (!currentUrl) return;
+
     setIsUploadingImages(true);
 
     try {
@@ -256,51 +246,24 @@ const SingleProd: FC<SingleProdProps> = () => {
         "products/images",
       );
 
-      const handleReplaceImage = async (
-        e: React.ChangeEvent<HTMLInputElement>,
-      ) => {
-        const files = e.target.files;
-        if (!files || files.length === 0) return;
+      setProductImages((prev) =>
+        prev.map((img) => (img === currentUrl ? result.url : img)),
+      );
+    } catch (err) {
+      console.error("Image replacement failed", err);
+      toast.error("החלפת תמונה נכשלה");
+    } finally {
+      setIsUploadingImages(false);
+      setIsReplacingImage(false);
+      e.target.value = "";
+    }
+  };
 
-        const currentUrl = displayImages[currentImageIndex];
-        if (!currentUrl) return;
-
-        setIsUploadingImages(true);
-
-        try {
-          const result = await CloudinaryService.uploadFile(
-            files[0],
-            "products/images",
-          );
-
-    setProductImages((prev) =>
-      prev.map((img) => (img === currentUrl ? result.url : img))
-    );
-  } catch (err) {
-    console.error("Image replacement failed", err);
-    toast.error("החלפת תמונה נכשלה");
-  } finally {
-    setIsUploadingImages(false);
+  const handleDeleteAllImages = async () => {
+    setProductImages([]);
+    setCurrentImageIndex(0);
     setIsReplacingImage(false);
-    e.target.value = "";
-  }
-};
-  } catch (err) {
-    console.error("Image replacement failed", err);
-    toast.error("החלפת תמונה נכשלה");
-  } finally {
-    setIsUploadingImages(false);
-    setIsReplacingImage(false);
-    e.target.value = "";
-  }
-};
-
-const handleDeleteAllImages = async () => {
-  setProductImages([]);
-  setCurrentImageIndex(0);
-
-  setIsReplacingImage(false);
-};
+  };
 
   const handleDeleteImage = () => {
     const currentUrl = displayImages[currentImageIndex];
@@ -314,6 +277,7 @@ const handleDeleteAllImages = async () => {
       return prevIndex >= newLen ? newLen - 1 : prevIndex;
     });
   };
+
   const handleAccordionContentChange = (uiId: string, newContent: string) => {
     setAccordionData((prevData) =>
       prevData.map((item) =>
@@ -332,7 +296,7 @@ const handleDeleteAllImages = async () => {
 
   const confirmAddAccordion = (type: "content" | "bullets") => {
     const newItem = {
-      uiId: `ui-${Date.now()}`, // required for type AccordionData
+      uiId: `ui-${Date.now()}`,
       id: `new-${Date.now()}`,
       title: "",
       type,
@@ -433,7 +397,7 @@ const handleDeleteAllImages = async () => {
       return;
     }
 
-    if(!isLength(title.trim(), { max: 30 })) {
+    if (!isLength(title.trim(), { max: 30 })) {
       toast.error("שם מוצר לא יכול להיות ארוך מ-30 תווים");
       return;
     }
@@ -733,46 +697,43 @@ const handleDeleteAllImages = async () => {
                       </div>
                     </div>
                   )}
-                 <ImageCarousel
-  productImages={displayImages}
-  currentImageIndex={currentImageIndex}
-  setCurrentImageIndex={setCurrentImageIndex}
-  prevImage={() => {
-    if (displayImages.length === 0) return;
-    setCurrentImageIndex((prev) =>
-      prev === 0 ? displayImages.length - 1 : prev - 1
-    );
-  }}
-  nextImage={() => {
-    if (displayImages.length === 0) return;
-    setCurrentImageIndex((prev) =>
-      prev === displayImages.length - 1 ? 0 : prev + 1
-    );
-  }}
-  isEditing={isEditing}
-  handleReplaceImage={handleReplaceImage}
-  handleAddImages={handleAddImages}
-  handleDeleteImage={handleDeleteImage}
-  handleDeleteAllImages={handleDeleteAllImages} 
-  isUploading={isUploadingImages}
-  title={title}
-  isReplacingImage={isReplacingImage}
-  setIsReplacingImage={setIsReplacingImage}
-/>
+                  <ImageCarousel
+                    productImages={displayImages}
+                    currentImageIndex={currentImageIndex}
+                    setCurrentImageIndex={setCurrentImageIndex}
+                    prevImage={() => {
+                      if (displayImages.length === 0) return;
+                      setCurrentImageIndex((prev) =>
+                        prev === 0 ? displayImages.length - 1 : prev - 1,
+                      );
+                    }}
+                    nextImage={() => {
+                      if (displayImages.length === 0) return;
+                      setCurrentImageIndex((prev) =>
+                        prev === displayImages.length - 1 ? 0 : prev + 1,
+                      );
+                    }}
+                    isEditing={isEditing}
+                    handleReplaceImage={handleReplaceImage}
+                    handleAddImages={handleAddImages}
+                    handleDeleteImage={handleDeleteImage}
+                    handleDeleteAllImages={handleDeleteAllImages}
+                    isUploading={isUploadingImages}
+                    title={title}
+                    isReplacingImage={isReplacingImage}
+                    setIsReplacingImage={setIsReplacingImage}
+                  />
                 </div>
               ) : (
                 <div className="relative mb-4">
-                  {/* outer soft card */}
                   <div
                     className={`relative overflow-hidden rounded-[32px] p-[14px] shadow-[0_18px_55px_rgba(15,23,42,0.12)]
 ${isEditing ? "cursor-pointer" : "cursor-not-allowed opacity-80"}`}
                   >
-                    {/* dreamy background */}
                     <div className="absolute inset-0 bg-gradient-to-br from-[#f7fbff] via-white to-[#eaf1ff]" />
                     <div className="absolute -top-10 -left-10 w-40 h-40 rounded-full bg-blue-200/25 blur-3xl" />
                     <div className="absolute -bottom-14 -right-14 w-48 h-48 rounded-full bg-indigo-200/25 blur-3xl" />
 
-                    {/* uploading overlay - ADD THIS BACK */}
                     {isUploadingImages && (
                       <div className="absolute inset-0 z-20 grid place-items-center bg-white/60 backdrop-blur-sm rounded-[32px]">
                         <div className="flex items-center gap-2 rounded-2xl bg-white/80 px-4 py-2 shadow">
@@ -784,7 +745,6 @@ ${isEditing ? "cursor-pointer" : "cursor-not-allowed opacity-80"}`}
                       </div>
                     )}
 
-                    {/* inner dashed area */}
                     <button
                       type="button"
                       disabled={isUploadingImages}
@@ -803,7 +763,6 @@ ${isEditing ? "cursor-pointer" : "cursor-not-allowed opacity-80"}`}
           ${isEditing ? "hover:bg-white/70 hover:border-slate-400/90" : ""}
           ${isUploadingImages ? "opacity-60 cursor-not-allowed" : ""}`}
                     >
-                      {/* upload icon bubble */}
                       <div className="h-14 w-14 rounded-2xl bg-white/70 shadow-sm grid place-items-center">
                         <Upload className="h-7 w-7 text-slate-500" />
                       </div>
@@ -931,43 +890,34 @@ ${isEditing ? "cursor-pointer" : "cursor-not-allowed opacity-80"}`}
   );
 };
 
-
-
-
 const SingleProdSkeleton: FC = () => {
   return (
     <div className="pt-16 px-6 pb-10 font-sans-['Noto_Sans_Hebrew'] rtl">
-      {/* Breadcrumbs placeholder */}
       <div className="mb-6">
         <Skeleton className="h-4 w-72 rounded-md" />
       </div>
 
       <div className="max-w-6xl mx-auto">
-        {/* Title row (like your h1 + floating buttons area space) */}
         <div className="flex justify-between items-center mb-4 text-right">
           <div className="flex-1">
             <Skeleton className="h-10 w-72 rounded-lg" />
           </div>
         </div>
 
-        {/* Description */}
         <div className="text-right mb-12">
           <Skeleton className="h-5 w-[520px] max-w-full rounded-md" />
           <Skeleton className="h-5 w-[420px] max-w-full mt-3 rounded-md" />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
-          {/* LEFT: image card */}
           <div className="lg:col-span-1 order-2 lg:order-1">
             <div className="group relative bg-white p-4 rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-stockblue to-stockblue" />
 
-              {/* Image area */}
               <div className="relative mb-4">
                 <Skeleton className="h-[320px] w-full rounded-[28px]" />
               </div>
 
-              {/* Buttons area (viewer icons / editor button) */}
               <div className="space-y-2 relative z-10 flex flex-row justify-center gap-12">
                 <Skeleton className="h-12 w-14 rounded-lg" />
                 <Skeleton className="h-6 w-6 rounded-md" />
@@ -976,9 +926,7 @@ const SingleProdSkeleton: FC = () => {
             </div>
           </div>
 
-          {/* RIGHT: accordion + files */}
           <div className="lg:col-span-2 order-1 lg:order-2">
-            {/* Accordion skeleton */}
             <div className="w-full space-y-2">
               {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="border-b border-gray-200/70 rounded-lg">
@@ -986,7 +934,6 @@ const SingleProdSkeleton: FC = () => {
                     <Skeleton className="h-6 w-64 rounded-md" />
                     <Skeleton className="h-6 w-6 rounded-md" />
                   </div>
-                  {/* Content preview area (like open accordion content) */}
                   <div className="px-2 pb-6">
                     <Skeleton className="h-4 w-full rounded-md" />
                     <Skeleton className="h-4 w-[90%] rounded-md mt-2" />
@@ -996,14 +943,12 @@ const SingleProdSkeleton: FC = () => {
               ))}
             </div>
 
-            {/* Files section skeleton */}
             <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 mt-6">
               <div className="flex items-center justify-between mb-6">
                 <Skeleton className="h-8 w-56 rounded-md" />
                 <Skeleton className="h-10 w-32 rounded-lg" />
               </div>
 
-              {/* Folder blocks */}
               <div className="space-y-4">
                 {Array.from({ length: 2 }).map((_, idx) => (
                   <div
@@ -1023,7 +968,6 @@ const SingleProdSkeleton: FC = () => {
                     </div>
 
                     <div className="p-4 pt-0 border-t border-gray-200">
-                      {/* file row skeleton */}
                       <div className="space-y-2 mt-3">
                         {Array.from({ length: 2 }).map((__, j) => (
                           <div
