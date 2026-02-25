@@ -166,7 +166,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               <CheckCircle2 className="w-4 h-4" />
             </button>
             <div className="absolute bottom-full right-1/2 translate-x-1/2 mb-0 px-2 py-1 bg-gray-800 text-white text-[10px] rounded-lg whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg">
-              בחר
+              בחירה
             </div>
           </div>
 
@@ -187,7 +187,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                 <Users className="w-4 h-4" />
               </button>
               <div className="absolute bottom-full right-1/2 translate-x-1/2 mb-0 px-2 py-1 bg-gray-800 text-white text-[10px] rounded-lg whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg">
-                בחר עם צאצאים
+                בחירה עם צאצאים
               </div>
             </div>
           )}
