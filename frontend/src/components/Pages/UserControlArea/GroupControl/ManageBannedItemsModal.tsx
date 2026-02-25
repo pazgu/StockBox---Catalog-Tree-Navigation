@@ -517,27 +517,29 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
                 }}
               />
             </div>
-          <div className="p-1.5 bg-white">
-            <div className="relative group/tooltip flex justify-center">
-              <span
-                className="font-semibold text-gray-800 text-[10px] w-full line-clamp-2 text-center leading-tight"
-                style={{
-                  overflowWrap: "anywhere",
-                  wordBreak: "break-word",
-                  direction: /[\u0590-\u05FF]/.test(item.name) ? "rtl" : "ltr",
-                }}
-                title="" 
-              >
-                {item.name}
-              </span>
-
-              {item.name.length > 20 && (
-                <span className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-50 shadow-md">
+            <div className="p-1.5 bg-white">
+              <div className="relative group/tooltip flex justify-center">
+                <span
+                  className="font-semibold text-gray-800 text-[10px] w-full line-clamp-2 text-center leading-tight"
+                  style={{
+                    overflowWrap: "anywhere",
+                    wordBreak: "break-word",
+                    direction: /[\u0590-\u05FF]/.test(item.name)
+                      ? "rtl"
+                      : "ltr",
+                  }}
+                  title=""
+                >
                   {item.name}
                 </span>
-              )}
+
+                {item.name.length > 20 && (
+                  <span className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-50 shadow-md">
+                    {item.name}
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
           </div>
         ))}
       </div>
@@ -579,9 +581,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
   };
 
   return (
-    <div
-      className="fixed inset-0  bg-slate-900/90 backdrop-blur-sm flex items-center justify-center z-50 p-2 overflow-y-auto"
-    >
+    <div className="fixed inset-0  bg-slate-900/90 backdrop-blur-sm flex items-center justify-center z-50 p-2 overflow-y-auto">
       <div
         className="bg-white rounded-xl w-full max-w-5xl shadow-2xl text-right flex flex-col my-auto h-[90vh]"
         onClick={(e) => e.stopPropagation()}
@@ -602,28 +602,37 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
         </div>
         <div className="flex justify-center py-2">
           <div className="flex gap-1 bg-gray-100 p-1 rounded-lg ">
-            <button
-              onClick={() => setViewMode("tree")}
-              className={`px-3 py-1 rounded text-xs font-medium transition-all ${
-                viewMode === "tree"
-                  ? "bg-white text-slate-700 shadow"
-                  : "text-gray-600 hover:text-gray-800"
-              }`}
-              title="תצוגת עץ"
-            >
-              <GitBranch className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setViewMode("grid")}
-              className={`px-3 py-1 rounded text-xs font-medium transition-all ${
-                viewMode === "grid"
-                  ? "bg-white text-slate-700 shadow"
-                  : "text-gray-600 hover:text-gray-800"
-              }`}
-              title="תצוגת רשת"
-            >
-              <List className="w-4 h-4" />
-            </button>
+            <div className="relative group">
+              <button
+                onClick={() => setViewMode("tree")}
+                className={`px-3 py-1 rounded text-xs font-medium transition-all ${
+                  viewMode === "tree"
+                    ? "bg-white text-slate-700 shadow"
+                    : "text-gray-600 hover:text-gray-800"
+                }`}
+              >
+                <GitBranch className="w-4 h-4" />
+              </button>
+              <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-3 py-2 rounded opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                תצוגת עץ
+              </span>
+            </div>
+            
+            <div className="relative group">
+              <button
+                onClick={() => setViewMode("grid")}
+                className={`px-3 py-1 rounded text-xs font-medium transition-all ${
+                  viewMode === "grid"
+                    ? "bg-white text-slate-700 shadow"
+                    : "text-gray-600 hover:text-gray-800"
+                }`}
+              >
+                <List className="w-4 h-4" />
+              </button>
+              <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-3 py-2 rounded opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                תצוגת רשימה
+              </span>
+            </div>
           </div>
         </div>
         {viewMode === "grid" && (
@@ -769,26 +778,28 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
                       ` (${selectedWithChildren.size} עם ילדים)`}
                   </span>
                   {viewMode === "grid" && (
-                  <div className="relative group/tooltip">
-                    <button
-                      onClick={() => handleBulkAction()}
-                      disabled={isLoading}
-                      className={`py-1 px-3 rounded-md text-[11px] font-medium transition-all shadow-sm hover:shadow-md ${
-                        activeTab === "banned"
-                          ? "bg-green-500 text-white hover:bg-green-600 disabled:bg-green-300"
-                          : "bg-red-500 text-white hover:bg-red-600 disabled:bg-red-300"
-                      }`}
-                    >
-                      {activeTab === "banned" ? (
-                        <LockOpen className="w-3.5 h-3.5" />
-                      ) : (
-                        <Lock className="w-3.5 h-3.5" />
-                      )}
-                    </button>
-                    <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-50">
-                      {activeTab === "banned" ? "שחרר פריטים נבחרים" : "חסום פריטים נבחרים"}
-                    </span>
-                  </div>
+                    <div className="relative group/tooltip">
+                      <button
+                        onClick={() => handleBulkAction()}
+                        disabled={isLoading}
+                        className={`py-1 px-3 rounded-md text-[11px] font-medium transition-all shadow-sm hover:shadow-md ${
+                          activeTab === "banned"
+                            ? "bg-green-500 text-white hover:bg-green-600 disabled:bg-green-300"
+                            : "bg-red-500 text-white hover:bg-red-600 disabled:bg-red-300"
+                        }`}
+                      >
+                        {activeTab === "banned" ? (
+                          <LockOpen className="w-3.5 h-3.5" />
+                        ) : (
+                          <Lock className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                      <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-50">
+                        {activeTab === "banned"
+                          ? "שחרר פריטים נבחרים"
+                          : "חסום פריטים נבחרים"}
+                      </span>
+                    </div>
                   )}
                   {viewMode === "tree" && (
                     <div className="flex items-center gap-2">
