@@ -51,9 +51,6 @@ const BannedItems: React.FC<BannedItemsProps> = ({
           onClick={() => setShowManageModal(true)}
           className="relative group flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg transition-all duration-200 shadow-md text-sm"
         >
-          <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-3 py-2 rounded opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none shadow-xl z-20">
-            נהל פריטים חסומים
-          </span>
           <Settings className="w-4 h-4" />
           <span className="hidden sm:inline">נהל פריטים</span>
         </button>
