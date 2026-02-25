@@ -73,9 +73,11 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
       });
 
       await loadRecycleBinItems();
-      toast.success(`<span className="inline-block max-w-full break-words">
-  "${selectedItem.itemName}"
-</span> שוחזר בהצלחה!`);
+      toast.success(
+        <span className="inline-block max-w-full break-words">
+          "{selectedItem.itemName}" שוחזר בהצלחה
+        </span>,
+      );
       setShowRestoreModal(false);
       setSelectedItem(null);
     } catch (error) {
@@ -100,7 +102,7 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
       toast.success(
         <span className="inline-block max-w-full break-words">
           "{selectedItem.itemName}" נמחק לצמיתות
-        </span>
+        </span>,
       );
       setShowPermanentDeleteModal(false);
       setSelectedItem(null);
@@ -279,7 +281,8 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
                   <span className="text-base text-slate-700 font-medium mt-2 w-44 text-center truncate block">
                     {item.itemName}
                   </span>
-                  <span className="text-xs text-slate-500">
+                  <span className="text-xs text-slate-500 block">
+                    נמחק ב-
                     {new Date(item.deletedAt).toLocaleDateString("he-IL")}
                   </span>
                   {item.childrenCount != null && item.childrenCount > 0 && (
@@ -510,7 +513,7 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
             </p>
 
             <p className="text-slate-700 mb-3">
-              האם אתה בטוח שברצונך למחוק לצמיתות את{" "}
+              האם ברצונך למחוק לצמיתות את{" "}
               {selectedItem.itemType === "category" ? "הקטגוריה" : "המוצר"}{" "}
               <span className="inline-block max-w-full break-words">
                 "{selectedItem.itemName}"

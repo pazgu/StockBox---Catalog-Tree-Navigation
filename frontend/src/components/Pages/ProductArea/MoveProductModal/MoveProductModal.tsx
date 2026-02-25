@@ -349,7 +349,7 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
         {needsSourceSelection && (
           <div className="text-right mb-6">
             <label className="block text-gray-700 font-medium mb-2">
-              1️⃣ מאיזו קטגוריה להעביר?
+              מאיזו קטגוריה להעביר?
             </label>
             <div className="border border-gray-200 rounded-lg p-2 bg-blue-50">
               {allCategories.map((cat) => renderCategory(cat, 0, true))}
@@ -363,7 +363,7 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
 
         <div className="text-right mb-6">
           <label className="block text-gray-700 font-medium mb-2">
-            {needsSourceSelection ? "2️⃣ " : ""}בחר קטגוריית יעד:
+            {needsSourceSelection ? " " : ""}בחר קטגוריית יעד:
           </label>
 
           {loading && allCategories.length === 0 ? (
