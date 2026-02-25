@@ -36,7 +36,7 @@ import MoveMultipleItemsModal from "./MoveMultipleItemsModal/MoveMultipleItemsMo
 import { usePath } from "../../../../context/PathContext";
 import ImagePreviewHover from "../../ProductArea/ImageCarousel/ImageCarousel/ImagePreviewHover";
 import { useDebouncedFavorite } from "../../../../hooks/useDebouncedFavorite";
-import {truncateDisplay} from "../../../../lib/utils";
+import { truncateDisplay } from "../../../../lib/utils";
 
 const hasImage = (images: any): boolean => {
   if (!images) return false;
@@ -648,8 +648,24 @@ const SingleCat: FC = () => {
           {!isSelectionMode ? (
             <button
               onClick={toggleSelectionMode}
-              className="text-base text-gray-700 hover:text-[#0D305B] hover:underline transition-colors"
+              className="flex items-center gap-2 text-sm font-medium text-[#0D305B] border border-[#0D305B] px-4 py-2 rounded hover:bg-[#0D305B] hover:text-white transition-all duration-200 shadow-sm"
             >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="3" y="5" width="4" height="4" rx="1" />
+                <rect x="3" y="13" width="4" height="4" rx="1" />
+                <line x1="10" y1="7" x2="21" y2="7" />
+                <line x1="10" y1="15" x2="21" y2="15" />
+              </svg>
               בחירה מרובה
             </button>
           ) : (
@@ -761,11 +777,10 @@ const SingleCat: FC = () => {
                   >
                     <FolderInput size={18} />
                   </button>
-            
+
                   <span className="absolute -bottom-8 -left-1 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
                     העברה לקטגוריה אחרת
                   </span>
-              
                 </div>
                 <div className="absolute bottom-5 left-3">
                   <button
