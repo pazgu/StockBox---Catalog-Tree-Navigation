@@ -144,6 +144,11 @@ const SingleCat: FC = () => {
     };
   }, [showFabButtons]);
 
+  useEffect(() => {
+  setIsSelectionMode(false);
+  setSelectedItems([]);
+}, [categoryPath]);
+
   const loadAllContent = async () => {
     try {
       setLoading(true);
