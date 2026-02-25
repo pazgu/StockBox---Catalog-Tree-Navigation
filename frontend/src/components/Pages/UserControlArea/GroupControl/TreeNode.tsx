@@ -131,8 +131,8 @@ const TreeNode: React.FC<TreeNodeProps> = ({
           />
         )}
 
-        <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center">
-          {hasChildren ? (
+<div className={`flex-shrink-0 flex items-center justify-center ${hasChildren ? "w-6 h-6" : "w-0"}`}>
+            {hasChildren ? (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -146,9 +146,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                 <ChevronLeft className="w-4 h-4" />
               )}
             </button>
-          ) : (
-            <div className="w-1.5 h-1.5 rounded-full bg-gray-300 mx-auto" />
-          )}
+          ) : null}
         </div>
 
         <div className="flex items-center gap-1.5 flex-shrink-0">
