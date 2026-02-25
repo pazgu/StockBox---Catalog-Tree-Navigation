@@ -80,7 +80,7 @@ const Breadcrumbs: FC<BreadcrumbsProps> = ({ path }) => {
         `}
         aria-label="scroll right"
       >
-        <ChevronRight className="size-4" />
+        <ChevronRight className="size-4 mt-1" />
       </button>
 
       <div
@@ -132,7 +132,7 @@ const Breadcrumbs: FC<BreadcrumbsProps> = ({ path }) => {
                 )}
               </span>
               {!isLast && (
-                <ChevronLeft className="size-3 text-gray-300 shrink-0" />
+                <ChevronLeft className="size-3 text-gray-300 shrink-0 mt-1" />
               )}
             </span>
           );
@@ -148,7 +148,7 @@ const Breadcrumbs: FC<BreadcrumbsProps> = ({ path }) => {
         `}
         aria-label="scroll left"
       >
-        <ChevronLeft className="size-4" />
+        <ChevronLeft className="size-4 mt-1" />
       </button>
 
       <span
