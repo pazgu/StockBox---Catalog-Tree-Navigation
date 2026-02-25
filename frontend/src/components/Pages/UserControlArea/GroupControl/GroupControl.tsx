@@ -346,7 +346,7 @@ const [bannedItemsByGroup, setBannedItemsByGroup] = useState<Record<string, Bann
         </div>
 
         {/* Lists */}
-        <div className="grid grid-cols-12">
+        <div className="grid grid-cols-12 items-stretch h-[800px]">
           <GroupList
             groups={groups}
             users={users}
