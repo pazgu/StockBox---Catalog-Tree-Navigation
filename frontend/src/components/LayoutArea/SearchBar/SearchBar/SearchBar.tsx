@@ -123,7 +123,7 @@ const SearchBar: React.FC<SearchHeaderProps> = ({
   };
 
   const handleShowAll = () => {
-    navigate(`/search-all?q=${encodeURIComponent(searchQuery)}`);
+    navigate(`/searchAll?q=${encodeURIComponent(searchQuery)}`);
     setShowResults(false);
   };
 
