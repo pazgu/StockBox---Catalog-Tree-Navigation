@@ -208,7 +208,6 @@ const TreeNode: React.FC<TreeNodeProps> = ({
           <div className="flex flex-col min-w-0">
             <span
               className={`text-sm font-bold truncate max-w-xs ${styles.text}`}
-              title={node.name}
             >
               {node.name}
             </span>
