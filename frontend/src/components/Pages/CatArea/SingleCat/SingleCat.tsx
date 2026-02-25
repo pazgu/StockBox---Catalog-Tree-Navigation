@@ -669,7 +669,7 @@ const SingleCat: FC = () => {
                     onClick={handleMoveSelectedToRecycleBin}
                     className="text-base hover:underline text-orange-600 hover:text-orange-700 transition-colors"
                   >
-                    העברה לסל ({selectedItems.length})
+                    העברה לסל מיחזור ({selectedItems.length})
                   </button>
                   <span className="text-gray-400">|</span>
                   <button
