@@ -89,7 +89,6 @@ const Header: React.FC<HeaderProps> = ({
       >
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-20">
-            {/* Logo */}
             <div className="hidden sm:block flex-shrink-0 transform transition-transform duration-300 hover:scale-105 cursor-pointer">
               <img
                 src={logoSrc}
@@ -99,7 +98,6 @@ const Header: React.FC<HeaderProps> = ({
               />
             </div>
 
-            {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center flex-1 justify-center max-w-3xl mx-8">
               <nav className="flex items-center gap-6" dir="rtl">
                 <NavLink to="/categories" className={navLinkClass}>
@@ -127,11 +125,9 @@ const Header: React.FC<HeaderProps> = ({
               <SearchBar onSelectResult={handleSearchSelect} />
             </div>
 
-            {/* Action Icons */}
             <div
               className={`hidden lg:flex items-center gap-2 mr-4 ${isMobileMenuOpen ? "hidden" : ""}`}
             >
-              {/* Favorites — visible when logged in */}
               {role && (
                 <button
                   aria-label="Favorites"
@@ -148,7 +144,6 @@ const Header: React.FC<HeaderProps> = ({
                 </button>
               )}
 
-              {/* Editor-only controls */}
               {role === "editor" && (
                 <>
                   <div className="relative group">
@@ -265,7 +260,6 @@ const Header: React.FC<HeaderProps> = ({
               )}
             </nav>
 
-            {/* Mobile Quick Actions */}
             <div className="flex justify-around mt-1 pt-6 border-t border-white/20">     
                 <button
                   onClick={() => navigate("/Favorites")}
@@ -307,7 +301,6 @@ const Header: React.FC<HeaderProps> = ({
                 </>
               )}
 
-              {/* ── Mobile Logout — visible for ANY logged-in role ── */}
               {role && (
                 <button
                   onClick={handleLogout}
