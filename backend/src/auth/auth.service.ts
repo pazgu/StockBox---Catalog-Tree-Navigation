@@ -11,6 +11,7 @@ import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dtos/Login.dto';
 import { User, UserRole } from 'src/schemas/Users.schema';
 import { UsersService } from 'src/users/users.service';
+import { BadRequestException } from '@nestjs/common';
 
 @Injectable()
 export class AuthService {
@@ -37,6 +38,12 @@ export class AuthService {
       if (emailExists || userNameExists) {
         throw new ConflictException({
           code: 'USER_CREDENTIALS_MISMATCH',
+        });
+      }
+      if (!dto.firstName?.trim() || !dto.lastName?.trim()) {
+        throw new BadRequestException({
+          code: 'MISSING_NAME_FOR_NEW_USER',
+          fields: ['firstName', 'lastName'],
         });
       }
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
