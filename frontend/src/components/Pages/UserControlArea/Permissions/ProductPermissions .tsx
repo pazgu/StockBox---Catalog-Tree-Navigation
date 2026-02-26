@@ -347,35 +347,26 @@ const ProductPermissions: React.FC = () => {
         );
         return;
       }
-      const blockedByProduct = allIds.filter((id) => isBlockedInProduct(id));
-      if (blockedByProduct.length > 0) {
-        toast.error(
-          "לא ניתן לשחרר לכולם - חלק מהמשתמשים/קבוצות חסומים במוצר",
-        );
-        return;
-      }
     }
     setPathStates((prev) => {
-        const pathState = prev[path];
-        if (!pathState) return prev;
+      const pathState = prev[path];
+      if (!pathState) return prev;
 
-        return {
-          ...prev,
-          [path]: {
-            ...pathState,
-
-            users: pathState.users.map((u) => ({
-              ...u,
-              enabled: u.groupIds.length === 0 ? enabled : false,
-            })),
-
-            groups: pathState.groups.map((g) => ({
-              ...g,
-              members: enabled,
-            })),
-          },
-        };
-      });
+      return {
+        ...prev,
+        [path]: {
+          ...pathState,
+          users: pathState.users.map((u) => ({
+            ...u,
+            enabled: u.groupIds.length === 0 ? enabled : false,
+          })),
+          groups: pathState.groups.map((g) => ({
+            ...g,
+            members: enabled,
+          })),
+        },
+      };
+    });
   };
 
   const savePermissionsForPath = async (pathData: PathData) => {
