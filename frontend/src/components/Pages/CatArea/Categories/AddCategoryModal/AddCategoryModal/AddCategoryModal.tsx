@@ -538,15 +538,8 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
                 "שמור"
               )}
               </button>
-            </div>
-
-         
+            </div>       
             <div>
-
-              
-
-
-            
           </div>
         </div>
       </div>
