@@ -854,6 +854,7 @@ ${isEditing ? "cursor-pointer" : "cursor-not-allowed opacity-80"}`}
           <AccordionSection
             isEditing={isEditing}
             accordionData={accordionData}
+            userRole={role as "editor" | "viewer"}
             features={features}
             folders={folders}
             draggedItem={draggedItem}
