@@ -136,7 +136,7 @@ const DuplicateProductModal: React.FC<DuplicateProductModalProps> = ({
     const isLoading = loadingSubcats.has(cat.categoryPath);
     const isSelected = selectedCategoryPaths.has(cat.categoryPath);
     const slugify = (name: string) => name.toLowerCase().replace(/\s+/g, '-');
-    const productSlug = slugify(productName); // productName is already a prop
+    const productSlug = slugify(productName); 
     const isCurrentPath = currentPaths.some(
       (p) => p === `${cat.categoryPath}/${productSlug}`
     );
