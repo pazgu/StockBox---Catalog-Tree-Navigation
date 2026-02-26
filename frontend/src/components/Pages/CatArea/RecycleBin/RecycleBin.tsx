@@ -1,5 +1,4 @@
 import React, { FC, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Trash2, RotateCcw, PackageX, AlertTriangle } from "lucide-react";
 import { useUser } from "../../../../context/UserContext";
@@ -8,6 +7,7 @@ import { RecycleBinItemDTO } from "../../../models/recycleBin.models";
 import { Spinner } from "../../../ui/spinner";
 import ImagePreviewHover from "../../ProductArea/ImageCarousel/ImageCarousel/ImagePreviewHover";
 import { PathDisplay } from "../../SharedComponents/PathDisplay/PathDisplay";
+import Page404 from "../../Page404/Page404";
 
 type FilterType = "all" | "categories" | "products";
 
@@ -151,13 +151,7 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
   }
 
   if (role !== "editor") {
-    return (
-      <div className="mt-12 p-4 flex items-center justify-center min-h-[400px]">
-        <div className="text-slate-700 text-xl">
-          רק עורכים יכולים לגשת לסל המיחזור
-        </div>
-      </div>
-    );
+    return <Page404 />;
   }
 
   const categoryItems = items.filter((x) => x.itemType === "category");
