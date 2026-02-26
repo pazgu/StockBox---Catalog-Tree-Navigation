@@ -196,40 +196,6 @@ export const Categories: FC<CategoriesProps> = () => {
     }
   };
 
-  const toggleFavorite = async (
-    itemId: string,
-    itemName: string,
-    itemType: "category" | "product",
-  ) => {
-    if (!id) {
-      toast.error("יש להתחבר כדי להוסיף למועדפים");
-      return;
-    }
-
-    const wasFavorite = items.find((x) => x.id === itemId)?.favorite ?? false;
-
-    try {
-      setItems((prev) =>
-        prev.map((x) =>
-          x.id === itemId ? { ...x, favorite: !wasFavorite } : x,
-        ),
-      );
-
-      await userService.toggleFavorite(itemId, itemType);
-
-      if (!wasFavorite) toast.success(`${itemName} נוספה למועדפים`);
-      else toast.info(`${itemName} הוסרה מהמועדפים`);
-    } catch (error) {
-      toast.error("שגיאה בעדכון המועדפים");
-
-      setItems((prev) =>
-        prev.map((x) =>
-          x.id === itemId ? { ...x, favorite: wasFavorite } : x,
-        ),
-      );
-    }
-  };
-
   const debouncedToggleFavorite = useDebouncedFavorite(items, setItems, 500);
 
   const handleMoveToRecycleBin = async (category: Category) => {
@@ -306,7 +272,11 @@ export const Categories: FC<CategoriesProps> = () => {
     setProductToMoveToRecycleBin(null);
   };
 
-  const handleAddCategory = async ({ name, imageFile,allowAll }: AddCategoryResult) => {
+  const handleAddCategory = async ({
+    name,
+    imageFile,
+    allowAll,
+  }: AddCategoryResult) => {
     try {
       const categoryPath = `/categories/${name
         .toLowerCase()
