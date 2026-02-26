@@ -39,6 +39,10 @@ const Header: React.FC<HeaderProps> = ({
 
   const handleLogout = () => {
     setUser(null);
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("previousPath");
+    localStorage.removeItem("groupControl:selectedGroupId");
     navigate("/login");
   };
 
