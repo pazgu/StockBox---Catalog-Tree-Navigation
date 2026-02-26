@@ -187,7 +187,11 @@ export class ProductsService {
         { nameKey },
         { $set: { refId: savedProduct._id.toString() } },
       );
-      await this.permissionsService.assignPermissionsForNewEntity(savedProduct);
+      if (createProductDto.allowAll) {
+        await this.permissionsService.assignPermissionsForNewEntity(
+          savedProduct,
+        );
+      }
 
       return savedProduct;
     } catch (error: any) {

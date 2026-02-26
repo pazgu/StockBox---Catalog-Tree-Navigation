@@ -1,7 +1,7 @@
 export type CustomFieldDto = {
   _id: string;
   title: string;
-  type: 'bullets' | 'content';
+  type: "bullets" | "content";
   bullets?: string[];
   content?: string;
 };
@@ -35,8 +35,6 @@ export interface ProductDataDto {
   updatedAt: string;
 }
 
-
-
 export interface ProductDto {
   _id?: string;
   productName: string;
@@ -44,20 +42,19 @@ export interface ProductDto {
   productDescription?: string;
   productPath: Array<string>;
   customFields?: CustomFieldDto[];
-  uploadFolders?: UploadGroupDto[]; 
+  uploadFolders?: UploadGroupDto[];
   createdAt?: string;
   updatedAt?: string;
 }
-
 
 export type CreateProductPayload = {
   productName: string;
   productPath: string;
   productDescription?: string;
   customFields?: Record<string, any>;
-  imageFile?: File; 
+  imageFile?: File;
+  allowAll: boolean;
 };
-
 
 export interface UpdateProductPayload {
   productName?: string;
@@ -65,22 +62,22 @@ export interface UpdateProductPayload {
   productPath?: string;
   productImages?: (string | File)[];
   customFields?: Array<{
-    _id?: string;      // optional: if missing, backend creates new
+    _id?: string;
     title: string;
-    type: 'bullets' | 'content';
+    type: "bullets" | "content";
     bullets?: string[];
     content?: string;
   }>;
   uploadFolders?: Array<{
-    _id?: string;      // optional: if missing, backend creates new
+    _id?: string;
     title: string;
     folders: Array<{
-      _id?: string;    // optional
+      _id?: string;
       folderName: string;
       files: Array<{
-        _id?: string;  // optional
-        link?: string; // existing file
-        file?: File;   // new uploaded file
+        _id?: string;
+        link?: string;
+        file?: File;
       }>;
     }>;
   }>;

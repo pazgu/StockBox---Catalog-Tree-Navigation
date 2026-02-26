@@ -3,11 +3,13 @@ import { toast } from "sonner";
 import useBlockBrowserZoom from "../../Categories/useBlockBrowserZoom";
 import { Spinner } from "../../../../ui/spinner";
 import { isLength } from "validator";
+import { Label } from "../../../../../components/ui/label";
+import { Switch } from "../../../../../components/ui/switch";
 
 type Props = {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (result: { name: string; imageFile?: File }) => Promise<void>;
+  onSave: (result: { name: string; imageFile?: File,allowAll:boolean }) => Promise<void>;
 };
 
 const CROP_BOX = 256;
@@ -86,6 +88,7 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   const [isPanning, setIsPanning] = React.useState(false);
   const [startPan, setStartPan] = React.useState({ x: 0, y: 0 });
   const [isSaving, setIsSaving] = React.useState(false);
+  const [allowAll, setAllowAll] = React.useState(false);
 
   const cropRef = React.useRef<HTMLDivElement>(null!);
   useBlockBrowserZoom(cropRef);
@@ -223,7 +226,7 @@ const handleClose = () => {
   try {
     setIsSaving(true);
 
-    await onSave({ name: categoryName.trim(), imageFile: file as any });
+    await onSave({ name: categoryName.trim(), imageFile: file as any, allowAll });
 
     handleClose();
   } catch (error: any) {
@@ -481,11 +484,27 @@ const handleClose = () => {
             </div>
           )}
 
-          <div className="flex justify-between gap-3">
+          <div className="flex justify-between relative items-center p-4 bg-white bg-opacity-50 border rounded-lg mb-4 shadow-sm border-blue-100">
+            <Label className="font-bold text-blue-900 text-sm mb-2">
+             לאפשר לכולם לראות את הקטגוריה החדשה?
+            </Label>
+            <span className="absolute bottom-2 right-4 text-xs text-gray-500">יש לשים לב! חסימות של קטגוריית האב יוחלו על הקטגוריה החדשה</span>
+
+            <Switch
+              checked={
+                allowAll
+              }
+             onCheckedChange={() => {
+               setAllowAll(!allowAll);
+            }}
+            />
+          </div>
+
+          <div className="flex justify-between gap-3 border-t-2 border-gray-200 mb-2">
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className={`flex-1 p-3 rounded-lg text-base font-medium transition-all duration-200 text-white shadow-md
+              className={`flex-1 p-3 mt-8 rounded-lg text-base font-medium transition-all duration-200 text-white shadow-md
     ${
                 isSaving
                   ? "bg-slate-400 cursor-not-allowed"
@@ -505,7 +524,7 @@ const handleClose = () => {
             <button
               onClick={handleClose}
               disabled={isSaving}
-              className={`flex-1 p-3 border-none rounded-lg text-base font-medium transition-all duration-200 border
+              className={`flex-1 p-3 mt-8 border-none rounded-lg text-base font-medium transition-all duration-200 border
                 ${isSaving
                   ? "bg-gray-100 text-gray-300 cursor-not-allowed border-gray-200"
                   : "bg-gray-100 text-gray-500 border border-gray-300 hover:bg-gray-300 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"

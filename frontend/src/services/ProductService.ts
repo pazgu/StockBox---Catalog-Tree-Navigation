@@ -58,6 +58,7 @@ export class ProductsService {
     if (payload.imageFile) {
       fd.append("productImageFile", payload.imageFile);
     }
+    fd.append("allowAll", payload.allowAll.toString());
 
     try {
       const { data } = await api.post<ProductDto>(

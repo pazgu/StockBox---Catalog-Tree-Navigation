@@ -444,6 +444,7 @@ const SingleCat: FC = () => {
     name: string;
     description: string;
     imageFile?: File;
+    allowAll: boolean;
   }) => {
     try {
       const productPathString = categoryPath;
@@ -453,6 +454,7 @@ const SingleCat: FC = () => {
         productDescription: data.description,
         customFields: {},
         imageFile: data.imageFile,
+        allowAll: data.allowAll,
       });
 
       const newItem: DisplayItem = {
@@ -486,6 +488,7 @@ const SingleCat: FC = () => {
   const handleSaveCategory = async (data: {
     name: string;
     imageFile?: File;
+    allowAll: boolean;
   }) => {
     try {
       const newCategoryPath =
@@ -496,6 +499,7 @@ const SingleCat: FC = () => {
         categoryName: data.name,
         categoryPath: newCategoryPath,
         imageFile: data.imageFile,
+        allowAll: data.allowAll,
       });
 
       const newItem: DisplayItem = {

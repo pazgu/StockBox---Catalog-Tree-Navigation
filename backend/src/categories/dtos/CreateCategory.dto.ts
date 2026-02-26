@@ -1,4 +1,5 @@
-import { IsOptional, IsString } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsBoolean, IsOptional, IsString } from 'class-validator';
 
 export class CreateCategoryDto {
   @IsString()
@@ -10,4 +11,8 @@ export class CreateCategoryDto {
   @IsOptional()
   @IsString()
   categoryImage: string;
+
+  @Transform(({ value }) => value === 'true')
+  @IsBoolean()
+  allowAll: boolean;
 }
