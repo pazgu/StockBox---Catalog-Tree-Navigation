@@ -38,6 +38,8 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const touchStartX = useRef<number | null>(null);
+  const [broken, setBroken] = useState(false);
+
   const replaceId = useId();
   const addId = useId();
   const [showClearDialog, setShowClearDialog] = useState(false);
@@ -46,15 +48,20 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
   const validImages = (productImages || []).filter(
     (u) => typeof u === "string" && u.trim().length > 0,
   );
-    const imagesExist = validImages.length > 0;
+    const imagesExist = validImages.length > 1;
 
   const hasImages = validImages.length > 0 && !isReplacingImage;
+  
   const shownIndex = Math.min(
     currentImageIndex,
     Math.max(0, validImages.length - 1),
   );
   const shownSrc = hasImages ? validImages[shownIndex] : "";
   const replaceInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+  setBroken(false);
+}, [shownSrc]);
 
   useEffect(() => {
     if (currentImageIndex > validImages.length - 1) {
@@ -142,7 +149,6 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
         : ""
     }
   `}
-  title="מחק את כל התמונות"
 >
   מחיקת הכל
 </button>
@@ -184,17 +190,16 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
         </>
       )}
       <div className="relative w-full h-40 flex items-center justify-center">
-        {hasImages ? (
-          <img
-            src={shownSrc}
-            alt={title || "תמונה"}
-            className="w-full h-44 object-contain relative z-10 transition-all duration-500 ease-in-out transform drop-shadow-md"
-            draggable={false}
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).style.display = "none";
-            }}
-          />
-        ) : (
+       {hasImages && !broken ? (
+  <img
+    src={shownSrc}
+    alt={title || "תמונה"}
+    className="w-full h-44 object-contain relative z-10 transition-all duration-500 ease-in-out transform drop-shadow-md"
+    draggable={false}
+    onError={() => setBroken(true)}
+  />
+) : (
+
           <div className="w-full h-40 relative z-10 flex flex-col items-center justify-center gap-2 text-slate-500">
             <div className="h-14 w-14 rounded-2xl bg-white shadow-sm grid place-items-center border border-slate-200">
               <ImageOff className="h-7 w-7" />
