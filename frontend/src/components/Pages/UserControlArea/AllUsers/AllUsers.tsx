@@ -9,6 +9,7 @@ import { User } from "../../../models/user.models";
 import { groupService } from "../../../../services/GroupService";
 import isEmail from "validator/lib/isEmail";
 import { useUser } from "../../../../context/UserContext";
+import AllUsersSkeleton from "./AllUsersSkeleton";
 const ROLE_OPTIONS: Array<{ value: User["role"]; label: string }> = [
   { value: "editor", label: "עורך" },
   { value: "viewer", label: "צופה" },
@@ -45,9 +46,21 @@ const AllUsers: FC<AllUsersProps> = () => {
   const { id } = useUser();  
 
   const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   useEffect(() => {
-    userService.getAll().then(setUsers);
-  }, []);
+  (async () => {
+    try {
+      setIsLoading(true);
+      const data = await userService.getAll();
+      setUsers(data);
+    } catch (e) {
+      toast.error("שגיאה בטעינת המשתמשים");
+      setUsers([]);
+    } finally {
+      setIsLoading(false);
+    }
+  })();
+}, []);
   const isMe = (userId: string | undefined) => userId === id;
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
@@ -378,8 +391,11 @@ const handleCancelEdit = () => {
           </div>
         )}
 
-        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {currentUsers.map((user, index) => (
+        {isLoading ? (
+  <AllUsersSkeleton count={usersPerPage} />
+) : (
+  <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+    {currentUsers.map((user, index) => (
             <div
               key={user._id}
               className={`rounded-xl p-4 text-center shadow-sm relative min-h-[110px] transition-transform hover:-translate-y-1 hover:shadow-md border-gray-100 ${
@@ -511,6 +527,7 @@ const handleCancelEdit = () => {
             </div>
           ))}
         </div>
+)}
 
         {/* Approval Dialog */}
         {approveUserIndex !== null && (
@@ -653,7 +670,7 @@ const handleCancelEdit = () => {
           </div>
         )}
 
-        {users.length === 0 && (
+        {!isLoading && users.length === 0 && (
           <div className="w-full flex flex-col justify-center items-center my-12 text-slate-500">
             <UsersRound size={64} className="mb-4 text-slate-300" />
             <p className="text-lg"> לא נמצאו משתמשים במערכת </p>
