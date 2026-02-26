@@ -306,9 +306,7 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
       destinationCategoryPath !== currentCategoryPaths[0];
 
   return (
-    <div
-      className="fixed inset-0 bg-slate-900 bg-opacity-85 backdrop-blur-xl flex items-center justify-center z-50 transition-all duration-300 p-4"
-    >
+    <div className="fixed inset-0 bg-slate-900 bg-opacity-85 backdrop-blur-xl flex items-center justify-center z-50 transition-all duration-300 p-4">
       <div
         className="bg-white p-8 rounded-xl w-[600px] max-w-[95%] max-h-[90vh] overflow-y-auto shadow-2xl text-center"
         onClick={(e) => e.stopPropagation()}
@@ -336,7 +334,7 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
                   <li
                     key={i}
                     className="text-[11px] text-gray-600 py-1 border-b last:border-0 truncate"
-                    dir="ltr"
+                    dir="auto"
                   >
                     {path}
                   </li>

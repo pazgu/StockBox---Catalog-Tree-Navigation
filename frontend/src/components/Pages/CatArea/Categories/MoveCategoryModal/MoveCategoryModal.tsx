@@ -263,7 +263,7 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
 
         <div className="text-right mb-6">
           <label className="block text-gray-700 font-medium mb-2">
-            בחר קטגוריית יעד (קטגוריה ראשית או תת-קטגוריה):
+            נא לבחור קטגוריית יעד (קטגוריה ראשית או תת-קטגוריה):
           </label>
           <small>שימו לב! התוכן תחת אותה קטגוריה יעבור איתה למיקום הנבחר</small>
 
