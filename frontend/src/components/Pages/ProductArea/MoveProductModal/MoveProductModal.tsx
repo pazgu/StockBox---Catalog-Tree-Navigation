@@ -10,6 +10,7 @@ interface MoveProductModalProps {
   productId: string;
   productName: string;
   currentPaths: Array<string>;
+  currentCategoryPath?: string;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -19,6 +20,7 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
   productId,
   productName,
   currentPaths,
+  currentCategoryPath,
   onClose,
   onSuccess,
 }) => {
@@ -47,6 +49,11 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
       loadAllCategoriesRecursively();
       if (currentCategoryPaths.length === 1) {
         setSourceCategoryPath(currentCategoryPaths[0]);
+      } else if (
+        currentCategoryPath &&
+        currentCategoryPaths.includes(currentCategoryPath)
+      ) {
+        setSourceCategoryPath(currentCategoryPath);
       } else {
         setSourceCategoryPath("");
       }
