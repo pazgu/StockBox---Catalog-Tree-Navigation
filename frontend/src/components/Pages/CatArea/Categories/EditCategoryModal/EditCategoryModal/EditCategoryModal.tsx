@@ -41,6 +41,8 @@ const EditCategoryModal: React.FC<Props> = ({
     category.categoryImage
   );
 
+const MAX_EDIT_NAME_LEN = 30;
+
   const [imageFile, setImageFile] = React.useState<File | undefined>(undefined); 
   const [isSaving, setIsSaving] = React.useState(false);
   const [isEditCropperOpen, setIsEditCropperOpen] = React.useState(false);
@@ -265,13 +267,21 @@ const EditCategoryModal: React.FC<Props> = ({
           שם קטגוריה
         </label>
 
+        <div className="relative">
         <input
           type="text"
           placeholder="שם קטגוריה"
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          maxLength={MAX_EDIT_NAME_LEN}
+          onChange={(e) =>
+                setName(e.target.value.slice(0, MAX_EDIT_NAME_LEN))
+          }
           className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
         />
+          <div className="absolute bottom-1.5 left-3 text-xs text-gray-400 z-10 pointer-events-none">
+                {name.length}/{MAX_EDIT_NAME_LEN}
+          </div>
+        </div>
       </div>
 
       {/* Image upload */}
