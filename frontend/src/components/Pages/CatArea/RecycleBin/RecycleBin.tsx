@@ -363,11 +363,19 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
                       </div>
                     </div>
 
-                    <div className="h-36 w-full flex justify-center items-center p-5 rounded-none mr-2 grayscale pointer-events-none">
-                      <ImagePreviewHover
-                        images={item.productImages || [item.itemImage]}
+                    <div className="h-36 w-full flex justify-center items-center p-5 grayscale">
+                      <img
+                        src={
+                          item.productImages && item.productImages.length > 0
+                            ? item.productImages[0]
+                            : item.itemImage || "/assets/images/placeholder.png"
+                        }
                         alt={item.itemName}
-                        className="h-32 w-32"
+                        className="h-32 w-32 object-contain"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src =
+                            "/assets/images/placeholder.png";
+                        }}
                       />
                     </div>
 
