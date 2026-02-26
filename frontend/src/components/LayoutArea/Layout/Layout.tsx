@@ -69,7 +69,7 @@ const Layout: FC<LayoutProps> = () => {
             }
           />
           <Route
-            path="/search-all"
+            path="/searchAll"
             element={
               <RequireAuth>
                 <SearchResultsPage />
@@ -77,7 +77,7 @@ const Layout: FC<LayoutProps> = () => {
             }
           />
           <Route
-            path="/recycle-bin"
+            path="/recycleBin"
             element={
               <RequireAuth>
                 <RecycleBin />

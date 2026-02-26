@@ -306,7 +306,7 @@ export const Categories: FC<CategoriesProps> = () => {
     setProductToMoveToRecycleBin(null);
   };
 
-  const handleAddCategory = async ({ name, imageFile }: AddCategoryResult) => {
+  const handleAddCategory = async ({ name, imageFile,allowAll }: AddCategoryResult) => {
     try {
       const categoryPath = `/categories/${name
         .toLowerCase()
@@ -316,6 +316,7 @@ export const Categories: FC<CategoriesProps> = () => {
         categoryName: name,
         categoryPath,
         imageFile,
+        allowAll,
       });
 
       setCategories((prev) => [...prev, newCategory]);

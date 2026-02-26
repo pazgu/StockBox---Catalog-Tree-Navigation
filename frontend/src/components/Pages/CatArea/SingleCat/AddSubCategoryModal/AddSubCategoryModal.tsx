@@ -3,11 +3,13 @@ import { toast } from "sonner";
 import useBlockBrowserZoom from "../../Categories/useBlockBrowserZoom";
 import { Spinner } from "../../../../ui/spinner";
 import { isLength } from "validator";
+import { Label } from "../../../../../components/ui/label";
+import { Switch } from "../../../../../components/ui/switch";
 
 type Props = {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (result: { name: string; imageFile?: File }) => Promise<void>;
+  onSave: (result: { name: string; imageFile?: File,allowAll:boolean }) => Promise<void>;
 };
 
 const CROP_BOX = 256;
@@ -76,6 +78,8 @@ function anchoredZoom(
   );
 }
 
+const MAX_EDIT_NAME_LEN = 30;
+
 const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   const [categoryName, setCategoryName] = React.useState("");
   const [errorMessage, setErrorMessage] = React.useState("");
@@ -86,6 +90,7 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   const [isPanning, setIsPanning] = React.useState(false);
   const [startPan, setStartPan] = React.useState({ x: 0, y: 0 });
   const [isSaving, setIsSaving] = React.useState(false);
+  const [allowAll, setAllowAll] = React.useState(false);
 
   const cropRef = React.useRef<HTMLDivElement>(null!);
   useBlockBrowserZoom(cropRef);
@@ -169,8 +174,8 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     return out.toDataURL("image/jpeg", 0.92);
   };
 
- const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  const value = e.target.value;
+const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const value = e.target.value.slice(0, MAX_EDIT_NAME_LEN);
   setCategoryName(value);
 
   const FORBIDDEN_CHARS = /[;|"'*<>]/;
@@ -223,7 +228,7 @@ const handleClose = () => {
   try {
     setIsSaving(true);
 
-    await onSave({ name: categoryName.trim(), imageFile: file as any });
+    await onSave({ name: categoryName.trim(), imageFile: file as any, allowAll });
 
     handleClose();
   } catch (error: any) {
@@ -272,16 +277,23 @@ const handleClose = () => {
               שם תת-קטגוריה
             </label>
 
-            <input
-                type="text"
-                placeholder="שם תת-קטגוריה"
-                value={categoryName}
-                onChange={handleNameChange}
-                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
-              />
+          <div>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="שם תת-קטגוריה"
+                  value={categoryName}
+                  onChange={handleNameChange}
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
+                />
+                <div className="absolute bottom-1.5 left-3 text-xs text-gray-400 z-10 pointer-events-none">
+                  {categoryName.length}/{MAX_EDIT_NAME_LEN}
+                </div>
+              </div>
               {errorMessage && (
                 <p className="mt-1 text-sm text-red-600">{errorMessage}</p>
               )}
+            </div>
           </div>
 
           <div className="group mb-4">
@@ -481,11 +493,27 @@ const handleClose = () => {
             </div>
           )}
 
-          <div className="flex justify-between gap-3">
+          <div className="flex justify-between relative items-center p-4 bg-white bg-opacity-50 border rounded-lg mb-4 shadow-sm border-blue-100">
+            <Label className="font-bold text-blue-900 text-sm mb-2">
+             לאפשר לכולם לראות את הקטגוריה החדשה?
+            </Label>
+            <span className="absolute bottom-2 right-4 text-xs text-gray-500">יש לשים לב! חסימות של קטגוריית האב יוחלו על הקטגוריה החדשה</span>
+
+            <Switch
+              checked={
+                allowAll
+              }
+             onCheckedChange={() => {
+               setAllowAll(!allowAll);
+            }}
+            />
+          </div>
+
+          <div className="flex justify-between gap-3 border-t-2 border-gray-200 mb-2">
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className={`flex-1 p-3 rounded-lg text-base font-medium transition-all duration-200 text-white shadow-md
+              className={`flex-1 p-3 mt-8 rounded-lg text-base font-medium transition-all duration-200 text-white shadow-md
     ${
                 isSaving
                   ? "bg-slate-400 cursor-not-allowed"
@@ -505,7 +533,7 @@ const handleClose = () => {
             <button
               onClick={handleClose}
               disabled={isSaving}
-              className={`flex-1 p-3 border-none rounded-lg text-base font-medium transition-all duration-200 border
+              className={`flex-1 p-3 mt-8 border-none rounded-lg text-base font-medium transition-all duration-200 border
                 ${isSaving
                   ? "bg-gray-100 text-gray-300 cursor-not-allowed border-gray-200"
                   : "bg-gray-100 text-gray-500 border border-gray-300 hover:bg-gray-300 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"

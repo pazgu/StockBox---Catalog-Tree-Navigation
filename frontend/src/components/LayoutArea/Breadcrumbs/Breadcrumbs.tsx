@@ -75,12 +75,12 @@ const Breadcrumbs: FC<BreadcrumbsProps> = ({ path }) => {
         onClick={() => scroll("right")}
         disabled={!canScrollRight}
         className={`shrink-0 rounded-full p-0.5 transition-all duration-200
-          disabled:cursor-not-allowed disabled:text-gray-200
+          disabled:opacity-0 disabled:text-gray-200
           ${canScrollRight ? "text-gray-500 hover:bg-gray-100 hover:text-gray-800" : ""}
         `}
         aria-label="scroll right"
       >
-        <ChevronRight className="size-4" />
+        <ChevronRight className="size-4 mt-1" />
       </button>
 
       <div
@@ -97,7 +97,7 @@ const Breadcrumbs: FC<BreadcrumbsProps> = ({ path }) => {
           const isLast = index === pathSegments.length - 1;
           const finalDisplayName =
             segmentMap[lower] || decoded.replace(/-/g, " ");
-          const showTooltip = finalDisplayName.length >= 18;
+          const showTooltip = finalDisplayName.length > 18;
 
           return (
             <span
@@ -105,34 +105,51 @@ const Breadcrumbs: FC<BreadcrumbsProps> = ({ path }) => {
               className="flex items-center gap-1 shrink-0 h-20"
             >
               <span className="relative group/text shrink-0">
-                <span
-                  role={isLast ? undefined : "button"}
-                  onClick={() => !isLast && navigate(encodeURI(pathToHere))}
-                  className={`
-                    inline-block max-w-[120px] truncate align-bottom text-sm
-                    transition-colors duration-150
-                    ${isLast ? "font-semibold text-gray-800" : "text-gray-500 cursor-pointer hover:text-gray-900 hover:underline"}
-                  `}
-                >
-                  {finalDisplayName}
+                <span className="relative group/text shrink-0">
+                  <span
+                    role={isLast ? undefined : "button"}
+                    onClick={() => !isLast && navigate(encodeURI(pathToHere))}
+                    dir={
+                      /[\u0590-\u05FF\uFB1D-\uFB4F]/.test(finalDisplayName)
+                        ? "rtl"
+                        : "ltr"
+                    }
+                    className={`
+      inline-block max-w-[120px] truncate align-bottom text-sm
+      transition-colors duration-150
+      ${isLast ? "font-semibold text-gray-800" : "text-gray-500 cursor-pointer hover:text-gray-900 hover:underline"}
+    `}
+                  >
+                    {finalDisplayName}
+                  </span>
                 </span>
 
                 {showTooltip && (
                   <span
-                    className="absolute bottom-full -right-3 mt-2 z-50 hidden group-hover/text:block whitespace-nowrap rounded-md bg-gray-800 px-2.5 py-1 text-xs text-white shadow-lg pointer-events-none"
+                    className="absolute bottom-full z-50 hidden group-hover/text:block whitespace-nowrap rounded-md bg-gray-800 px-2.5 py-1 text-xs text-white pointer-events-none"
                     style={{
                       direction: /[\u0590-\u05FF]/.test(finalDisplayName)
                         ? "rtl"
                         : "ltr",
+                      ...(/[\u0590-\u05FF]/.test(finalDisplayName)
+                        ? { left: 0, right: "auto" }
+                        : { right: 0, left: "auto" }),
                     }}
                   >
                     {finalDisplayName}
-                    <span className="absolute top-full right-3 border-4 border-transparent border-t-gray-800" />
+                    <span
+                      className="absolute top-full border-4 border-transparent border-t-gray-800"
+                      style={
+                        /[\u0590-\u05FF]/.test(finalDisplayName)
+                          ? { left: "0.75rem" }
+                          : { right: "0.75rem" }
+                      }
+                    />
                   </span>
                 )}
               </span>
               {!isLast && (
-                <ChevronLeft className="size-3 text-gray-300 shrink-0" />
+                <ChevronLeft className="size-3 text-gray-300 shrink-0 mt-1" />
               )}
             </span>
           );
@@ -143,12 +160,12 @@ const Breadcrumbs: FC<BreadcrumbsProps> = ({ path }) => {
         onClick={() => scroll("left")}
         disabled={!canScrollLeft}
         className={`shrink-0 rounded-full p-0.5 transition-all duration-200
-          disabled:cursor-not-allowed disabled:text-gray-200
+          disabled:opacity-0 disabled:text-gray-200
           ${canScrollLeft ? "text-gray-500 hover:bg-gray-100 hover:text-gray-800" : ""}
         `}
         aria-label="scroll left"
       >
-        <ChevronLeft className="size-4" />
+        <ChevronLeft className="size-4 mt-1" />
       </button>
 
       <span

@@ -91,10 +91,11 @@ export class CategoriesService {
         { nameKey },
         { $set: { refId: savedCategory._id.toString() } },
       );
-
-      await this.permissionsService.assignPermissionsForNewEntity(
+      if (createCategoryDto.allowAll) {
+         await this.permissionsService.assignPermissionsForNewEntity(
         savedCategory,
       );
+      }
 
       return savedCategory;
     } catch (err: any) {
