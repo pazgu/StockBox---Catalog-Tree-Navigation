@@ -76,6 +76,8 @@ function anchoredZoom(
   );
 }
 
+const MAX_EDIT_NAME_LEN = 30;
+
 const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   const [categoryName, setCategoryName] = React.useState("");
   const [errorMessage, setErrorMessage] = React.useState("");
@@ -169,8 +171,8 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     return out.toDataURL("image/jpeg", 0.92);
   };
 
- const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  const value = e.target.value;
+const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const value = e.target.value.slice(0, MAX_EDIT_NAME_LEN);
   setCategoryName(value);
 
   const FORBIDDEN_CHARS = /[;|"'*<>]/;
@@ -272,16 +274,23 @@ const handleClose = () => {
               שם תת-קטגוריה
             </label>
 
-            <input
-                type="text"
-                placeholder="שם תת-קטגוריה"
-                value={categoryName}
-                onChange={handleNameChange}
-                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
-              />
+          <div>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="שם תת-קטגוריה"
+                  value={categoryName}
+                  onChange={handleNameChange}
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
+                />
+                <div className="absolute bottom-1.5 left-3 text-xs text-gray-400 z-10 pointer-events-none">
+                  {categoryName.length}/{MAX_EDIT_NAME_LEN}
+                </div>
+              </div>
               {errorMessage && (
                 <p className="mt-1 text-sm text-red-600">{errorMessage}</p>
               )}
+            </div>
           </div>
 
           <div className="group mb-4">
