@@ -759,9 +759,11 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
             )}
           </div>
 
-          {(activeTab === "banned"
-            ? filteredBannedItems.length
-            : availableItems.length) > 0 && (
+          {(viewMode === "tree"
+            ? allItems.length
+            : activeTab === "banned"
+              ? filteredBannedItems.length
+              : availableItems.length) > 0 && (
             <div className="flex gap-1 mb-2 items-center bg-gray-50 p-1 rounded-md flex-shrink-0">
               <button
                 onClick={handleSelectAll}
