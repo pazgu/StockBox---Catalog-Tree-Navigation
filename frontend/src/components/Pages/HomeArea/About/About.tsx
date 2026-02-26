@@ -116,6 +116,8 @@ const blocksToSections = (blocks: AboutBlock[]): SectionType[] => {
   });
 };
 
+
+
 const sectionsToBlocks = (sections: SectionType[]): AboutBlock[] => {
   return sections.map((s) => {
     if (s.type === "intro") {
@@ -164,6 +166,8 @@ const IconMap: { [key: string]: FC<any> } = Object.fromEntries(
 
 const iconOptions = ICONS_HE.map((i) => ({ value: i.value, label: i.label }));
 
+
+
 type FieldKind =
   | "sectionTitle"
   | "introContent"
@@ -204,12 +208,13 @@ const isSectionFilledEnough = (s: SectionType) => {
   return true;
 };
 
-interface AboutProps {}
+interface AboutProps { }
 
 const About: FC<AboutProps> = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
   const [isPageLoading, setIsPageLoading] = useState(true);
+  const [editExitAction, setEditExitAction] = useState<"save" | "cancel" | null>(null);
 
   const [editableImages, setEditableImages] = useState<ImageItem[]>([]);
 
@@ -429,31 +434,31 @@ const About: FC<AboutProps> = () => {
     const newSection: SectionType =
       type === "features"
         ? {
-            id: `features-${Date.now()}`,
-            type: "features",
-            title: "",
-            features: [
-              {
-                id: uid(),
-                icon: "star",
-                title: "",
-                description: "",
-              },
-            ],
-          }
+          id: `features-${Date.now()}`,
+          type: "features",
+          title: "",
+          features: [
+            {
+              id: uid(),
+              icon: "star",
+              title: "",
+              description: "",
+            },
+          ],
+        }
         : type === "bullets"
           ? {
-              id: `bullets-${Date.now()}`,
-              type: "bullets",
-              title: "",
-              bullets: [{ id: uid(), text: "" }],
-            }
+            id: `bullets-${Date.now()}`,
+            type: "bullets",
+            title: "",
+            bullets: [{ id: uid(), text: "" }],
+          }
           : {
-              id: `paragraph-${Date.now()}`,
-              type: "paragraph",
-              title: "",
-              content: "",
-            };
+            id: `paragraph-${Date.now()}`,
+            type: "paragraph",
+            title: "",
+            content: "",
+          };
 
     pendingScrollToSectionIdRef.current = newSection.id;
 
@@ -901,21 +906,11 @@ const About: FC<AboutProps> = () => {
     [cancelEdit],
   );
 
-  const debouncedClearAllImages = useMemo(
-    () =>
-      debounce(() => {
-        void clearAllImages();
-      }, 600),
-    [clearAllImages],
-  );
 
-  const debouncedRemoveImage = useMemo(
-    () =>
-      debounce((index: number) => {
-        void removeImage(index);
-      }, 400),
-    [removeImage],
-  );
+  const cancelPendingExit = () => {
+    (debouncedSaveChanges as any).cancel?.();
+    (debouncedCancelEdit as any).cancel?.();
+  };
 
   const handleDragOverContainer = (e: React.DragEvent) => {
     if (!isEditing) return;
@@ -956,7 +951,11 @@ const About: FC<AboutProps> = () => {
               {isEditing && (
                 <div className="relative">
                   <button
-                    onClick={debouncedCancelEdit}
+                    onClick={() => {
+                      cancelPendingExit();
+                      setEditExitAction("cancel");
+                      debouncedCancelEdit();
+                    }}
                     aria-label="ביטול עריכה"
                     className="peer flex items-center justify-center w-14 h-14 rounded-full font-semibold bg-white text-red-600 shadow-lg ring-2 ring-red-500/20 hover:ring-red-500/30 hover:bg-red-50 transition-all duration-300"
                   >
@@ -971,12 +970,17 @@ const About: FC<AboutProps> = () => {
               <div className="relative">
                 <button
                   onClick={() => {
-                    if (isEditing) {
-                      debouncedSaveChanges();
-                      return;
-                    }
-                    setIsEditing(true);
-                  }}
+  cancelPendingExit();
+
+  if (isEditing) {
+    setEditExitAction("save");
+    debouncedSaveChanges();
+    return;
+  }
+
+  setEditExitAction(null);
+  setIsEditing(true);
+}}
                   aria-label={isEditing ? "שמירת שינויים" : "עריכה"}
                   className="peer flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300"
                 >
@@ -1000,20 +1004,17 @@ const About: FC<AboutProps> = () => {
               onDragOver={(e) => handleSectionDragOver(e, sectionIndex)}
               onDragEnter={() => handleSectionDragEnter(sectionIndex)}
               onDragEnd={handleSectionDragEnd}
-              className={`relative my-6 transition-all duration-200 ${
-                isEditing
-                  ? "border-2 border-dashed border-stockblue/30 rounded-xl p-4 cursor-move hover:border-stockblue/50"
-                  : ""
-              } ${
-                draggedSectionIndex === sectionIndex
+              className={`relative my-6 transition-all duration-200 ${isEditing
+                ? "border-2 border-dashed border-stockblue/30 rounded-xl p-4 cursor-move hover:border-stockblue/50"
+                : ""
+                } ${draggedSectionIndex === sectionIndex
                   ? "opacity-40 scale-95 rotate-1"
                   : ""
-              } ${
-                dragOverIndex === sectionIndex &&
-                draggedSectionIndex !== sectionIndex
+                } ${dragOverIndex === sectionIndex &&
+                  draggedSectionIndex !== sectionIndex
                   ? "border-stockblue border-solid bg-stockblue/5 scale-[1.02]"
                   : ""
-              }`}
+                }`}
             >
               {isEditing && section.type !== "cta" && (
                 <div className="absolute -right-3 -top-3 flex gap-2 z-20">
@@ -1055,6 +1056,7 @@ const About: FC<AboutProps> = () => {
                         <input
                           type="text"
                           value={section.title}
+                          placeholder="כותרת חדשה"
                           onChange={(e) => {
                             const val = e.target.value;
                             updateSectionTitle(sectionIndex, val);
@@ -1090,6 +1092,7 @@ const About: FC<AboutProps> = () => {
                         <div className="flex items-start gap-2">
                           <textarea
                             value={section.content || ""}
+                            placeholder="תיאור חדש"
                             onChange={(e) => {
                               const val = e.target.value;
                               updateTextContent(sectionIndex, val);
@@ -1134,17 +1137,17 @@ const About: FC<AboutProps> = () => {
                     const newFeature: FeatureItem = {
                       id: uid(),
                       icon: "star",
-                      title: "כותרת חדשה",
-                      description: "תיאור חדש",
+                      title: "",
+                      description: "",
                     };
 
                     setSections((prev) =>
                       prev.map((s, i) =>
                         i === sectionIndex && s.type === "features"
                           ? {
-                              ...s,
-                              features: [...(s.features || []), newFeature],
-                            }
+                            ...s,
+                            features: [...(s.features || []), newFeature],
+                          }
                           : s,
                       ),
                     );
@@ -1171,11 +1174,11 @@ const About: FC<AboutProps> = () => {
                       prev.map((s, i) =>
                         i === sectionIndex && s.type === "features"
                           ? {
-                              ...s,
-                              features: (s.features || []).filter(
-                                (_, ii) => ii !== itemIndex,
-                              ),
-                            }
+                            ...s,
+                            features: (s.features || []).filter(
+                              (_, ii) => ii !== itemIndex,
+                            ),
+                          }
                           : s,
                       ),
                     );
@@ -1185,11 +1188,11 @@ const About: FC<AboutProps> = () => {
                       prev.map((s, i) =>
                         i === sectionIndex && s.type === "features"
                           ? {
-                              ...s,
-                              features: (s.features || []).map((f, ii) =>
-                                ii === itemIndex ? { ...f, [field]: value } : f,
-                              ),
-                            }
+                            ...s,
+                            features: (s.features || []).map((f, ii) =>
+                              ii === itemIndex ? { ...f, [field]: value } : f,
+                            ),
+                          }
                           : s,
                       ),
                     );
@@ -1226,7 +1229,7 @@ const About: FC<AboutProps> = () => {
                   onAdd={() => {
                     const newBullet: BulletItem = {
                       id: uid(),
-                      text: "נקודה חדשה",
+                      text: "",
                     };
 
                     setSections((prev) =>
@@ -1256,11 +1259,11 @@ const About: FC<AboutProps> = () => {
                       prev.map((s, i) =>
                         i === sectionIndex && s.type === "bullets"
                           ? {
-                              ...s,
-                              bullets: (s.bullets || []).filter(
-                                (b) => b.id !== id,
-                              ),
-                            }
+                            ...s,
+                            bullets: (s.bullets || []).filter(
+                              (b) => b.id !== id,
+                            ),
+                          }
                           : s,
                       ),
                     );
@@ -1270,11 +1273,11 @@ const About: FC<AboutProps> = () => {
                       prev.map((s, i) =>
                         i === sectionIndex && s.type === "bullets"
                           ? {
-                              ...s,
-                              bullets: (s.bullets || []).map((b) =>
-                                b.id === id ? { ...b, text: value } : b,
-                              ),
-                            }
+                            ...s,
+                            bullets: (s.bullets || []).map((b) =>
+                              b.id === id ? { ...b, text: value } : b,
+                            ),
+                          }
                           : s,
                       ),
                     );
@@ -1311,6 +1314,7 @@ const About: FC<AboutProps> = () => {
                         <input
                           type="text"
                           value={section.title}
+                          placeholder="כותרת ראשית"
                           onChange={(e) => {
                             const val = e.target.value;
                             updateSectionTitle(sectionIndex, val);
@@ -1346,6 +1350,8 @@ const About: FC<AboutProps> = () => {
                         <div className="flex items-start gap-2">
                           <textarea
                             value={section.content || ""}
+                            placeholder="תוכן חדש"
+
                             onChange={(e) => {
                               const val = e.target.value;
                               updateTextContent(sectionIndex, val);
@@ -1459,19 +1465,17 @@ const About: FC<AboutProps> = () => {
                       : "הוסף מקטע פסקה"
                   }
                   className={`group inline-flex items-center gap-2 rounded-full px-5 py-2 font-semibold border shadow-md transition-all duration-300
-          ${
-            hasUnconfirmedChanges
-              ? "text-gray-400 border-gray-200 bg-white cursor-not-allowed opacity-60"
-              : "text-stockblue border-stockblue/30 bg-white hover:bg-stockblue hover:text-white"
-          }`}
+          ${hasUnconfirmedChanges
+                      ? "text-gray-400 border-gray-200 bg-white cursor-not-allowed opacity-60"
+                      : "text-stockblue border-stockblue/30 bg-white hover:bg-stockblue hover:text-white"
+                    }`}
                 >
                   <span
                     className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition-all duration-300
-            ${
-              hasUnconfirmedChanges
-                ? "border-gray-200 bg-gray-50"
-                : "border-stockblue/20 bg-stockblue/5 group-hover:bg-white/10 group-hover:border-white/30"
-            }`}
+            ${hasUnconfirmedChanges
+                        ? "border-gray-200 bg-gray-50"
+                        : "border-stockblue/20 bg-stockblue/5 group-hover:bg-white/10 group-hover:border-white/30"
+                      }`}
                   >
                     <FileText size={18} />
                   </span>
@@ -1493,19 +1497,17 @@ const About: FC<AboutProps> = () => {
                       : "הוסף מקטע נקודות"
                   }
                   className={`group inline-flex items-center gap-2 rounded-full px-5 py-2 font-semibold border shadow-md transition-all duration-300
-          ${
-            hasUnconfirmedChanges
-              ? "text-gray-400 border-gray-200 bg-white cursor-not-allowed opacity-60"
-              : "text-stockblue border-stockblue/30 bg-white hover:bg-stockblue hover:text-white"
-          }`}
+          ${hasUnconfirmedChanges
+                      ? "text-gray-400 border-gray-200 bg-white cursor-not-allowed opacity-60"
+                      : "text-stockblue border-stockblue/30 bg-white hover:bg-stockblue hover:text-white"
+                    }`}
                 >
                   <span
                     className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition-all duration-300
-            ${
-              hasUnconfirmedChanges
-                ? "border-gray-200 bg-gray-50"
-                : "border-stockblue/20 bg-stockblue/5 group-hover:bg-white/10 group-hover:border-white/30"
-            }`}
+            ${hasUnconfirmedChanges
+                        ? "border-gray-200 bg-gray-50"
+                        : "border-stockblue/20 bg-stockblue/5 group-hover:bg-white/10 group-hover:border-white/30"
+                      }`}
                   >
                     <ListChecks size={18} />
                   </span>
@@ -1527,19 +1529,17 @@ const About: FC<AboutProps> = () => {
                       : "הוסף מקטע פיצ'רים"
                   }
                   className={`group inline-flex items-center gap-2 rounded-full px-5 py-2 font-semibold border shadow-md transition-all duration-300
-          ${
-            hasUnconfirmedChanges
-              ? "text-gray-400 border-gray-200 bg-white cursor-not-allowed opacity-60"
-              : "text-stockblue border-stockblue/30 bg-white hover:bg-stockblue hover:text-white"
-          }`}
+          ${hasUnconfirmedChanges
+                      ? "text-gray-400 border-gray-200 bg-white cursor-not-allowed opacity-60"
+                      : "text-stockblue border-stockblue/30 bg-white hover:bg-stockblue hover:text-white"
+                    }`}
                 >
                   <span
                     className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition-all duration-300
-            ${
-              hasUnconfirmedChanges
-                ? "border-gray-200 bg-gray-50"
-                : "border-stockblue/20 bg-stockblue/5 group-hover:bg-white/10 group-hover:border-white/30"
-            }`}
+            ${hasUnconfirmedChanges
+                        ? "border-gray-200 bg-gray-50"
+                        : "border-stockblue/20 bg-stockblue/5 group-hover:bg-white/10 group-hover:border-white/30"
+                      }`}
                   >
                     <LayoutGrid size={18} />
                   </span>
@@ -1566,11 +1566,10 @@ const About: FC<AboutProps> = () => {
                 if (from === null) return;
                 setDragOverIndex(sections.length);
               }}
-              className={`my-6 h-12 rounded-xl transition-all duration-200 ${
-                dragOverIndex === sections.length
-                  ? "border-2 border-solid border-stockblue bg-stockblue/5"
-                  : "border-2 border-dashed border-stockblue/15"
-              }`}
+              className={`my-6 h-12 rounded-xl transition-all duration-200 ${dragOverIndex === sections.length
+                ? "border-2 border-solid border-stockblue bg-stockblue/5"
+                : "border-2 border-dashed border-stockblue/15"
+                }`}
             />
           )}
         </div>
@@ -1578,13 +1577,14 @@ const About: FC<AboutProps> = () => {
         {/* Image Panel */}
         <AboutImagesPanel
           isEditing={isEditing}
+          editExitAction={editExitAction}
           role={role}
           images={images}
           currentIndex={currentImageIndex}
           onPrev={goPrev}
           onNext={goNext}
-          onRemoveImage={debouncedRemoveImage}
-          onClearAll={debouncedClearAllImages}
+          onRemoveImage={removeImage}
+          onClearAll={clearAllImages}
           onReplaceImage={handleReplaceImage}
           onAddImages={handleAddImages}
           replaceInputRef={replaceInputRef}

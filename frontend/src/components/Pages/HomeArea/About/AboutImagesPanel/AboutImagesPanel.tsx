@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Plus, Upload } from "lucide-react";
+import { Plus, Upload, Ban, RotateCcw } from "lucide-react";
 import { UserRole } from "../../../../models/user.models";
 import { Spinner } from "../../../../ui/spinner";
 import { environment } from "../../../../../environments/environment";
@@ -15,6 +15,8 @@ type AboutImagesPanelProps = {
   onPrev: () => void;
   onNext: () => void;
 
+  editExitAction?: "save" | "cancel" | null;
+
   onRemoveImage: (index: number) => void;
   onClearAll: () => void;
   onReplaceImage: (
@@ -24,15 +26,16 @@ type AboutImagesPanelProps = {
   onAddImages: (e: React.ChangeEvent<HTMLInputElement>) => void;
 
   replaceInputRef?:
-    | React.RefObject<HTMLInputElement>
-    | React.MutableRefObject<HTMLInputElement | null>;
+  | React.RefObject<HTMLInputElement>
+  | React.MutableRefObject<HTMLInputElement | null>;
   addInputRef?:
-    | React.RefObject<HTMLInputElement>
-    | React.MutableRefObject<HTMLInputElement | null>;
+  | React.RefObject<HTMLInputElement>
+  | React.MutableRefObject<HTMLInputElement | null>;
 };
 
 const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
   isEditing,
+  editExitAction,
   role,
   images,
   currentIndex,
@@ -53,6 +56,37 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
 
   const replaceRef = replaceInputRef ?? localReplaceRef;
   const addRef = addInputRef ?? localAddRef;
+  const imageWrapRef = React.useRef<HTMLDivElement | null>(null);
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+
+  const viewByImageRef = React.useRef<
+    Record<string, { zoom: number; pan: { x: number; y: number } }>
+  >({});
+  const prevImageKeyRef = React.useRef<string>("");
+
+  const imageKey = images[currentIndex] ?? "";
+
+  React.useEffect(() => {
+    if (!imageKey) return;
+
+    const saved = viewByImageRef.current[imageKey];
+    if (saved) {
+      setZoom(saved.zoom);
+      setPan(saved.pan);
+    } else {
+      setZoom(1);
+      setPan({ x: 0, y: 0 });
+    }
+
+    prevImageKeyRef.current = imageKey;
+  }, [imageKey]);
+
+  React.useEffect(() => {
+    if (!imageKey) return;
+    viewByImageRef.current[imageKey] = { zoom, pan: { ...pan } };
+  }, [zoom, pan, imageKey]);
+
 
   React.useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -75,6 +109,7 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [onPrev, onNext]);
 
+
   const onTouchStart = (e: React.TouchEvent) => {
     touchStartXRef.current = e.touches[0].clientX;
   };
@@ -86,6 +121,137 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
     if (dx < -40) onNext();
   };
   const [showClearDialog, setShowClearDialog] = useState(false);
+
+
+  const ZOOM_STEP = 0.25;
+  const ZOOM_MAX = 3;
+
+  const zoomIn = () => setZoom((z) => Math.min(ZOOM_MAX, +(z + ZOOM_STEP).toFixed(2)));
+  const zoomOut = () => setZoom((z) => Math.max(1, +(z - ZOOM_STEP).toFixed(2)));
+  const resetZoom = () => {
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+  };
+
+  const isMinZoom = zoom <= 1;
+  const isMaxZoom = zoom >= ZOOM_MAX;
+  const isResetZoom = zoom === 1;
+  const isDraggingRef = React.useRef(false);
+  const dragStartRef = React.useRef({ x: 0, y: 0, panX: 0, panY: 0 });
+
+  const canPan = zoom > 1;
+
+
+  const viewBeforeEditRef = React.useRef<{
+    zoom: number;
+    pan: { x: number; y: number };
+    imageKey: string;
+  } | null>(null);
+
+  const prevIsEditingRef = React.useRef(isEditing);
+
+  const zoomRef = React.useRef(zoom);
+  const panRef = React.useRef(pan);
+
+  React.useEffect(() => {
+    zoomRef.current = zoom;
+    panRef.current = pan;
+  }, [zoom, pan]);
+
+  React.useEffect(() => {
+    const wasEditing = prevIsEditingRef.current;
+
+    if (!wasEditing && isEditing) {
+      viewBeforeEditRef.current = {
+        zoom: zoomRef.current,
+        pan: { ...panRef.current },
+        imageKey,
+      };
+    }
+    if (wasEditing && !isEditing) {
+      isDraggingRef.current = false;
+
+      if (editExitAction === "cancel") {
+        const snap = viewBeforeEditRef.current;
+
+        if (snap && snap.imageKey === imageKey) {
+          setZoom(snap.zoom);
+          setPan(snap.pan);
+
+          viewByImageRef.current[imageKey] = {
+            zoom: snap.zoom,
+            pan: snap.pan,
+          };
+        }
+      }
+    }
+
+    prevIsEditingRef.current = isEditing;
+  }, [isEditing, editExitAction, imageKey]);
+
+  const clamp = (value: number, min: number, max: number) =>
+    Math.max(min, Math.min(max, value));
+
+  const clampPan = (next: { x: number; y: number }) => {
+    const el = imageWrapRef.current;
+    if (!el) return next;
+
+    const rect = el.getBoundingClientRect();
+    const maxX = ((zoom - 1) * rect.width) / 2;
+    const maxY = ((zoom - 1) * rect.height) / 2;
+
+    return {
+      x: clamp(next.x, -maxX, maxX),
+      y: clamp(next.y, -maxY, maxY),
+    };
+  };
+
+  React.useEffect(() => {
+  setPan((p) => clampPan(p));
+}, [zoom]);
+
+
+
+  const onMouseDownImage = (e: React.MouseEvent) => {
+    if (!canPan || isLoading) return;
+
+    isDraggingRef.current = true;
+    dragStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      panX: pan.x,
+      panY: pan.y,
+    };
+  };
+
+  React.useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      if (!isDraggingRef.current) return;
+
+      const dx = e.clientX - dragStartRef.current.x;
+      const dy = e.clientY - dragStartRef.current.y;
+
+      const next = {
+        x: dragStartRef.current.panX + dx,
+        y: dragStartRef.current.panY + dy,
+      };
+
+      setPan(clampPan(next));
+    };
+
+    const onUp = () => {
+      isDraggingRef.current = false;
+    };
+
+    
+
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+  }, [canPan, isLoading, zoom]);
 
   return (
     <aside
@@ -106,10 +272,9 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
           className={`relative z-10 w-full h-full rounded-[3rem] overflow-hidden
             bg-gradient-to-br from-white via-blue-50 to-blue-100/70
             shadow-2xl border-4 border-white/60 backdrop-blur-sm
-            ${
-              isEditing
-                ? ""
-                : "transition-all duration-700 ease-out hover:shadow-[0_30px_80px_rgba(59,130,246,0.3)] hover:scale-105 hover:-translate-y-2 hover:rotate-2"
+            ${isEditing
+              ? ""
+              : "transition-all duration-700 ease-out hover:shadow-[0_30px_80px_rgba(59,130,246,0.3)] hover:scale-105 hover:-translate-y-2 hover:rotate-2"
             }
           `}
         >
@@ -117,25 +282,29 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
           <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-blue-600/10 z-10 pointer-events-none" />
           <div
             className={`absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent z-20 pointer-events-none skew-x-12
-              ${
-                isEditing
-                  ? ""
-                  : "-translate-x-full hover:translate-x-full transition-transform duration-1000"
+              ${isEditing
+                ? ""
+                : "-translate-x-full hover:translate-x-full transition-transform duration-1000"
               }
             `}
           />
 
           {images.length > 0 ? (
             <>
-              <img
-                src={toFullUrl(images[currentIndex] ?? images[0] ?? "")}
-                alt="StockBox preview"
-                className={`w-full h-full object-cover scale-105 ${
-                  isEditing
-                    ? ""
-                    : "transition-all duration-1000 ease-out hover:scale-110"
-                } pointer-events-none`}
-              />
+              <div ref={imageWrapRef} className="absolute inset-0">
+                <img
+                  src={toFullUrl(images[currentIndex] ?? images[0] ?? "")}
+                  alt="StockBox preview"
+                  className={`w-full h-full object-cover transition-transform duration-200 ease-out select-none
+      ${canPan ? "cursor-grab active:cursor-grabbing" : ""}`}
+                  draggable={false}
+                  onMouseDown={onMouseDownImage}
+                  style={{
+                    transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+                    transformOrigin: "center",
+                  }}
+                />
+              </div>
 
               {isEditing && images.length > 1 && (
                 <>
@@ -181,14 +350,13 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
                     מחיקת תמונה
                   </button>
 
-                  {images.length > 0 && (
+                  {images.length > 1 && (
                     <button
                       disabled={isLoading}
                       onClick={() => setShowClearDialog(true)}
                       className={`absolute top-4 left-4 z-[60] pointer-events-auto inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold text-red-700 bg-white/90 border border-red-200 hover:bg-red-50 shadow transition-all
     ${isLoading ? "opacity-50 pointer-events-none" : ""}
   `}
-                      title="מחק את כל התמונות"
                     >
                       מחיקת הכל
                     </button>
@@ -225,12 +393,15 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
 
               {/* toolbar (edit/editor only) */}
               {isEditing && role === "editor" && (
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[60] pointer-events-auto flex items-center gap-3 rounded-2xl bg-white/80 backdrop-blur shadow-lg px-3 py-2">
+                <div
+                  className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[60] pointer-events-auto
+flex items-center gap-2 rounded-xl bg-white/70 backdrop-blur shadow-md px-2 py-1"
+                >
                   {/* replace current */}
                   <button
                     disabled={isLoading}
                     onClick={() => replaceRef.current?.click()}
-                    className={`h-8 rounded-full px-3 text-xs font-semibold bg-white text-stockblue border border-stockblue/20 hover:bg-blue-50
+                    className={`h-7 rounded-full px-2 text-xs font-semibold bg-white text-stockblue border border-stockblue/20 hover:bg-blue-50
     ${isLoading ? "opacity-50 pointer-events-none" : ""}
   `}
                   >
@@ -238,9 +409,54 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
                   </button>
 
                   <button
+                    type="button"
+                    disabled={isLoading || isMaxZoom}
+                    onClick={zoomIn}
+                    className={`relative group h-7 w-7 rounded-full font-bold bg-white text-stockblue border border-stockblue/20 transition-all
+    ${isLoading || isMaxZoom ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-50"}`}
+                  >
+                    +
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isLoading || isMinZoom}
+                    onClick={zoomOut}
+                    className={`relative group h-8 w-8 rounded-full font-bold bg-white text-stockblue border border-stockblue/20 transition-all
+    ${isLoading || isMinZoom ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-50"}`}
+                  >
+                    <span
+                      className={`${isMinZoom ? "group-hover:opacity-0 transition-opacity duration-0" : "transition-opacity duration-200"
+                        }`}
+                    >
+                      −
+                    </span>
+
+                    {isMinZoom && !isLoading && (
+                      <Ban
+                        size={16}
+                        className="absolute inset-0 m-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-red-500"
+                      />
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isLoading || isResetZoom}
+                    onClick={resetZoom}
+                    className={`h-7 rounded-full px-2 text-xs font-semibold bg-white text-stockblue border border-stockblue/20 hover:bg-blue-50
+    ${isLoading || isResetZoom ? "opacity-50 cursor-not-allowed" : ""}`}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      <RotateCcw size={14} />
+                      איפוס
+                    </span>
+                  </button>
+
+                  <button
                     disabled={isLoading}
                     onClick={() => addRef.current?.click()}
-                    className={`h-8 rounded-full px-3 text-xs font-semibold bg-stockblue text-white hover:bg-blue-700
+                    className={`h-7 rounded-full px-2 text-xs font-semibold bg-stockblue text-white hover:bg-blue-700
     ${isLoading ? "opacity-50 pointer-events-none" : ""}
   `}
                   >
@@ -333,14 +549,12 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
 
         {/* floating glows */}
         <div
-          className={`absolute -top-6 -right-6 w-24 h-24 bg-gradient-to-br from-blue-400/40 to-purple-400/30 rounded-full blur-2xl pointer-events-none -z-10 ${
-            isEditing ? "" : "animate-pulse"
-          }`}
+          className={`absolute -top-6 -right-6 w-24 h-24 bg-gradient-to-br from-blue-400/40 to-purple-400/30 rounded-full blur-2xl pointer-events-none -z-10 ${isEditing ? "" : "animate-pulse"
+            }`}
         />
         <div
-          className={`absolute -bottom-8 -left-8 w-32 h-32 bg-gradient-to-tr from-purple-500/20 to-blue-500/30 rounded-full blur-3xl pointer-events-none -z-10 ${
-            isEditing ? "" : "animate-pulse"
-          }`}
+          className={`absolute -bottom-8 -left-8 w-32 h-32 bg-gradient-to-tr from-purple-500/20 to-blue-500/30 rounded-full blur-3xl pointer-events-none -z-10 ${isEditing ? "" : "animate-pulse"
+            }`}
         />
       </div>
     </aside>

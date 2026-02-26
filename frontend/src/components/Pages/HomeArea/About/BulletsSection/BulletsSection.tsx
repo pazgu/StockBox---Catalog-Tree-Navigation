@@ -123,6 +123,7 @@ const BulletsSection: React.FC<BulletsSectionProps> = ({
               <input
                 type="text"
                 value={title}
+                placeholder="כותרת חדשה"
                 onChange={(e) => {
                   const val = e.target.value;
                   onChangeTitle(val);
@@ -206,6 +207,7 @@ const BulletsSection: React.FC<BulletsSectionProps> = ({
                       if (el) inputRefs.current[i] = el;
                     }}
                     type="text"
+                      placeholder="נקודה חדשה"
                     value={b.text}
                     onChange={(e) => {
                       const val = e.target.value;
