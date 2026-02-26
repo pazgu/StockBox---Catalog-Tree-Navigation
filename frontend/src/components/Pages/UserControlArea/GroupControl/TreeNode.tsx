@@ -131,8 +131,8 @@ const TreeNode: React.FC<TreeNodeProps> = ({
           />
         )}
 
-        <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center">
-          {hasChildren ? (
+<div className={`flex-shrink-0 flex items-center justify-center ${hasChildren ? "w-6 h-6" : "w-0"}`}>
+            {hasChildren ? (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -146,9 +146,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                 <ChevronLeft className="w-4 h-4" />
               )}
             </button>
-          ) : (
-            <div className="w-1.5 h-1.5 rounded-full bg-gray-300 mx-auto" />
-          )}
+          ) : null}
         </div>
 
         <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -168,7 +166,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               <CheckCircle2 className="w-4 h-4" />
             </button>
             <div className="absolute bottom-full right-1/2 translate-x-1/2 mb-0 px-2 py-1 bg-gray-800 text-white text-[10px] rounded-lg whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg">
-              בחר
+              בחירה
             </div>
           </div>
 
@@ -189,7 +187,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                 <Users className="w-4 h-4" />
               </button>
               <div className="absolute bottom-full right-1/2 translate-x-1/2 mb-0 px-2 py-1 bg-gray-800 text-white text-[10px] rounded-lg whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg">
-                בחר עם צאצאים
+                בחירה עם צאצאים
               </div>
             </div>
           )}
@@ -210,7 +208,6 @@ const TreeNode: React.FC<TreeNodeProps> = ({
           <div className="flex flex-col min-w-0">
             <span
               className={`text-sm font-bold truncate max-w-xs ${styles.text}`}
-              title={node.name}
             >
               {node.name}
             </span>

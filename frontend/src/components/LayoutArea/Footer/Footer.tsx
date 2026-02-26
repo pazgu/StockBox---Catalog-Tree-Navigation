@@ -21,7 +21,7 @@ const Footer: FC<FooterProps> = () => {
 
           {/* Text next to it, RTL order looks correct */}
           <p className="text-sm whitespace-nowrap">
-            © כל הזכויות שמורות 2025
+            © כל הזכויות שמורות {new Date().getFullYear()}
           </p>
         </div>
       </div>

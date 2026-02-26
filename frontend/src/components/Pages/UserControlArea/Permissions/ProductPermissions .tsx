@@ -333,7 +333,9 @@ const ProductPermissions: React.FC = () => {
       const pathState = pathStates[path];
       if (!pathState) return;
       const allIds = [
-        ...pathState.users.map((u) => u._id),
+        ...pathState.users
+          .filter((u) => u.groupIds.length === 0)
+          .map((u) => u._id),
         ...pathState.groups.map((g) => g._id),
       ];
       const blockedByCategory = allIds.filter((id) =>
@@ -354,18 +356,26 @@ const ProductPermissions: React.FC = () => {
       }
     }
     setPathStates((prev) => {
-      const pathState = prev[path];
-      if (!pathState) return prev;
+        const pathState = prev[path];
+        if (!pathState) return prev;
 
-      return {
-        ...prev,
-        [path]: {
-          ...pathState,
-          users: pathState.users.map((u) => ({ ...u, enabled })),
-          groups: pathState.groups.map((g) => ({ ...g, members: enabled })),
-        },
-      };
-    });
+        return {
+          ...prev,
+          [path]: {
+            ...pathState,
+
+            users: pathState.users.map((u) => ({
+              ...u,
+              enabled: u.groupIds.length === 0 ? enabled : false,
+            })),
+
+            groups: pathState.groups.map((g) => ({
+              ...g,
+              members: enabled,
+            })),
+          },
+        };
+      });
   };
 
   const savePermissionsForPath = async (pathData: PathData) => {
@@ -631,11 +641,15 @@ const ProductPermissions: React.FC = () => {
                               אפשר לכולם
                             </Label>
                             <Switch
-                              checked={
-                                pathState.users.length > 0 &&
-                                usersWithGroupInfo.every((u) => u.effectiveEnabled) &&
-                                pathState.groups.every((g) => g.members)
-                              }
+                             checked={
+                              pathState.groups.length > 0 &&
+                              pathState.groups.every((g) => g.members) &&
+                              pathState.users.every((u) =>
+                                u.groupIds.length === 0
+                                  ? u.enabled === true
+                                  : u.enabled === false
+                              )
+                            }
                               onCheckedChange={(checked) =>
                                 handleEnableAllForPath(pathData.path, checked)
                               }

@@ -1,4 +1,3 @@
-import React from "react";
 import { Search, Users, Plus, UserMinus } from "lucide-react";
 import { User } from "../../../models/user.models";
 import { Group } from "../../../models/group.models";
@@ -17,6 +16,7 @@ interface UsersListProps {
   onSearchChange: (query: string) => void;
   onRemoveUsers: () => void;
 }
+const isNewUsersGroup = (name: string) => name === "New Users";
 
 const UsersList: React.FC<UsersListProps> = ({
   filteredUsers,
@@ -61,23 +61,23 @@ const UsersList: React.FC<UsersListProps> = ({
             : "בחר הכל"}
         </button>
         <span className="text-sm text-gray-600">
-          {selectedUsers.size > 0 
+          {selectedUsers.size > 0
             ? `${selectedUsers.size} נבחרו מתוך ${filteredUsers.length}`
-            : `נמצאו ${filteredUsers.length} משתמשים`
-          }
+            : `נמצאו ${filteredUsers.length} משתמשים`}
         </span>
       </div>
 
       <div className="flex gap-3 mb-4">
-        <button
-          onClick={onAddUsers}
-          disabled={!selectedGroup}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-900 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-md text-sm font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
-        >
-          <Plus className="w-4 h-4" />
-          הוספת משתמשים לקבוצה
-        </button>
-
+        {!isNewUsersGroup(currentGroupName) && (
+          <button
+            onClick={onAddUsers}
+            disabled={!selectedGroup}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-900 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-md text-sm font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
+          >
+            <Plus className="w-4 h-4" />
+            הוספת משתמשים לקבוצה
+          </button>
+        )}
         <button
           onClick={onRemoveUsers}
           disabled={selectedUsers.size === 0}
@@ -114,8 +114,7 @@ const UsersList: React.FC<UsersListProps> = ({
                 className="w-5 h-5 text-slate-700 rounded focus:ring-slate-700"
               />
 
-              <div className="w-12 h-12 bg-gradient-to-br from-slate-600 to-slate-700 rounded-full flex items-center justify-center text-white font-bold text-sm">
-              </div>
+              <div className="w-12 h-12 bg-gradient-to-br from-slate-600 to-slate-700 rounded-full flex items-center justify-center text-white font-bold text-sm"></div>
 
               <div className="flex-1 text-right min-w-0">
                 <h4 className="font-semibold text-gray-800 truncate">

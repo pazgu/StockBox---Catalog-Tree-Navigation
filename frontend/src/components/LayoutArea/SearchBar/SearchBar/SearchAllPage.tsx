@@ -137,7 +137,9 @@ const SearchResultsPage = () => {
                         dir="ltr"
                         style={{ unicodeBidi: "isolate" }}
                         onClick={() => {
-                          setPreviousPath(item.paths?.[0]);
+                          item.type === "product"? 
+                          setPreviousPath(item.paths?.[0].slice(0, item.paths?.[0].lastIndexOf("/")))
+                          : setPreviousPath(item.paths?.[0]);
                           navigate(
                             item.type === "product"
                               ? `/products/${item.id}`
@@ -204,7 +206,7 @@ const SearchResultsPage = () => {
 
                 <p className="text-[14px] text-[#4d5156] leading-relaxed line-clamp-1">
                   {item.type === "product"
-                    ? item.description || "תיאור המוצר לא זמין."
+                    ? item.description || `יש ללחוץ על הקישור לעיון במוצר ${item.label}`
                     : `יש ללחוץ על הקישור לעיון בקטגוריית ${item.label}`}
                 </p>
                 <div className="border-b border-gray-100 my-4" />

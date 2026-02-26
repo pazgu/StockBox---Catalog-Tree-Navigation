@@ -36,7 +36,7 @@ import MoveMultipleItemsModal from "./MoveMultipleItemsModal/MoveMultipleItemsMo
 import { usePath } from "../../../../context/PathContext";
 import ImagePreviewHover from "../../ProductArea/ImageCarousel/ImageCarousel/ImagePreviewHover";
 import { useDebouncedFavorite } from "../../../../hooks/useDebouncedFavorite";
-import {truncateDisplay} from "../../../../lib/utils";
+import { truncateDisplay } from "../../../../lib/utils";
 
 const hasImage = (images: any): boolean => {
   if (!images) return false;
@@ -143,6 +143,11 @@ const SingleCat: FC = () => {
       if (timer) clearTimeout(timer);
     };
   }, [showFabButtons]);
+
+  useEffect(() => {
+  setIsSelectionMode(false);
+  setSelectedItems([]);
+}, [categoryPath]);
 
   const loadAllContent = async () => {
     try {
@@ -390,7 +395,6 @@ const SingleCat: FC = () => {
 
   const handleMoveSuccess = async () => {
     await loadAllContent();
-    toast.success("הפריט הועבר בהצלחה!");
     setShowMoveModal(false);
     setItemToMove(null);
   };
@@ -462,7 +466,7 @@ const SingleCat: FC = () => {
       };
 
       setItems((prev) => [...prev, newItem]);
-      toast.success(`המוצר "${data.name}" נוסף בהצלחה!`);
+      toast.success(`המוצר "${data.name}" נוצר בהצלחה!`);
       setShowAddProductModal(false);
     } catch (error: any) {
       console.error("Save Error:", error);
@@ -503,7 +507,7 @@ const SingleCat: FC = () => {
         favorite: false,
       };
       setItems([...items, newItem]);
-      toast.success(`הקטגוריה "${data.name}" נוספה בהצלחה!`);
+      toast.success(`הקטגוריה "${data.name}" נוצרה בהצלחה!`);
       setShowAddSubCategoryModal(false);
     } catch (error) {
       const serverMessage =
@@ -649,8 +653,24 @@ const SingleCat: FC = () => {
           {!isSelectionMode ? (
             <button
               onClick={toggleSelectionMode}
-              className="text-base text-gray-700 hover:text-[#0D305B] hover:underline transition-colors"
+              className="flex items-center gap-2 text-sm font-medium text-[#0D305B] border border-[#0D305B] px-4 py-2 rounded hover:bg-[#0D305B] hover:text-white transition-all duration-200 shadow-sm"
             >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="3" y="5" width="4" height="4" rx="1" />
+                <rect x="3" y="13" width="4" height="4" rx="1" />
+                <line x1="10" y1="7" x2="21" y2="7" />
+                <line x1="10" y1="15" x2="21" y2="15" />
+              </svg>
               בחירה מרובה
             </button>
           ) : (
@@ -670,7 +690,7 @@ const SingleCat: FC = () => {
                     onClick={handleMoveSelectedToRecycleBin}
                     className="text-base hover:underline text-orange-600 hover:text-orange-700 transition-colors"
                   >
-                    העבר לסל ({selectedItems.length})
+                    העברה לסל מיחזור ({selectedItems.length})
                   </button>
                   <span className="text-gray-400">|</span>
                   <button
@@ -747,7 +767,7 @@ const SingleCat: FC = () => {
                     >
                       <Copy size={18} />
                     </button>
-                    <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                    <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
                       שכפול לקטגוריות נוספות
                     </span>
                   </div>
@@ -762,11 +782,10 @@ const SingleCat: FC = () => {
                   >
                     <FolderInput size={18} />
                   </button>
-            
-                  <span className="absolute -top-8 -left-1 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+
+                  <span className="absolute -bottom-8 -left-1 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
                     העברה לקטגוריה אחרת
                   </span>
-              
                 </div>
                 <div className="absolute bottom-5 left-3">
                   <button
@@ -778,8 +797,8 @@ const SingleCat: FC = () => {
                   >
                     <Trash size={18} />
                   </button>
-                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                    העבר לסל מיחזור
+                  <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                    העברה לסל מיחזור
                   </span>
                 </div>
                 {item.type === "category" && (
@@ -793,7 +812,7 @@ const SingleCat: FC = () => {
                     >
                       <Pen size={18} />
                     </button>
-                    <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                    <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
                       עריכת קטגוריה
                     </span>
                   </div>
@@ -1003,7 +1022,7 @@ const SingleCat: FC = () => {
                     מעביר לסל...
                   </span>
                 ) : (
-                  "העבר לסל מיחזור"
+                  "העברה לסל מיחזור"
                 )}
               </button>
 
@@ -1120,7 +1139,7 @@ const SingleCat: FC = () => {
                 onClick={confirmMoveSelectedToRecycleBin}
                 className="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 transition-colors"
               >
-                העבר לסל מיחזור
+                העברה לסל מיחזור
               </button>
               <button
                 onClick={closeAllModals}
