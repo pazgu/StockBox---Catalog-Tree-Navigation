@@ -233,7 +233,7 @@ const SearchBar: React.FC<SearchHeaderProps> = ({
                         </span>
 
                         {isEditor && item.paths && item.paths.length > 1 && (
-                          <span className="relative group/path text-xs text-blue-600 whitespace-nowrap shrink-0">
+                          <span className="relative group/path text-xs text-gray-600 whitespace-nowrap shrink-0">
                             + עוד {item.paths.length - 1} נתיבים
                           </span>
                         )}
