@@ -488,9 +488,9 @@ const ProductPermissions: React.FC = () => {
       const allGroupsEnabled =
         userGroups.length > 0 && blockedGroups.length === 0;
       const hasBlockedGroups = blockedGroups.length > 0;
-      const enabledGroupIds = enabledGroups.map(g => g._id);
-      const blockedByProduct = isBlockedInProduct(user._id, enabledGroupIds);
-      const blockedByCategory = isBlockedInCategory(pathData, user._id, enabledGroupIds);
+      const allUserGroupIds = user.groupIds;
+      const blockedByProduct = isBlockedInProduct(user._id, allUserGroupIds);
+      const blockedByCategory = isBlockedInCategory(pathData, user._id, allUserGroupIds);
 
       return {
         ...user,
@@ -647,7 +647,7 @@ const ProductPermissions: React.FC = () => {
                               pathState.users.every((u) =>
                                 u.groupIds.length === 0
                                   ? u.enabled === true
-                                  : u.enabled === false
+                                  : true
                               )
                             }
                               onCheckedChange={(checked) =>
@@ -706,8 +706,10 @@ const ProductPermissions: React.FC = () => {
                                           ),
                                       )
                                       .map((user) => {
-                                        const isDisabledDueToGroup = user.allGroupsEnabled && !user.enabled;
-                                        const isDisabled = user.hasBlockedGroups || user.blockedByCategory || isDisabledDueToGroup;
+                                        const isDisabled = 
+                                          user.hasBlockedGroups || 
+                                          user.blockedByCategory || 
+                                          user.userGroups.length > 0;
                                         return (
                                           <div
                                             key={user._id}
