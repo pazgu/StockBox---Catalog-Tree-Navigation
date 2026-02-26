@@ -147,6 +147,7 @@ const FeaturesSection: FC<FeaturesSectionProps> = ({
               <input
                 type="text"
                 value={title}
+                placeholder="כותרת חדשה"
                 onChange={(e) => {
                   const val = e.target.value;
                   onChangeTitle(val);
@@ -261,6 +262,7 @@ const FeaturesSection: FC<FeaturesSectionProps> = ({
                           if (el) titleInputRefs.current[index] = el;
                         }}
                         type="text"
+                        placeholder="כותרת חדשה"
                         value={feature.title}
                         onChange={(e) => {
                           const nextTitle = e.target.value;
@@ -278,6 +280,7 @@ const FeaturesSection: FC<FeaturesSectionProps> = ({
 
                       <textarea
                         value={feature.description}
+                        placeholder="תיאור חדש"
                         onChange={(e) => {
                           const nextDesc = e.target.value;
                           onChange(index, "description", nextDesc);

@@ -30,7 +30,7 @@ import ImagePreviewHover from "../../ProductArea/ImageCarousel/ImageCarousel/Ima
 import { recycleBinService } from "../../../../services/RecycleBinService";
 import { useDebouncedFavorite } from "../../../../hooks/useDebouncedFavorite";
 import { truncateDisplay } from "../../../../lib/utils";
-
+import { environment } from "../../../../environments/environment";
 interface CategoriesProps {}
 
 export interface Category {
@@ -306,7 +306,7 @@ export const Categories: FC<CategoriesProps> = () => {
     setProductToMoveToRecycleBin(null);
   };
 
-  const handleAddCategory = async ({ name, imageFile }: AddCategoryResult) => {
+  const handleAddCategory = async ({ name, imageFile,allowAll }: AddCategoryResult) => {
     try {
       const categoryPath = `/categories/${name
         .toLowerCase()
@@ -316,6 +316,7 @@ export const Categories: FC<CategoriesProps> = () => {
         categoryName: name,
         categoryPath,
         imageFile,
+        allowAll,
       });
 
       setCategories((prev) => [...prev, newCategory]);
@@ -694,9 +695,17 @@ export const Categories: FC<CategoriesProps> = () => {
                               className="w-full h-full"
                             />
                           </div>
-                        ) : (
-                          <NoImageCard label="אין תמונה למוצר" />
-                        )}
+                     ) : (
+  <img
+    src={environment.DEFAULT_PRODUCT_IMAGE_URL}
+    alt={item.name}
+    className="max-h-full max-w-full object-contain"
+    onError={(e) => {
+      (e.currentTarget as HTMLImageElement).src =
+        environment.DEFAULT_PRODUCT_IMAGE_URL;
+    }}
+  />
+)}
                       </div>
 
                       <div className="w-full text-center pt-4 border-t border-gray-200">

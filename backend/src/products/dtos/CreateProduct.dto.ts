@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
-import { IsString, IsOptional } from 'class-validator';
+import { IsString, IsOptional, IsBoolean } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class CreateProductDto {
@@ -40,4 +40,8 @@ export class CreateProductDto {
     }
   })
   productImages?: string[];
+
+  @Transform(({ value }) => value === 'true')
+  @IsBoolean()
+  allowAll: boolean;
 }

@@ -1,3 +1,4 @@
+import { c } from "framer-motion/dist/types.d-CSbqhfMB";
 import {
   CategoryDTO,
   CreateCategoryDTO,
@@ -61,7 +62,7 @@ class CategoriesService {
       if (category.imageFile) {
         fd.append("categoryImageFile", category.imageFile);
       }
-
+      fd.append("allowAll", category.allowAll.toString());
       const response = await api.post<CategoryDTO>(this.baseUrl, fd, {
         headers: {
           "Content-Type": "multipart/form-data",

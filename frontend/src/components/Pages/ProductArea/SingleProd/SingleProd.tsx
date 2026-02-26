@@ -37,8 +37,8 @@ import { Skeleton } from "../../../ui/skeleton";
 import { usePath } from "../../../../context/PathContext";
 import { useDebouncedFavoriteSingle } from "../../../../hooks/useDebouncedFavoriteSingle";
 import { isLength } from "validator";
-
-interface SingleProdProps {}
+import { environment } from "../../../../environments/environment.development";
+interface SingleProdProps { }
 
 function normalizeImages(images: string[]) {
   return (images || [])
@@ -96,7 +96,13 @@ const SingleProd: FC<SingleProdProps> = () => {
 
         setTitle(product.productName);
         setDescription(product.productDescription || "");
-        setProductImages(product.productImages || []);
+        const defaultUrl = environment.DEFAULT_PRODUCT_IMAGE_URL;
+
+        const cleaned = normalizeImages(product.productImages || []).filter(
+          (url) => url !== defaultUrl,
+        );
+
+        setProductImages(cleaned);
         setCurrentImageIndex(0);
         setProduct(product);
         setOriginalProduct(product);
@@ -235,7 +241,7 @@ const SingleProd: FC<SingleProdProps> = () => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    const currentUrl = displayImages[currentImageIndex];
+    const currentUrl = realImages[currentImageIndex];
     if (!currentUrl) return;
 
     setIsUploadingImages(true);
@@ -265,8 +271,10 @@ const SingleProd: FC<SingleProdProps> = () => {
     setIsReplacingImage(false);
   };
 
+  
+
   const handleDeleteImage = () => {
-    const currentUrl = displayImages[currentImageIndex];
+    const currentUrl = realImages[currentImageIndex];
     if (!currentUrl) return;
 
     setProductImages((prev) => prev.filter((img) => img !== currentUrl));
@@ -285,6 +293,8 @@ const SingleProd: FC<SingleProdProps> = () => {
       ),
     );
   };
+
+
 
   const handleAccordionTitleChange = (uiId: string, newTitle: string) => {
     setAccordionData((prevData) =>
@@ -412,22 +422,22 @@ const SingleProd: FC<SingleProdProps> = () => {
     }));
     const uploadFolders = folders.length
       ? [
-          {
-            title: "Default Group",
-            folders: folders
-              .filter((folder) => folder.files.length > 0)
-              .map((folder) => ({
-                ...(folder._id ? { _id: folder._id } : {}),
-                folderName: folder.name,
-                files: folder.files.map((file) => ({
-                  ...(file._id ? { _id: file._id } : {}),
-                  link: file.url,
-                  name: file.name,
-                  size: file.size,
-                })),
+        {
+          title: "Default Group",
+          folders: folders
+            .filter((folder) => folder.files.length > 0)
+            .map((folder) => ({
+              ...(folder._id ? { _id: folder._id } : {}),
+              folderName: folder.name,
+              files: folder.files.map((file) => ({
+                ...(file._id ? { _id: file._id } : {}),
+                link: file.url,
+                name: file.name,
+                size: file.size,
               })),
-          },
-        ]
+            })),
+        },
+      ]
       : [];
 
     const normalizedProductImages = normalizeImages(productImages);
@@ -443,32 +453,32 @@ const SingleProd: FC<SingleProdProps> = () => {
       title !== originalProduct?.productName ||
       description !== originalProduct?.productDescription ||
       JSON.stringify(accordionData) !==
-        JSON.stringify(
-          originalProduct?.customFields?.map((field) => ({
-            uiId: field._id,
-            title: field.title,
-            type: field.type,
-            content:
-              field.type === "bullets"
-                ? JSON.stringify(field.bullets)
-                : field.content,
-          })),
-        ) ||
+      JSON.stringify(
+        originalProduct?.customFields?.map((field) => ({
+          uiId: field._id,
+          title: field.title,
+          type: field.type,
+          content:
+            field.type === "bullets"
+              ? JSON.stringify(field.bullets)
+              : field.content,
+        })),
+      ) ||
       JSON.stringify(productImages) !==
-        JSON.stringify(originalProduct?.productImages) ||
+      JSON.stringify(originalProduct?.productImages) ||
       JSON.stringify(folders) !==
-        JSON.stringify(
-          originalProduct?.uploadFolders?.[0]?.folders.map((folder) => ({
-            uiId: folder._id,
-            name: folder.folderName,
-            files: folder.files.map((f) => ({
-              uiId: f._id,
-              name: f.link.split("/").pop(),
-              url: f.link,
-              size: 0,
-            })),
-          })) || [],
-        );
+      JSON.stringify(
+        originalProduct?.uploadFolders?.[0]?.folders.map((folder) => ({
+          uiId: folder._id,
+          name: folder.folderName,
+          files: folder.files.map((f) => ({
+            uiId: f._id,
+            name: f.link.split("/").pop(),
+            url: f.link,
+            size: 0,
+          })),
+        })) || [],
+      );
 
     if (!hasChanges) {
       setIsEditing(false);
@@ -549,9 +559,9 @@ const SingleProd: FC<SingleProdProps> = () => {
       prev.map((folder) =>
         folder.uiId === folderUiId
           ? {
-              ...folder,
-              files: folder.files.filter((f) => f.uiId !== fileUiId),
-            }
+            ...folder,
+            files: folder.files.filter((f) => f.uiId !== fileUiId),
+          }
           : folder,
       ),
     );
@@ -581,9 +591,14 @@ const SingleProd: FC<SingleProdProps> = () => {
     return user?.favorites?.some((fav) => fav.id === product?._id) ?? false;
   }, [user?.favorites, product?._id]);
 
-  const displayImages = useMemo(() => {
-    return isEditing ? normalizeImages(productImages) : productImages;
-  }, [isEditing, productImages]);
+  const realImages = useMemo(() => normalizeImages(productImages), [productImages]);
+
+const displayImages = useMemo(() => {
+  if (isEditing) return realImages;
+  return realImages.length > 0
+    ? realImages
+    : [environment.DEFAULT_PRODUCT_IMAGE_URL]; 
+}, [isEditing, realImages]);
 
   if (isLoading) {
     return <SingleProdSkeleton />;
@@ -685,45 +700,47 @@ const SingleProd: FC<SingleProdProps> = () => {
             <div className="group relative bg-white p-4 rounded-2xl border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-stockblue to-stockblue"></div>
 
-              {displayImages.length > 0 ? (
-                <div className="relative mb-4">
-                  {isUploadingImages && (
-                    <div className="absolute inset-0 z-50 grid place-items-center bg-white/60 backdrop-blur-sm rounded-2xl">
-                      <div className="flex items-center gap-2 rounded-2xl bg-white/80 px-4 py-2 shadow">
-                        <Spinner className="size-6 text-stockblue" />
-                        <span className="text-sm font-semibold text-stockblue">
-                          מעלה תמונות…
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                  <ImageCarousel
-                    productImages={displayImages}
-                    currentImageIndex={currentImageIndex}
-                    setCurrentImageIndex={setCurrentImageIndex}
-                    prevImage={() => {
-                      if (displayImages.length === 0) return;
-                      setCurrentImageIndex((prev) =>
-                        prev === 0 ? displayImages.length - 1 : prev - 1,
-                      );
-                    }}
-                    nextImage={() => {
-                      if (displayImages.length === 0) return;
-                      setCurrentImageIndex((prev) =>
-                        prev === displayImages.length - 1 ? 0 : prev + 1,
-                      );
-                    }}
-                    isEditing={isEditing}
-                    handleReplaceImage={handleReplaceImage}
-                    handleAddImages={handleAddImages}
-                    handleDeleteImage={handleDeleteImage}
-                    handleDeleteAllImages={handleDeleteAllImages}
-                    isUploading={isUploadingImages}
-                    title={title}
-                    isReplacingImage={isReplacingImage}
-                    setIsReplacingImage={setIsReplacingImage}
-                  />
-                </div>
+              {!isEditing || realImages.length > 0 ? (
+  <div className="relative mb-4">
+    {isUploadingImages && (
+      <div className="absolute inset-0 z-50 grid place-items-center bg-white/60 backdrop-blur-sm rounded-2xl">
+        <div className="flex items-center gap-2 rounded-2xl bg-white/80 px-4 py-2 shadow">
+          <Spinner className="size-6 text-stockblue" />
+          <span className="text-sm font-semibold text-stockblue">
+            מעלה תמונות…
+          </span>
+        </div>
+      </div>
+    )}
+
+    <ImageCarousel
+      productImages={displayImages}
+      currentImageIndex={currentImageIndex}
+      setCurrentImageIndex={setCurrentImageIndex}
+      prevImage={() => {
+        if (displayImages.length === 0) return;
+        setCurrentImageIndex((prev) =>
+          prev === 0 ? displayImages.length - 1 : prev - 1,
+        );
+      }}
+      nextImage={() => {
+        if (displayImages.length === 0) return;
+        setCurrentImageIndex((prev) =>
+          prev === displayImages.length - 1 ? 0 : prev + 1,
+        );
+      }}
+      isEditing={isEditing}
+      handleReplaceImage={handleReplaceImage}
+      handleAddImages={handleAddImages}
+      handleDeleteImage={handleDeleteImage}
+      handleDeleteAllImages={handleDeleteAllImages}
+      isUploading={isUploadingImages}
+      title={title}
+      isReplacingImage={isReplacingImage}
+      setIsReplacingImage={setIsReplacingImage}
+    />
+  </div>
+
               ) : (
                 <div className="relative mb-4">
                   <div

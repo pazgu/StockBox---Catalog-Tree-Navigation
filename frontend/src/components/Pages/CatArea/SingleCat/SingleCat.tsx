@@ -37,6 +37,7 @@ import { usePath } from "../../../../context/PathContext";
 import ImagePreviewHover from "../../ProductArea/ImageCarousel/ImageCarousel/ImagePreviewHover";
 import { useDebouncedFavorite } from "../../../../hooks/useDebouncedFavorite";
 import { truncateDisplay } from "../../../../lib/utils";
+import { environment } from "../../../../environments/environment";
 
 const hasImage = (images: any): boolean => {
   if (!images) return false;
@@ -444,6 +445,7 @@ const SingleCat: FC = () => {
     name: string;
     description: string;
     imageFile?: File;
+    allowAll: boolean;
   }) => {
     try {
       const productPathString = categoryPath;
@@ -453,6 +455,7 @@ const SingleCat: FC = () => {
         productDescription: data.description,
         customFields: {},
         imageFile: data.imageFile,
+        allowAll: data.allowAll,
       });
 
       const newItem: DisplayItem = {
@@ -486,6 +489,7 @@ const SingleCat: FC = () => {
   const handleSaveCategory = async (data: {
     name: string;
     imageFile?: File;
+    allowAll: boolean;
   }) => {
     try {
       const newCategoryPath =
@@ -496,6 +500,7 @@ const SingleCat: FC = () => {
         categoryName: data.name,
         categoryPath: newCategoryPath,
         imageFile: data.imageFile,
+        allowAll: data.allowAll,
       });
 
       const newItem: DisplayItem = {
@@ -874,9 +879,17 @@ const SingleCat: FC = () => {
                     className="w-full h-full"
                   />
                 </div>
-              ) : (
-                <NoImageCard label="אין תמונה למוצר" />
-              )}
+             ) : (
+  <img
+    src={environment.DEFAULT_PRODUCT_IMAGE_URL}
+    alt={item.name}
+    className="max-h-full max-w-full object-contain"
+    onError={(e) => {
+      (e.currentTarget as HTMLImageElement).src =
+        environment.DEFAULT_PRODUCT_IMAGE_URL;
+    }}
+  />
+)}
             </div>
 
             <div className="w-full text-center pt-4 border-t border-gray-200">

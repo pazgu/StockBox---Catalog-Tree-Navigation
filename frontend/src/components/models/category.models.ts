@@ -11,6 +11,7 @@ export interface CreateCategoryDTO {
   categoryName: string;
   categoryPath: string;
   imageFile?: File;
+  allowAll: boolean;
 }
 
 export interface UpdateCategoryDTO {
@@ -19,9 +20,8 @@ export interface UpdateCategoryDTO {
   categoryImage?: string;
 }
 
-
 export type AddCategoryResult = {
   name: string;
   imageFile?: File;
+  allowAll: boolean;
 };
-
