@@ -15,11 +15,24 @@ export const PathProvider = ({ children }: { children: ReactNode }) => {
     if (saved) setPreviousPathState(saved);
   }, []);
 
-  const setPreviousPath = (path: string | null) => {
-    setPreviousPathState(path);
+  const dynamicPages = [
+  /^\/products\/[^/]+$/,          
+  /^\/permissions\/[^/]+\/[^/]+$/, 
+  /^\/permissions\/product\/[^/]+$/, 
+  /^\/permissions\/category\/[^/]+$/ 
+];
 
-    if (path) localStorage.setItem("previousPath", path);
-    else localStorage.removeItem("previousPath");
+  const setPreviousPath = (path: string | null) => {
+    if (path) {
+      const isDynamic = dynamicPages.some((pattern) => pattern.test(path));
+      if (isDynamic) return; 
+
+      setPreviousPathState(path);
+      localStorage.setItem("previousPath", path);
+    } else {
+      setPreviousPathState(null);
+      localStorage.removeItem("previousPath");
+    }
   };
 
   return (

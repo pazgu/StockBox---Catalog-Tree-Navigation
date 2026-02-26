@@ -30,7 +30,8 @@ const Header: React.FC<HeaderProps> = ({
   const handleSearchSelect = (item: any) => {
     setIsMobileMenuOpen(false);
     if (item.type === "product") {
-      setPreviousPath(location.pathname);
+      setPreviousPath(item.paths[0].slice(0, item.paths[0].lastIndexOf("/")));
+
       navigate(`/products/${item.id}`);
     } else if (item.type === "category") {
       navigate(`${item.paths[0]}`);
