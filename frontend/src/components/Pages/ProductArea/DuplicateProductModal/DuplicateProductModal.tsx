@@ -135,10 +135,11 @@ const DuplicateProductModal: React.FC<DuplicateProductModalProps> = ({
     const isExpanded = expandedCategories.has(cat.categoryPath);
     const isLoading = loadingSubcats.has(cat.categoryPath);
     const isSelected = selectedCategoryPaths.has(cat.categoryPath);
-    const productName = currentPaths[0]?.split("/").pop();
-    const isCurrentPath = productName
-      ? currentPaths.includes(`${cat.categoryPath}/${productName}`)
-      : false;
+    const slugify = (name: string) => name.toLowerCase().replace(/\s+/g, '-');
+    const productSlug = slugify(productName); 
+    const isCurrentPath = currentPaths.some(
+      (p) => p === `${cat.categoryPath}/${productSlug}`
+    );
 
     return (
       <div key={cat._id} style={{ marginRight: `${level * 20}px` }}>
@@ -199,7 +200,9 @@ const DuplicateProductModal: React.FC<DuplicateProductModalProps> = ({
                   </span>
                 )}
               </p>
-              <p className="text-xs text-gray-400"> <PathDisplay path={cat.categoryPath} />           
+              <p className="text-xs text-gray-400">
+                {" "}
+                <PathDisplay path={cat.categoryPath} />
               </p>
             </div>
           </div>
@@ -279,10 +282,9 @@ const DuplicateProductModal: React.FC<DuplicateProductModalProps> = ({
                   <li
                     key={i}
                     className="text-[11px] text-gray-600 py-1 border-b last:border-0 truncate"
-                    dir="ltr"
+                    dir="auto"
                   >
-                  <PathDisplay path={path} />           
-                   
+                    <PathDisplay path={path} />
                   </li>
                 ))}
               </ul>

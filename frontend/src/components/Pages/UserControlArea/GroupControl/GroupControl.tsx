@@ -418,21 +418,23 @@ const [bannedItemsByGroup, setBannedItemsByGroup] = useState<Record<string, Bann
                 שם הקבוצה
               </label>
 
-              <input
-                ref={inputRef}
-                type="text"
-                value={newGroupName}
-                maxLength={MAX_GROUP_NAME_LEN}
-                onChange={(e) =>
-                  setNewGroupName(e.target.value.slice(0, MAX_GROUP_NAME_LEN))
-                }
-                placeholder="שם הקבוצה"
-                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 mb-2 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md text-right"
-                aria-label="שם הקבוצה החדשה"
-              />
+              <div className="relative mb-3">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={newGroupName}
+                  maxLength={MAX_GROUP_NAME_LEN}
+                  onChange={(e) =>
+                    setNewGroupName(e.target.value.slice(0, MAX_GROUP_NAME_LEN))
+                  }
+                  placeholder="שם הקבוצה"
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 pb-6 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md text-right"
+                  aria-label="שם הקבוצה החדשה"
+                />
 
-              <div className="text-xs text-gray-500 mb-3">
-                {newGroupName.length}/{MAX_GROUP_NAME_LEN}
+                <div className="absolute bottom-1.5 left-3 text-xs text-gray-400">
+                  {newGroupName.length}/{MAX_GROUP_NAME_LEN}
+                </div>
               </div>
             </div>
 

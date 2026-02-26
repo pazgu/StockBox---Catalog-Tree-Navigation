@@ -58,12 +58,13 @@ export class ProductsService {
       .exec();
 
     const directChildren = matchingProducts.filter((product) => {
-      const currentPath = product.productPath.find((p) => p.startsWith(path));
-      if (!currentPath) return false;
+      return product.productPath.some((p) => {
+        if (!p.startsWith(path)) return false;
 
-      const remainingPath = currentPath.substring(path.length);
-      const slashCount = (remainingPath.match(/\//g) || []).length;
-      return slashCount <= 1;
+        const remainingPath = p.substring(path.length);
+        const slashCount = (remainingPath.match(/\//g) || []).length;
+        return slashCount === 1;
+      });
     });
 
     if (user.role === 'editor') {
