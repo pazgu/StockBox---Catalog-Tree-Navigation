@@ -138,6 +138,8 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     reader.readAsDataURL(file);
   };
 
+  const MAX_GROUP_NAME_LEN = 30;
+
   const generateCroppedImage = () => {
     if (!rawImage) return null;
 
@@ -274,17 +276,22 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
               <span className="w-1.5 h-1.5 rounded-full bg-[#0D305B]"></span>
               שם קטגוריה
             </label>
-
-            <input
-                type="text"
-                placeholder="שם קטגוריה"
-                value={newCatName}
-                onChange={handleNameChange}   
-                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
-              />
-              {errorMessage && (
-                <p className="mt-1 text-sm text-red-600">{errorMessage}</p>
-              )}
+            <div className="relative mb-3">
+              <input
+                  type="text"
+                  placeholder="שם קטגוריה"
+                  value={newCatName}
+                  onChange={handleNameChange}   
+                  maxLength={MAX_GROUP_NAME_LEN}
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
+                />
+                <div className="absolute bottom-1.5 left-3 text-xs text-gray-400">
+                  {newCatName.length}/{MAX_GROUP_NAME_LEN}
+                </div>
+                {errorMessage && (
+                  <p className="mt-1 text-sm text-red-600">{errorMessage}</p>
+                )}
+            </div>
           </div>
 
           <div className="group mb-4">

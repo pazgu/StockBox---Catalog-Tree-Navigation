@@ -145,9 +145,9 @@ const SingleCat: FC = () => {
   }, [showFabButtons]);
 
   useEffect(() => {
-  setIsSelectionMode(false);
-  setSelectedItems([]);
-}, [categoryPath]);
+    setIsSelectionMode(false);
+    setSelectedItems([]);
+  }, [categoryPath]);
 
   const loadAllContent = async () => {
     try {
@@ -1168,6 +1168,7 @@ const SingleCat: FC = () => {
                   ? itemToMove.path
                   : [itemToMove.path || categoryPath]
               }
+              currentCategoryPath={categoryPath} 
               onClose={() => {
                 setShowMoveModal(false);
                 setItemToMove(null);

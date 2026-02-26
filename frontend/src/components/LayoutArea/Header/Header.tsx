@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Heart, User, Menu, X, Trash2 } from "lucide-react";
+import { Heart, User, Menu, X, Trash2, LogOut } from "lucide-react";
 import logo from "../../../assets/logo.png";
 import { useUser } from "../../../context/UserContext";
 import { usePath } from "../../../context/PathContext";
@@ -25,7 +25,8 @@ const Header: React.FC<HeaderProps> = ({
   const location = useLocation();
   const navigate = useNavigate();
   const { setPreviousPath } = usePath();
-  const { role } = useUser();
+  const { role, setUser } = useUser();
+
   const handleSearchSelect = (item: any) => {
     setIsMobileMenuOpen(false);
     if (item.type === "product") {
@@ -34,6 +35,11 @@ const Header: React.FC<HeaderProps> = ({
     } else if (item.type === "category") {
       navigate(`${item.paths[0]}`);
     }
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    navigate("/login");
   };
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -81,9 +87,23 @@ const Header: React.FC<HeaderProps> = ({
             : "bg-[#0D305B] shadow-lg h-40"
         }`}
       >
+        {role && (
+          <button
+            aria-label="Logout"
+            className="relative p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 group"
+            onClick={handleLogout}
+          >
+            <LogOut
+              size={21}
+              className="transition-all duration-300 group-hover:scale-110 group-hover:text-[#BA9F71]"
+            />
+            <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-3 py-2 rounded opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+              התנתקות
+            </span>
+          </button>
+        )}
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-20">
-            {/* Logo */}
             <div className="hidden sm:block flex-shrink-0 transform transition-transform duration-300 hover:scale-105 cursor-pointer">
               <img
                 src={logoSrc}
@@ -93,7 +113,6 @@ const Header: React.FC<HeaderProps> = ({
               />
             </div>
 
-            {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center flex-1 justify-center max-w-3xl mx-8">
               <nav className="flex items-center gap-6" dir="rtl">
                 <NavLink to="/categories" className={navLinkClass}>
@@ -114,29 +133,31 @@ const Header: React.FC<HeaderProps> = ({
                 )}
               </nav>
             </div>
+
             <div
               className={`relative flex-1 max-w-md mx-4 ${isMobileMenuOpen ? "hidden" : ""}`}
             >
               <SearchBar onSelectResult={handleSearchSelect} />
             </div>
 
-            {/* Action Icons */}
             <div
-              className={`hidden lg:flex  items-center gap-2 mr-4 ${isMobileMenuOpen ? "hidden" : ""}`}
+              className={`hidden lg:flex items-center gap-2 mr-4 ${isMobileMenuOpen ? "hidden" : ""}`}
             >
-              <button
-                aria-label="Favorites"
-                className="relative p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 group mr-2"
-                onClick={() => navigate("/Favorites")}
-              >
-                <Heart
-                  size={21}
-                  className="transition-all duration-300 group-hover:fill-current group-hover:scale-110"
-                />
-                <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-3 py-2 rounded opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                  מועדפים
-                </span>
-              </button>
+              {role && (
+                <button
+                  aria-label="Favorites"
+                  className="relative p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 group mr-2"
+                  onClick={() => navigate("/Favorites")}
+                >
+                  <Heart
+                    size={21}
+                    className="transition-all duration-300 group-hover:fill-current group-hover:scale-110"
+                  />
+                  <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-3 py-2 rounded opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                    מועדפים
+                  </span>
+                </button>
+              )}
 
               {role === "editor" && (
                 <>
@@ -163,6 +184,7 @@ const Header: React.FC<HeaderProps> = ({
                       </button>
                     </div>
                   </div>
+
                   <button
                     aria-label="Recycle Bin"
                     className="relative p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 group"
@@ -174,14 +196,12 @@ const Header: React.FC<HeaderProps> = ({
                         alt="Trash bin closed"
                         className="absolute inset-0 w-full h-full transition-all duration-300 group-hover:opacity-0 group-hover:scale-90"
                       />
-
                       <img
                         src={bin_open}
                         alt="Trash bin open"
                         className="absolute inset-0 w-full h-full opacity-0 transition-all duration-300 group-hover:opacity-100 group-hover:scale-110"
                       />
                     </div>
-
                     <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-3 py-2 rounded opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
                       סל מיחזור
                     </span>
@@ -189,6 +209,7 @@ const Header: React.FC<HeaderProps> = ({
                 </>
               )}
             </div>
+
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="lg:hidden p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 active:scale-95 ml-auto"
@@ -201,6 +222,7 @@ const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
+        {/* Mobile Menu */}
         <div
           className={`lg:hidden absolute top-0 left-0 w-full transition-all duration-500 ease-in-out mt-3 ${
             isMobileMenuOpen
@@ -236,7 +258,6 @@ const Header: React.FC<HeaderProps> = ({
               )}
             </nav>
 
-            {/* Mobile Quick Actions */}
             <div className="flex justify-around mt-1 pt-6 border-t border-white/20">
               <button
                 onClick={() => navigate("/Favorites")}
@@ -263,6 +284,7 @@ const Header: React.FC<HeaderProps> = ({
                     <User size={20} />
                     <span className="text-xs">כל המשתמשים</span>
                   </button>
+
                   <button
                     onClick={() => navigate("/GroupControl")}
                     className="flex flex-col items-center gap-1 text-white/80 mb-4"
@@ -275,6 +297,16 @@ const Header: React.FC<HeaderProps> = ({
                     <span className="text-xs">ניהול קבוצות</span>
                   </button>
                 </>
+              )}
+
+              {role && (
+                <button
+                  onClick={handleLogout}
+                  className="flex flex-col items-center gap-1 text-white/80 mb-4"
+                >
+                  <LogOut size={20} />
+                  <span className="text-xs">התנתקות</span>
+                </button>
               )}
             </div>
           </div>

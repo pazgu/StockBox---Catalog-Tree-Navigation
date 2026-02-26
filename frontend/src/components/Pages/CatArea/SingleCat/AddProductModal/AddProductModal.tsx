@@ -96,6 +96,7 @@ const RequiredStar = () => (
 
 
 
+const MAX_EDIT_NAME_LEN = 30;
 
 const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   const [productName, setProductName] = React.useState("");
@@ -195,7 +196,7 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
 
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+    const value = e.target.value.slice(0, MAX_EDIT_NAME_LEN);
     setProductName(value);
   if (!value) {
     setErrorMessage(""); 
@@ -304,15 +305,23 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
 
 
 
-
-            <input
-              type="text"
-              placeholder="שם מוצר"
-              value={productName}
-              onChange={handleNameChange}
-              className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
-            />
-            {errorMessage && <p className="mt-1 text-sm text-red-600">{errorMessage}</p>}
+          <div>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="שם מוצר"
+                value={productName}
+                onChange={handleNameChange}
+                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
+              />
+              <div className="absolute bottom-1.5 left-3 text-xs text-gray-400 z-10 pointer-events-none">
+                {productName.length}/{MAX_EDIT_NAME_LEN}
+              </div>
+            </div>
+            {errorMessage && (
+              <p className="mt-1 text-sm text-red-600">{errorMessage}</p>
+            )}
+          </div>
           </div>
 
           <div className="group mb-5">
