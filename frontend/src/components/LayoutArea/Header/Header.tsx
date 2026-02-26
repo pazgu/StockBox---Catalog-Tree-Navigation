@@ -38,7 +38,7 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   const handleLogout = () => {
-    setUser(null); 
+    setUser(null);
     navigate("/login");
   };
 
@@ -87,6 +87,21 @@ const Header: React.FC<HeaderProps> = ({
             : "bg-[#0D305B] shadow-lg h-40"
         }`}
       >
+        {role && (
+          <button
+            aria-label="Logout"
+            className="relative p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 group"
+            onClick={handleLogout}
+          >
+            <LogOut
+              size={21}
+              className="transition-all duration-300 group-hover:scale-110 group-hover:text-[#BA9F71]"
+            />
+            <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-3 py-2 rounded opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+              התנתקות
+            </span>
+          </button>
+        )}
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-20">
             <div className="hidden sm:block flex-shrink-0 transform transition-transform duration-300 hover:scale-105 cursor-pointer">
@@ -193,23 +208,6 @@ const Header: React.FC<HeaderProps> = ({
                   </button>
                 </>
               )}
-
-              {/* ── Logout — visible for ANY logged-in role ── */}
-              {role && (
-                <button
-                  aria-label="Logout"
-                  className="relative p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 group"
-                  onClick={handleLogout}
-                >
-                  <LogOut
-                    size={21}
-                    className="transition-all duration-300 group-hover:scale-110 group-hover:text-[#BA9F71]"
-                  />
-                  <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-3 py-2 rounded opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                    התנתקות
-                  </span>
-                </button>
-              )}
             </div>
 
             <button
@@ -260,14 +258,14 @@ const Header: React.FC<HeaderProps> = ({
               )}
             </nav>
 
-            <div className="flex justify-around mt-1 pt-6 border-t border-white/20">     
-                <button
-                  onClick={() => navigate("/Favorites")}
-                  className="flex flex-col items-center gap-1 text-white/80"
-                >
-                  <Heart size={20} />
-                  <span className="text-xs">מועדפים</span>
-                </button>
+            <div className="flex justify-around mt-1 pt-6 border-t border-white/20">
+              <button
+                onClick={() => navigate("/Favorites")}
+                className="flex flex-col items-center gap-1 text-white/80"
+              >
+                <Heart size={20} />
+                <span className="text-xs">מועדפים</span>
+              </button>
 
               {role === "editor" && (
                 <>

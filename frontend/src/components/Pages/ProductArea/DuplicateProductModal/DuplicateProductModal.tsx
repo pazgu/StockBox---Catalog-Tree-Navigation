@@ -200,7 +200,9 @@ const DuplicateProductModal: React.FC<DuplicateProductModalProps> = ({
                   </span>
                 )}
               </p>
-              <p className="text-xs text-gray-400"> <PathDisplay path={cat.categoryPath} />           
+              <p className="text-xs text-gray-400">
+                {" "}
+                <PathDisplay path={cat.categoryPath} />
               </p>
             </div>
           </div>
@@ -280,10 +282,9 @@ const DuplicateProductModal: React.FC<DuplicateProductModalProps> = ({
                   <li
                     key={i}
                     className="text-[11px] text-gray-600 py-1 border-b last:border-0 truncate"
-                    dir="ltr"
+                    dir="auto"
                   >
-                  <PathDisplay path={path} />           
-                   
+                    <PathDisplay path={path} />
                   </li>
                 ))}
               </ul>
