@@ -225,6 +225,7 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   try {
     setIsSaving(true);
     await onSave({ name: newCatName.trim(), imageFile: file, allowAll });
+    setAllowAll(false);
     handleClose(); 
   } catch (error: any) {
     const serverMessage =
