@@ -57,6 +57,35 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
   const replaceRef = replaceInputRef ?? localReplaceRef;
   const addRef = addInputRef ?? localAddRef;
   const imageWrapRef = React.useRef<HTMLDivElement | null>(null);
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+
+  const viewByImageRef = React.useRef<
+    Record<string, { zoom: number; pan: { x: number; y: number } }>
+  >({});
+  const prevImageKeyRef = React.useRef<string>("");
+
+  const imageKey = images[currentIndex] ?? "";
+
+  React.useEffect(() => {
+    if (!imageKey) return;
+
+    const saved = viewByImageRef.current[imageKey];
+    if (saved) {
+      setZoom(saved.zoom);
+      setPan(saved.pan);
+    } else {
+      setZoom(1);
+      setPan({ x: 0, y: 0 });
+    }
+
+    prevImageKeyRef.current = imageKey;
+  }, [imageKey]);
+
+  React.useEffect(() => {
+    if (!imageKey) return;
+    viewByImageRef.current[imageKey] = { zoom, pan: { ...pan } };
+  }, [zoom, pan, imageKey]);
 
 
   React.useEffect(() => {
@@ -94,7 +123,6 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
   const [showClearDialog, setShowClearDialog] = useState(false);
 
 
-  const [zoom, setZoom] = useState(1);
   const ZOOM_STEP = 0.25;
   const ZOOM_MAX = 3;
 
@@ -105,44 +133,61 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
     setPan({ x: 0, y: 0 });
   };
 
-  
-
-
-
-
   const isMinZoom = zoom <= 1;
   const isMaxZoom = zoom >= ZOOM_MAX;
   const isResetZoom = zoom === 1;
-  const [pan, setPan] = useState({ x: 0, y: 0 });
   const isDraggingRef = React.useRef(false);
   const dragStartRef = React.useRef({ x: 0, y: 0, panX: 0, panY: 0 });
 
   const canPan = zoom > 1;
+
+
+  const viewBeforeEditRef = React.useRef<{
+    zoom: number;
+    pan: { x: number; y: number };
+    imageKey: string;
+  } | null>(null);
+
+  const prevIsEditingRef = React.useRef(isEditing);
+
+  const zoomRef = React.useRef(zoom);
+  const panRef = React.useRef(pan);
+
   React.useEffect(() => {
-  const wasEditing = prevIsEditingRef.current;
+    zoomRef.current = zoom;
+    panRef.current = pan;
+  }, [zoom, pan]);
 
-  if (!wasEditing && isEditing) {
-    viewBeforeEditRef.current = { zoom, pan: { ...pan } };
-  }
+  React.useEffect(() => {
+    const wasEditing = prevIsEditingRef.current;
 
-  if (wasEditing && !isEditing) {
-    isDraggingRef.current = false;
+    if (!wasEditing && isEditing) {
+      viewBeforeEditRef.current = {
+        zoom: zoomRef.current,
+        pan: { ...panRef.current },
+        imageKey,
+      };
+    }
+    if (wasEditing && !isEditing) {
+      isDraggingRef.current = false;
 
-    if (editExitAction === "cancel") {
-      const snap = viewBeforeEditRef.current;
-      if (snap) {
-        setZoom(snap.zoom);
-        setPan(snap.pan);
-      } else {
-        resetZoom();
+      if (editExitAction === "cancel") {
+        const snap = viewBeforeEditRef.current;
+
+        if (snap && snap.imageKey === imageKey) {
+          setZoom(snap.zoom);
+          setPan(snap.pan);
+
+          viewByImageRef.current[imageKey] = {
+            zoom: snap.zoom,
+            pan: snap.pan,
+          };
+        }
       }
     }
-  }
 
-  prevIsEditingRef.current = isEditing;
-}, [isEditing, editExitAction, zoom, pan]);
-  const viewBeforeEditRef = React.useRef<{ zoom: number; pan: { x: number; y: number } } | null>(null);
-  const prevIsEditingRef = React.useRef(isEditing);
+    prevIsEditingRef.current = isEditing;
+  }, [isEditing, editExitAction, imageKey]);
 
   const clamp = (value: number, min: number, max: number) =>
     Math.max(min, Math.min(max, value));
@@ -165,9 +210,7 @@ const AboutImagesPanel: React.FC<AboutImagesPanelProps> = ({
   setPan((p) => clampPan(p));
 }, [zoom]);
 
-  React.useEffect(() => {
-    resetZoom();
-  }, [currentIndex, images.length]);
+
 
   const onMouseDownImage = (e: React.MouseEvent) => {
     if (!canPan || isLoading) return;
