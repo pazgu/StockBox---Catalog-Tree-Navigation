@@ -568,6 +568,10 @@ const toFullUrl = (raw: string) => {
 
   const u = raw.trim().replaceAll("\\", "/");
 
+  if (u.startsWith("blob:")) return u;
+
+  if (u.startsWith("data:")) return u;
+
   if (u.startsWith("http://") || u.startsWith("https://")) return u;
 
   if (u.startsWith("/")) return `${API_BASE}${u}`;

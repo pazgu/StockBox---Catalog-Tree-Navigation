@@ -218,6 +218,8 @@ const About: FC<AboutProps> = () => {
 
   const [editableImages, setEditableImages] = useState<ImageItem[]>([]);
 
+  const [pendingAddedFiles, setPendingAddedFiles] = useState<File[]>([]);
+
   const images = editableImages.map((i) => i.url);
   const navigate = useNavigate();
   const { role } = useUser();
@@ -624,6 +626,8 @@ const About: FC<AboutProps> = () => {
   }, [sections]);
 
   const hasActualChanges = useCallback(() => {
+    if (pendingAddedFiles.length > 0) return true;
+
     const currentBlocks = sectionsToBlocks(realSections);
     const originalBlocks = sectionsToBlocks(originalData.sections);
 
@@ -637,7 +641,13 @@ const About: FC<AboutProps> = () => {
       JSON.stringify(currentBlocks) !== JSON.stringify(originalBlocks) ||
       JSON.stringify(currentImages) !== JSON.stringify(originalImages)
     );
-  }, [sections, editableImages, originalData.sections, originalData.images]);
+  }, [
+    realSections,
+    originalData.sections,
+    originalData.images,
+    editableImages,
+    pendingAddedFiles,
+  ]);
 
   const handleSaveChanges = useCallback(async () => {
     if (!hasActualChanges()) {
@@ -663,6 +673,62 @@ const About: FC<AboutProps> = () => {
         blocks: sectionsToBlocks(realSections),
         images: editableImages.filter((i) => !i.isPreview).map((i) => i.url),
       };
+
+      if (pendingAddedFiles.length > 0) {
+        setIsImagesLoading(true);
+        try {
+          const res = await aboutApi.uploadImages(pendingAddedFiles);
+
+          setEditableImages((prev) => {
+            prev.filter((i) => i.isPreview).forEach((p) => URL.revokeObjectURL(p.url));
+            return prev;
+          });
+
+          const serverAfterUpload = res.images ?? [];
+
+          const originalUrls = originalData.images.map((i) => i.url);
+          const alreadyInPayload = payload.images;
+
+          const newlyAdded = serverAfterUpload.filter(
+            (u) => !originalUrls.includes(u) && !alreadyInPayload.includes(u),
+          );
+
+          payload.images = [...payload.images, ...newlyAdded];
+
+          setPendingAddedFiles([]);
+          setEditableImages(payload.images.map((url) => ({ url })));
+          setCurrentImageIndex((idx) => {
+            const len = payload.images.length;
+            if (len === 0) return 0;
+            return Math.min(idx, len - 1);
+          });
+        } finally {
+          setIsImagesLoading(false);
+        }
+      }
+
+      const originalUrls = originalData.images.map((i) => i.url);
+      const finalUrls = payload.images;
+
+      const removedUrls = originalUrls.filter((u) => !finalUrls.includes(u));
+
+      if (removedUrls.length > 0) {
+        const latest = await aboutApi.get();
+        let serverImages = [...(latest.images ?? [])];
+
+        if (finalUrls.length === 0) {
+          await aboutApi.clearImages();
+          serverImages = [];
+        } else {
+          for (const url of removedUrls) {
+            const idx = serverImages.indexOf(url);
+            if (idx !== -1) {
+              const res = await aboutApi.deleteImageAt(idx);
+              serverImages = [...(res.images ?? [])];
+            }
+          }
+        }
+      }
 
       await aboutApi.replace(payload);
 
@@ -700,9 +766,7 @@ const About: FC<AboutProps> = () => {
 
       setOriginalData({
         sections: realSections,
-        images: editableImages
-          .filter((i) => !i.isPreview)
-          .map((i) => ({ url: i.url })),
+        images: payload.images.map((url) => ({ url })),
       });
 
       setIsEditing(false);
@@ -713,6 +777,7 @@ const About: FC<AboutProps> = () => {
   }, [
     sections,
     editableImages,
+    pendingAddedFiles,
     originalData.sections,
     originalData.images,
     hasActualChanges,
@@ -720,26 +785,22 @@ const About: FC<AboutProps> = () => {
     TOAST.saveError,
   ]);
 
-  const cancelEdit = useCallback(async () => {
-    try {
-      await aboutApi.replace({
-        blocks: sectionsToBlocks(originalData.sections),
-        images: originalData.images.map((i) => i.url),
-      });
+  const cancelEdit = useCallback(() => {
 
-      setSections(originalData.sections);
+    setPendingAddedFiles([]);
+    setEditableImages((prev) => {
+      prev.filter((i) => i.isPreview).forEach((p) => URL.revokeObjectURL(p.url));
+      return prev;
+    });
+    setSections(originalData.sections);
+    setEditableImages(originalData.images);
 
-      setEditableImages(originalData.images);
+    const snap = buildSnapshotFromSections(originalData.sections);
+    setConfirmedSnapshot(snap);
+    setDirtyKeys(new Set());
 
-      const snap = buildSnapshotFromSections(originalData.sections);
-      setConfirmedSnapshot(snap);
-      setDirtyKeys(new Set());
-
-      setCurrentImageIndex(0);
-      setIsEditing(false);
-    } catch (e) {
-      toast.error("שגיאה בביטול העריכה. נסה שוב.");
-    }
+    setCurrentImageIndex(0);
+    setIsEditing(false);
   }, [originalData.sections, originalData.images]);
 
   const buildSnapshotFromSections = (secs: SectionType[]) => {
@@ -810,9 +871,7 @@ const About: FC<AboutProps> = () => {
     }
   };
 
-  const handleAddImages = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleAddImages = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!isEditing) {
       event.target.value = "";
       return;
@@ -833,61 +892,34 @@ const About: FC<AboutProps> = () => {
       return next;
     });
 
-    setIsImagesLoading(true);
-    try {
-      const res = await aboutApi.uploadImages(files);
+    setPendingAddedFiles((prev) => [...prev, ...files]);
 
-      previews.forEach((p) => URL.revokeObjectURL(p.url));
-
-      const nextImgs = (res.images ?? []).map((url) => ({ url }));
-      setEditableImages(nextImgs);
-      setCurrentImageIndex((nextImgs.length ?? 1) - 1);
-    } catch (e) {
-      toast.error("Failed to upload images");
-      setEditableImages((prev) => prev.filter((i) => !i.isPreview));
-    } finally {
-      setIsImagesLoading(false);
-      input.value = "";
-    }
+    input.value = "";
   };
 
   const removeImage = useCallback(
-    async (index: number) => {
+    (index: number) => {
       if (!isEditing) return;
 
-      setIsImagesLoading(true);
-      try {
-        const res = await aboutApi.deleteImageAt(index);
-        const nextImgs = (res.images ?? []).map((url) => ({ url }));
-        setEditableImages(nextImgs);
+      setEditableImages((prev) => {
+        const next = prev.filter((_, i) => i !== index);
 
         setCurrentImageIndex((cur) => {
-          const len = nextImgs.length;
-          if (len === 0) return 0;
-          return Math.min(cur, len - 1);
+          if (next.length === 0) return 0;
+          return Math.min(cur, next.length - 1);
         });
-      } catch (e) {
-        toast.error("Failed to delete image");
-      } finally {
-        setIsImagesLoading(false);
-      }
+
+        return next;
+      });
     },
     [isEditing],
   );
 
-  const clearAllImages = useCallback(async () => {
+  const clearAllImages = useCallback(() => {
     if (!isEditing) return;
 
-    setIsImagesLoading(true);
-    try {
-      const res = await aboutApi.clearImages();
-      setEditableImages((res.images ?? []).map((url) => ({ url })));
-      setCurrentImageIndex(0);
-    } catch (e) {
-      toast.error("Failed to clear images");
-    } finally {
-      setIsImagesLoading(false);
-    }
+    setEditableImages([]);
+    setCurrentImageIndex(0);
   }, [isEditing]);
 
   const debouncedSaveChanges = useMemo(
@@ -970,17 +1002,17 @@ const About: FC<AboutProps> = () => {
               <div className="relative">
                 <button
                   onClick={() => {
-  cancelPendingExit();
+                    cancelPendingExit();
 
-  if (isEditing) {
-    setEditExitAction("save");
-    debouncedSaveChanges();
-    return;
-  }
+                    if (isEditing) {
+                      setEditExitAction("save");
+                      debouncedSaveChanges();
+                      return;
+                    }
 
-  setEditExitAction(null);
-  setIsEditing(true);
-}}
+                    setEditExitAction(null);
+                    setIsEditing(true);
+                  }}
                   aria-label={isEditing ? "שמירת שינויים" : "עריכה"}
                   className="peer flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300"
                 >
