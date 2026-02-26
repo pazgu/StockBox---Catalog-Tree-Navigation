@@ -594,7 +594,7 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
             </p>
 
             <p className="text-slate-700 mb-5">
-              האם אתה בטוח שברצונך למחוק לצמיתות את כל {items.length} הפריטים
+              האם את/ה בטוח/ה שברצונך למחוק לצמיתות את כל {items.length} הפריטים
               בסל המיחזור?
             </p>
 
