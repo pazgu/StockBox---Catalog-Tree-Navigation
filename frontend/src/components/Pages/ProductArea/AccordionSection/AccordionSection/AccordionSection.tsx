@@ -19,6 +19,7 @@ import {
 import { UploadedFile } from "../../../../models/files.models";
 interface AccordionSectionProps {
   isEditing: boolean;
+  userRole: "editor" | "viewer";
   accordionData: any[];
   features: string[];
   folders: any[];
@@ -57,6 +58,7 @@ interface AccordionSectionProps {
 const AccordionSection: FC<AccordionSectionProps> = ({
   isEditing,
   accordionData,
+  userRole,
   features,
   folders,
   draggedItem,
@@ -444,7 +446,9 @@ const AccordionSection: FC<AccordionSectionProps> = ({
 
         {folders.length === 0 && (
           <p className="text-center text-gray-500 py-8">
-            אין תיקיות עדיין. לחץ על "תיקייה חדשה" כדי להתחיל.
+            {userRole === "editor"
+              ? 'אין תיקיות עדיין. לחץ על "תיקייה חדשה" כדי להתחיל.'
+              : "אין קבצים ומסמכים זמינים כרגע"}
           </p>
         )}
       </div>
