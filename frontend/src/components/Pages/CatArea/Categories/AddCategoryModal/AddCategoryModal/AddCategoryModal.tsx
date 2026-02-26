@@ -4,6 +4,9 @@ import useBlockBrowserZoom from "../../useBlockBrowserZoom";
 import { AddCategoryResult } from "../../../../../models/category.models";
 import { Spinner } from "../../../../../ui/spinner";
 import { isLength } from "validator";
+import { Label } from "../../../../../../components/ui/label";
+import { Switch } from "../../../../../../components/ui/switch";
+import { fa } from "zod/v4/locales";
 
 type Props = {
   isOpen: boolean;
@@ -83,6 +86,7 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   const [isPanning, setIsPanning] = React.useState(false);
   const [startPan, setStartPan] = React.useState({ x: 0, y: 0 });
   const [isSaving, setIsSaving] = React.useState(false);
+  const [allowAll, setAllowAll] = React.useState(false);
 
   const cropRef = React.useRef<HTMLDivElement>(null!);
   useBlockBrowserZoom(cropRef);
@@ -220,8 +224,8 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
 
   try {
     setIsSaving(true);
-    await onSave({ name: newCatName.trim(), imageFile: file });
-    handleClose(); // optional: close modal after success
+    await onSave({ name: newCatName.trim(), imageFile: file, allowAll });
+    handleClose(); 
   } catch (error: any) {
     const serverMessage =
       error?.response?.data?.message || error?.response?.data?.error;
@@ -487,8 +491,22 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
             </div>
           )}
 
-          <div className="flex justify-end gap-4 mt-8 pt-6 border-t-2 border-gray-200">
-            <button
+             <div className="flex justify-between items-center p-4 bg-white bg-opacity-50 border rounded-lg mb-2 shadow-sm border-blue-100">
+            <Label className="font-bold text-blue-900 text-sm" >
+             לאפשר לכולם לראות את הקטגוריה החדשה?
+            </Label>
+            <Switch
+              checked={
+                allowAll
+              }
+             onCheckedChange={() => {
+               setAllowAll(!allowAll);
+            }}
+            />
+          </div>
+
+            <div className="flex justify-end gap-4 mt-2 pt-6 border-t-2 border-gray-200">
+              <button
               onClick={handleClose}
               disabled={isSaving}
               className={`px-6 py-3 rounded-xl border-2 border-gray-300 transition-colors font-bold
@@ -499,9 +517,9 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
               }`}
             >
               ביטול
-            </button>
+              </button>
 
-            <button
+              <button
               onClick={handleSave}
               disabled={isSaving}
               className={`px-8 py-3 rounded-xl text-white transition-colors font-bold shadow-lg
@@ -519,7 +537,9 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
               ) : (
                 "שמור"
               )}
-            </button>
+              </button>
+            </div>       
+            <div>
           </div>
         </div>
       </div>

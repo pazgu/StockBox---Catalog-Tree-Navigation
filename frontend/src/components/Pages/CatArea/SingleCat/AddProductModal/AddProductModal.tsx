@@ -4,6 +4,8 @@ import useBlockBrowserZoom from "../../Categories/useBlockBrowserZoom";
 import { Spinner } from "../../../../ui/spinner";
 import { Asterisk } from "lucide-react";
 import { isLength } from "validator";
+import { Label } from "../../../../../components/ui/label";
+import { Switch } from "../../../../../components/ui/switch";
 
 
 type Props = {
@@ -13,6 +15,7 @@ type Props = {
   name: string;
   description: string;
   imageFile?: File;
+  allowAll: boolean;
 }) => Promise<void>;
 
 };
@@ -106,6 +109,7 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   const [isPanning, setIsPanning] = React.useState(false);
   const [startPan, setStartPan] = React.useState({ x: 0, y: 0 });
   const [isSaving, setIsSaving] = React.useState(false);
+  const [allowAll, setAllowAll] = React.useState(false);
 
   const cropRef = React.useRef<HTMLDivElement>(null!);
   useBlockBrowserZoom(cropRef);
@@ -246,6 +250,7 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
       name: productName.trim(),
       description: productDesc.trim(),
       imageFile: file,
+      allowAll: allowAll,
     });
 
     handleClose(); // optional
@@ -529,6 +534,22 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
               </div>
             </div>
           )}
+
+          <div className="flex justify-between relative items-center p-4 bg-white bg-opacity-50 border rounded-lg mb-4 shadow-sm border-blue-100">
+            <Label className="font-bold text-blue-900 text-sm mb-2">
+             לאפשר לכולם לראות את המוצר החדש?
+            </Label>
+            <span className="absolute bottom-2 right-4 text-xs text-gray-500">יש לשים לב! חסימות של קטגוריית האב יוחלו על המוצר החדש</span>
+
+            <Switch
+              checked={
+                allowAll
+              }
+             onCheckedChange={() => {
+               setAllowAll(!allowAll);
+            }}
+            />
+          </div>
 
           <div className="flex justify-end gap-4 mt-8 pt-6 border-t-2 border-gray-200">
             <button
