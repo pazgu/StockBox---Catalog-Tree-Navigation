@@ -92,9 +92,9 @@ export class CategoriesService {
         { $set: { refId: savedCategory._id.toString() } },
       );
       if (createCategoryDto.allowAll) {
-         await this.permissionsService.assignPermissionsForNewEntity(
-        savedCategory,
-      );
+        await this.permissionsService.assignPermissionsForNewEntity(
+          savedCategory,
+        );
       }
 
       return savedCategory;
@@ -254,6 +254,7 @@ export class CategoriesService {
       oldKey = normalizeName(category.categoryName);
       newKey = normalizeName(updateCategoryDto.categoryName);
       if (!newKey) throw new BadRequestException('Invalid name');
+
       try {
         await this.nameLockModel.create({
           nameKey: newKey,
@@ -268,11 +269,10 @@ export class CategoriesService {
         }
         throw e;
       }
+
       (updateCategoryDto as any).nameKey = newKey;
       const parentPath = this.getParentPath(oldCategoryPath);
-
       const newSlug = this.slugify(updateCategoryDto.categoryName);
-
       const newCategoryPath = `${parentPath}/${newSlug}`;
 
       const dup = await this.categoryModel.findOne({
@@ -334,9 +334,13 @@ export class CategoriesService {
       updateCategoryDto.categoryPath !== oldCategoryPath
     ) {
       const newCategoryPath = updateCategoryDto.categoryPath;
+      const escapedOldPath = oldCategoryPath.replace(
+        /[.*+?^${}()|[\]\\]/g,
+        '\\$&',
+      );
 
       await this.categoryModel.updateMany(
-        { categoryPath: new RegExp(`^${oldCategoryPath}/`) },
+        { categoryPath: new RegExp(`^${escapedOldPath}/`) },
         [
           {
             $set: {
@@ -344,10 +348,15 @@ export class CategoriesService {
                 $concat: [
                   newCategoryPath,
                   {
-                    $substr: [
+                    $substrCP: [
                       '$categoryPath',
                       oldCategoryPath.length,
-                      { $strLenCP: '$categoryPath' },
+                      {
+                        $subtract: [
+                          { $strLenCP: '$categoryPath' },
+                          oldCategoryPath.length,
+                        ],
+                      },
                     ],
                   },
                 ],
@@ -358,29 +367,49 @@ export class CategoriesService {
         { updatePipeline: true },
       );
 
-      const escapedOldPath = oldCategoryPath.replace(
-        /[.*+?^${}()|[\]\\]/g,
-        '\\$&',
-      );
-      const productsToUpdate = await this.productModel.find({
-        productPath: {
-          $elemMatch: { $regex: new RegExp(`^${escapedOldPath}`) },
+      await this.productModel.updateMany(
+        {
+          productPath: {
+            $elemMatch: { $regex: new RegExp(`^${escapedOldPath}`) },
+          },
         },
-      });
-
-      for (const product of productsToUpdate) {
-        const updatedPaths = product.productPath.map((path) => {
-          if (path.startsWith(oldCategoryPath)) {
-            return newCategoryPath + path.substring(oldCategoryPath.length);
-          }
-          return path;
-        });
-
-        await this.productModel.updateOne(
-          { _id: product._id },
-          { $set: { productPath: updatedPaths } },
-        );
-      }
+        [
+          {
+            $set: {
+              productPath: {
+                $map: {
+                  input: '$productPath',
+                  as: 'p',
+                  in: {
+                    $cond: [
+                      {
+                        $regexMatch: {
+                          input: '$$p',
+                          regex: `^${escapedOldPath}`,
+                        },
+                      },
+                      {
+                        $concat: [
+                          newCategoryPath,
+                          {
+                            $substrCP: [
+                              '$$p',
+                              oldCategoryPath.length,
+                              { $strLenCP: '$$p' },
+                            ],
+                          },
+                        ],
+                      },
+                      '$$p',
+                    ],
+                  },
+                },
+              },
+            },
+          },
+        ],
+        { updatePipeline: true },
+      );
     }
 
     return updatedCategory;
