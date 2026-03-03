@@ -347,35 +347,26 @@ const ProductPermissions: React.FC = () => {
         );
         return;
       }
-      const blockedByProduct = allIds.filter((id) => isBlockedInProduct(id));
-      if (blockedByProduct.length > 0) {
-        toast.error(
-          "לא ניתן לשחרר לכולם - חלק מהמשתמשים/קבוצות חסומים במוצר",
-        );
-        return;
-      }
     }
     setPathStates((prev) => {
-        const pathState = prev[path];
-        if (!pathState) return prev;
+      const pathState = prev[path];
+      if (!pathState) return prev;
 
-        return {
-          ...prev,
-          [path]: {
-            ...pathState,
-
-            users: pathState.users.map((u) => ({
-              ...u,
-              enabled: u.groupIds.length === 0 ? enabled : false,
-            })),
-
-            groups: pathState.groups.map((g) => ({
-              ...g,
-              members: enabled,
-            })),
-          },
-        };
-      });
+      return {
+        ...prev,
+        [path]: {
+          ...pathState,
+          users: pathState.users.map((u) => ({
+            ...u,
+            enabled: u.groupIds.length === 0 ? enabled : false,
+          })),
+          groups: pathState.groups.map((g) => ({
+            ...g,
+            members: enabled,
+          })),
+        },
+      };
+    });
   };
 
   const savePermissionsForPath = async (pathData: PathData) => {
@@ -723,12 +714,12 @@ const ProductPermissions: React.FC = () => {
                                               {user.blockedByProduct && !user.effectiveEnabled && (
                                                 <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full whitespace-nowrap flex items-center gap-1 flex-shrink-0">
                                                   <Lock className="w-3 h-3" />
-                                                  חסום במוצר
+                                                 המוצר חסום למשתמש
                                                 </span>
                                               )}
                                               {user.blockedByCategory && !user.effectiveEnabled && (
                                                 <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">
-                                                  חסום בקטגוריה
+                                                 קטגורית האב חסומה למשתמש
                                                 </span>
                                               )}
                                               {!user.blockedByProduct &&
@@ -815,12 +806,12 @@ const ProductPermissions: React.FC = () => {
                                             {blockedByProduct && (
                                               <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full whitespace-nowrap flex items-center gap-1">
                                                 <Lock className="w-3 h-3" />
-                                                חסום במוצר
+                                                המוצר חסום לקבוצה
                                               </span>
                                             )}
                                             {blockedByCategory && (
                                               <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">
-                                                חסום בקטגוריה
+                                               קטגורית האב חסומה לקבוצה
                                               </span>
                                             )}
                                           </div>
