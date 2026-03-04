@@ -234,42 +234,47 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
   }, [unifiedTree, searchQuery, filterTree]);
 
   const handleToggleSelection = (
-    itemId: string | number,
-    withChildren: boolean,
-    contextPath?: string,
-  ) => {
-    if (withChildren) {
-      setSelectedWithChildren((prev) => {
-        const newSet = new Set(prev);
-        if (newSet.has(itemId)) {
-          newSet.delete(itemId);
-        } else {
-          newSet.add(itemId);
-        }
-        return newSet;
-      });
-      setSelectedItems((prev) => {
-        const newMap = new Map(prev);
+  itemId: string | number,
+  withChildren: boolean,
+  contextPath?: string,
+) => {
+  if (withChildren) {
+    const isCurrentlySelected = selectedWithChildren.has(itemId);
+    setSelectedWithChildren((prev) => {
+      const newSet = new Set(prev);
+      if (isCurrentlySelected) {
+        newSet.delete(itemId);
+      } else {
+        newSet.add(itemId);
+      }
+      return newSet;
+    });
+    setSelectedItems((prev) => {
+      const newMap = new Map(prev);
+      if (isCurrentlySelected) {
+        newMap.delete(itemId); 
+      } else {
         newMap.set(itemId, contextPath);
-        return newMap;
-      });
-    } else {
-      setSelectedItems((prev) => {
-        const newMap = new Map(prev);
-        if (newMap.has(itemId)) {
-          newMap.delete(itemId);
-          setSelectedWithChildren((prevChildren) => {
-            const newChildren = new Set(prevChildren);
-            newChildren.delete(itemId);
-            return newChildren;
-          });
-        } else {
-          newMap.set(itemId, contextPath);
-        }
-        return newMap;
-      });
-    }
-  };
+      }
+      return newMap;
+    });
+  } else {
+    setSelectedItems((prev) => {
+      const newMap = new Map(prev);
+      if (newMap.has(itemId)) {
+        newMap.delete(itemId);
+        setSelectedWithChildren((prevChildren) => {
+          const newChildren = new Set(prevChildren);
+          newChildren.delete(itemId);
+          return newChildren;
+        });
+      } else {
+        newMap.set(itemId, contextPath);
+      }
+      return newMap;
+    });
+  }
+};
   const handleToggleExpand = (nodeId: string | number) => {
     setExpandedNodes((prev) => {
       const newSet = new Set(prev);
