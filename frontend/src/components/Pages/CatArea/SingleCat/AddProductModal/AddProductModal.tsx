@@ -252,8 +252,8 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
       imageFile: file,
       allowAll: allowAll,
     });
-
-    handleClose(); // optional
+    setAllowAll(false);
+    handleClose(); 
   } catch (error: any) {
     const serverMessage =
       error?.response?.data?.message || error?.response?.data?.error;

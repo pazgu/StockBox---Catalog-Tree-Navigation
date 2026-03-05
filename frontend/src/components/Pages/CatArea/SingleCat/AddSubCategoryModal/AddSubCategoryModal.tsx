@@ -229,7 +229,7 @@ const handleClose = () => {
     setIsSaving(true);
 
     await onSave({ name: categoryName.trim(), imageFile: file as any, allowAll });
-
+    setAllowAll(false);
     handleClose();
   } catch (error: any) {
     const serverMessage =

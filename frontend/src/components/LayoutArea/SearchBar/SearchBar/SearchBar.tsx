@@ -50,16 +50,13 @@ const SearchBar: React.FC<SearchHeaderProps> = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Debounced search
  useEffect(() => {
   const q = searchQuery.trim();
 
-  // clear previous timer
   if (debounceTimerRef.current) {
     window.clearTimeout(debounceTimerRef.current);
   }
 
-  // if empty -> reset UI
   if (!q) {
     setResults([]);
     setShowResults(false);
