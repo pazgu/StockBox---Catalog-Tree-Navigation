@@ -54,22 +54,21 @@ const EditCategoryModal: React.FC<Props> = ({
   const [isEditPanning, setIsEditPanning] = React.useState(false);
   const [editStartPan, setEditStartPan] = React.useState({ x: 0, y: 0 });
   const [errorMessage, setErrorMessage] = React.useState("");
+  const ALLOWED_CHARS = /^[\u0590-\u05FFa-zA-Z0-9 ._\-/\\:]*$/;
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.slice(0, MAX_EDIT_NAME_LEN);
     setName(value);
 
-    const ALLOWED_CHARS = /^[\u0590-\u05FFa-zA-Z0-9 ._-]*$/;
-
-    if (!value) {
-      setErrorMessage("");
-    } else if (!ALLOWED_CHARS.test(value)) {
-      setErrorMessage(
-        "שם קטגוריה יכול להכיל רק אותיות, מספרים ותווים . - _"
-      );
-    } else {
-      setErrorMessage("");
-    }
+  if (!value) {
+    setErrorMessage("");
+  } else if (!ALLOWED_CHARS.test(value)) {
+    setErrorMessage(
+      'שם מכיל תווים לא חוקיים. מותר להשתמש רק באותיות (עברית/אנגלית), מספרים, מקף (-), קו תחתון (_), סלאש (/ \\) ונקודתיים (:)'
+    );
+  } else {
+    setErrorMessage("");
+  }
   };
   const hasChanges =
     name.trim() !== category.categoryName.trim() ||
@@ -199,7 +198,11 @@ const EditCategoryModal: React.FC<Props> = ({
 
   const handleSave = async () => {
     const trimmed = name.trim();
-
+    
+    if (!ALLOWED_CHARS.test(trimmed)) {
+    setErrorMessage('שם מכיל תווים לא חוקיים. מותר להשתמש רק באותיות (עברית/אנגלית), מספרים, מקף (-), קו תחתון (_), סלאש (/ \\) ונקודתיים (:)');
+    return;
+    }
     if (!trimmed) {
       toast.error("שם קטגוריה חובה");
       return;
