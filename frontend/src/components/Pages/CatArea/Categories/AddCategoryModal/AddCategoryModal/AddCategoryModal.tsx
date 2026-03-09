@@ -79,7 +79,7 @@ function anchoredZoom(
 const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   const [newCatName, setNewCatName] = React.useState("");
   const [errorMessage, setErrorMessage] = React.useState("");
-  const FORBIDDEN_CHARS = /[;|"'*<>]/;
+  const ALLOWED_CHARS = /^[\u0590-\u05FFa-zA-Z0-9 ._\-/\\:]*$/;
   const [rawImage, setRawImage] = React.useState<HTMLImageElement | null>(null);
   const [zoom, setZoom] = React.useState(1);
   const [offset, setOffset] = React.useState({ x: 0, y: 0 });
@@ -177,18 +177,16 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     const value = e.target.value.slice(0, MAX_GROUP_NAME_LEN);
     setNewCatName(value);
 
-    const ALLOWED_CHARS = /^[\u0590-\u05FFa-zA-Z0-9 ._-]*$/;
-
-    if (!value) {
-      setErrorMessage("");
-    } else if (!ALLOWED_CHARS.test(value)) {
-      setErrorMessage(
-        "שם קטגוריה יכול להכיל רק אותיות, מספרים ותווים . - _"
-      );
-    } else {
-      setErrorMessage("");
-    }
-  };
+  if (!value) {
+    setErrorMessage("");
+  } else if (!ALLOWED_CHARS.test(value)) {
+    setErrorMessage(
+      'שם מכיל תווים לא חוקיים. מותר להשתמש רק באותיות (עברית/אנגלית), מספרים, מקף (-), קו תחתון (_), סלאש (/ \\) ונקודתיים (:)'
+    );
+  } else {
+    setErrorMessage("");
+  }
+    };
   const handleClose = () => {
     setErrorMessage("");
     setNewCatName("");
@@ -202,9 +200,9 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
       return;
     }
 
-    if (FORBIDDEN_CHARS.test(newCatName)) {
-      toast.error('שם קטגוריה מכיל תווים אסורים ; | " \' * < >');
-      return;
+    if (!ALLOWED_CHARS.test(newCatName.trim())) {
+    setErrorMessage('שם מכיל תווים לא חוקיים. מותר להשתמש רק באותיות (עברית/אנגלית), מספרים, מקף (-), קו תחתון (_), סלאש (/ \\) ונקודתיים (:)');
+    return;
     }
 
     if (!isLength(newCatName.trim(), { max: 30 })) {
