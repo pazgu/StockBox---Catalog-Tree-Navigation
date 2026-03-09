@@ -456,7 +456,11 @@ export const Categories: FC<CategoriesProps> = () => {
       ) : (
         <>
           {showCategories && categoryItems.length > 0 && (
+            
             <div className="mx-auto flex justify-center flex-wrap gap-10 my-12 px-4 sm:px-8">
+            <h3 className="text-3xl font-light text-slate-700 mb-6 tracking-tight w-full">
+                  קטגוריות
+                </h3>
               {categoryItems.map((item) => {
                 const category = categories.find((c) => c._id === item.id);
 
