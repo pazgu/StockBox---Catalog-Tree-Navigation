@@ -49,7 +49,7 @@ function clampOffsetToCircle(
 
   const maxX = Math.max(0, halfW - radius);
   const maxY = Math.max(0, halfH - radius);
-  
+
 
   return {
     x: Math.min(maxX, Math.max(-maxX, offset.x)),
@@ -174,74 +174,77 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   };
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  const value = e.target.value;
-  setNewCatName(value);
+    const value = e.target.value.slice(0, MAX_GROUP_NAME_LEN);
+    setNewCatName(value);
 
-  if (!value) {
-    setErrorMessage(""); 
-  } else if (FORBIDDEN_CHARS.test(value)) {
-    setErrorMessage("שם מוצר לא יכול להכיל תווים ; | \" ' * < >");
-  } else {
-    setErrorMessage(""); 
-  }
-};
+    const ALLOWED_CHARS = /^[\u0590-\u05FFa-zA-Z0-9 ._-]*$/;
 
+    if (!value) {
+      setErrorMessage("");
+    } else if (!ALLOWED_CHARS.test(value)) {
+      setErrorMessage(
+        "שם קטגוריה יכול להכיל רק אותיות, מספרים ותווים . - _"
+      );
+    } else {
+      setErrorMessage("");
+    }
+  };
   const handleClose = () => {
-  setErrorMessage(""); 
-  setNewCatName(""); 
-  setRawImage(null);
-  onClose();           
-};
+    setErrorMessage("");
+    setNewCatName("");
+    setRawImage(null);
+    onClose();
+  };
 
   const handleSave = async () => {
-  if (!newCatName.trim()) {
-    toast.error("שם קטגוריה חובה");
-    return;
-  }
-
-  if (FORBIDDEN_CHARS.test(newCatName)) {
-    toast.error('שם קטגוריה מכיל תווים אסורים ; | " \' * < >');
-    return;
-  }
-
-  if (!isLength(newCatName.trim(), { max: 30 })) {
-    toast.error("שם קטגוריה לא יכול להיות ארוך מ-30 תווים");
-    return;
-  }
-
-  let file: File | undefined;
-
-  if (rawImage) {
-    const croppedDataUrl = generateCroppedImage();
-    if (!croppedDataUrl) {
-      toast.error("שגיאה ביצירת התמונה");
+    if (!newCatName.trim()) {
+      toast.error("שם קטגוריה חובה");
       return;
     }
 
-    const safeName = newCatName.trim().toLowerCase().replace(/\s+/g, "-");
-    file = dataURLtoFile(croppedDataUrl, `${safeName}.jpg`);
-  }
-
-  try {
-    setIsSaving(true);
-    await onSave({ name: newCatName.trim(), imageFile: file, allowAll });
-    setAllowAll(false);
-    handleClose(); 
-  } catch (error: any) {
-    const serverMessage =
-      error?.response?.data?.message || error?.response?.data?.error;
-
-    if (typeof serverMessage === "string" && serverMessage.trim()) {
-      toast.error(serverMessage);
-    } else {
-      toast.error("שגיאה בהוספת קטגוריה");
+    if (FORBIDDEN_CHARS.test(newCatName)) {
+      toast.error('שם קטגוריה מכיל תווים אסורים ; | " \' * < >');
+      return;
     }
 
-    console.error("Add category failed:", error);
-  } finally {
-    setIsSaving(false);
-  }
-};
+    if (!isLength(newCatName.trim(), { max: 30 })) {
+      toast.error("שם קטגוריה לא יכול להיות ארוך מ-30 תווים");
+      return;
+    }
+
+    let file: File | undefined;
+
+    if (rawImage) {
+      const croppedDataUrl = generateCroppedImage();
+      if (!croppedDataUrl) {
+        toast.error("שגיאה ביצירת התמונה");
+        return;
+      }
+
+      const safeName = newCatName.trim().toLowerCase().replace(/\s+/g, "-");
+      file = dataURLtoFile(croppedDataUrl, `${safeName}.jpg`);
+    }
+
+    try {
+      setIsSaving(true);
+      await onSave({ name: newCatName.trim(), imageFile: file, allowAll });
+      setAllowAll(false);
+      handleClose();
+    } catch (error: any) {
+      const serverMessage =
+        error?.response?.data?.message || error?.response?.data?.error;
+
+      if (typeof serverMessage === "string" && serverMessage.trim()) {
+        toast.error(serverMessage);
+      } else {
+        toast.error("שגיאה בהוספת קטגוריה");
+      }
+
+      console.error("Add category failed:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div
@@ -279,19 +282,21 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
             </label>
             <div className="relative mb-3">
               <input
-                  type="text"
-                  placeholder="שם קטגוריה"
-                  value={newCatName}
-                  onChange={handleNameChange}   
-                  maxLength={MAX_GROUP_NAME_LEN}
-                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
-                />
-                <div className="absolute bottom-1.5 left-3 text-xs text-gray-400">
-                  {newCatName.length}/{MAX_GROUP_NAME_LEN}
-                </div>
-                {errorMessage && (
-                  <p className="mt-1 text-sm text-red-600">{errorMessage}</p>
-                )}
+                type="text"
+                placeholder="שם קטגוריה"
+                value={newCatName}
+                onChange={handleNameChange}
+                maxLength={MAX_GROUP_NAME_LEN}
+                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
+              />
+
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 select-none">
+                {newCatName.length}/{MAX_GROUP_NAME_LEN}
+              </span>
+
+              {errorMessage && (
+                <p className="mt-1 text-sm text-red-600">{errorMessage}</p>
+              )}
             </div>
           </div>
 
@@ -492,43 +497,41 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
             </div>
           )}
 
-             <div className="flex justify-between items-center p-4 bg-white bg-opacity-50 border rounded-lg mb-2 shadow-sm border-blue-100">
+          <div className="flex justify-between items-center p-4 bg-white bg-opacity-50 border rounded-lg mb-2 shadow-sm border-blue-100">
             <Label className="font-bold text-blue-900 text-sm" >
-             לאפשר לכולם לראות את הקטגוריה החדשה?
+              לאפשר לכולם לראות את הקטגוריה החדשה?
             </Label>
             <Switch
               checked={
                 allowAll
               }
-             onCheckedChange={() => {
-               setAllowAll(!allowAll);
-            }}
+              onCheckedChange={() => {
+                setAllowAll(!allowAll);
+              }}
             />
           </div>
 
-            <div className="flex justify-end gap-4 mt-2 pt-6 border-t-2 border-gray-200">
-              <button
+          <div className="flex justify-end gap-4 mt-2 pt-6 border-t-2 border-gray-200">
+            <button
               onClick={handleClose}
               disabled={isSaving}
               className={`px-6 py-3 rounded-xl border-2 border-gray-300 transition-colors font-bold
-      ${
-                isSaving
+      ${isSaving
                   ? "bg-gray-100 text-gray-300 cursor-not-allowed"
                   : "bg-white text-gray-700 hover:bg-gray-50"
-              }`}
+                }`}
             >
               ביטול
-              </button>
+            </button>
 
-              <button
+            <button
               onClick={handleSave}
               disabled={isSaving}
               className={`px-8 py-3 rounded-xl text-white transition-colors font-bold shadow-lg
-      ${
-                isSaving
+      ${isSaving
                   ? "bg-slate-400 cursor-not-allowed"
                   : "bg-[#0D305B] hover:bg-[#15457a] hover:to-[#1e5a9e] hover:shadow-xl"
-              }`}
+                }`}
             >
               {isSaving ? (
                 <span className="flex items-center justify-center gap-2">
@@ -538,9 +541,9 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
               ) : (
                 "שמור"
               )}
-              </button>
-            </div>       
-            <div>
+            </button>
+          </div>
+          <div>
           </div>
         </div>
       </div>

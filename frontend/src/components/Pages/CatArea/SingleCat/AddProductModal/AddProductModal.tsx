@@ -12,11 +12,11 @@ type Props = {
   isOpen: boolean;
   onClose: () => void;
   onSave: (result: {
-  name: string;
-  description: string;
-  imageFile?: File;
-  allowAll: boolean;
-}) => Promise<void>;
+    name: string;
+    description: string;
+    imageFile?: File;
+    allowAll: boolean;
+  }) => Promise<void>;
 
 };
 
@@ -198,77 +198,81 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.slice(0, MAX_EDIT_NAME_LEN);
     setProductName(value);
-  if (!value) {
-    setErrorMessage(""); 
-  } else if (FORBIDDEN_CHARS.test(value)) {
-    setErrorMessage("שם מוצר לא יכול להכיל תווים ; | \" ' * < >");
-  } else {
-    setErrorMessage(""); 
-  }
-};
 
+    const ALLOWED_CHARS = /^[\u0590-\u05FFa-zA-Z0-9 ._-]*$/;
+
+    if (!value) {
+      setErrorMessage("");
+    } else if (!ALLOWED_CHARS.test(value)) {
+      setErrorMessage(
+        "שם מוצר יכול להכיל רק אותיות, מספרים ותווים . - _"
+      );
+    } else {
+      setErrorMessage("");
+    }
+  };
   const handleClose = () => {
-  setErrorMessage(""); 
-  setProductName(""); 
-  setRawImage(null);
-  onClose();           
-};
+    setErrorMessage("");
+    setProductName("");
+    setRawImage(null);
+    onClose();
+  };
 
   const handleSave = async () => {
-  if (!productName.trim()) {
-    toast.error("שם מוצר חובה");
-    return;
-  }
-
-  if (FORBIDDEN_CHARS.test(productName)) {
-    toast.error('שם מוצר מכיל תווים אסורים ; | " \' * < >');
-    return;
-  }
-
-  if (!isLength(productName.trim(), { max: 30 })) {
-    toast.error("שם מוצר לא יכול להיות ארוך מ-30 תווים");
-    return;
-  }
-
-  let file: File | undefined;
-
-  if (rawImage) {
-    const croppedDataUrl = generateCroppedImage();
-    if (!croppedDataUrl) {
-      toast.error("שגיאה ביצירת התמונה");
+    if (!productName.trim()) {
+      toast.error("שם מוצר חובה");
       return;
     }
 
-    const safeName = productName.trim().toLowerCase().replace(/\s+/g, "-");
-    file = dataURLtoFile(croppedDataUrl, `${safeName}.jpg`);
-  }
-
-  try {
-    setIsSaving(true);
-
-    await onSave({
-      name: productName.trim(),
-      description: productDesc.trim(),
-      imageFile: file,
-      allowAll: allowAll,
-    });
-    setAllowAll(false);
-    handleClose(); 
-  } catch (error: any) {
-    const serverMessage =
-      error?.response?.data?.message || error?.response?.data?.error;
-
-    if (typeof serverMessage === "string" && serverMessage.trim()) {
-      toast.error(serverMessage);
-    } else {
-      toast.error("שגיאה בהוספת מוצר");
+    if (FORBIDDEN_CHARS.test(productName)) {
+      toast.error('שם מוצר מכיל תווים אסורים ; | " \' * < >');
+      return;
     }
 
-    console.error("Add product failed:", error);
-  } finally {
-    setIsSaving(false);
-  }
-};
+    if (!isLength(productName.trim(), { max: 30 })) {
+      toast.error("שם מוצר לא יכול להיות ארוך מ-30 תווים");
+      return;
+    }
+
+    let file: File | undefined;
+
+    if (rawImage) {
+      const croppedDataUrl = generateCroppedImage();
+      if (!croppedDataUrl) {
+        toast.error("שגיאה ביצירת התמונה");
+        return;
+      }
+
+      const safeName = productName.trim().toLowerCase().replace(/\s+/g, "-");
+      file = dataURLtoFile(croppedDataUrl, `${safeName}.jpg`);
+    }
+
+    try {
+      setIsSaving(true);
+
+      await onSave({
+        name: productName.trim(),
+        description: productDesc.trim(),
+        imageFile: file,
+        allowAll: allowAll,
+      });
+      setAllowAll(false);
+      handleClose();
+    } catch (error: any) {
+      const serverMessage =
+        error?.response?.data?.message || error?.response?.data?.error;
+
+      if (typeof serverMessage === "string" && serverMessage.trim()) {
+        toast.error(serverMessage);
+      } else {
+        toast.error("שגיאה בהוספת מוצר");
+      }
+
+      console.error("Add product failed:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div
@@ -296,36 +300,36 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
           </div>
 
           <div className="group mb-5">
-          <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center">
-            <span className="inline-flex items-center gap-1 flex-row-reverse">
-              <span>שם מוצר</span>
-              <RequiredStar />
-            </span>
-          </label>
+            <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center">
+              <span className="inline-flex items-center gap-1 flex-row-reverse">
+                <span>שם מוצר</span>
+                <RequiredStar />
+              </span>
+            </label>
 
 
 
-          <div>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="שם מוצר"
-                value={productName}
-                onChange={handleNameChange}
-                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
-              />
-              <div className="absolute bottom-1.5 left-3 text-xs text-gray-400 z-10 pointer-events-none">
-                {productName.length}/{MAX_EDIT_NAME_LEN}
+            <div>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="שם מוצר"
+                  value={productName}
+                  onChange={handleNameChange}
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
+                />
+                <div className="absolute bottom-1.5 left-3 text-xs text-gray-400 z-10 pointer-events-none">
+                  {productName.length}/{MAX_EDIT_NAME_LEN}
+                </div>
               </div>
+              {errorMessage && (
+                <p className="mt-1 text-sm text-red-600">{errorMessage}</p>
+              )}
             </div>
-            {errorMessage && (
-              <p className="mt-1 text-sm text-red-600">{errorMessage}</p>
-            )}
-          </div>
           </div>
 
           <div className="group mb-5">
-           <label className="block text-sm font-bold mb-2 text-gray-700">
+            <label className="block text-sm font-bold mb-2 text-gray-700">
               תיאור מוצר
             </label>
 
@@ -340,11 +344,11 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
           </div>
 
           <div className="group mb-4">
-      <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center">
-  <span className="inline-flex items-center gap-1 flex-row-reverse">
-    <span>תמונת מוצר</span>
-  </span>
-</label>
+            <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center">
+              <span className="inline-flex items-center gap-1 flex-row-reverse">
+                <span>תמונת מוצר</span>
+              </span>
+            </label>
 
 
 
@@ -370,7 +374,7 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
                   width: CROP_BOX,
                   height: CROP_BOX,
                   position: "relative",
-                  borderRadius: "16px", 
+                  borderRadius: "16px",
                   touchAction: "none",
                   overscrollBehavior: "contain",
                 }}
@@ -537,7 +541,7 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
 
           <div className="flex justify-between relative items-center p-4 bg-white bg-opacity-50 border rounded-lg mb-4 shadow-sm border-blue-100">
             <Label className="font-bold text-blue-900 text-sm mb-2">
-             לאפשר לכולם לראות את המוצר החדש?
+              לאפשר לכולם לראות את המוצר החדש?
             </Label>
             <span className="absolute bottom-2 right-4 text-xs text-gray-500">יש לשים לב! חסימות של קטגוריית האב יוחלו על המוצר החדש</span>
 
@@ -545,22 +549,21 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
               checked={
                 allowAll
               }
-             onCheckedChange={() => {
-               setAllowAll(!allowAll);
-            }}
+              onCheckedChange={() => {
+                setAllowAll(!allowAll);
+              }}
             />
           </div>
 
           <div className="flex justify-end gap-4 mt-8 pt-6 border-t-2 border-gray-200">
             <button
-               onClick={handleClose}
+              onClick={handleClose}
               disabled={isSaving}
               className={`px-6 py-3 rounded-xl border-2 border-gray-300 transition-colors font-bold
-      ${
-                isSaving
+      ${isSaving
                   ? "bg-gray-100 text-gray-300 cursor-not-allowed"
                   : "bg-white text-gray-700 hover:bg-gray-50"
-              }`}
+                }`}
             >
               ביטול
             </button>
@@ -569,11 +572,10 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
               onClick={handleSave}
               disabled={isSaving}
               className={`px-8 py-3 rounded-xl text-white transition-colors font-bold shadow-lg
-      ${
-                isSaving
+      ${isSaving
                   ? "bg-slate-400 cursor-not-allowed"
                   : "bg-[#0D305B] hover:from-[#15457a] hover:to-[#1e5a9e] hover:shadow-xl"
-              }`}
+                }`}
             >
               {isSaving ? (
                 <span className="flex items-center justify-center gap-2">
