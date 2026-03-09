@@ -50,10 +50,13 @@ const SingleProd: FC<SingleProdProps> = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
   const [product, setProduct] = useState<ProductDto | null>(null);
   const [originalProduct, setOriginalProduct] = useState<ProductDto | null>(
     null,
   );
+  const ALLOWED_CHARS = /^[\u0590-\u05FFa-zA-Z0-9 ._-]*$/;
+
   const [newAccordionType, setNewAccordionType] = useState<
     "bullets" | "content" | null
   >(null);
@@ -77,7 +80,20 @@ const SingleProd: FC<SingleProdProps> = () => {
   const { previousPath } = usePath();
   const [isLoading, setIsLoading] = useState(true);
   const [isReplacingImage, setIsReplacingImage] = useState(false);
+  const MAX_EDIT_NAME_LEN = 30;
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.slice(0, MAX_EDIT_NAME_LEN);
 
+    setTitle(value);
+
+    if (!ALLOWED_CHARS.test(value)) {
+      setErrorMessage(
+        "ניתן להשתמש רק באותיות, מספרים, רווחים והתווים . - _"
+      );
+    } else {
+      setErrorMessage("");
+    }
+  };
   useEffect(() => {
     if (!productId) {
       setIsLoading(false);
@@ -88,6 +104,7 @@ const SingleProd: FC<SingleProdProps> = () => {
       navigate("/404", { replace: true });
       return;
     }
+
 
     const loadProduct = async () => {
       setIsLoading(true);
@@ -271,7 +288,7 @@ const SingleProd: FC<SingleProdProps> = () => {
     setIsReplacingImage(false);
   };
 
-  
+
 
   const handleDeleteImage = () => {
     const currentUrl = realImages[currentImageIndex];
@@ -297,10 +314,12 @@ const SingleProd: FC<SingleProdProps> = () => {
 
 
   const handleAccordionTitleChange = (uiId: string, newTitle: string) => {
+    const value = newTitle.slice(0, MAX_EDIT_NAME_LEN);
+
     setAccordionData((prevData) =>
       prevData.map((item) =>
-        item.uiId === uiId ? { ...item, title: newTitle } : item,
-      ),
+        item.uiId === uiId ? { ...item, title: value } : item
+      )
     );
   };
 
@@ -593,12 +612,12 @@ const SingleProd: FC<SingleProdProps> = () => {
 
   const realImages = useMemo(() => normalizeImages(productImages), [productImages]);
 
-const displayImages = useMemo(() => {
-  if (isEditing) return realImages;
-  return realImages.length > 0
-    ? realImages
-    : [environment.DEFAULT_PRODUCT_IMAGE_URL]; 
-}, [isEditing, realImages]);
+  const displayImages = useMemo(() => {
+    if (isEditing) return realImages;
+    return realImages.length > 0
+      ? realImages
+      : [environment.DEFAULT_PRODUCT_IMAGE_URL];
+  }, [isEditing, realImages]);
 
   if (isLoading) {
     return <SingleProdSkeleton />;
@@ -611,13 +630,31 @@ const displayImages = useMemo(() => {
         <div className="flex justify-between items-start mb-4 text-right">
           <div className="flex-1">
             {isEditing ? (
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="bg-transparent text-4xl font-bold text-stockblue w-full text-right outline-none border-none"
-                style={{ boxShadow: "0 2px 0 0 #1e3a5f", lineHeight: "1.4", paddingBottom: "4px" }}
-              />
+              <div className="relative w-full">
+                <input
+                  type="text"
+                  value={title}
+                  maxLength={MAX_EDIT_NAME_LEN}
+                  onChange={handleTitleChange}
+                  className={`bg-transparent text-4xl font-bold w-full text-right outline-none border-none pl-20 text-stockblue
+                    }`}
+                  style={{
+                    boxShadow: "0 2px 0 0 #1e3a5f",
+                    lineHeight: "1.4",
+                    paddingBottom: "4px",
+                  }}
+                />
+
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 text-sm text-gray-400">
+                  {title.length}/{MAX_EDIT_NAME_LEN}
+                </span>
+
+                {errorMessage && (
+                  <p className="text-red-500 text-sm mt-2 text-right">
+                    {errorMessage}
+                  </p>
+                )}
+              </div>
             ) : (
               <h1
                 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-stockblue to-stockblue break-words pb-2 overflow-visible"
@@ -701,45 +738,45 @@ const displayImages = useMemo(() => {
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-stockblue to-stockblue"></div>
 
               {!isEditing || realImages.length > 0 ? (
-  <div className="relative mb-4">
-    {isUploadingImages && (
-      <div className="absolute inset-0 z-50 grid place-items-center bg-white/60 backdrop-blur-sm rounded-2xl">
-        <div className="flex items-center gap-2 rounded-2xl bg-white/80 px-4 py-2 shadow">
-          <Spinner className="size-6 text-stockblue" />
-          <span className="text-sm font-semibold text-stockblue">
-            מעלה תמונות…
-          </span>
-        </div>
-      </div>
-    )}
+                <div className="relative mb-4">
+                  {isUploadingImages && (
+                    <div className="absolute inset-0 z-50 grid place-items-center bg-white/60 backdrop-blur-sm rounded-2xl">
+                      <div className="flex items-center gap-2 rounded-2xl bg-white/80 px-4 py-2 shadow">
+                        <Spinner className="size-6 text-stockblue" />
+                        <span className="text-sm font-semibold text-stockblue">
+                          מעלה תמונות…
+                        </span>
+                      </div>
+                    </div>
+                  )}
 
-    <ImageCarousel
-      productImages={displayImages}
-      currentImageIndex={currentImageIndex}
-      setCurrentImageIndex={setCurrentImageIndex}
-      prevImage={() => {
-        if (displayImages.length === 0) return;
-        setCurrentImageIndex((prev) =>
-          prev === 0 ? displayImages.length - 1 : prev - 1,
-        );
-      }}
-      nextImage={() => {
-        if (displayImages.length === 0) return;
-        setCurrentImageIndex((prev) =>
-          prev === displayImages.length - 1 ? 0 : prev + 1,
-        );
-      }}
-      isEditing={isEditing}
-      handleReplaceImage={handleReplaceImage}
-      handleAddImages={handleAddImages}
-      handleDeleteImage={handleDeleteImage}
-      handleDeleteAllImages={handleDeleteAllImages}
-      isUploading={isUploadingImages}
-      title={title}
-      isReplacingImage={isReplacingImage}
-      setIsReplacingImage={setIsReplacingImage}
-    />
-  </div>
+                  <ImageCarousel
+                    productImages={displayImages}
+                    currentImageIndex={currentImageIndex}
+                    setCurrentImageIndex={setCurrentImageIndex}
+                    prevImage={() => {
+                      if (displayImages.length === 0) return;
+                      setCurrentImageIndex((prev) =>
+                        prev === 0 ? displayImages.length - 1 : prev - 1,
+                      );
+                    }}
+                    nextImage={() => {
+                      if (displayImages.length === 0) return;
+                      setCurrentImageIndex((prev) =>
+                        prev === displayImages.length - 1 ? 0 : prev + 1,
+                      );
+                    }}
+                    isEditing={isEditing}
+                    handleReplaceImage={handleReplaceImage}
+                    handleAddImages={handleAddImages}
+                    handleDeleteImage={handleDeleteImage}
+                    handleDeleteAllImages={handleDeleteAllImages}
+                    isUploading={isUploadingImages}
+                    title={title}
+                    isReplacingImage={isReplacingImage}
+                    setIsReplacingImage={setIsReplacingImage}
+                  />
+                </div>
 
               ) : (
                 <div className="relative mb-4">
@@ -884,6 +921,7 @@ ${isEditing ? "cursor-pointer" : "cursor-not-allowed opacity-80"}`}
             handleDrop={handleDrop}
             setDraggedItem={setDraggedItem}
             handleAccordionTitleChange={handleAccordionTitleChange}
+            MAX_EDIT_NAME_LEN={MAX_EDIT_NAME_LEN}
             handleAccordionContentChange={handleAccordionContentChange}
             removeAccordion={removeAccordion}
             addCustomAccordion={addCustomAccordion}
