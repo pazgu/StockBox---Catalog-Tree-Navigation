@@ -7,6 +7,7 @@ import {
 } from "../components/models/product.models";
 import api from "./axios";
 import { AxiosError } from "axios";
+import { getSafeProductImage } from "../lib/imageFallback";
 
 export class ProductsService {
   private static readonly baseUrl = `${environment.API_URL}/products`;
@@ -83,9 +84,16 @@ export class ProductsService {
 
 
   static async getById(id: string): Promise<ProductDataDto> {
-    const { data } = await api.get(`${environment.API_URL}/products/${id}`);
-    return data;
-  }
+  const { data } = await api.get(`${environment.API_URL}/products/${id}`);
+
+  return {
+    ...data,
+    productImages:
+      Array.isArray(data.productImages) && data.productImages.length > 0
+        ? data.productImages
+        : [getSafeProductImage(data.productImages, data.image)],
+  };
+}
 
   
   static async moveProduct(

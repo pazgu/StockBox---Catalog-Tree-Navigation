@@ -8,6 +8,10 @@ import { Spinner } from "../../../ui/spinner";
 import ImagePreviewHover from "../../ProductArea/ImageCarousel/ImageCarousel/ImagePreviewHover";
 import { PathDisplay } from "../../SharedComponents/PathDisplay/PathDisplay";
 import Page404 from "../../Page404/Page404";
+import {
+  getSafeCategoryImage,
+  getSafeProductImage,
+} from "../../../../lib/imageFallback";
 
 type FilterType = "all" | "categories" | "products";
 
@@ -239,7 +243,7 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
                   <div className="flex items-center justify-center relative">
                     <div className="relative opacity-60 hover:opacity-80 transition-opacity">
                       <img
-                        src={item.itemImage}
+                        src={getSafeCategoryImage(item.itemImage)}
                         alt={item.itemName}
                         className="w-44 h-44 object-cover rounded-full shadow-md mt-2 grayscale"
                       />
@@ -328,10 +332,10 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
 
                         <span
                           className="absolute -bottom-9 left-1 -translate-x-1/2
-      bg-gray-800 text-white text-xs px-2 py-1 rounded
-      opacity-0 group-hover:opacity-100
-      transition-all duration-200 whitespace-nowrap
-      pointer-events-none shadow-lg z-50"
+                            bg-gray-800 text-white text-xs px-2 py-1 rounded
+                            opacity-0 group-hover:opacity-100
+                            transition-all duration-200 whitespace-nowrap
+                            pointer-events-none shadow-lg z-50"
                         >
                           שחזור מוצר
                         </span>
@@ -347,10 +351,10 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
 
                         <span
                           className="absolute -bottom-9 left-1/2 -translate-x-1/2
-      bg-gray-800 text-white text-xs px-2 py-1 rounded
-      opacity-0 group-hover:opacity-100
-      transition-all duration-200 whitespace-nowrap
-      pointer-events-none shadow-lg z-50"
+                            bg-gray-800 text-white text-xs px-2 py-1 rounded
+                            opacity-0 group-hover:opacity-100
+                            transition-all duration-200 whitespace-nowrap
+                            pointer-events-none shadow-lg z-50"
                         >
                           מחיקה לצמיתות
                         </span>
@@ -358,17 +362,13 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
                     </div>
 
                     <div className="h-36 w-full flex justify-center items-center p-5 grayscale">
-                      <img
-                        src={
-                          item.productImages && item.productImages.length > 0
-                            ? item.productImages[0]
-                            : item.itemImage || "/assets/images/placeholder.png"
-                        }
+                     <img
+                        src={getSafeProductImage(item.productImages, item.itemImage)}
                         alt={item.itemName}
                         className="h-32 w-32 object-contain"
                         onError={(e) => {
                           (e.currentTarget as HTMLImageElement).src =
-                            "/assets/images/placeholder.png";
+                            getSafeProductImage(item.productImages, item.itemImage);
                         }}
                       />
                     </div>
