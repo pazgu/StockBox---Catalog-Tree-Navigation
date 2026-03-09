@@ -19,6 +19,10 @@ import { permissionsService } from "../../../../services/permissions.service";
 import { usePath } from "../../../../context/PathContext";
 import { Spinner } from '../../../ui/spinner';
 import { PathDisplay } from "../../SharedComponents/PathDisplay/PathDisplay";
+import {
+  getSafeCategoryImage,
+  getSafeProductImage,
+} from "../../../../lib/imageFallback";
 
 interface Group {
   _id: string;
@@ -535,7 +539,7 @@ const ProductPermissions: React.FC = () => {
           <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
             <div className="relative">
               <img
-                src={productData.image || "/placeholder-image.png"}
+               src={getSafeProductImage(undefined, productData.image)}
                 className="w-24 h-24 rounded-xl border-2 border-white shadow-lg object-cover bg-white"
                 alt={productData.name}
               />
@@ -593,7 +597,7 @@ const ProductPermissions: React.FC = () => {
                     <div className="flex items-center gap-3 flex-1 text-right min-w-0">
                       {!pathData.isRootLevel && (
                         <img
-                          src={pathData.categoryImage || "/placeholder-image.png"}
+                         src={getSafeCategoryImage(pathData.categoryImage)}
                           className="w-14 h-14 rounded-lg object-cover border border-gray-200 flex-shrink-0"
                           alt={pathData.categoryName}
                         />

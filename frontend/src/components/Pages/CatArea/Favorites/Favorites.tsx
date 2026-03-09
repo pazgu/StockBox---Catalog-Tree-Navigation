@@ -8,6 +8,10 @@ import { ProductsService } from "../../../../services/ProductService";
 import { categoriesService } from "../../../../services/CategoryService";
 import { ProductDto, ProductDataDto } from "../../../models/product.models";
 import { CategoryDTO } from "../../../models/category.models";
+import {
+  getSafeCategoryImage,
+  getSafeProductImage,
+} from "../../../../lib/imageFallback";
 
 type FilterType = "all" | "products" | "categories";
 
@@ -260,7 +264,7 @@ export const Favorites: React.FC = () => {
                 </div>
                 <Link to={`${cat.categoryPath}`}>
                   <img
-                    src={cat.categoryImage}
+                    src={getSafeCategoryImage(cat.categoryImage)}
                     alt={cat.categoryName}
                     className="w-[100px] h-[100px] object-contain mx-auto mb-3"
                   />
@@ -310,7 +314,7 @@ export const Favorites: React.FC = () => {
                 </div>
                 <Link to={`/products/${product._id}`}>
                   <img
-                    src={product.productImages?.[0] || "/placeholder.png"}
+                    src={getSafeProductImage(product.productImages)}
                     alt={product.productName}
                     className="w-[140px] h-[140px] object-contain rounded-lg mb-3 mx-auto"
                   />

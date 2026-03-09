@@ -1,5 +1,9 @@
 import { environment } from "../environments/environment.development";
 import api from "./axios";
+import {
+  getSafeCategoryImage,
+  getSafeProductImage,
+} from "../lib/imageFallback";
 
 const API_URL = `${environment.API_URL}/permissions`;
 
@@ -79,9 +83,9 @@ export const permissionsService = {
       _id: data._id,
       name: data.categoryName || data.productName || data.name,
       image:
-        Array.isArray(data.productImages) && data.productImages.length > 0
-          ? data.productImages[0]
-          : data.categoryImage || "/placeholder-image.png",
+  type === "product"
+    ? getSafeProductImage(data.productImages, data.image)
+    : getSafeCategoryImage(data.categoryImage),
       permissionsInheritedToChildren: data.permissionsInheritedToChildren || false,
     };
   },
