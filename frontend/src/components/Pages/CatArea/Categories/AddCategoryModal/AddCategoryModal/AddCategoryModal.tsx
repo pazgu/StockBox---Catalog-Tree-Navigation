@@ -277,7 +277,7 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
 
           <div className="group mb-5">
             <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#0D305B]"></span>
+              <span className="text-red-600">*</span>
               שם קטגוריה
             </label>
             <div className="relative mb-3">
@@ -302,7 +302,6 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
 
           <div className="group mb-4">
             <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#0D305B]"></span>
               תמונת קטגוריה
             </label>
 
