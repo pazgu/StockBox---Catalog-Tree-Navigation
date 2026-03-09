@@ -8,6 +8,10 @@ import { Spinner } from "../../../ui/spinner";
 import ImagePreviewHover from "../../ProductArea/ImageCarousel/ImageCarousel/ImagePreviewHover";
 import { PathDisplay } from "../../SharedComponents/PathDisplay/PathDisplay";
 import Page404 from "../../Page404/Page404";
+import {
+  getSafeCategoryImage,
+  getSafeProductImage,
+} from "../../../../lib/imageFallback";
 
 type FilterType = "all" | "categories" | "products";
 
@@ -239,10 +243,10 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
                   <div className="flex items-center justify-center relative">
                     <div className="relative opacity-60 hover:opacity-80 transition-opacity">
                       <img
-                        src={item.itemImage}
-                        alt={item.itemName}
-                        className="w-44 h-44 object-cover rounded-full shadow-md mt-2 grayscale"
-                      />
+  src={getSafeCategoryImage(item.itemImage)}
+  alt={item.itemName}
+  className="w-44 h-44 object-cover rounded-full shadow-md mt-2 grayscale"
+/>
 
                       <div className="absolute inset-0 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity mb-28 mr-24">
                         <div className="relative">
@@ -358,19 +362,15 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
                     </div>
 
                     <div className="h-36 w-full flex justify-center items-center p-5 grayscale">
-                      <img
-                        src={
-                          item.productImages && item.productImages.length > 0
-                            ? item.productImages[0]
-                            : item.itemImage || "/assets/images/placeholder.png"
-                        }
-                        alt={item.itemName}
-                        className="h-32 w-32 object-contain"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src =
-                            "/assets/images/placeholder.png";
-                        }}
-                      />
+                     <img
+  src={getSafeProductImage(item.productImages, item.itemImage)}
+  alt={item.itemName}
+  className="h-32 w-32 object-contain"
+  onError={(e) => {
+    (e.currentTarget as HTMLImageElement).src =
+      getSafeProductImage(item.productImages, item.itemImage);
+  }}
+/>
                     </div>
 
                     <div className="w-full text-center pt-4 border-t border-gray-200">

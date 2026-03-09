@@ -37,7 +37,10 @@ import { usePath } from "../../../../context/PathContext";
 import ImagePreviewHover from "../../ProductArea/ImageCarousel/ImageCarousel/ImagePreviewHover";
 import { useDebouncedFavorite } from "../../../../hooks/useDebouncedFavorite";
 import { truncateDisplay } from "../../../../lib/utils";
-import { environment } from "../../../../environments/environment";
+import {
+  getSafeCategoryImage,
+  getSafeProductImage,
+} from "../../../../lib/imageFallback";
 
 const hasImage = (images: any): boolean => {
   if (!images) return false;
@@ -619,15 +622,15 @@ const SingleCat: FC = () => {
       <header className="flex items-center gap-6 mb-10">
         {/* Category Image */}
         {categoryInfo && (
-          <img
-            src={categoryInfo.categoryImage || "/assets/images/placeholder.png"}
-            alt={categoryInfo.categoryName}
-            className="w-32 h-32 rounded-full object-cover mt-0 border-0 ring-0 outline-none bg-transparent focus:outline-none focus:ring-0 focus:ring-offset-0"
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).src =
-                "/assets/images/placeholder.png";
-            }}
-          />
+         <img
+  src={getSafeCategoryImage(categoryInfo.categoryImage)}
+  alt={categoryInfo.categoryName}
+  className="w-32 h-32 rounded-full object-cover mt-0 border-0 ring-0 outline-none bg-transparent focus:outline-none focus:ring-0 focus:ring-offset-0"
+  onError={(e) => {
+    (e.currentTarget as HTMLImageElement).src =
+      getSafeCategoryImage(categoryInfo.categoryImage);
+  }}
+/>
         )}
 
         {/* Category Title and Stats */}
@@ -864,18 +867,17 @@ const SingleCat: FC = () => {
               >
                 {item.type === "category" ? (
                   <img
-                    src={
-                      typeof item.images === "string" && item.images.trim()
-                        ? item.images
-                        : "/assets/images/placeholder.png"
-                    }
-                    alt={item.name}
-                    className="max-h-full max-w-full object-contain"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src =
-                        "/assets/images/placeholder.png";
-                    }}
-                  />
+  src={getSafeCategoryImage(
+    typeof item.images === "string" ? item.images : null,
+  )}
+  alt={item.name}
+  className="max-h-full max-w-full object-contain"
+  onError={(e) => {
+    (e.currentTarget as HTMLImageElement).src = getSafeCategoryImage(
+      typeof item.images === "string" ? item.images : null,
+    );
+  }}
+/>
                 ) : hasImage(item.images) ? (
                   <div className="h-full w-full flex justify-center items-center">
                     <ImagePreviewHover
@@ -885,15 +887,18 @@ const SingleCat: FC = () => {
                     />
                   </div>
                 ) : (
-                  <img
-                    src={environment.DEFAULT_PRODUCT_IMAGE_URL}
-                    alt={item.name}
-                    className="max-h-full max-w-full object-contain"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src =
-                        environment.DEFAULT_PRODUCT_IMAGE_URL;
-                    }}
-                  />
+                 <img
+  src={getSafeProductImage(
+    Array.isArray(item.images) ? item.images : [],
+  )}
+  alt={item.name}
+  className="max-h-full max-w-full object-contain"
+  onError={(e) => {
+    (e.currentTarget as HTMLImageElement).src = getSafeProductImage(
+      Array.isArray(item.images) ? item.images : [],
+    );
+  }}
+/>
                 )}
               </div>
 
@@ -1197,8 +1202,13 @@ const SingleCat: FC = () => {
                 _id: itemToMove.id,
                 categoryName: itemToMove.name,
                 categoryPath: itemToMove.path[0],
-                categoryImage:
-                  itemToMove.images[0] || "/assets/images/placeholder.png",
+                categoryImage: getSafeCategoryImage(
+  Array.isArray(itemToMove.images)
+    ? itemToMove.images[0]
+    : typeof itemToMove.images === "string"
+      ? itemToMove.images
+      : null,
+),
               }}
               onClose={() => {
                 setShowMoveModal(false);
@@ -1244,9 +1254,13 @@ const SingleCat: FC = () => {
             _id: itemToEdit.id,
             categoryName: itemToEdit.name,
             categoryPath: itemToEdit.path[0],
-            categoryImage: Array.isArray(itemToEdit.images)
-              ? itemToEdit.images[0]
-              : itemToEdit.images,
+            categoryImage: getSafeCategoryImage(
+  Array.isArray(itemToEdit.images)
+    ? itemToEdit.images[0]
+    : typeof itemToEdit.images === "string"
+      ? itemToEdit.images
+      : null,
+),
           }}
           onClose={() => {
             setShowEditModal(false);
