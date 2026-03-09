@@ -711,7 +711,7 @@ const SingleCat: FC = () => {
                 onClick={toggleSelectionMode}
                 className="text-base hover:underline text-gray-700 hover:text-[#0D305B] transition-colors"
               >
-                ביטול
+                ביטול בחירה מרובה
               </button>
             </div>
           )}
