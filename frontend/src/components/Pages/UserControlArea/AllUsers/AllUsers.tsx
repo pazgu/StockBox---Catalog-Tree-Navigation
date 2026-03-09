@@ -435,7 +435,7 @@ const handleCancelEdit = () => {
                 {user._id != id && (
                   <button
                   className="w-6 h-6 rounded flex items-center justify-center
-             hover:bg-red-500 hover:text-white
+             hover:text-red-500
              opacity-60 hover:opacity-100 transition"
                   onClick={() => handleDeleteClick(index)}
                 >
