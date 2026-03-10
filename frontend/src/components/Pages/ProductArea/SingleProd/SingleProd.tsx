@@ -60,6 +60,7 @@ const SingleProd: FC<SingleProdProps> = () => {
   const [newAccordionType, setNewAccordionType] = useState<
     "bullets" | "content" | null
   >(null);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showAccordionTypeSelector, setShowAccordionTypeSelector] =
     useState(false);
   const [accordionData, setAccordionData] = useState<AccordionData[]>([]);
@@ -208,7 +209,6 @@ const SingleProd: FC<SingleProdProps> = () => {
     });
     setIsEditing(true);
   };
-
   const cancelEdit = () => {
     if (!editSnapshot) {
       setIsEditing(false);
@@ -224,6 +224,37 @@ const SingleProd: FC<SingleProdProps> = () => {
     setCurrentImageIndex(0);
     setIsEditing(false);
     setEditSnapshot(null);
+  };
+
+  const hasUnsavedChanges = useMemo(() => {
+    if (!isEditing || !editSnapshot) return false;
+
+    return (
+      title !== editSnapshot.title ||
+      description !== editSnapshot.description ||
+      JSON.stringify(productImages) !== JSON.stringify(editSnapshot.productImages) ||
+      JSON.stringify(accordionData) !== JSON.stringify(editSnapshot.accordionData) ||
+      JSON.stringify(folders) !== JSON.stringify(editSnapshot.folders)
+    );
+  }, [
+    isEditing,
+    editSnapshot,
+    title,
+    description,
+    productImages,
+    accordionData,
+    folders,
+  ]);
+
+  const handleCancelClick = () => {
+    if (isSaving) return;
+
+    if (hasUnsavedChanges) {
+      setShowCancelConfirm(true);
+      return;
+    }
+
+    cancelEdit();
   };
 
   const handleAddImages = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -469,39 +500,17 @@ const SingleProd: FC<SingleProdProps> = () => {
       uploadFolders,
     };
     const hasChanges =
-      title !== originalProduct?.productName ||
-      description !== originalProduct?.productDescription ||
-      JSON.stringify(accordionData) !==
-      JSON.stringify(
-        originalProduct?.customFields?.map((field) => ({
-          uiId: field._id,
-          title: field.title,
-          type: field.type,
-          content:
-            field.type === "bullets"
-              ? JSON.stringify(field.bullets)
-              : field.content,
-        })),
-      ) ||
-      JSON.stringify(productImages) !==
-      JSON.stringify(originalProduct?.productImages) ||
-      JSON.stringify(folders) !==
-      JSON.stringify(
-        originalProduct?.uploadFolders?.[0]?.folders.map((folder) => ({
-          uiId: folder._id,
-          name: folder.folderName,
-          files: folder.files.map((f) => ({
-            uiId: f._id,
-            name: f.link.split("/").pop(),
-            url: f.link,
-            size: 0,
-          })),
-        })) || [],
+      !!editSnapshot &&
+      (
+        title !== editSnapshot.title ||
+        description !== editSnapshot.description ||
+        JSON.stringify(productImages) !== JSON.stringify(editSnapshot.productImages) ||
+        JSON.stringify(accordionData) !== JSON.stringify(editSnapshot.accordionData) ||
+        JSON.stringify(folders) !== JSON.stringify(editSnapshot.folders)
       );
 
     if (!hasChanges) {
       setIsEditing(false);
-      toast.info("לא נעשו שינויים");
       return;
     }
 
@@ -670,7 +679,7 @@ const SingleProd: FC<SingleProdProps> = () => {
               {isEditing && (
                 <div className="relative">
                   <button
-                    onClick={cancelEdit}
+                    onClick={handleCancelClick}
                     disabled={isSaving}
                     aria-label="ביטול עריכה"
                     className={`peer flex items-center justify-center w-14 h-14 rounded-full font-semibold bg-white text-red-600 shadow-lg ring-2 ring-red-500/20 hover:ring-red-500/30 hover:bg-red-50 transition-all duration-300
@@ -942,6 +951,77 @@ ${isEditing ? "cursor-pointer" : "cursor-not-allowed opacity-80"}`}
           />
         </div>
       </div>
+      {showCancelConfirm && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div
+            className="bg-gradient-to-br from-white via-[#fffdf8] to-[#fff9ed] rounded-2xl w-full max-w-md shadow-2xl border border-gray-100 text-right overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+            dir="rtl"
+          >
+            <div className="p-8">
+              <div className="flex justify-start w-full mb-5">
+                <h2 className="flex items-center gap-3 text-2xl font-bold text-[#0D305B]">
+                  <svg
+                    className="w-7 h-7 text-[#0D305B]"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M12 8v5"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                    <circle
+                      cx="12"
+                      cy="16"
+                      r="1"
+                      fill="currentColor"
+                    />
+                    <path
+                      d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  <span>ישנם שינויים שלא נשמרו</span>
+                </h2>
+              </div>
+
+              <div className="bg-white/70 border border-blue-100 rounded-xl p-4 shadow-sm mb-6">
+                <p className="text-gray-800 font-semibold mb-2">
+                  האם אתם בטוחים שברצונכם לצאת ללא שמירה?
+                </p>
+                <p className="text-sm text-gray-600">
+                  כל השינויים שבוצעו יאבדו.
+                </p>
+              </div>
+
+              <div className="flex justify-center items-center gap-4 pt-2 border-t-2 border-gray-200">                <button
+                type="button"
+                onClick={() => setShowCancelConfirm(false)}
+                className="px-6 py-3 rounded-xl border-2 border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors font-bold"
+              >
+                חזרה לעריכה
+              </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCancelConfirm(false);
+                    cancelEdit();
+                  }}
+                  className="px-8 py-3 rounded-xl text-white bg-[#0D305B] hover:bg-[#15457a] transition-colors font-bold shadow-lg"
+                >
+                  יציאה ללא שמירה
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -1047,6 +1127,7 @@ const SingleProdSkeleton: FC = () => {
                     </div>
                   </div>
                 ))}
+
               </div>
             </div>
           </div>
