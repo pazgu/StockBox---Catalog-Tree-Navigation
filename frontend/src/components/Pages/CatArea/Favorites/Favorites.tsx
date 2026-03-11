@@ -291,11 +291,11 @@ export const Favorites: React.FC = () => {
           <h2 className="mr-8 text-xl font-semibold text-slate-800 mb-4 text-right">
             מוצרים מועדפים
           </h2>
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(273px,1fr))] gap-8 m-8">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-6 m-8">
             {products.map((product) => (
               <div
                 key={product._id}
-                className="relative bg-white rounded-xl p-8 text-center shadow-lg transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-xl"
+                className="relative bg-white rounded-xl p-6 text-center shadow-md transition-transform hover:-translate-y-1 hover:shadow-lg"
               >
                 <div className="absolute top-3 right-3">
                   <button
@@ -316,7 +316,7 @@ export const Favorites: React.FC = () => {
                   <img
                     src={getSafeProductImage(product.productImages)}
                     alt={product.productName}
-                    className="w-[140px] h-[140px] object-contain rounded-lg mb-3 mx-auto"
+                    className="w-[100px] h-[100px] object-contain mx-auto mb-3"
                   />
                 </Link>
                 <span 
