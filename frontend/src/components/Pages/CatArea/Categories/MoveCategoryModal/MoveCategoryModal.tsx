@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { categoriesService } from "../../../../../services/CategoryService";
 import { Category } from "../Categories";
-import { MoveRight, ChevronLeft } from "lucide-react";
+import { MoveRight, ChevronLeft, Search } from "lucide-react";
 
 interface MoveCategoryModalProps {
   isOpen: boolean;
@@ -27,6 +27,7 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
     Record<string, Category[]>
   >({});
   const [loadingSubcats, setLoadingSubcats] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   const getCurrentParentPath = (): string => {
     const parts = category.categoryPath.split("/");
@@ -41,8 +42,46 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
       loadAllCategoriesRecursively();
       setSelectedParentPath("");
       setExpandedCategories(new Set());
+      setSearchQuery("");
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setExpandedCategories(new Set());
+      return;
+    }
+    const q = searchQuery.toLowerCase();
+    const pathsToExpand = new Set<string>();
+
+    const collectMatchingPaths = (cats: Category[]) => {
+      for (const cat of cats) {
+        const childrenMatch = checkDescendantsMatch(cat.categoryPath, q);
+        if (childrenMatch) pathsToExpand.add(cat.categoryPath);
+        const subcats = subcategoriesCache[cat.categoryPath] || [];
+        if (subcats.length > 0) collectMatchingPaths(subcats);
+      }
+    };
+
+    collectMatchingPaths(allCategories);
+    setExpandedCategories(pathsToExpand);
+  }, [searchQuery, subcategoriesCache, allCategories]);
+
+  const checkDescendantsMatch = (categoryPath: string, q: string): boolean => {
+    const subcats = subcategoriesCache[categoryPath] || [];
+    for (const subcat of subcats) {
+      if (subcat.categoryName.toLowerCase().includes(q)) return true;
+      if (checkDescendantsMatch(subcat.categoryPath, q)) return true;
+    }
+    return false;
+  };
+
+  const matchesSearch = (cat: Category): boolean => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    if (cat.categoryName.toLowerCase().includes(q)) return true;
+    return checkDescendantsMatch(cat.categoryPath, q);
+  };
 
   const loadAllCategoriesRecursively = async () => {
     try {
@@ -129,11 +168,14 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
   };
 
   const renderCategory = (cat: Category, level: number = 0) => {
+    if (!matchesSearch(cat)) return null;
+
     const subcats = subcategoriesCache[cat.categoryPath] || [];
     const hasSubcats = subcats.length > 0;
     const isExpanded = expandedCategories.has(cat.categoryPath);
     const isLoading = loadingSubcats.has(cat.categoryPath);
     const isCurrentParent = cat.categoryPath === currentParentPath;
+    const nameMatch = searchQuery.trim() && cat.categoryName.toLowerCase().includes(searchQuery.toLowerCase());
 
     return (
       <div key={cat._id} style={{ paddingRight: `${level * 20}px` }}>
@@ -189,7 +231,17 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
             )}
             <div className="text-right">
               <p className="font-medium">
-                {cat.categoryName}
+                {nameMatch ? (
+                  <span>
+                    {cat.categoryName.split(new RegExp(`(${searchQuery})`, "gi")).map((part, i) =>
+                      part.toLowerCase() === searchQuery.toLowerCase()
+                        ? <mark key={i} className="bg-yellow-200 text-yellow-900 rounded px-0.5">{part}</mark>
+                        : part
+                    )}
+                  </span>
+                ) : (
+                  cat.categoryName
+                )}
                 {isCurrentParent && (
                   <span className="mr-2 text-xs text-amber-600 font-semibold">
                     (קיים כאן)
@@ -223,12 +275,7 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
       onSuccess();
       onClose();
     } catch (error: any) {
-      const errorMessage =
-        error?.response?.data?.message ||
-        error?.response?.data?.error ||
-        "שגיאה בהעברת הקטגוריה";
-      toast.error(errorMessage);
-      console.error(error);
+      toast.error(error.response?.data?.message || "שגיאה בהעברת הפריט");
     } finally {
       setLoading(false);
     }
@@ -274,6 +321,18 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
               נא לבחור קטגוריית יעד (קטגוריה ראשית או תת-קטגוריה):
             </label>
             <small>שימו לב! התוכן תחת אותה קטגוריה יעבור איתה למיקום הנבחר</small>
+
+            <div className="relative mt-2 mb-2">
+              <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="חיפוש קטגוריה..."
+                className="w-full pr-9 pl-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-slate-400 text-right"
+                dir="rtl"
+              />
+            </div>
 
             {loading && allCategories.length === 0 ? (
               <div className="flex items-center justify-center p-8">
