@@ -138,17 +138,15 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
     const isCurrentParent = cat.categoryPath === currentParentPath;
 
     return (
-      <div key={cat._id} style={{ marginRight: `${level * 20}px` }}>
+      <div key={cat._id} style={{ paddingRight: `${level * 20}px` }}>
         <label
-          className={`flex items-center gap-2 p-3 border-2 rounded-lg ${
-            isCurrentParent ? "" : "cursor-pointer hover:bg-gray-50"
-          } transition-all mb-2 ${
-            selectedParentPath === cat.categoryPath
+          className={`flex items-center gap-2 p-3 border-2 rounded-lg ${isCurrentParent ? "" : "cursor-pointer hover:bg-gray-50"
+            } transition-all mb-2 ${selectedParentPath === cat.categoryPath
               ? "border-slate-700 bg-slate-50"
               : isCurrentParent
                 ? "border-amber-400 bg-amber-50"
                 : "border-gray-200"
-          }`}
+            }`}
         >
           {hasSubcats && (
             <button
@@ -272,7 +270,7 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
               <div className="w-8 h-8 border-4 border-gray-300 border-t-slate-700 rounded-full animate-spin" />
             </div>
           ) : (
-            <div className="max-h-96 overflow-y-auto border border-gray-200 rounded-lg p-2">
+            <div className="max-h-96 overflow-y-auto overflow-x-hidden border border-gray-200 rounded-lg p-2">
               {allCategories.length === 0 ? (
                 <p className="text-gray-500 p-4">אין קטגוריות זמינות</p>
               ) : (
@@ -286,11 +284,10 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
           <button
             onClick={handleMove}
             disabled={loading || !selectedParentPath}
-            className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg text-base font-medium transition-all duration-200 text-white shadow-md ${
-              loading || !selectedParentPath
+            className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg text-base font-medium transition-all duration-200 text-white shadow-md ${loading || !selectedParentPath
                 ? "bg-slate-400 cursor-not-allowed"
                 : "bg-slate-700 hover:bg-slate-600 hover:-translate-y-px hover:shadow-lg"
-            }`}
+              }`}
           >
             <MoveRight size={18} />
             {loading ? "מעביר..." : "העבר"}
