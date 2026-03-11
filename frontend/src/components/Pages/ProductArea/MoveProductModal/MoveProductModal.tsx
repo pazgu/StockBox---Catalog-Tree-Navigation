@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { categoriesService } from "../../../../services/CategoryService";
 import { ProductsService } from "../../../../services/ProductService";
-import { MoveRight, ChevronLeft, Search } from "lucide-react";
+import { MoveRight, ChevronLeft } from "lucide-react";
 import { Category } from "../../CatArea/Categories/Categories";
 
 interface MoveProductModalProps {
@@ -29,15 +29,14 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
     new Set(),
   );
   const [sourceCategoryPath, setSourceCategoryPath] = useState<string>("");
-  const [destinationCategoryPath, setDestinationCategoryPath] = 
-  useState<string>("");
+  const [destinationCategoryPath, setDestinationCategoryPath] =
+    useState<string>("");
   const [loading, setLoading] = useState(false);
   const [showPaths, setShowPaths] = React.useState(false);
   const [subcategoriesCache, setSubcategoriesCache] = useState<
-  Record<string, Category[]>
+    Record<string, Category[]>
   >({});
   const [loadingSubcats, setLoadingSubcats] = useState<Set<string>>(new Set());
-  const [searchQuery, setSearchQuery] = useState<string>("");
 
   const currentCategoryPaths = currentPaths.map((p) => {
     const parts = p.split("/");
@@ -51,7 +50,7 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
       if (currentCategoryPaths.length === 1) {
         setSourceCategoryPath(currentCategoryPaths[0]);
       } else if (
-        currentCategoryPath && 
+        currentCategoryPath &&
         currentCategoryPaths.includes(currentCategoryPath)
       ) {
         setSourceCategoryPath(currentCategoryPath);
@@ -60,48 +59,8 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
       }
       setDestinationCategoryPath("");
       setExpandedCategories(new Set());
-      setSearchQuery("");
     }
   }, [isOpen, currentPaths]);
-
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setExpandedCategories(new Set());
-      return;
-    }
-    const q = searchQuery.toLowerCase();
-    const pathsToExpand = new Set<string>();
-
-    const collectMatchingPaths = (cats: Category[]) => {
-      for (const cat of cats) {
-        const subcats = subcategoriesCache[cat.categoryPath] || [];
-        const childrenMatch = checkDescendantsMatch(cat.categoryPath, q);
-        if (childrenMatch) {
-          pathsToExpand.add(cat.categoryPath);
-        }
-        if (subcats.length > 0) collectMatchingPaths(subcats);
-      }
-    };
-
-    collectMatchingPaths(allCategories);
-    setExpandedCategories(pathsToExpand);
-  }, [searchQuery, subcategoriesCache, allCategories]);
-
-  const checkDescendantsMatch = (categoryPath: string, q: string): boolean => {
-    const subcats = subcategoriesCache[categoryPath] || [];
-    for (const subcat of subcats) {
-      if (subcat.categoryName.toLowerCase().includes(q)) return true;
-      if (checkDescendantsMatch(subcat.categoryPath, q)) return true;
-    }
-    return false;
-  };
-
-  const matchesSearch = (cat: Category): boolean => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    if (cat.categoryName.toLowerCase().includes(q)) return true;
-    return checkDescendantsMatch(cat.categoryPath, q);
-  };
 
   const loadAllCategoriesRecursively = async () => {
     try {
@@ -110,10 +69,10 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
       setAllCategories(mainCategories);
 
       await Promise.all(
-        mainCategories.map((cat) => 
+        mainCategories.map((cat) =>
           loadAllSubcategoriesRecursively(cat.categoryPath),
-      ),
-    );
+        ),
+      );
     } catch (error) {
       toast.error("שגיאה בטעינת קטגוריות");
       console.error(error);
@@ -132,16 +91,16 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
     try {
       const subcats = await categoriesService.getDirectChildren(categoryPath);
 
-      setSubcategoriesCache((prev) => ({ 
-        ...prev, 
+      setSubcategoriesCache((prev) => ({
+        ...prev,
         [categoryPath]: subcats,
-       }));
+      }));
 
       await Promise.all(
-        subcats.map((subcat) => 
+        subcats.map((subcat) =>
           loadAllSubcategoriesRecursively(subcat.categoryPath),
-      ),
-    );
+        ),
+      );
     } catch (error) {
       console.error("Error loading subcategories:", error);
     }
@@ -170,18 +129,18 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
   };
 
   const renderCategory = (
-    cat: Category, 
-    level: number = 0, 
+    cat: Category,
+    level: number = 0,
     isSourceSelection: boolean = false,
   ) => {
-    if (!matchesSearch(cat)) return null;
-
     const subcats = subcategoriesCache[cat.categoryPath] || [];
     const hasSubcats = subcats.length > 0;
     const isExpanded = expandedCategories.has(cat.categoryPath);
     const isLoading = loadingSubcats.has(cat.categoryPath);
     const isCurrentPath = currentCategoryPaths.includes(cat.categoryPath);
+
     const productExistsHere = currentCategoryPaths.includes(cat.categoryPath);
+
     const isSelected = isSourceSelection
       ? sourceCategoryPath === cat.categoryPath
       : destinationCategoryPath === cat.categoryPath;
@@ -189,27 +148,26 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
     if (isSourceSelection && !isCurrentPath) {
       return null;
     }
-    const nameMatch = searchQuery.trim() && cat.categoryName.toLowerCase().includes(searchQuery.toLowerCase());
 
     return (
-      <div key={cat._id} style={{ paddingRight: `${level * 20}px` }}>
+      <div key={cat._id} style={{ marginRight: `${level * 20}px` }}>
         <label
-          className={`flex items-center gap-2 p-3 border-2 rounded-lg ${
-            isCurrentPath && !isSourceSelection ? "" : "cursor-pointer hover:bg-gray-50"
-          } transition-all mb-0 ${
-            isSelected
+          className={`flex items-center gap-2 p-3 border-2 rounded-lg ${isCurrentPath && !isSourceSelection
+              ? ""
+              : "cursor-pointer hover:bg-gray-50"
+            } transition-all mb-2 ${isSelected
               ? "border-slate-700 bg-slate-50"
               : productExistsHere && !isSourceSelection
-              ? "border-amber-400 bg-amber-50"
-              : "border-gray-200"
-          }`}
+                ? "border-amber-400 bg-amber-50"
+                : "border-gray-200"
+            }`}
         >
           {hasSubcats && !isSourceSelection && (
             <button
-              onClick={(e) => { 
-                e.preventDefault(); 
-                e.stopPropagation(); 
-                toggleCategory(cat.categoryPath); 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleCategory(cat.categoryPath);
               }}
               className="p-1 hover:bg-gray-200 rounded"
               disabled={isLoading}
@@ -217,9 +175,9 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
               {isLoading ? (
                 <div className="w-4 h-4 border-2 border-gray-300 border-t-slate-700 rounded-full animate-spin" />
               ) : (
-                <ChevronLeft 
-                size={16} 
-                className={`transition-transform ${isExpanded ? "-rotate-90" : ""}`} 
+                <ChevronLeft
+                  size={16}
+                  className={`transition-transform ${isExpanded ? "-rotate-90" : ""}`}
                 />
               )}
             </button>
@@ -245,29 +203,19 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
 
           <div className="flex items-center gap-2 flex-1">
             {cat.categoryImage && (
-              <img 
-              src={cat.categoryImage} 
-              alt={cat.categoryName} 
-              className="w-8 h-8 rounded-full object-cover" 
+              <img
+                src={cat.categoryImage}
+                alt={cat.categoryName}
+                className="w-8 h-8 rounded-full object-cover"
               />
             )}
             <div className="text-right">
               <p className="font-medium">
-                {nameMatch ? (
-                  <span>
-                    {cat.categoryName.split(new RegExp(`(${searchQuery})`, "gi")).map((part, i) =>
-                      part.toLowerCase() === searchQuery.toLowerCase()
-                        ? <mark key={i} className="bg-yellow-200 text-yellow-900 rounded px-0.5">{part}</mark>
-                        : part
-                    )}
-                  </span>
-                ) : (
-                  cat.categoryName
-                )}
+                {cat.categoryName}
                 {productExistsHere && !isSourceSelection && (
                   <span className="mr-2 text-xs text-amber-600 font-semibold">
                     (קיים כאן)
-                    </span>
+                  </span>
                 )}
               </p>
               <p className="text-xs text-gray-500">{cat.categoryPath}</p>
@@ -275,9 +223,11 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
           </div>
         </label>
 
-        {isExpanded && hasSubcats && (
-          <div className="mt-1">
-            {subcats.map((subcat) => renderCategory(subcat, level + 1, isSourceSelection))}
+        {isExpanded && hasSubcats && !isSourceSelection && (
+          <div className="mr-4">
+            {subcats.map((subcat) =>
+              renderCategory(subcat, level + 1, isSourceSelection),
+            )}
           </div>
         )}
       </div>
@@ -286,59 +236,66 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
 
   const handleMove = async () => {
     if (currentCategoryPaths.length === 1) {
-      if (!destinationCategoryPath) { 
-        toast.error("נא לבחור קטגוריית יעד"); 
-        return; 
+      if (!destinationCategoryPath) {
+        toast.error("נא לבחור קטגוריית יעד");
+        return;
       }
 
-      if (destinationCategoryPath === currentCategoryPaths[0]) { 
-        toast.error("הקטגוריה היעד זהה לנוכחית"); 
-        return; 
+      if (destinationCategoryPath === currentCategoryPaths[0]) {
+        toast.error("הקטגוריה היעד זהה לנוכחית");
+        return;
       }
 
       try {
         setLoading(true);
         await ProductsService.moveProduct(productId, [destinationCategoryPath]);
         toast.success(`${productName} הועבר בהצלחה!`);
-        onSuccess(); 
+        onSuccess();
         onClose();
       } catch (error: any) {
-        toast.error(error.response?.data?.message || "שגיאה בהעברת הפריט");
-      } finally { 
-        setLoading(false); 
+        const errorMessage =
+          error.response?.data?.message || "שגיאה בהעברת הפריט";
+        toast.error(errorMessage);
+        console.error(error);
+      } finally {
+        setLoading(false);
       }
     } else {
       if (!sourceCategoryPath) {
-         toast.error("נא לבחור מאיזו קטגוריה להעביר"); 
-         return; 
-        }
-
-      if (!destinationCategoryPath) { 
-        toast.error("נא לבחור קטגוריית יעד"); 
-        return; 
+        toast.error("נא לבחור מאיזו קטגוריה להעביר");
+        return;
       }
 
-      if (sourceCategoryPath === destinationCategoryPath) { 
-        toast.error("הקטגוריה היעד זהה למקור"); 
-        return; 
+      if (!destinationCategoryPath) {
+        toast.error("נא לבחור קטגוריית יעד");
+        return;
       }
+
+      if (sourceCategoryPath === destinationCategoryPath) {
+        toast.error("הקטגוריה היעד זהה למקור");
+        return;
+      }
+
       try {
         setLoading(true);
 
         const newPaths = currentCategoryPaths
-        .filter((path) => path !== sourceCategoryPath)
-        .concat(destinationCategoryPath);
-        
+          .filter((path) => path !== sourceCategoryPath)
+          .concat(destinationCategoryPath);
+
         await ProductsService.moveProduct(productId, newPaths);
         toast.success(
           `${productName} הועבר מ-${sourceCategoryPath.split("/").pop()} ל-${destinationCategoryPath.split("/").pop()}!`,
         );
-        onSuccess(); 
+        onSuccess();
         onClose();
       } catch (error: any) {
-        toast.error(error.response?.data?.message || "שגיאה בהעברת הפריט");
-      } finally { 
-        setLoading(false); 
+        const errorMessage =
+          error.response?.data?.message || "שגיאה בהעברת הפריט";
+        toast.error(errorMessage);
+        console.error(error);
+      } finally {
+        setLoading(false);
       }
     }
   };
@@ -347,131 +304,103 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
 
   const needsSourceSelection = currentCategoryPaths.length > 1;
   const canMove = needsSourceSelection
-    ? sourceCategoryPath && 
-    destinationCategoryPath && 
+    ? sourceCategoryPath &&
+    destinationCategoryPath &&
     sourceCategoryPath !== destinationCategoryPath
-    : destinationCategoryPath && 
+    : destinationCategoryPath &&
     destinationCategoryPath !== currentCategoryPaths[0];
 
   return (
     <div className="fixed inset-0 bg-slate-900 bg-opacity-85 backdrop-blur-xl flex items-center justify-center z-50 transition-all duration-300 p-4">
-      <div 
-        className="bg-white rounded-xl w-[600px] max-w-[95%] max-h-[90vh] shadow-2xl text-center relative flex flex-col" 
+      <div
+        className="bg-white p-8 rounded-xl w-[600px] max-w-[95%] max-h-[90vh] overflow-y-auto shadow-2xl text-center"
         onClick={(e) => e.stopPropagation()}
-        >
-        <div className="overflow-y-auto flex-1 p-8 pb-4">
-          <button 
-          onClick={onClose} 
-          disabled={loading} 
-          className="absolute top-4 left-4 p-1.5 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all duration-200" 
-          aria-label="סגור"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
-          <h4 className="m-0 mb-5 text-xl text-slate-700 font-semibold tracking-tight">
-            העבר מוצר
-            </h4>
+      >
+        <h4 className="m-0 mb-5 text-xl text-slate-700 font-semibold tracking-tight">
+          העבר מוצר
+        </h4>
 
-          <div className="text-right mb-6">
-            <p className="text-gray-700 mb-2">
-              מעביר: <strong>{productName}</strong>
-              </p>
-            <div className="relative inline-block text-right">
-              <div 
-              onClick={() => setShowPaths(!showPaths)} 
+        <div className="text-right mb-6">
+          <p className="text-gray-700 mb-2">
+            מעביר: <strong>{productName}</strong>
+          </p>
+          <div className="relative inline-block text-right">
+            <div
+              onClick={() => setShowPaths(!showPaths)}
               className="text-sm text-gray-500 cursor-pointer hover:underline"
-              >
-                קיים ב-{currentPaths.length} {currentPaths.length === 1 ? "מיקום" : "מיקומים"}
-              </div>
+            >
+              קיים ב-{currentPaths.length}{" "}
+              {currentPaths.length === 1 ? "מיקום" : "מיקומים"}
+            </div>
 
-              {showPaths && (
-                <ul className="absolute right-0 mt-1 bg-white border border-gray-200 rounded shadow-lg p-2 min-w-[200px] z-50">
-                  {currentPaths.map((path, i) => (
-                    <li 
-                    key={i} 
-                    className="text-[11px] text-gray-600 py-1 border-b last:border-0 truncate" 
+            {showPaths && (
+              <ul className="absolute right-0 mt-1 bg-white border border-gray-200 rounded shadow-lg p-2 min-w-[200px] z-50">
+                {currentPaths.map((path, i) => (
+                  <li
+                    key={i}
+                    className="text-[11px] text-gray-600 py-1 border-b last:border-0 truncate"
                     dir="auto"
-                    >
-                      {path}
-                      </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
-
-          {needsSourceSelection && (
-            <div className="text-right mb-6">
-              <label className="block text-gray-700 font-medium mb-2">
-                מאיזו קטגוריה להעביר?
-                </label>
-              <div className="border border-gray-200 rounded-lg p-2 bg-blue-50">
-                {allCategories.map((cat) => renderCategory(cat, 0, true))}
-                {allCategories.map((cat) => {
-                  const subcats = subcategoriesCache[cat.categoryPath] || [];
-                  return subcats.map((subcat) => renderCategory(subcat, 1, true));
-                })}
-              </div>
-            </div>
-          )}
-
-          <div className="text-right mb-6">
-            <label className="block text-gray-700 font-medium mb-2">
-              {needsSourceSelection ? " " : ""}בחר קטגוריית יעד:
-            </label>
-
-            <div className="relative mb-2">
-              <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="חיפוש קטגוריה..."
-                className="w-full pr-9 pl-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-slate-400 text-right"
-                dir="rtl"
-              />
-            </div>
-
-            {loading && allCategories.length === 0 ? (
-              <div className="flex items-center justify-center p-8">
-                <div className="w-8 h-8 border-4 border-gray-300 border-t-slate-700 rounded-full animate-spin" />
-              </div>
-            ) : (
-              <div className="max-h-96 overflow-y-auto overflow-x-hidden border border-gray-200 rounded-lg p-2">
-                {allCategories.length === 0 ? (
-                  <p className="text-gray-500 p-4">אין קטגוריות זמינות</p>
-                ) : (
-                  allCategories.map((cat) => (
-                    <div key={cat._id} className="mb-3">
-                      {renderCategory(cat, 0, false)}
-                    </div>
-                  ))
-                )}
-              </div>
+                  >
+                    {path}
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
         </div>
 
-        <div className="sticky bottom-0 bg-white border-t border-gray-100 px-8 py-4 rounded-b-xl flex justify-between gap-3">
+        {needsSourceSelection && (
+          <div className="text-right mb-6">
+            <label className="block text-gray-700 font-medium mb-2">
+              מאיזו קטגוריה להעביר?
+            </label>
+            <div className="border border-gray-200 rounded-lg p-2 bg-blue-50">
+              {allCategories.map((cat) => renderCategory(cat, 0, true))}
+              {allCategories.map((cat) => {
+                const subcats = subcategoriesCache[cat.categoryPath] || [];
+                return subcats.map((subcat) => renderCategory(subcat, 1, true));
+              })}
+            </div>
+          </div>
+        )}
+
+        <div className="text-right mb-6">
+          <label className="block text-gray-700 font-medium mb-2">
+            {needsSourceSelection ? " " : ""}בחר קטגוריית יעד:
+          </label>
+
+          {loading && allCategories.length === 0 ? (
+            <div className="flex items-center justify-center p-8">
+              <div className="w-8 h-8 border-4 border-gray-300 border-t-slate-700 rounded-full animate-spin" />
+            </div>
+          ) : (
+            <div className="max-h-96 overflow-y-auto border border-gray-200 rounded-lg p-2">
+              {allCategories.length === 0 ? (
+                <p className="text-gray-500 p-4">אין קטגוריות זמינות</p>
+              ) : (
+                allCategories.map((cat) => renderCategory(cat, 0, false))
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-between gap-3">
           <button
             onClick={handleMove}
             disabled={loading || !canMove}
-            className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg text-base font-medium transition-all duration-200 text-white shadow-md ${loading || !canMove 
-              ? "bg-slate-400 cursor-not-allowed" 
-              : "bg-slate-700 hover:bg-slate-600 hover:-translate-y-px hover:shadow-lg"
-            }`}
+            className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg text-base font-medium transition-all duration-200 text-white shadow-md ${loading || !canMove
+                ? "bg-slate-400 cursor-not-allowed"
+                : "bg-slate-700 hover:bg-slate-600 hover:-translate-y-px hover:shadow-lg"
+              }`}
           >
             <MoveRight size={18} />
             {loading ? "מעביר..." : "העבר"}
           </button>
 
-          <button 
-          onClick={onClose} 
-          disabled={loading} 
-          className="flex-1 p-3 border-none rounded-lg text-base font-medium cursor-pointer transition-all duration-200 bg-gray-100 text-gray-500 border border-gray-300 hover:bg-gray-300 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"
+          <button
+            onClick={onClose}
+            disabled={loading}
+            className="flex-1 p-3 border-none rounded-lg text-base font-medium cursor-pointer transition-all duration-200 bg-gray-100 text-gray-500 border border-gray-300 hover:bg-gray-300 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"
           >
             ביטול
           </button>
