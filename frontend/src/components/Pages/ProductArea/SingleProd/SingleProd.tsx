@@ -55,8 +55,7 @@ const SingleProd: FC<SingleProdProps> = () => {
   const [originalProduct, setOriginalProduct] = useState<ProductDto | null>(
     null,
   );
-  const ALLOWED_CHARS = /^[\u0590-\u05FFa-zA-Z0-9 ._-]*$/;
-
+  const ALLOWED_CHARS = /^[\u0590-\u05FFa-zA-Z0-9 ._]*$/;
   const [newAccordionType, setNewAccordionType] = useState<
     "bullets" | "content" | null
   >(null);
@@ -89,7 +88,7 @@ const SingleProd: FC<SingleProdProps> = () => {
 
     if (!ALLOWED_CHARS.test(value)) {
       setErrorMessage(
-        "ניתן להשתמש רק באותיות, מספרים, רווחים והתווים . - _"
+        "ניתן להשתמש רק באותיות, מספרים, רווחים והתווים . _"
       );
     } else {
       setErrorMessage("");

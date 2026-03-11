@@ -199,13 +199,12 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     const value = e.target.value.slice(0, MAX_EDIT_NAME_LEN);
     setProductName(value);
 
-    const ALLOWED_CHARS = /^[\u0590-\u05FFa-zA-Z0-9 ._-]*$/;
-
+    const ALLOWED_CHARS = /^[\u0590-\u05FFa-zA-Z0-9 ._]*$/;
     if (!value) {
       setErrorMessage("");
     } else if (!ALLOWED_CHARS.test(value)) {
       setErrorMessage(
-        "שם מוצר יכול להכיל רק אותיות, מספרים ותווים . - _"
+        "שם מוצר יכול להכיל רק אותיות, מספרים ותווים . _"
       );
     } else {
       setErrorMessage("");
