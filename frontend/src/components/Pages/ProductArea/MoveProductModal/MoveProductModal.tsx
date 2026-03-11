@@ -307,81 +307,83 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
   return (
     <div className="fixed inset-0 bg-slate-900 bg-opacity-85 backdrop-blur-xl flex items-center justify-center z-50 transition-all duration-300 p-4">
       <div
-        className="bg-white p-8 pb-0 rounded-xl w-[600px] max-w-[95%] max-h-[90vh] overflow-y-auto shadow-2xl text-center relative"
+        className="bg-white rounded-xl w-[600px] max-w-[95%] max-h-[90vh] shadow-2xl text-center relative flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <h4 className="m-0 mb-5 text-xl text-slate-700 font-semibold tracking-tight">
-          העבר מוצר
-        </h4>
+        <div className="overflow-y-auto flex-1 p-8 pb-4">
+          <h4 className="m-0 mb-5 text-xl text-slate-700 font-semibold tracking-tight">
+            העבר מוצר
+          </h4>
 
-        <div className="text-right mb-6">
-          <p className="text-gray-700 mb-2">
-            מעביר: <strong>{productName}</strong>
-          </p>
-          <div className="relative inline-block text-right">
-            <div
-              onClick={() => setShowPaths(!showPaths)}
-              className="text-sm text-gray-500 cursor-pointer hover:underline"
-            >
-              קיים ב-{currentPaths.length} {currentPaths.length === 1 ? "מיקום" : "מיקומים"}
+          <div className="text-right mb-6">
+            <p className="text-gray-700 mb-2">
+              מעביר: <strong>{productName}</strong>
+            </p>
+            <div className="relative inline-block text-right">
+              <div
+                onClick={() => setShowPaths(!showPaths)}
+                className="text-sm text-gray-500 cursor-pointer hover:underline"
+              >
+                קיים ב-{currentPaths.length} {currentPaths.length === 1 ? "מיקום" : "מיקומים"}
+              </div>
+
+              {showPaths && (
+                <ul className="absolute right-0 mt-1 bg-white border border-gray-200 rounded shadow-lg p-2 min-w-[200px] z-50">
+                  {currentPaths.map((path, i) => (
+                    <li
+                      key={i}
+                      className="text-[11px] text-gray-600 py-1 border-b last:border-0 truncate"
+                      dir="auto"
+                    >
+                      {path}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
+          </div>
 
-            {showPaths && (
-              <ul className="absolute right-0 mt-1 bg-white border border-gray-200 rounded shadow-lg p-2 min-w-[200px] z-50">
-                {currentPaths.map((path, i) => (
-                  <li
-                    key={i}
-                    className="text-[11px] text-gray-600 py-1 border-b last:border-0 truncate"
-                    dir="auto"
-                  >
-                    {path}
-                  </li>
-                ))}
-              </ul>
+          {needsSourceSelection && (
+            <div className="text-right mb-6">
+              <label className="block text-gray-700 font-medium mb-2">
+                מאיזו קטגוריה להעביר?
+              </label>
+              <div className="border border-gray-200 rounded-lg p-2 bg-blue-50">
+                {allCategories.map((cat) => renderCategory(cat, 0, true))}
+                {allCategories.map((cat) => {
+                  const subcats = subcategoriesCache[cat.categoryPath] || [];
+                  return subcats.map((subcat) => renderCategory(subcat, 1, true));
+                })}
+              </div>
+            </div>
+          )}
+
+          <div className="text-right mb-6">
+            <label className="block text-gray-700 font-medium mb-2">
+              {needsSourceSelection ? " " : ""}בחר קטגוריית יעד:
+            </label>
+
+            {loading && allCategories.length === 0 ? (
+              <div className="flex items-center justify-center p-8">
+                <div className="w-8 h-8 border-4 border-gray-300 border-t-slate-700 rounded-full animate-spin" />
+              </div>
+            ) : (
+              <div className="max-h-96 overflow-y-auto overflow-x-hidden border border-gray-200 rounded-lg p-2">
+                {allCategories.length === 0 ? (
+                  <p className="text-gray-500 p-4">אין קטגוריות זמינות</p>
+                ) : (
+                  allCategories.map((cat) => (
+                    <div key={cat._id} className="mb-3">
+                      {renderCategory(cat, 0, false)}
+                    </div>
+                  ))
+                )}
+              </div>
             )}
           </div>
         </div>
 
-        {needsSourceSelection && (
-          <div className="text-right mb-6">
-            <label className="block text-gray-700 font-medium mb-2">
-              מאיזו קטגוריה להעביר?
-            </label>
-            <div className="border border-gray-200 rounded-lg p-2 bg-blue-50">
-              {allCategories.map((cat) => renderCategory(cat, 0, true))}
-              {allCategories.map((cat) => {
-                const subcats = subcategoriesCache[cat.categoryPath] || [];
-                return subcats.map((subcat) => renderCategory(subcat, 1, true));
-              })}
-            </div>
-          </div>
-        )}
-
-        <div className="text-right mb-6">
-          <label className="block text-gray-700 font-medium mb-2">
-            {needsSourceSelection ? " " : ""}בחר קטגוריית יעד:
-          </label>
-
-          {loading && allCategories.length === 0 ? (
-            <div className="flex items-center justify-center p-8">
-              <div className="w-8 h-8 border-4 border-gray-300 border-t-slate-700 rounded-full animate-spin" />
-            </div>
-          ) : (
-            <div className="max-h-96 overflow-y-auto overflow-x-hidden border border-gray-200 rounded-lg p-2">
-              {allCategories.length === 0 ? (
-                <p className="text-gray-500 p-4">אין קטגוריות זמינות</p>
-              ) : (
-                allCategories.map((cat) => (
-                  <div key={cat._id} className="mb-3">
-                    {renderCategory(cat, 0, false)}
-                  </div>
-                ))
-              )}
-            </div>
-          )}
-        </div>
-
-        <div className="flex justify-between gap-3">
+        <div className="sticky bottom-0 bg-white border-t border-gray-100 px-8 py-4 rounded-b-xl flex justify-between gap-3">
           <button
             onClick={handleMove}
             disabled={loading || !canMove}

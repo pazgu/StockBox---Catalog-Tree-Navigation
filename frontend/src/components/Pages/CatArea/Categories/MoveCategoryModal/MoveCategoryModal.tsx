@@ -241,48 +241,50 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
       className="fixed inset-0 bg-slate-900 bg-opacity-85 backdrop-blur-xl flex items-center justify-center z-50 transition-all duration-300 p-4"
     >
       <div
-        className="bg-white p-8 pb-0 rounded-xl w-[600px] max-w-[95%] max-h-[90vh] overflow-y-auto shadow-2xl text-center relative"
+        className="bg-white rounded-xl w-[600px] max-w-[95%] max-h-[90vh] shadow-2xl text-center relative flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <h4 className="m-0 mb-5 text-xl text-slate-700 font-semibold tracking-tight">
-          העבר תת-קטגוריה
-        </h4>
+        <div className="overflow-y-auto flex-1 p-8 pb-4">
+          <h4 className="m-0 mb-5 text-xl text-slate-700 font-semibold tracking-tight">
+            העבר תת-קטגוריה
+          </h4>
 
-        <div className="text-right mb-6">
-          <p className="text-gray-700 mb-2">
-            מעביר: <strong>{category.categoryName}</strong>
-          </p>
-          <p className="text-sm text-gray-500">
-            נתיב נוכחי: {category.categoryPath}
-          </p>
+          <div className="text-right mb-6">
+            <p className="text-gray-700 mb-2">
+              מעביר: <strong>{category.categoryName}</strong>
+            </p>
+            <p className="text-sm text-gray-500">
+              נתיב נוכחי: {category.categoryPath}
+            </p>
+          </div>
+
+          <div className="text-right mb-6">
+            <label className="block text-gray-700 font-medium mb-2">
+              נא לבחור קטגוריית יעד (קטגוריה ראשית או תת-קטגוריה):
+            </label>
+            <small>שימו לב! התוכן תחת אותה קטגוריה יעבור איתה למיקום הנבחר</small>
+
+            {loading && allCategories.length === 0 ? (
+              <div className="flex items-center justify-center p-8">
+                <div className="w-8 h-8 border-4 border-gray-300 border-t-slate-700 rounded-full animate-spin" />
+              </div>
+            ) : (
+              <div className="max-h-96 overflow-y-auto overflow-x-hidden border border-gray-200 rounded-lg p-2">
+                {allCategories.length === 0 ? (
+                  <p className="text-gray-500 p-4">אין קטגוריות זמינות</p>
+                ) : (
+                  allCategories.map((cat) => (
+                    <div key={cat._id} className="mb-3">
+                      {renderCategory(cat)}
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="text-right mb-6">
-          <label className="block text-gray-700 font-medium mb-2">
-            נא לבחור קטגוריית יעד (קטגוריה ראשית או תת-קטגוריה):
-          </label>
-          <small>שימו לב! התוכן תחת אותה קטגוריה יעבור איתה למיקום הנבחר</small>
-
-          {loading && allCategories.length === 0 ? (
-            <div className="flex items-center justify-center p-8">
-              <div className="w-8 h-8 border-4 border-gray-300 border-t-slate-700 rounded-full animate-spin" />
-            </div>
-          ) : (
-            <div className="max-h-96 overflow-y-auto overflow-x-hidden border border-gray-200 rounded-lg p-2">
-              {allCategories.length === 0 ? (
-                <p className="text-gray-500 p-4">אין קטגוריות זמינות</p>
-              ) : (
-                allCategories.map((cat) => (
-                  <div key={cat._id} className="mb-3">
-                    {renderCategory(cat)}
-                  </div>
-                ))
-              )}
-            </div>
-          )}
-        </div>
-
-        <div className="flex justify-between gap-3">
+        <div className="sticky bottom-0 bg-white border-t border-gray-100 px-8 py-4 rounded-b-xl flex justify-between gap-3">
           <button
             onClick={handleMove}
             disabled={loading || !selectedParentPath}
