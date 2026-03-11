@@ -20,6 +20,7 @@ import {
 import { BannedItem } from "../../../../types/types";
 import { permissionsService } from "../../../../services/permissions.service";
 import { toast } from "sonner";
+import { Toaster } from "sonner";
 import InheritanceModal from "../../SharedComponents/DialogModal/DialogModal";
 import { usePath } from "../../../../context/PathContext";
 import TreeNode from "../GroupControl/TreeNode";
@@ -234,47 +235,47 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
   }, [unifiedTree, searchQuery, filterTree]);
 
   const handleToggleSelection = (
-  itemId: string | number,
-  withChildren: boolean,
-  contextPath?: string,
-) => {
-  if (withChildren) {
-    const isCurrentlySelected = selectedWithChildren.has(itemId);
-    setSelectedWithChildren((prev) => {
-      const newSet = new Set(prev);
-      if (isCurrentlySelected) {
-        newSet.delete(itemId);
-      } else {
-        newSet.add(itemId);
-      }
-      return newSet;
-    });
-    setSelectedItems((prev) => {
-      const newMap = new Map(prev);
-      if (isCurrentlySelected) {
-        newMap.delete(itemId); 
-      } else {
-        newMap.set(itemId, contextPath);
-      }
-      return newMap;
-    });
-  } else {
-    setSelectedItems((prev) => {
-      const newMap = new Map(prev);
-      if (newMap.has(itemId)) {
-        newMap.delete(itemId);
-        setSelectedWithChildren((prevChildren) => {
-          const newChildren = new Set(prevChildren);
-          newChildren.delete(itemId);
-          return newChildren;
-        });
-      } else {
-        newMap.set(itemId, contextPath);
-      }
-      return newMap;
-    });
-  }
-};
+    itemId: string | number,
+    withChildren: boolean,
+    contextPath?: string,
+  ) => {
+    if (withChildren) {
+      const isCurrentlySelected = selectedWithChildren.has(itemId);
+      setSelectedWithChildren((prev) => {
+        const newSet = new Set(prev);
+        if (isCurrentlySelected) {
+          newSet.delete(itemId);
+        } else {
+          newSet.add(itemId);
+        }
+        return newSet;
+      });
+      setSelectedItems((prev) => {
+        const newMap = new Map(prev);
+        if (isCurrentlySelected) {
+          newMap.delete(itemId);
+        } else {
+          newMap.set(itemId, contextPath);
+        }
+        return newMap;
+      });
+    } else {
+      setSelectedItems((prev) => {
+        const newMap = new Map(prev);
+        if (newMap.has(itemId)) {
+          newMap.delete(itemId);
+          setSelectedWithChildren((prevChildren) => {
+            const newChildren = new Set(prevChildren);
+            newChildren.delete(itemId);
+            return newChildren;
+          });
+        } else {
+          newMap.set(itemId, contextPath);
+        }
+        return newMap;
+      });
+    }
+  };
   const handleToggleExpand = (nodeId: string | number) => {
     setExpandedNodes((prev) => {
       const newSet = new Set(prev);
@@ -383,18 +384,60 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
         return;
       }
       if (failedItems.length > 0) {
-        const failedReasons = failedItems
-          .map((f: any) => f.reason)
-          .filter(Boolean);
-        const reason = failedReasons[0] || "חלק מהפריטים לא שוחררו";
-        toast.warning(
-          `${createdItems.length} פריטים שוחררו, ${failedItems.length} נכשלו: ${reason}`,
+        type FailedItem = {
+          dto: {
+            entityId: string;
+            entityType?: string;
+            allowed?: string;
+            inheritToChildren?: boolean;
+          };
+          reason?: string;
+        };
+
+        const names: Record<string, string> = {};
+        await Promise.all(
+          failedItems.map(async (f: FailedItem) => {
+            const details = await permissionsService.getEntityDetails(
+              f.dto.entityType as "category" | "product",
+              f.dto.entityId,
+            );
+            names[f.dto.entityId] = details.name;
+          }),
         );
 
+        toast.warning(
+          <div >
+            <div>
+              {createdItems.length} פריטים שוחררו, {failedItems.length} נכשלו
+            </div>
+
+            <details className="mt-2">
+              <summary className="cursor-pointer">הצג פרטים</summary>
+
+              <ul className="max-h-[150px] overflow-y-auto mt-1 pl-4">
+                {failedItems.map((f: FailedItem, i: number) => (
+                  <li key={i} className="mb-1">
+                    <span className="font-semibold">
+                      {names[f.dto.entityId] ?? f.dto.entityId}
+                    </span>
+
+                    {f.reason && (
+                      <div className="text-amber-700 text-xs mt-0.5">
+                        {f.reason}
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          </div>,
+        );
         await load(true);
         setSelectedItems(new Map());
         setSelectedWithChildren(new Set());
         return;
+      } else {
+        toast.success("פריטים חסומים עודכנו בהצלחה");
       }
       await load(true);
       setSelectedItems(new Map());
@@ -410,6 +453,27 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
     } finally {
       setIsLoading(false);
     }
+  };
+
+    const getBlockSuccessMessage = (items: BannedItem[]) => {
+    const productCount = items.filter((item) => item.type === "product").length;
+    const categoryCount = items.filter((item) => item.type === "category").length;
+    const totalCount = items.length;
+
+    if (totalCount === 1) {
+      if (productCount === 1) return "המוצר נחסם בהצלחה";
+      if (categoryCount === 1) return "הקטגוריה נחסמה בהצלחה";
+    }
+
+    if (productCount > 0 && categoryCount === 0) {
+      return `${productCount} ${productCount === 1 ? "מוצר" : "מוצרים"} נחסמו בהצלחה`;
+    }
+
+    if (categoryCount > 0 && productCount === 0) {
+      return `${categoryCount} ${categoryCount === 1 ? "קטגוריה" : "קטגוריות"} נחסמו בהצלחה`;
+    }
+
+    return `${totalCount} פריטים נחסמו בהצלחה`;
   };
 
   const handleBulkAction = async (forcedMode?: "banned" | "available") => {
@@ -451,11 +515,14 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
         })
         .filter((id): id is string => !!id);
 
-      if (permissionIds.length > 0) {
+            if (permissionIds.length > 0) {
         try {
           setIsLoading(true);
           await permissionsService.deletePermissionsBatch(permissionIds);
+          toast.success(getBlockSuccessMessage(items));
           await load(true);
+          setSelectedItems(new Map());
+          setSelectedWithChildren(new Set());
         } catch (e: any) {
           console.error("Bulk block failed:", e);
           toast.error("שגיאה בחסימת הפריטים");
@@ -622,7 +689,7 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
                 תצוגת עץ
               </span>
             </div>
-            
+
             <div className="relative group">
               <button
                 onClick={() => setViewMode("grid")}

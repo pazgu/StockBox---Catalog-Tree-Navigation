@@ -183,7 +183,7 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
       setErrorMessage("");
     } else if (!ALLOWED_CHARS.test(value)) {
       setErrorMessage(
-        "שם קטגוריה יכול להכיל רק אותיות, מספרים ותווים . - _"
+        "שם קטגוריה יכול להכיל רק אותיות, מספרים ותווים . _"
       );
     } else {
       setErrorMessage("");

@@ -203,7 +203,7 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
       setErrorMessage("");
     } else if (!ALLOWED_CHARS.test(value)) {
       setErrorMessage(
-        "שם מוצר יכול להכיל רק אותיות, מספרים ותווים . - _"
+        "שם מוצר יכול להכיל רק אותיות, מספרים ותווים . _"
       );
     } else {
       setErrorMessage("");

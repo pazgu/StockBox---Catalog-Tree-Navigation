@@ -159,7 +159,7 @@ const Login: FC<LoginProps> = () => {
       } else if (error?.response?.status === 409) {
         toast.error("שם משתמש או אימייל שגויים/כבר קיימים במערכת");
       } else if (error?.response?.status === 400) {
-        toast.info("המשתמש לא נמצא במערכת, לא להזין נתוני משתמש חדש");
+        toast.info("המשתמש לא נמצא במערכת, נא להזין נתוני משתמש חדש");
         setIsReturningUser(false);
       } else {
         toast.error("שגיאה לא צפויה, נא לנסות שוב");
