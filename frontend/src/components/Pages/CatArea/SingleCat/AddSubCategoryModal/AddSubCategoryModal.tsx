@@ -178,13 +178,12 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     const value = e.target.value.slice(0, MAX_EDIT_NAME_LEN);
     setCategoryName(value);
 
-    const ALLOWED_CHARS = /^[\u0590-\u05FFa-zA-Z0-9 ._-]*$/;
-
+    const ALLOWED_CHARS = /^[\u0590-\u05FFa-zA-Z0-9 ._]*$/;
     if (!value) {
       setErrorMessage("");
     } else if (!ALLOWED_CHARS.test(value)) {
       setErrorMessage(
-        "שם קטגוריה יכול להכיל רק אותיות, מספרים ותווים . - _"
+        "שם קטגוריה יכול להכיל רק אותיות, מספרים ותווים . _"
       );
     } else {
       setErrorMessage("");
