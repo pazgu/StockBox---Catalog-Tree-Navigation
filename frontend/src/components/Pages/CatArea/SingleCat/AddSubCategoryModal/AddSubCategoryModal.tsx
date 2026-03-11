@@ -9,7 +9,7 @@ import { Switch } from "../../../../../components/ui/switch";
 type Props = {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (result: { name: string; imageFile?: File,allowAll:boolean }) => Promise<void>;
+  onSave: (result: { name: string; imageFile?: File, allowAll: boolean }) => Promise<void>;
 };
 
 const CROP_BOX = 256;
@@ -125,7 +125,7 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     reader.onload = () => {
       const img = new Image();
       img.onload = () => {
-        setRawImage(img);    
+        setRawImage(img);
         setZoom(1);
 
         const clamped = clampOffsetToCircle(
@@ -174,78 +174,80 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     return out.toDataURL("image/jpeg", 0.92);
   };
 
-const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  const value = e.target.value.slice(0, MAX_EDIT_NAME_LEN);
-  setCategoryName(value);
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.slice(0, MAX_EDIT_NAME_LEN);
+    setCategoryName(value);
 
-  const FORBIDDEN_CHARS = /[;|"'*<>]/;
-  if (!value) {
-    setErrorMessage(""); 
-  } else if (FORBIDDEN_CHARS.test(value)) {
-    setErrorMessage("שם קטגוריה לא יכול להכיל תווים ; | \" ' * < >");
-  } else {
-    setErrorMessage(""); 
-  }
-};
+    const ALLOWED_CHARS = /^[\u0590-\u05FFa-zA-Z0-9 ._]*$/;
+    if (!value) {
+      setErrorMessage("");
+    } else if (!ALLOWED_CHARS.test(value)) {
+      setErrorMessage(
+        "שם קטגוריה יכול להכיל רק אותיות, מספרים ותווים . _"
+      );
+    } else {
+      setErrorMessage("");
+    }
+  };
 
-const handleClose = () => {
-  setErrorMessage(""); 
-  setCategoryName(""); 
-  setRawImage(null);  
-  onClose();       
-};
-  
+  const handleClose = () => {
+    setErrorMessage("");
+    setCategoryName("");
+    setRawImage(null);
+    onClose();
+  };
+
 
   const handleSave = async () => {
-  if (!categoryName.trim()) {
-    toast.error("שם תת-קטגוריה חובה");
-    return;
-  }
-
-  if (FORBIDDEN_CHARS.test(categoryName)) {
-    toast.error('שם תת-קטגוריה מכיל תווים אסורים ; | " \' * < >');
-    return;
-  }
-
-  if (!isLength(categoryName.trim(), { max: 30 })) {
-    toast.error("שם תת-קטגוריה לא יכול להיות ארוך מ-30 תווים");
-    return;
-  }
-
-  let file: File | undefined;
-
-  if (rawImage) {
-    const croppedDataUrl = generateCroppedImage();
-    if (!croppedDataUrl) {
-      toast.error("שגיאה ביצירת התמונה");
+    if (!categoryName.trim()) {
+      toast.error("שם תת-קטגוריה חובה");
       return;
     }
 
-    const safeName = categoryName.trim().toLowerCase().replace(/\s+/g, "-");
-    file = dataURLtoFile(croppedDataUrl, `${safeName}.jpg`);
-  }
-
-  try {
-    setIsSaving(true);
-
-    await onSave({ name: categoryName.trim(), imageFile: file as any, allowAll });
-    setAllowAll(false);
-    handleClose();
-  } catch (error: any) {
-    const serverMessage =
-      error?.response?.data?.message || error?.response?.data?.error;
-
-    if (typeof serverMessage === "string" && serverMessage.trim()) {
-      toast.error(serverMessage);
-    } else {
-      toast.error("שגיאה בהוספת תת-קטגוריה");
+    if (FORBIDDEN_CHARS.test(categoryName)) {
+      toast.error('שם תת-קטגוריה מכיל תווים אסורים ; | " \' * < >');
+      return;
     }
 
-    console.error("Add sub category failed:", error);
-  } finally {
-    setIsSaving(false);
-  }
-};
+    if (!isLength(categoryName.trim(), { max: 30 })) {
+      toast.error("שם תת-קטגוריה לא יכול להיות ארוך מ-30 תווים");
+      return;
+    }
+
+    let file: File | undefined;
+
+    if (rawImage) {
+      const croppedDataUrl = generateCroppedImage();
+      if (!croppedDataUrl) {
+        toast.error("שגיאה ביצירת התמונה");
+        return;
+      }
+
+      const safeName = categoryName.trim().toLowerCase().replace(/\s+/g, "-");
+      file = dataURLtoFile(croppedDataUrl, `${safeName}.jpg`);
+    }
+
+    try {
+      setIsSaving(true);
+
+      await onSave({ name: categoryName.trim(), imageFile: file as any, allowAll });
+      setAllowAll(false);
+      handleClose();
+    } catch (error: any) {
+      const serverMessage =
+        error?.response?.data?.message || error?.response?.data?.error;
+
+      if (typeof serverMessage === "string" && serverMessage.trim()) {
+        toast.error(serverMessage);
+      } else {
+        toast.error("שגיאה בהוספת תת-קטגוריה");
+      }
+
+      console.error("Add sub category failed:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div
@@ -273,11 +275,11 @@ const handleClose = () => {
 
           <div className="group mb-5">
             <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#0D305B]" />
+              <span className="text-red-600">*</span>
               שם תת-קטגוריה
             </label>
 
-          <div>
+            <div>
               <div className="relative">
                 <input
                   type="text"
@@ -298,7 +300,6 @@ const handleClose = () => {
 
           <div className="group mb-4">
             <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#0D305B]" />
               תמונת תת-קטגוריה
             </label>
 
@@ -495,7 +496,7 @@ const handleClose = () => {
 
           <div className="flex justify-between relative items-center p-4 bg-white bg-opacity-50 border rounded-lg mb-4 shadow-sm border-blue-100">
             <Label className="font-bold text-blue-900 text-sm mb-2">
-             לאפשר לכולם לראות את הקטגוריה החדשה?
+              לאפשר לכולם לראות את הקטגוריה החדשה?
             </Label>
             <span className="absolute bottom-2 right-4 text-xs text-gray-500">יש לשים לב! חסימות של קטגוריית האב יוחלו על הקטגוריה החדשה</span>
 
@@ -503,9 +504,9 @@ const handleClose = () => {
               checked={
                 allowAll
               }
-             onCheckedChange={() => {
-               setAllowAll(!allowAll);
-            }}
+              onCheckedChange={() => {
+                setAllowAll(!allowAll);
+              }}
             />
           </div>
 
@@ -514,11 +515,10 @@ const handleClose = () => {
               onClick={handleSave}
               disabled={isSaving}
               className={`flex-1 p-3 mt-8 rounded-lg text-base font-medium transition-all duration-200 text-white shadow-md
-    ${
-                isSaving
+    ${isSaving
                   ? "bg-slate-400 cursor-not-allowed"
                   : "bg-slate-700 hover:bg-slate-600 hover:-translate-y-px hover:shadow-lg"
-              }`}
+                }`}
             >
               {isSaving ? (
                 <span className="flex items-center justify-center gap-2">

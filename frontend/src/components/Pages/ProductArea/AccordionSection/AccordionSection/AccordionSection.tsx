@@ -53,6 +53,7 @@ interface AccordionSectionProps {
   confirmAddAccordion: (type: "content" | "bullets") => void;
   showAccordionTypeSelector: boolean;
   setShowAccordionTypeSelector: (value: boolean) => void;
+  MAX_EDIT_NAME_LEN: number;
 }
 
 const AccordionSection: FC<AccordionSectionProps> = ({
@@ -66,6 +67,7 @@ const AccordionSection: FC<AccordionSectionProps> = ({
   newFolderName,
   contentIconUrl,
   bulletsIconUrl,
+  MAX_EDIT_NAME_LEN,
   handleDragStart,
   handleDragOver,
   handleDrop,
@@ -96,9 +98,8 @@ const AccordionSection: FC<AccordionSectionProps> = ({
           <AccordionItem
             key={item.uiId}
             value={item.uiId}
-            className={`border-b border-gray-200/70 relative ${
-              isEditing && "p-2 border border-dashed border-gray-300 rounded-lg"
-            }`}
+            className={`border-b border-gray-200/70 relative ${isEditing && "p-2 border border-dashed border-gray-300 rounded-lg"
+              }`}
             draggable={isEditing}
             onDragStart={() => handleDragStart(item)}
             onDragOver={handleDragOver}
@@ -153,15 +154,21 @@ const AccordionSection: FC<AccordionSectionProps> = ({
                 </div>
               )}
               {isEditing ? (
-                <input
-                  type="text"
-                  value={item.title}
-                  onChange={(e) =>
-                    handleAccordionTitleChange(item.uiId, e.target.value)
-                  }
-                  onClick={(e) => e.stopPropagation()}
-                  className="bg-transparent text-lg font-semibold text-stockblue border-b border-gray-400 w-full text-right outline-none"
-                />
+                <div className="relative w-full">
+                  <input
+                    type="text"
+                    value={item.title}
+                    onChange={(e) =>
+                      handleAccordionTitleChange(item.uiId, e.target.value)
+                    }
+                    onClick={(e) => e.stopPropagation()}
+                    className="bg-transparent text-lg font-semibold text-stockblue border-b border-gray-400 w-full text-right outline-none pr-2 pl-12"
+                  />
+
+                  <span className="absolute left-1 top-1/2 -translate-y-1/2 text-xs text-gray-400">
+                    {item.title.length}/{MAX_EDIT_NAME_LEN}
+                  </span>
+                </div>
               ) : (
                 item.title
               )}
@@ -246,7 +253,6 @@ const AccordionSection: FC<AccordionSectionProps> = ({
 
       {isEditing && (
         <div className="mt-4">
-          {/* Always visible Add Accordion button */}
           <div
             onClick={() => setShowAccordionTypeSelector(true)}
             className="flex items-center justify-start gap-2 p-4 rounded-lg border border-dashed border-gray-300 text-stockblue hover:border-stockblue/50 hover:bg-stockblue/5 transition-all duration-300 cursor-pointer"
@@ -255,7 +261,6 @@ const AccordionSection: FC<AccordionSectionProps> = ({
             <span className="font-medium">הוסף אקורדיון חדש</span>
           </div>
 
-          {/* Only show type selector when the button is clicked */}
           {showAccordionTypeSelector && (
             <div className="p-4 bg-white border rounded-lg mt-2">
               <p className="mb-2">בחר סוג אקורדיון:</p>
@@ -284,7 +289,6 @@ const AccordionSection: FC<AccordionSectionProps> = ({
         </div>
       )}
 
-      {/* Files section */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 mt-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-stockblue">קבצים ומסמכים</h2>
@@ -300,15 +304,24 @@ const AccordionSection: FC<AccordionSectionProps> = ({
         </div>
 
         {showNewFolderInput && (
-          <div className="mb-4 flex gap-2">
-            <input
-              type="text"
-              value={newFolderName}
-              onChange={(e) => setNewFolderName(e.target.value)}
-              placeholder="שם התיקייה..."
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-stockblue/50 focus:border-stockblue outline-none text-right"
-              onKeyPress={(e) => e.key === "Enter" && handleCreateFolder()}
-            />
+          <div className="mb-4 flex gap-2 items-center">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={newFolderName}
+                onChange={(e) => setNewFolderName(e.target.value.slice(0, MAX_EDIT_NAME_LEN))}
+                placeholder="שם התיקייה..."
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-stockblue/50 focus:border-stockblue outline-none text-right"
+                onKeyPress={(e) => e.key === "Enter" && handleCreateFolder()}
+              />
+
+              <span
+                className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-gray-400 select-none"
+              >
+                {newFolderName.length}/{MAX_EDIT_NAME_LEN}
+              </span>
+            </div>
+
             <button
               onClick={handleCreateFolder}
               className="px-4 py-2 bg-cyan-800 text-white rounded-lg hover:bg-cyan-700 transition-all"

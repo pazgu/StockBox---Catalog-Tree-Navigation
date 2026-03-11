@@ -37,7 +37,10 @@ import { usePath } from "../../../../context/PathContext";
 import ImagePreviewHover from "../../ProductArea/ImageCarousel/ImageCarousel/ImagePreviewHover";
 import { useDebouncedFavorite } from "../../../../hooks/useDebouncedFavorite";
 import { truncateDisplay } from "../../../../lib/utils";
-import { environment } from "../../../../environments/environment";
+import {
+  getSafeCategoryImage,
+  getSafeProductImage,
+} from "../../../../lib/imageFallback";
 
 const hasImage = (images: any): boolean => {
   if (!images) return false;
@@ -619,15 +622,15 @@ const SingleCat: FC = () => {
       <header className="flex items-center gap-6 mb-10">
         {/* Category Image */}
         {categoryInfo && (
-          <img
-            src={categoryInfo.categoryImage || "/assets/images/placeholder.png"}
-            alt={categoryInfo.categoryName}
-            className="w-32 h-32 rounded-full object-cover mt-0 border-0 ring-0 outline-none bg-transparent focus:outline-none focus:ring-0 focus:ring-offset-0"
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).src =
-                "/assets/images/placeholder.png";
-            }}
-          />
+         <img
+  src={getSafeCategoryImage(categoryInfo.categoryImage)}
+  alt={categoryInfo.categoryName}
+  className="w-32 h-32 rounded-full object-cover mt-0 border-0 ring-0 outline-none bg-transparent focus:outline-none focus:ring-0 focus:ring-offset-0"
+  onError={(e) => {
+    (e.currentTarget as HTMLImageElement).src =
+      getSafeCategoryImage(categoryInfo.categoryImage);
+  }}
+/>
         )}
 
         {/* Category Title and Stats */}
@@ -718,218 +721,226 @@ const SingleCat: FC = () => {
         </div>
       )}
 
-      <main className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-16">
-        {items.map((item) => (
-          <div
-            key={item.id}
-            className={`flex flex-col items-center p-4 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 w-80 ${
-              selectedItems.includes(item.id)
-                ? "bg-[#0D305B]/10"
-                : "border-gray-200"
-            } ${!isSelectionMode ? "cursor-pointer" : ""}`}
-          >
+            {items.length === 0 ? (
+        <div className="w-full h-40 flex justify-center items-center my-12 text-slate-500">
+          <p className="text-lg">אין פריטים להצגה</p>
+        </div>
+      ) : (
+        <main className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-16">
+          {items.map((item) => (
             <div
-              className={`absolute top-2 left-2 px-3 py-1 text-xs font-medium ${
-                item.type === "category" ? " text-blue-700" : " text-green-700"
-              }`}
+              key={item.id}
+              className={`flex flex-col items-center p-4 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 w-80 ${
+                selectedItems.includes(item.id)
+                  ? "bg-[#0D305B]/10"
+                  : "border-gray-200"
+              } ${!isSelectionMode ? "cursor-pointer" : ""}`}
             >
-              {item.type === "category" ? (
-                <>
-                  <div className="flex flex-col items-center ">
-                    <Boxes />
-                    <span>קטגוריה</span>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <PackageCheck />
-                  <span>מוצר</span>
-                </>
+              <div
+                className={`absolute top-2 left-2 px-3 py-1 text-xs font-medium ${
+                  item.type === "category" ? " text-blue-700" : " text-green-700"
+                }`}
+              >
+                {item.type === "category" ? (
+                  <>
+                    <div className="flex flex-col items-center ">
+                      <Boxes />
+                      <span>קטגוריה</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <PackageCheck />
+                    <span>מוצר</span>
+                  </>
+                )}
+              </div>
+
+              {isSelectionMode && role === "editor" && (
+                <div className="absolute top-3 right-3 z-10">
+                  <input
+                    type="checkbox"
+                    checked={selectedItems.includes(item.id)}
+                    onChange={() => toggleItemSelection(item.id)}
+                    className="w-6 h-6 cursor-pointer accent-[#0D305B]"
+                  />
+                </div>
               )}
-            </div>
-
-            {isSelectionMode && role === "editor" && (
-              <div className="absolute top-3 right-3 z-10">
-                <input
-                  type="checkbox"
-                  checked={selectedItems.includes(item.id)}
-                  onChange={() => toggleItemSelection(item.id)}
-                  className="w-6 h-6 cursor-pointer accent-[#0D305B]"
-                />
-              </div>
-            )}
-
-            {role === "editor" && !isSelectionMode && (
-              <>
-                {item.type === "product" && (
-                  <div className="absolute bottom-5 right-12">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDuplicate(item);
-                      }}
-                      className="peer group-hover:opacity-100 h-9 w-9 text-gray-700 flex items-center hover:text-purple-500"
-                    >
-                      <Copy size={18} />
-                    </button>
-                    <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                      שכפול לקטגוריות נוספות
-                    </span>
-                  </div>
-                )}
-                <div className="absolute bottom-5 right-3">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleMove(item);
-                    }}
-                    className="peer group-hover:opacity-100 h-9 w-9 text-gray-700 flex items-center hover:text-blue-500"
-                  >
-                    <FolderInput size={18} />
-                  </button>
-
-                  <span className="absolute -bottom-8 -left-1 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                    העברה לקטגוריה אחרת
-                  </span>
-                </div>
-                <div className="absolute bottom-5 left-3">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleMoveToRecycleBin(item);
-                    }}
-                    className="peer group-hover:opacity-100 h-9 w-9 text-gray-700 flex items-center hover:text-orange-500"
-                  >
-                    <Trash size={18} />
-                  </button>
-                  <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                    העברה לסל מיחזור
-                  </span>
-                </div>
-                {item.type === "category" && (
-                  <div className="absolute bottom-5 left-12">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEdit(item);
-                      }}
-                      className="peer group-hover:opacity-100 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-green-500"
-                    >
-                      <Pen size={18} />
-                    </button>
-                    <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                      עריכת קטגוריה
-                    </span>
-                  </div>
-                )}
-              </>
-            )}
-
-            {!isSelectionMode && (
-              <div className="absolute right-3 top-3 z-10">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    toggleFavorite(item.id, item.name, item.type);
-                  }}
-                  className="peer transition-all duration-200 h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110 cursor-pointer"
-                >
-                  <Heart
-                    size={22}
-                    strokeWidth={2}
-                    className={`pointer-events-none ${item.favorite ? "fill-red-500 text-red-500" : "text-gray-700"}`}
-                  />
-                </button>
-                <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                  {item.favorite ? "הסר ממועדפים" : "הוסף למועדפים"}
-                </span>
-              </div>
-            )}
-            <div
-              className="h-[140px] w-full flex justify-center items-center p-2 cursor-pointer"
-              onClick={() => {
-                if (item.type === "product") {
-                  setPreviousPath(location.pathname);
-                  navigate(`/products/${item.id}`);
-                } else {
-                  navigate(encodeURI(item.path[0]));
-                }
-              }}
-            >
-              {item.type === "category" ? (
-                <img
-                  src={
-                    typeof item.images === "string" && item.images.trim()
-                      ? item.images
-                      : "/assets/images/placeholder.png"
-                  }
-                  alt={item.name}
-                  className="max-h-full max-w-full object-contain"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).src =
-                      "/assets/images/placeholder.png";
-                  }}
-                />
-              ) : hasImage(item.images) ? (
-                <div className="h-full w-full flex justify-center items-center">
-                  <ImagePreviewHover
-                    images={item.images}
-                    alt={item.name}
-                    className="w-full h-full"
-                  />
-                </div>
-             ) : (
-  <img
-    src={environment.DEFAULT_PRODUCT_IMAGE_URL}
-    alt={item.name}
-    className="max-h-full max-w-full object-contain"
-    onError={(e) => {
-      (e.currentTarget as HTMLImageElement).src =
-        environment.DEFAULT_PRODUCT_IMAGE_URL;
-    }}
-  />
-)}
-            </div>
-
-            <div className="w-full text-center pt-4 border-t border-gray-200">
-              <div className="relative group/tooltip flex justify-center">
-                <h2
-                  className="text-[1.1rem] text-[#0D305B] mb-2 w-full line-clamp-2"
-                  style={{
-                    overflowWrap: "anywhere",
-                    direction: /[\u0590-\u05FF]/.test(item.name)
-                      ? "rtl"
-                      : "ltr",
-                  }}
-                >
-                  {truncateDisplay(item.name)}
-                </h2>
-                {item.name.length > 18 && (
-                  <span className="absolute -top-6 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-50">
-                    {item.name}
-                  </span>
-                )}
-              </div>
 
               {role === "editor" && !isSelectionMode && (
-                <div className="mt-2 flex justify-center">
+                <>
+                  {item.type === "product" && (
+                    <div className="absolute bottom-5 right-12">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDuplicate(item);
+                        }}
+                        className="peer group-hover:opacity-100 h-9 w-9 text-gray-700 flex items-center hover:text-purple-500"
+                      >
+                        <Copy size={18} />
+                      </button>
+                      <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                        שכפול לקטגוריות נוספות
+                      </span>
+                    </div>
+                  )}
+                  <div className="absolute bottom-5 right-3">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleMove(item);
+                      }}
+                      className="peer group-hover:opacity-100 h-9 w-9 text-gray-700 flex items-center hover:text-blue-500"
+                    >
+                      <FolderInput size={18} />
+                    </button>
+
+                    <span className="absolute -bottom-8 -left-1 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                      העברה לקטגוריה אחרת
+                    </span>
+                  </div>
+                  <div className="absolute bottom-5 left-3">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleMoveToRecycleBin(item);
+                      }}
+                      className="peer group-hover:opacity-100 h-9 w-9 text-gray-700 flex items-center hover:text-orange-500"
+                    >
+                      <Trash size={18} />
+                    </button>
+                    <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                      העברה לסל מיחזור
+                    </span>
+                  </div>
+                  {item.type === "category" && (
+                    <div className="absolute bottom-5 left-12">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEdit(item);
+                        }}
+                        className="peer group-hover:opacity-100 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-green-500"
+                      >
+                        <Pen size={18} />
+                      </button>
+                      <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                        עריכת קטגוריה
+                      </span>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {!isSelectionMode && (
+                <div className="absolute right-3 top-3 z-10">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleManagePermissions(item.id, item.type);
+                      e.preventDefault();
+                      toggleFavorite(item.id, item.name, item.type);
                     }}
-                    className="flex items-center gap-2 text-sm font-medium text-white bg-[#0D305B] px-4 py-2 shadow-md transition-all duration-300 hover:bg-[#16447A] hover:shadow-lg focus:ring-2 focus:ring-[#0D305B]/40 border-none rounded"
+                    className="peer transition-all duration-200 h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110 cursor-pointer"
                   >
-                    <Lock size={16} className="text-white" />
-                    ניהול הרשאות
+                    <Heart
+                      size={22}
+                      strokeWidth={2}
+                      className={`pointer-events-none ${item.favorite ? "fill-red-500 text-red-500" : "text-gray-700"}`}
+                    />
                   </button>
+                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                    {item.favorite ? "הסר ממועדפים" : "הוסף למועדפים"}
+                  </span>
                 </div>
               )}
+              <div
+                className="h-[140px] w-full flex justify-center items-center p-2 cursor-pointer"
+                onClick={() => {
+                  if (item.type === "product") {
+                    setPreviousPath(location.pathname);
+                    navigate(`/products/${item.id}`);
+                  } else {
+                    navigate(encodeURI(item.path[0]));
+                  }
+                }}
+              >
+                {item.type === "category" ? (
+                  <img
+  src={getSafeCategoryImage(
+    typeof item.images === "string" ? item.images : null,
+  )}
+  alt={item.name}
+  className="max-h-full max-w-full object-contain"
+  onError={(e) => {
+    (e.currentTarget as HTMLImageElement).src = getSafeCategoryImage(
+      typeof item.images === "string" ? item.images : null,
+    );
+  }}
+/>
+                ) : hasImage(item.images) ? (
+                  <div className="h-full w-full flex justify-center items-center">
+                    <ImagePreviewHover
+                      images={item.images}
+                      alt={item.name}
+                      className="w-full h-full"
+                    />
+                  </div>
+                ) : (
+                 <img
+  src={getSafeProductImage(
+    Array.isArray(item.images) ? item.images : [],
+  )}
+  alt={item.name}
+  className="max-h-full max-w-full object-contain"
+  onError={(e) => {
+    (e.currentTarget as HTMLImageElement).src = getSafeProductImage(
+      Array.isArray(item.images) ? item.images : [],
+    );
+  }}
+/>
+                )}
+              </div>
+
+              <div className="w-full text-center pt-4 border-t border-gray-200">
+                <div className="relative group/tooltip flex justify-center">
+                  <h2
+                    className="text-[1.1rem] text-[#0D305B] mb-2 w-full line-clamp-2"
+                    style={{
+                      overflowWrap: "anywhere",
+                      direction: /[\u0590-\u05FF]/.test(item.name)
+                        ? "rtl"
+                        : "ltr",
+                    }}
+                  >
+                    {truncateDisplay(item.name)}
+                  </h2>
+                  {item.name.length > 18 && (
+                    <span className="absolute -top-6 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-50">
+                      {item.name}
+                    </span>
+                  )}
+                </div>
+
+                {role === "editor" && !isSelectionMode && (
+                  <div className="mt-2 flex justify-center">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleManagePermissions(item.id, item.type);
+                      }}
+                      className="flex items-center gap-2 text-sm font-medium text-white bg-[#0D305B] px-4 py-2 shadow-md transition-all duration-300 hover:bg-[#16447A] hover:shadow-lg focus:ring-2 focus:ring-[#0D305B]/40 border-none rounded"
+                    >
+                      <Lock size={16} className="text-white" />
+                      ניהול הרשאות
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
-      </main>
+          ))}
+        </main>
+      )}
 
       {role === "editor" && !isSelectionMode && (
         <div className="fixed bottom-10 left-4 flex flex-col-reverse gap-3">
@@ -1191,8 +1202,13 @@ const SingleCat: FC = () => {
                 _id: itemToMove.id,
                 categoryName: itemToMove.name,
                 categoryPath: itemToMove.path[0],
-                categoryImage:
-                  itemToMove.images[0] || "/assets/images/placeholder.png",
+                categoryImage: getSafeCategoryImage(
+  Array.isArray(itemToMove.images)
+    ? itemToMove.images[0]
+    : typeof itemToMove.images === "string"
+      ? itemToMove.images
+      : null,
+),
               }}
               onClose={() => {
                 setShowMoveModal(false);
@@ -1238,9 +1254,13 @@ const SingleCat: FC = () => {
             _id: itemToEdit.id,
             categoryName: itemToEdit.name,
             categoryPath: itemToEdit.path[0],
-            categoryImage: Array.isArray(itemToEdit.images)
-              ? itemToEdit.images[0]
-              : itemToEdit.images,
+            categoryImage: getSafeCategoryImage(
+  Array.isArray(itemToEdit.images)
+    ? itemToEdit.images[0]
+    : typeof itemToEdit.images === "string"
+      ? itemToEdit.images
+      : null,
+),
           }}
           onClose={() => {
             setShowEditModal(false);
