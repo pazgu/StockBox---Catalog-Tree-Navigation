@@ -138,9 +138,7 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
     const isExpanded = expandedCategories.has(cat.categoryPath);
     const isLoading = loadingSubcats.has(cat.categoryPath);
     const isCurrentPath = currentCategoryPaths.includes(cat.categoryPath);
-
     const productExistsHere = currentCategoryPaths.includes(cat.categoryPath);
-
     const isSelected = isSourceSelection
       ? sourceCategoryPath === cat.categoryPath
       : destinationCategoryPath === cat.categoryPath;
@@ -152,10 +150,8 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
     return (
       <div key={cat._id} style={{ paddingRight: `${level * 20}px` }}>
         <label
-          className={`flex items-center gap-2 p-3 border-2 rounded-lg ${isCurrentPath && !isSourceSelection
-              ? ""
-              : "cursor-pointer hover:bg-gray-50"
-            } transition-all mb-2 ${isSelected
+          className={`flex items-center gap-2 p-3 border-2 rounded-lg ${isCurrentPath && !isSourceSelection ? "" : "cursor-pointer hover:bg-gray-50"
+            } transition-all mb-0 ${isSelected
               ? "border-slate-700 bg-slate-50"
               : productExistsHere && !isSourceSelection
                 ? "border-amber-400 bg-amber-50"
@@ -223,11 +219,9 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
           </div>
         </label>
 
-        {isExpanded && hasSubcats && !isSourceSelection && (
-          <div className="mr-4">
-            {subcats.map((subcat) =>
-              renderCategory(subcat, level + 1, isSourceSelection),
-            )}
+        {isExpanded && hasSubcats && (
+          <div className="mt-1">
+            {subcats.map((subcat) => renderCategory(subcat, level + 1))}
           </div>
         )}
       </div>
@@ -313,7 +307,7 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
   return (
     <div className="fixed inset-0 bg-slate-900 bg-opacity-85 backdrop-blur-xl flex items-center justify-center z-50 transition-all duration-300 p-4">
       <div
-        className="bg-white p-8 rounded-xl w-[600px] max-w-[95%] max-h-[90vh] overflow-y-auto shadow-2xl text-center"
+        className="bg-white p-8 pb-0 rounded-xl w-[600px] max-w-[95%] max-h-[90vh] overflow-y-auto shadow-2xl text-center relative"
         onClick={(e) => e.stopPropagation()}
       >
         <h4 className="m-0 mb-5 text-xl text-slate-700 font-semibold tracking-tight">
@@ -329,8 +323,7 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
               onClick={() => setShowPaths(!showPaths)}
               className="text-sm text-gray-500 cursor-pointer hover:underline"
             >
-              קיים ב-{currentPaths.length}{" "}
-              {currentPaths.length === 1 ? "מיקום" : "מיקומים"}
+              קיים ב-{currentPaths.length} {currentPaths.length === 1 ? "מיקום" : "מיקומים"}
             </div>
 
             {showPaths && (
@@ -378,7 +371,11 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
               {allCategories.length === 0 ? (
                 <p className="text-gray-500 p-4">אין קטגוריות זמינות</p>
               ) : (
-                allCategories.map((cat) => renderCategory(cat, 0, false))
+                allCategories.map((cat) => (
+                  <div key={cat._id} className="mb-3">
+                    {renderCategory(cat, 0, false)}
+                  </div>
+                ))
               )}
             </div>
           )}
@@ -389,8 +386,8 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
             onClick={handleMove}
             disabled={loading || !canMove}
             className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg text-base font-medium transition-all duration-200 text-white shadow-md ${loading || !canMove
-                ? "bg-slate-400 cursor-not-allowed"
-                : "bg-slate-700 hover:bg-slate-600 hover:-translate-y-px hover:shadow-lg"
+              ? "bg-slate-400 cursor-not-allowed"
+              : "bg-slate-700 hover:bg-slate-600 hover:-translate-y-px hover:shadow-lg"
               }`}
           >
             <MoveRight size={18} />

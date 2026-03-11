@@ -100,9 +100,8 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
         ),
       );
     } catch (error) {
-      if (showToastOnFail) {
+      if (showToastOnFail)
         toast.error("שגיאה בטעינת תתי-קטגוריות");
-      }
       console.error("Error loading subcategories:", error);
     }
   };
@@ -134,14 +133,13 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
     const hasSubcats = subcats.length > 0;
     const isExpanded = expandedCategories.has(cat.categoryPath);
     const isLoading = loadingSubcats.has(cat.categoryPath);
-
     const isCurrentParent = cat.categoryPath === currentParentPath;
 
     return (
       <div key={cat._id} style={{ paddingRight: `${level * 20}px` }}>
         <label
           className={`flex items-center gap-2 p-3 border-2 rounded-lg ${isCurrentParent ? "" : "cursor-pointer hover:bg-gray-50"
-            } transition-all mb-2 ${selectedParentPath === cat.categoryPath
+            } transition-all mb-0 ${selectedParentPath === cat.categoryPath
               ? "border-slate-700 bg-slate-50"
               : isCurrentParent
                 ? "border-amber-400 bg-amber-50"
@@ -204,7 +202,7 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
         </label>
 
         {isExpanded && hasSubcats && (
-          <div className="mr-4">
+          <div className="mt-1">
             {subcats.map((subcat) => renderCategory(subcat, level + 1))}
           </div>
         )}
@@ -243,7 +241,7 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
       className="fixed inset-0 bg-slate-900 bg-opacity-85 backdrop-blur-xl flex items-center justify-center z-50 transition-all duration-300 p-4"
     >
       <div
-        className="bg-white p-8 rounded-xl w-[600px] max-w-[95%] max-h-[90vh] overflow-y-auto shadow-2xl text-center"
+        className="bg-white p-8 pb-0 rounded-xl w-[600px] max-w-[95%] max-h-[90vh] overflow-y-auto shadow-2xl text-center relative"
         onClick={(e) => e.stopPropagation()}
       >
         <h4 className="m-0 mb-5 text-xl text-slate-700 font-semibold tracking-tight">
@@ -274,7 +272,11 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
               {allCategories.length === 0 ? (
                 <p className="text-gray-500 p-4">אין קטגוריות זמינות</p>
               ) : (
-                allCategories.map((cat) => renderCategory(cat))
+                allCategories.map((cat) => (
+                  <div key={cat._id} className="mb-3">
+                    {renderCategory(cat)}
+                  </div>
+                ))
               )}
             </div>
           )}
@@ -285,8 +287,8 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
             onClick={handleMove}
             disabled={loading || !selectedParentPath}
             className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg text-base font-medium transition-all duration-200 text-white shadow-md ${loading || !selectedParentPath
-                ? "bg-slate-400 cursor-not-allowed"
-                : "bg-slate-700 hover:bg-slate-600 hover:-translate-y-px hover:shadow-lg"
+              ? "bg-slate-400 cursor-not-allowed"
+              : "bg-slate-700 hover:bg-slate-600 hover:-translate-y-px hover:shadow-lg"
               }`}
           >
             <MoveRight size={18} />
