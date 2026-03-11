@@ -54,12 +54,11 @@ const EditCategoryModal: React.FC<Props> = ({
   const [isEditPanning, setIsEditPanning] = React.useState(false);
   const [editStartPan, setEditStartPan] = React.useState({ x: 0, y: 0 });
   const [errorMessage, setErrorMessage] = React.useState("");
+  const ALLOWED_CHARS = /^[\u0590-\u05FFa-zA-Z0-9 ._-]*$/;
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.slice(0, MAX_EDIT_NAME_LEN);
     setName(value);
-
-    const ALLOWED_CHARS = /^[\u0590-\u05FFa-zA-Z0-9 ._-]*$/;
 
     if (!value) {
       setErrorMessage("");
@@ -204,6 +203,10 @@ const EditCategoryModal: React.FC<Props> = ({
       toast.error("שם קטגוריה חובה");
       return;
     }
+    if (!ALLOWED_CHARS.test(trimmed)) {
+      toast.error("שם קטגוריה יכול להכיל רק אותיות, מספרים ותווים . - _");
+      return;
+    }
 
     if (!isLength(trimmed, { max: 30 })) {
       toast.error("שם קטגוריה לא יכול להיות ארוך מ-30 תווים");
@@ -215,10 +218,6 @@ const EditCategoryModal: React.FC<Props> = ({
       return;
     }
 
-    if (!isLength(trimmed, { max: 30 })) {
-      toast.error("שם קטגוריה לא יכול להיות ארוך מ-30 תווים");
-      return;
-    }
 
     let finalImageFile = imageFile;
 

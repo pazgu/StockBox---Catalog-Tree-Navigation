@@ -202,6 +202,11 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
       return;
     }
 
+    if (errorMessage) {
+      toast.error(errorMessage);
+    return;
+  }
+
     if (FORBIDDEN_CHARS.test(newCatName)) {
       toast.error('שם קטגוריה מכיל תווים אסורים ; | " \' * < >');
       return;

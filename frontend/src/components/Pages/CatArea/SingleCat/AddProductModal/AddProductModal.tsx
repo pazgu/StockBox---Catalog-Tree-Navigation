@@ -102,7 +102,6 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   const [productName, setProductName] = React.useState("");
   const [productDesc, setProductDesc] = React.useState("");
   const [errorMessage, setErrorMessage] = React.useState("");
-  const FORBIDDEN_CHARS = /[;|"'*<>]/;
   const [rawImage, setRawImage] = React.useState<HTMLImageElement | null>(null);
   const [zoom, setZoom] = React.useState(1);
   const [offset, setOffset] = React.useState({ x: 0, y: 0 });
@@ -194,12 +193,11 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     return out.toDataURL("image/jpeg", 0.92);
   };
 
+  const ALLOWED_CHARS = /^[\u0590-\u05FFa-zA-Z0-9 ._-]*$/;
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.slice(0, MAX_EDIT_NAME_LEN);
     setProductName(value);
-
-    const ALLOWED_CHARS = /^[\u0590-\u05FFa-zA-Z0-9 ._-]*$/;
 
     if (!value) {
       setErrorMessage("");
@@ -224,8 +222,8 @@ const AddProductModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
       return;
     }
 
-    if (FORBIDDEN_CHARS.test(productName)) {
-      toast.error('שם מוצר מכיל תווים אסורים ; | " \' * < >');
+    if (!ALLOWED_CHARS.test(productName.trim())) {
+      toast.error("שם מוצר יכול להכיל רק אותיות, מספרים ותווים . - _");
       return;
     }
 
