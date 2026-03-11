@@ -455,6 +455,27 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
     }
   };
 
+    const getBlockSuccessMessage = (items: BannedItem[]) => {
+    const productCount = items.filter((item) => item.type === "product").length;
+    const categoryCount = items.filter((item) => item.type === "category").length;
+    const totalCount = items.length;
+
+    if (totalCount === 1) {
+      if (productCount === 1) return "המוצר נחסם בהצלחה";
+      if (categoryCount === 1) return "הקטגוריה נחסמה בהצלחה";
+    }
+
+    if (productCount > 0 && categoryCount === 0) {
+      return `${productCount} ${productCount === 1 ? "מוצר" : "מוצרים"} נחסמו בהצלחה`;
+    }
+
+    if (categoryCount > 0 && productCount === 0) {
+      return `${categoryCount} ${categoryCount === 1 ? "קטגוריה" : "קטגוריות"} נחסמו בהצלחה`;
+    }
+
+    return `${totalCount} פריטים נחסמו בהצלחה`;
+  };
+
   const handleBulkAction = async (forcedMode?: "banned" | "available") => {
     const mode = forcedMode || activeTab;
 
@@ -494,11 +515,14 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
         })
         .filter((id): id is string => !!id);
 
-      if (permissionIds.length > 0) {
+            if (permissionIds.length > 0) {
         try {
           setIsLoading(true);
           await permissionsService.deletePermissionsBatch(permissionIds);
+          toast.success(getBlockSuccessMessage(items));
           await load(true);
+          setSelectedItems(new Map());
+          setSelectedWithChildren(new Set());
         } catch (e: any) {
           console.error("Bulk block failed:", e);
           toast.error("שגיאה בחסימת הפריטים");
