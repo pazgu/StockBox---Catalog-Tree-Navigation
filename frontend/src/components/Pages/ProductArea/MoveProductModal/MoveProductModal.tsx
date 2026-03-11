@@ -311,6 +311,17 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="overflow-y-auto flex-1 p-8 pb-4">
+          <button
+            onClick={onClose}
+            disabled={loading}
+            className="absolute top-4 left-4 p-1.5 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all duration-200"
+            aria-label="סגור"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
           <h4 className="m-0 mb-5 text-xl text-slate-700 font-semibold tracking-tight">
             העבר מוצר
           </h4>
