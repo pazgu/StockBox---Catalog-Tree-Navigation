@@ -343,7 +343,7 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
                               <span className="mr-1.5 text-xs text-amber-500">(קיים כאן)</span>
                             )}
                           </p>
-                          <p className="text-xs text-gray-400 truncate"><PathDisplay path={cat.categoryPath}/></p>
+                          <p className="text-xs text-gray-400 truncate"><PathDisplay path={cat.categoryPath} /></p>
                         </div>
                         {isSelected && <Check size={14} className="text-slate-700 shrink-0" />}
                       </button>

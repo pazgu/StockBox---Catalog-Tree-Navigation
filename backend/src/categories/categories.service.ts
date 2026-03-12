@@ -457,13 +457,7 @@ export class CategoriesService {
     const oldPath = category.categoryPath;
     const { newParentPath } = moveCategoryDto;
 
-    const pathSegments = oldPath.split('/').filter(Boolean);
-    if (pathSegments.length <= 2) {
-      throw new BadRequestException(
-        'Cannot move main categories. Only subcategories can be moved.',
-      );
-    }
-
+   
     const parentCategory = await this.categoryModel.findOne({
       categoryPath: newParentPath,
     });

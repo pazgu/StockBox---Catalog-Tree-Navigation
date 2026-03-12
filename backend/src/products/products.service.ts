@@ -39,7 +39,7 @@ export class ProductsService {
     private usersService: UsersService,
 
     private permissionsService: PermissionsService,
-  ) {}
+  ) { }
 
   async findAll(): Promise<Product[]> {
     return this.productModel.find().exec();
@@ -297,10 +297,8 @@ export class ProductsService {
     const { newCategoryPath } = moveProductDto;
 
     for (const path of newCategoryPath) {
-      const categoryExists = await this.categoryModel.findOne({
-        categoryPath: path,
-      });
-
+      if (path === '/categories') continue; // root is always valid, no DB check needed
+      const categoryExists = await this.categoryModel.findOne({ categoryPath: path });
       if (!categoryExists) {
         throw new BadRequestException(`Category path does not exist: ${path}`);
       }
