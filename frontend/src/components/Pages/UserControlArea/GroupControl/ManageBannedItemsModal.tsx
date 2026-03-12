@@ -254,7 +254,6 @@ if (withChildren) {
     if (isCurrentlySelected) {
       newMap.delete(itemId);
     } else {
-      // מנקה צאצאים שנבחרו בנפרד לפני
       const descendants = getAllDescendants(itemId, unifiedTree);
       descendants.forEach((d) => newMap.delete(d.id));
       newMap.set(itemId, contextPath);
@@ -491,12 +490,10 @@ if (mode === "banned") {
 
 items.forEach((item) => {
   if (item.type === "category" && selectedWithChildren.has(item.id)) {
-    // אם הקטגוריה עצמה חסומה — מוסיפים אותה גם
     const isCategoryBlocked = localBannedItems.some((b) => b.id === item.id);
     if (isCategoryBlocked) {
       itemsToUnblock.push(item);
     }
-    // מוסיפים את הצאצאים החסומים
     const blockedDescendants = getAllDescendants(item.id, unifiedTree)
       .filter((d) => localBannedItems.some((b) => b.id === d.id))
       .map((d) => localBannedItems.find((b) => b.id === d.id)!)
