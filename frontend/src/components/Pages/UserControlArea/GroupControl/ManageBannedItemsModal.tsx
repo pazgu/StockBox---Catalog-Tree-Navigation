@@ -20,6 +20,7 @@ import {
 import { BannedItem } from "../../../../types/types";
 import { permissionsService } from "../../../../services/permissions.service";
 import { toast } from "sonner";
+import { Toaster } from "sonner";
 import InheritanceModal from "../../SharedComponents/DialogModal/DialogModal";
 import { usePath } from "../../../../context/PathContext";
 import TreeNode from "../GroupControl/TreeNode";
@@ -435,18 +436,60 @@ const result = nonCategoryItems.length > 0
         return;
       }
       if (failedItems.length > 0) {
-        const failedReasons = failedItems
-          .map((f: any) => f.reason)
-          .filter(Boolean);
-        const reason = failedReasons[0] || "חלק מהפריטים לא שוחררו";
-        toast.warning(
-          `${createdItems.length} פריטים שוחררו, ${failedItems.length} נכשלו: ${reason}`,
+        type FailedItem = {
+          dto: {
+            entityId: string;
+            entityType?: string;
+            allowed?: string;
+            inheritToChildren?: boolean;
+          };
+          reason?: string;
+        };
+
+        const names: Record<string, string> = {};
+        await Promise.all(
+          failedItems.map(async (f: FailedItem) => {
+            const details = await permissionsService.getEntityDetails(
+              f.dto.entityType as "category" | "product",
+              f.dto.entityId,
+            );
+            names[f.dto.entityId] = details.name;
+          }),
         );
 
+        toast.warning(
+          <div >
+            <div>
+              {createdItems.length} פריטים שוחררו, {failedItems.length} נכשלו
+            </div>
+
+            <details className="mt-2">
+              <summary className="cursor-pointer">הצג פרטים</summary>
+
+              <ul className="max-h-[150px] overflow-y-auto mt-1 pl-4">
+                {failedItems.map((f: FailedItem, i: number) => (
+                  <li key={i} className="mb-1">
+                    <span className="font-semibold">
+                      {names[f.dto.entityId] ?? f.dto.entityId}
+                    </span>
+
+                    {f.reason && (
+                      <div className="text-amber-700 text-xs mt-0.5">
+                        {f.reason}
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          </div>,
+        );
         await load(true);
         setSelectedItems(new Map());
         setSelectedWithChildren(new Set());
         return;
+      } else {
+        toast.success("פריטים חסומים עודכנו בהצלחה");
       }
       await load(true);
             setSelectedItems(new Map());
@@ -463,6 +506,27 @@ const result = nonCategoryItems.length > 0
     } finally {
       setIsLoading(false);
     }
+  };
+
+    const getBlockSuccessMessage = (items: BannedItem[]) => {
+    const productCount = items.filter((item) => item.type === "product").length;
+    const categoryCount = items.filter((item) => item.type === "category").length;
+    const totalCount = items.length;
+
+    if (totalCount === 1) {
+      if (productCount === 1) return "המוצר נחסם בהצלחה";
+      if (categoryCount === 1) return "הקטגוריה נחסמה בהצלחה";
+    }
+
+    if (productCount > 0 && categoryCount === 0) {
+      return `${productCount} ${productCount === 1 ? "מוצר" : "מוצרים"} נחסמו בהצלחה`;
+    }
+
+    if (categoryCount > 0 && productCount === 0) {
+      return `${categoryCount} ${categoryCount === 1 ? "קטגוריה" : "קטגוריות"} נחסמו בהצלחה`;
+    }
+
+    return `${totalCount} פריטים נחסמו בהצלחה`;
   };
 
   const handleBulkAction = async (forcedMode?: "banned" | "available") => {
@@ -524,7 +588,7 @@ items.forEach((item) => {
         })
         .filter((id): id is string => !!id);
 
-      if (permissionIds.length > 0) {
+            if (permissionIds.length > 0) {
         try {
           setIsLoading(true);
       await permissionsService.deletePermissionsBatch(permissionIds);
@@ -696,7 +760,7 @@ items.forEach((item) => {
                 תצוגת עץ
               </span>
             </div>
-            
+
             <div className="relative group">
               <button
                 onClick={() => setViewMode("grid")}

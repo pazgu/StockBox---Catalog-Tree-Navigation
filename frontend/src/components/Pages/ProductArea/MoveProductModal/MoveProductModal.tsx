@@ -152,17 +152,15 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
     return (
       <div key={cat._id} style={{ marginRight: `${level * 20}px` }}>
         <label
-          className={`flex items-center gap-2 p-3 border-2 rounded-lg ${
-            isCurrentPath && !isSourceSelection
+          className={`flex items-center gap-2 p-3 border-2 rounded-lg ${isCurrentPath && !isSourceSelection
               ? ""
               : "cursor-pointer hover:bg-gray-50"
-          } transition-all mb-2 ${
-            isSelected
+            } transition-all mb-2 ${isSelected
               ? "border-slate-700 bg-slate-50"
               : productExistsHere && !isSourceSelection
                 ? "border-amber-400 bg-amber-50"
                 : "border-gray-200"
-          }`}
+            }`}
         >
           {hasSubcats && !isSourceSelection && (
             <button
@@ -307,10 +305,10 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
   const needsSourceSelection = currentCategoryPaths.length > 1;
   const canMove = needsSourceSelection
     ? sourceCategoryPath &&
-      destinationCategoryPath &&
-      sourceCategoryPath !== destinationCategoryPath
+    destinationCategoryPath &&
+    sourceCategoryPath !== destinationCategoryPath
     : destinationCategoryPath &&
-      destinationCategoryPath !== currentCategoryPaths[0];
+    destinationCategoryPath !== currentCategoryPaths[0];
 
   return (
     <div className="fixed inset-0 bg-slate-900 bg-opacity-85 backdrop-blur-xl flex items-center justify-center z-50 transition-all duration-300 p-4">
@@ -390,11 +388,10 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
           <button
             onClick={handleMove}
             disabled={loading || !canMove}
-            className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg text-base font-medium transition-all duration-200 text-white shadow-md ${
-              loading || !canMove
+            className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg text-base font-medium transition-all duration-200 text-white shadow-md ${loading || !canMove
                 ? "bg-slate-400 cursor-not-allowed"
                 : "bg-slate-700 hover:bg-slate-600 hover:-translate-y-px hover:shadow-lg"
-            }`}
+              }`}
           >
             <MoveRight size={18} />
             {loading ? "מעביר..." : "העבר"}

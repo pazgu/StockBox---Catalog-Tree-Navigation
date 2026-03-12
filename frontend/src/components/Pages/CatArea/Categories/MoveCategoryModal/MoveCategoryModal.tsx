@@ -140,15 +140,13 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
     return (
       <div key={cat._id} style={{ marginRight: `${level * 20}px` }}>
         <label
-          className={`flex items-center gap-2 p-3 border-2 rounded-lg ${
-            isCurrentParent ? "" : "cursor-pointer hover:bg-gray-50"
-          } transition-all mb-2 ${
-            selectedParentPath === cat.categoryPath
+          className={`flex items-center gap-2 p-3 border-2 rounded-lg ${isCurrentParent ? "" : "cursor-pointer hover:bg-gray-50"
+            } transition-all mb-2 ${selectedParentPath === cat.categoryPath
               ? "border-slate-700 bg-slate-50"
               : isCurrentParent
                 ? "border-amber-400 bg-amber-50"
                 : "border-gray-200"
-          }`}
+            }`}
         >
           {hasSubcats && (
             <button
@@ -286,11 +284,10 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
           <button
             onClick={handleMove}
             disabled={loading || !selectedParentPath}
-            className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg text-base font-medium transition-all duration-200 text-white shadow-md ${
-              loading || !selectedParentPath
+            className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg text-base font-medium transition-all duration-200 text-white shadow-md ${loading || !selectedParentPath
                 ? "bg-slate-400 cursor-not-allowed"
                 : "bg-slate-700 hover:bg-slate-600 hover:-translate-y-px hover:shadow-lg"
-            }`}
+              }`}
           >
             <MoveRight size={18} />
             {loading ? "מעביר..." : "העבר"}

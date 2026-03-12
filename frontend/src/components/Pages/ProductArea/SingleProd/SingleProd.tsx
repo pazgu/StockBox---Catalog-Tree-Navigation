@@ -457,6 +457,11 @@ const SingleProd: FC<SingleProdProps> = () => {
       return;
     }
 
+    if (!ALLOWED_CHARS.test(title.trim())) {
+      toast.error("ניתן להשתמש רק באותיות, מספרים, רווחים והתווים . - _");
+      return;
+    }
+
     if (!isLength(title.trim(), { max: 30 })) {
       toast.error("שם מוצר לא יכול להיות ארוך מ-30 תווים");
       return;

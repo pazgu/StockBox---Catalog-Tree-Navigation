@@ -8,6 +8,7 @@ import {
   PackageCheck,
   FolderInput,
   Copy,
+  EllipsisVertical,
 } from "lucide-react";
 import { useUser } from "../../../../context/UserContext";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -306,7 +307,11 @@ export const Categories: FC<CategoriesProps> = () => {
     setProductToMoveToRecycleBin(null);
   };
 
-  const handleAddCategory = async ({ name, imageFile,allowAll }: AddCategoryResult) => {
+  const handleAddCategory = async ({
+    name,
+    imageFile,
+    allowAll,
+  }: AddCategoryResult) => {
     try {
       const categoryPath = `/categories/${name
         .toLowerCase()
@@ -456,11 +461,10 @@ export const Categories: FC<CategoriesProps> = () => {
       ) : (
         <>
           {showCategories && categoryItems.length > 0 && (
-            
             <div className="mx-auto flex justify-center flex-wrap gap-10 my-12 px-4 sm:px-8">
-            <h3 className="text-3xl font-light text-slate-700 mb-6 tracking-tight w-full">
-                  קטגוריות
-                </h3>
+              <h3 className="text-3xl font-light text-slate-700 mb-6 tracking-tight w-full">
+                קטגוריות
+              </h3>
               {categoryItems.map((item) => {
                 const category = categories.find((c) => c._id === item.id);
 
@@ -474,7 +478,7 @@ export const Categories: FC<CategoriesProps> = () => {
                         onClick={() => navigate(item.path[0])}
                         className="relative"
                       >
-                        <div className="absolute top-3 right-3 z-10">
+                        <div className="absolute top-3 left-3 z-10">
                           <button
                             onClick={(e) => {
                               e.preventDefault();
@@ -514,55 +518,78 @@ export const Categories: FC<CategoriesProps> = () => {
 
                         {role === "editor" && category && (
                           <div className="w-60 absolute inset-0 flex mr-16 gap-3 mb-4">
-                            <div className="relative pointer-events-auto">
-                              <button
-                                className="peer -mt-1.5 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  handleMoveToRecycleBin(category);
-                                }}
-                              >
-                                <Trash size={18} />
+                            <div className="relative pointer-events-auto group/ellipsis -mr-12 mt-3">
+                              <button className="peer bottom-1.5 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-center shadow-lg text-slate-700 hover:shadow-2xl">
+                                <EllipsisVertical size={18} />
                               </button>
-                              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                                העברה לסל מיחזור
-                              </span>
-                            </div>
 
-                            <div className="relative pointer-events-auto">
-                              <button
-                                className="peer opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm cursor-pointer flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl mt-2.1"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  handleEdit(category);
-                                }}
-                              >
-                                <Pen size={18} />
-                              </button>
-                              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                                עריכת קטגוריה
-                              </span>
-                            </div>
+                              <div className="absolute top-7 left-2 flex flex-col gap-3 opacity-0 group-hover/ellipsis:opacity-100 pointer-events-none group-hover/ellipsis:pointer-events-auto transition-all duration-200">
+                                <div className="relative group/btn1 mr-3">
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleMoveToRecycleBin(category);
+                                    }}
+                                    className="h-7 w-7 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg text-slate-700 transition-all duration-200 hover:-translate-y-1 hover:scale-110 hover:bg-gray-600 hover:text-white"
+                                  >
+                                    <Trash size={16} />
+                                  </button>
+                                  <span className="absolute left-full top-1/2 -translate-y-1/2 mr-2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/btn1:opacity-100 whitespace-nowrap pointer-events-none z-20 transition-all duration-200">
+                                    העברה לסל מיחזור
+                                  </span>
+                                </div>
 
-                            <div className="relative pointer-events-auto">
-                              <button
-                                className="peer mt-8 -mr-2.5 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-out h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm flex items-center justify-center shadow-lg text-slate-700 hover:bg-gray-600 hover:text-white hover:shadow-2xl"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  e.preventDefault();
-                                  setPreviousPath(location.pathname);
-                                  navigate(
-                                    `/permissions/category/${category._id}`,
-                                  );
-                                }}
-                              >
-                                <Lock size={18} />
-                              </button>
-                              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                                ניהול הרשאות
-                              </span>
+                                <div className="relative group/btn2 ml-1">
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleEdit(category);
+                                    }}
+                                    className="h-7 w-7 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg text-slate-700 transition-all duration-200 hover:-translate-y-1 hover:scale-110 hover:bg-gray-600 hover:text-white"
+                                  >
+                                    <Pen size={16} />
+                                  </button>
+                                  <span className="absolute left-full top-1/2 -translate-y-1/2 mr-2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/btn2:opacity-100 whitespace-nowrap pointer-events-none z-20 transition-all duration-200">
+                                    עריכה
+                                  </span>
+                                </div>
+
+                                <div className="relative group/btn3 mr-3">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      e.preventDefault();
+                                      setPreviousPath(location.pathname);
+                                      navigate(
+                                        `/permissions/category/${category._id}`,
+                                      );
+                                    }}
+                                    className="h-7 w-7 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg text-slate-700 transition-all duration-200 hover:-translate-y-1 hover:scale-110 hover:bg-gray-600 hover:text-white"
+                                  >
+                                    <Lock size={16} />
+                                  </button>
+                                  <span className="absolute left-full top-1/2 -translate-y-1/2 mr-2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/btn3:opacity-100 whitespace-nowrap pointer-events-none z-20 transition-all duration-200">
+                                    ניהול הרשאות
+                                  </span>
+                                </div>
+
+                                <div className="relative group/btn4 mr-9 -mt-2">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openMoveForItem(item);
+                                    }}
+                                    className="h-7 w-7 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg text-slate-700 transition-all duration-200 hover:-translate-y-1 hover:scale-110 hover:bg-gray-600 hover:text-white"
+                                  >
+                                    <FolderInput size={16} />
+                                  </button>
+                                  <span className="absolute left-full top-1/2 -translate-y-1/2 mr-2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/btn4:opacity-100 whitespace-nowrap pointer-events-none z-20 transition-all duration-200">
+                                    העברה לקטגוריה אחרת
+                                  </span>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         )}
@@ -619,7 +646,7 @@ export const Categories: FC<CategoriesProps> = () => {
                         </div>
                       </div>
 
-                      <div className="absolute right-3 top-3">
+                      <div className="absolute left-3 top-3">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -699,17 +726,17 @@ export const Categories: FC<CategoriesProps> = () => {
                               className="w-full h-full"
                             />
                           </div>
-                     ) : (
-  <img
-    src={environment.DEFAULT_PRODUCT_IMAGE_URL}
-    alt={item.name}
-    className="max-h-full max-w-full object-contain"
-    onError={(e) => {
-      (e.currentTarget as HTMLImageElement).src =
-        environment.DEFAULT_PRODUCT_IMAGE_URL;
-    }}
-  />
-)}
+                        ) : (
+                          <img
+                            src={environment.DEFAULT_PRODUCT_IMAGE_URL}
+                            alt={item.name}
+                            className="max-h-full max-w-full object-contain"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src =
+                                environment.DEFAULT_PRODUCT_IMAGE_URL;
+                            }}
+                          />
+                        )}
                       </div>
 
                       <div className="w-full text-center pt-4 border-t border-gray-200">
