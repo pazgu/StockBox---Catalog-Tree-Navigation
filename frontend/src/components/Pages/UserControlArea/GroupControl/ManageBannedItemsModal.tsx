@@ -488,8 +488,6 @@ const result = nonCategoryItems.length > 0
         setSelectedItems(new Map());
         setSelectedWithChildren(new Set());
         return;
-      } else {
-        toast.success("פריטים חסומים עודכנו בהצלחה");
       }
       await load(true);
             setSelectedItems(new Map());
