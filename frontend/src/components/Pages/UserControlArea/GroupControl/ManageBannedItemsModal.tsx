@@ -238,27 +238,30 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
   withChildren: boolean,
   contextPath?: string,
 ) => {
-  if (withChildren) {
-    const isCurrentlySelected = selectedWithChildren.has(itemId);
-    setSelectedWithChildren((prev) => {
-      const newSet = new Set(prev);
-      if (isCurrentlySelected) {
-        newSet.delete(itemId);
-      } else {
-        newSet.add(itemId);
-      }
-      return newSet;
-    });
-    setSelectedItems((prev) => {
-      const newMap = new Map(prev);
-      if (isCurrentlySelected) {
-        newMap.delete(itemId); 
-      } else {
-        newMap.set(itemId, contextPath);
-      }
-      return newMap;
-    });
-  } else {
+if (withChildren) {
+  const isCurrentlySelected = selectedWithChildren.has(itemId);
+  setSelectedWithChildren((prev) => {
+    const newSet = new Set(prev);
+    if (isCurrentlySelected) {
+      newSet.delete(itemId);
+    } else {
+      newSet.add(itemId);
+    }
+    return newSet;
+  });
+  setSelectedItems((prev) => {
+    const newMap = new Map(prev);
+    if (isCurrentlySelected) {
+      newMap.delete(itemId);
+    } else {
+      // מנקה צאצאים שנבחרו בנפרד לפני
+      const descendants = getAllDescendants(itemId, unifiedTree);
+      descendants.forEach((d) => newMap.delete(d.id));
+      newMap.set(itemId, contextPath);
+    }
+    return newMap;
+  });
+} else {
     setSelectedItems((prev) => {
       const newMap = new Map(prev);
       if (newMap.has(itemId)) {
@@ -339,6 +342,39 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
       currentItems.every((item) => selectedItems.has(item.id))
     );
   })();
+  const getAllDescendants = useCallback((nodeId: string | number, nodes: TreeItem[]): TreeItem[] => {
+  for (const node of nodes) {
+    if (node.id === nodeId) {
+      const descendants: TreeItem[] = [];
+      const collect = (n: TreeItem) => {
+        (n.children || []).forEach((child) => { descendants.push(child); collect(child); });
+        (n.products || []).forEach((p) => descendants.push(p));
+      };
+      collect(node);
+      return descendants;
+    }
+    const found = getAllDescendants(nodeId, node.children || []);
+    if (found.length > 0) return found;
+  }
+  return [];
+}, []);
+const selectedItemsStatus = useMemo(() => {
+  let hasBlocked = Array.from(selectedItems.keys()).some((id) =>
+    localBannedItems.some((i) => i.id === id)
+  );
+  let hasAvailable = Array.from(selectedItems.keys()).some((id) =>
+    availableItems.some((i) => i.id === id)
+  );
+
+  selectedWithChildren.forEach((id) => {
+    const descendants = getAllDescendants(id, unifiedTree);
+    if (descendants.some((d) => localBannedItems.some((b) => b.id === d.id))) hasBlocked = true;
+    if (descendants.some((d) => availableItems.some((a) => a.id === d.id))) hasAvailable = true;
+  });
+
+  return { hasBlocked, hasAvailable };
+}, [selectedItems, selectedWithChildren, localBannedItems, availableItems, unifiedTree, getAllDescendants]);
+
   const executeUnblock = async (
     items: BannedItem[],
     inheritToChildren: boolean,
@@ -363,15 +399,32 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
         }
         return item;
       });
-      const result = await permissionsService.createPermissionsBatch(
-        itemsWithContext.map((item) => ({
-          entityType: item.type,
-          entityId: String(item.id),
-          allowed: groupId,
-          inheritToChildren,
-          contextPath: item.contextPath,
-        })),
-      );
+const categoryItems = itemsWithContext.filter((i) => i.type === "category");
+const nonCategoryItems = itemsWithContext.filter((i) => i.type !== "category");
+
+if (categoryItems.length > 0) {
+  await permissionsService.createPermissionsBatch(
+    categoryItems.map((item) => ({
+      entityType: item.type,
+      entityId: String(item.id),
+      allowed: groupId,
+      inheritToChildren,
+      contextPath: item.contextPath,
+    }))
+  );
+}
+
+const result = nonCategoryItems.length > 0
+  ? await permissionsService.createPermissionsBatch(
+      nonCategoryItems.map((item) => ({
+        entityType: item.type,
+        entityId: String(item.id),
+        allowed: groupId,
+        inheritToChildren,
+        contextPath: item.contextPath,
+      }))
+    )
+  : { data: { details: { failed: [], created: categoryItems } } };
       const failedItems = result.data?.details?.failed || [];
       const createdItems = result.data?.details?.created || [];
       if (failedItems.length > 0 && createdItems.length === 0) {
@@ -397,9 +450,10 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
         return;
       }
       await load(true);
-      setSelectedItems(new Map());
-      setSelectedWithChildren(new Set());
-    } catch (e: any) {
+            setSelectedItems(new Map());
+            setSelectedWithChildren(new Set());
+            toast.success("פריטים שוחררו בהצלחה");
+          } catch (e: any) {
       console.error("Bulk unblock failed:", e);
       if (e.response?.data?.message) {
         toast.error(e.response.data.message);
@@ -415,12 +469,9 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
   const handleBulkAction = async (forcedMode?: "banned" | "available") => {
     const mode = forcedMode || activeTab;
 
-    const items = Array.from(selectedItems.entries())
-      .map(([itemId, contextPath]) => {
-        const item =
-          mode === "banned"
-            ? localBannedItems.find((i) => i.id === itemId)
-            : availableItems.find((i) => i.id === itemId);
+  const items = Array.from(selectedItems.entries())
+    .map(([itemId, contextPath]) => {
+      const item = allItems.find((i) => i.id === itemId);
 
         if (!item) return undefined;
         return {
@@ -435,15 +486,40 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
       return;
     }
 
-    if (mode === "banned") {
-      const hasCategories = items.some((item) => item.type === "category");
-      if (hasCategories) {
-        setPendingUnblockItems(items);
-        setShowInheritanceModal(true);
-      } else {
-        await executeUnblock(items, false);
-      }
-    } else {
+if (mode === "banned") {
+  const itemsToUnblock: BannedItem[] = [];
+
+items.forEach((item) => {
+  if (item.type === "category" && selectedWithChildren.has(item.id)) {
+    // אם הקטגוריה עצמה חסומה — מוסיפים אותה גם
+    const isCategoryBlocked = localBannedItems.some((b) => b.id === item.id);
+    if (isCategoryBlocked) {
+      itemsToUnblock.push(item);
+    }
+    // מוסיפים את הצאצאים החסומים
+    const blockedDescendants = getAllDescendants(item.id, unifiedTree)
+      .filter((d) => localBannedItems.some((b) => b.id === d.id))
+      .map((d) => localBannedItems.find((b) => b.id === d.id)!)
+      .filter(Boolean);
+    itemsToUnblock.push(...blockedDescendants);
+  } else {
+    itemsToUnblock.push(item);
+  }
+});
+
+  if (itemsToUnblock.length === 0) {
+    toast.info("אין פריטים חסומים לשחרור");
+    return;
+  }
+
+  const hasCategories = itemsToUnblock.some((item) => item.type === "category");
+  if (hasCategories) {
+    setPendingUnblockItems(itemsToUnblock);
+    setShowInheritanceModal(true);
+  } else {
+    await executeUnblock(itemsToUnblock, false);
+  }
+} else {
       const permissionIds = items
         .map((item) => {
           const key = keyOf(item.type, item.id);
@@ -454,9 +530,10 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
       if (permissionIds.length > 0) {
         try {
           setIsLoading(true);
-          await permissionsService.deletePermissionsBatch(permissionIds);
-          await load(true);
-        } catch (e: any) {
+      await permissionsService.deletePermissionsBatch(permissionIds);
+      await load(true);
+      toast.success("פריטים נחסמו בהצלחה");
+      } catch (e: any) {
           console.error("Bulk block failed:", e);
           toast.error("שגיאה בחסימת הפריטים");
         } finally {
@@ -810,17 +887,21 @@ const ManageBannedItemsModal: React.FC<ManageBannedItemsModalProps> = ({
                   )}
                   {viewMode === "tree" && (
                     <div className="flex items-center gap-2">
-                      <div className="flex items-center justify-center py-1 px-3 bg-green-500 hover:bg-green-600 rounded-md transition-colors">
-                        <button onClick={() => handleBulkAction("banned")}>
-                          <LockOpen className="w-3.5 h-3.5 text-white" />
-                        </button>
-                      </div>
+                      {selectedItemsStatus.hasBlocked && (
+                        <div className="flex items-center justify-center py-1 px-3 bg-green-500 hover:bg-green-600 rounded-md transition-colors">
+                          <button onClick={() => handleBulkAction("banned")}>
+                            <LockOpen className="w-3.5 h-3.5 text-white" />
+                          </button>
+                        </div>
+                      )}
 
-                      <div className="flex items-center justify-center py-1 px-3 bg-red-500 hover:bg-red-600 rounded-md transition-colors">
-                        <button onClick={() => handleBulkAction("available")}>
-                          <Lock className="w-3.5 h-3.5 text-white" />
-                        </button>
-                      </div>
+                      {selectedItemsStatus.hasAvailable && (
+                        <div className="flex items-center justify-center py-1 px-3 bg-red-500 hover:bg-red-600 rounded-md transition-colors">
+                          <button onClick={() => handleBulkAction("available")}>
+                            <Lock className="w-3.5 h-3.5 text-white" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </>
