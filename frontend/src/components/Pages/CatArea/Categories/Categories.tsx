@@ -448,9 +448,7 @@ export const Categories: FC<CategoriesProps> = () => {
         </div>
       ) : (
         <div className="text-right mt-8 mb-6">
-          <h2 className="text-5xl font-light text-slate-700 mb-2 tracking-tight">
-            קטגוריות
-          </h2>
+          
         </div>
       )}
 
