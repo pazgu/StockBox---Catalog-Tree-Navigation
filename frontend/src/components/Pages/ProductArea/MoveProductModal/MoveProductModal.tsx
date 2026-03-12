@@ -189,9 +189,9 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
                 <>
                   <p className="text-xs font-semibold text-emerald-700">מעביר מתוך:</p>
                   <p className="text-sm font-bold text-emerald-800 truncate">
-                    {sourceCategoryPath.split("/").pop()}
+                    <PathDisplay path={sourceCategoryPath?.split("/").pop() || ""} />
                   </p>
-                  <p className="text-[11px] text-emerald-600 truncate">{sourceCategoryPath}</p>
+                  <p className="text-[11px] text-emerald-600 truncate"><PathDisplay path={sourceCategoryPath} /></p>
                 </>
               ) : (
                 <>
@@ -212,7 +212,7 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
           >
             <div className="flex items-center gap-2">
               <FolderOpen size={15} className="text-gray-400" />
-              <span className="text-sm font-medium text-gray-600">מיקומים נוכחיים</span>
+              <span className="text-sm font-medium text-gray-600">מיקומים קיימים</span>
               <span className="text-xs bg-gray-200 text-gray-500 rounded-full px-2 py-0.5 font-medium">
                 {currentPaths.length}
               </span>
@@ -343,7 +343,7 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
                               <span className="mr-1.5 text-xs text-amber-500">(קיים כאן)</span>
                             )}
                           </p>
-                          <p className="text-xs text-gray-400 truncate">{cat.categoryPath}</p>
+                          <p className="text-xs text-gray-400 truncate"><PathDisplay path={cat.categoryPath}/></p>
                         </div>
                         {isSelected && <Check size={14} className="text-slate-700 shrink-0" />}
                       </button>

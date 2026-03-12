@@ -298,7 +298,7 @@ const DuplicateProductModal: React.FC<DuplicateProductModalProps> = ({
                               <span className="mr-1.5 text-xs text-amber-500">(כבר קיים)</span>
                             )}
                           </p>
-                          <p className="text-xs text-gray-400 truncate">{cat.categoryPath}</p>
+                          <p className="text-xs text-gray-400 truncate"><PathDisplay path={cat.categoryPath}/></p>
                         </div>
                       </button>
                     );

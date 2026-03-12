@@ -5,6 +5,7 @@ import { ProductsService } from "./../../../../../services/ProductService";
 import { MoveRight, Search, X, FolderOpen, Check, Package, Folder, ChevronDown } from "lucide-react";
 import { CategoryDTO } from "./../../../../../components/models/category.models";
 import { DisplayItem } from "./../../../../../components/models/item.models";
+import { PathDisplay } from "../../../../../components/Pages/SharedComponents/PathDisplay/PathDisplay";
 
 interface MoveMultipleItemsModalProps {
   isOpen: boolean;
@@ -241,9 +242,28 @@ const MoveMultipleItemsModal: React.FC<MoveMultipleItemsModalProps> = ({
                   <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-emerald-50">
                     <Package size={15} className="text-emerald-500" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-700 truncate">{item.name}</p>
-                    <p className="text-xs text-gray-400 truncate">{item.path.join(", ")}</p>
+                  <div className="flex-1 min-w-0 relative group">
+                    <p className="text-sm font-semibold text-gray-700 truncate">
+                      {item.name}
+                    </p>
+
+                    <p className="text-xs text-gray-400 truncate">
+                      {item.path.map((p, index) => (
+                        <span key={p}>
+                          <PathDisplay path={p} />
+                          {index < item.path.length - 1 && ", "}
+                        </span>
+                      ))}
+                    </p>
+
+                    <div className="absolute hidden group-hover:block bg-black text-white text-xs rounded-md px-3 py-2 top-full mt-1 right-0 z-50 shadow-lg">
+                      {item.path.map((p, index) => (
+                        <span key={`tooltip-${p}`}>
+                          <PathDisplay path={p} />
+                          {index < item.path.length - 1 && ", "}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -254,7 +274,9 @@ const MoveMultipleItemsModal: React.FC<MoveMultipleItemsModalProps> = ({
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-700 truncate">{item.name}</p>
-                    <p className="text-xs text-gray-400 truncate">{item.path[0]}</p>
+                    <p className="text-xs text-gray-400 truncate">
+                      <PathDisplay path={item.path[0]} />
+                    </p>
                   </div>
                 </div>
               ))}
@@ -262,7 +284,7 @@ const MoveMultipleItemsModal: React.FC<MoveMultipleItemsModalProps> = ({
           )}
         </div>
 
-=        <div className="mb-6">
+        <div className="mb-6">
           <p className="text-sm font-medium text-gray-600 mb-2">בחר קטגוריית יעד</p>
 
           <div ref={searchRef} className="relative">
@@ -345,13 +367,12 @@ const MoveMultipleItemsModal: React.FC<MoveMultipleItemsModalProps> = ({
                           <p className="text-sm font-medium text-gray-800 truncate">
                             {cat.categoryName}
                             {isCurrentPath && (
-                              <span className="mr-1.5 text-xs text-amber-500">(מיקום נוכחי)</span>
-                            )}
-                            {!isCurrentPath && hasProductHere && (
-                              <span className="mr-1.5 text-xs text-blue-500">(מוצר קיים כאן)</span>
+                              <span className="mr-1.5 text-xs text-amber-500">(כבר קיים)</span>
                             )}
                           </p>
-                          <p className="text-xs text-gray-400 truncate">{cat.categoryPath}</p>
+                          <p className="text-xs text-gray-400 truncate">
+                            <PathDisplay path={cat.categoryPath} />
+                          </p>
                         </div>
                         {isSelected && <Check size={14} className="text-slate-700 shrink-0" />}
                       </button>

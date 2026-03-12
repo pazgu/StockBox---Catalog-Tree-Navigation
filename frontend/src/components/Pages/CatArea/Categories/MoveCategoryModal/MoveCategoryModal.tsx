@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { categoriesService } from "../../../../../services/CategoryService";
 import { Category } from "../Categories";
 import { MoveRight, Search, X, FolderOpen, Check } from "lucide-react";
+import { PathDisplay } from "../../../../../components/Pages/SharedComponents/PathDisplay/PathDisplay";
 
 interface MoveCategoryModalProps {
   isOpen: boolean;
@@ -148,7 +149,7 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-gray-700 truncate">{currentParentLabel}</p>
-              <p className="text-xs text-gray-400 truncate">{currentParentPath || "קטגוריה ראשית"}</p>
+              <p className="text-xs text-gray-400 truncate"><PathDisplay path={currentParentPath}/></p>
             </div>
           </div>
         </div>
@@ -239,7 +240,7 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
                               <span className="mr-1.5 text-xs text-amber-500">(מיקום נוכחי)</span>
                             )}
                           </p>
-                          <p className="text-xs text-gray-400 truncate">{cat.categoryPath}</p>
+                          <p className="text-xs text-gray-400 truncate"><PathDisplay path={cat.categoryPath}/></p>
                         </div>
                         {isSelected && <Check size={14} className="text-slate-700 shrink-0" />}
                       </button>
