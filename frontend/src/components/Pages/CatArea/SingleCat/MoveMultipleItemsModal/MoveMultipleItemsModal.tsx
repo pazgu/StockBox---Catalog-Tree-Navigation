@@ -5,6 +5,7 @@ import { ProductsService } from "./../../../../../services/ProductService";
 import { MoveRight, Search, X, FolderOpen, Check, Package, Folder, ChevronDown } from "lucide-react";
 import { CategoryDTO } from "./../../../../../components/models/category.models";
 import { DisplayItem } from "./../../../../../components/models/item.models";
+import { PathDisplay } from "../../../../../components/Pages/SharedComponents/PathDisplay/PathDisplay";
 
 interface MoveMultipleItemsModalProps {
   isOpen: boolean;
@@ -19,13 +20,15 @@ const MoveMultipleItemsModal: React.FC<MoveMultipleItemsModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const [flatCategories, setFlatCategories] = useState<CategoryDTO[]>([]);
-  const [destinationCategoryPath, setDestinationCategoryPath] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<CategoryDTO[]>([]);
   const [searchFocused, setSearchFocused] = useState(false);
+  const [destinationCategoryPath, setDestinationCategoryPath] = useState<string>("");
+  const [selectedDestCategory, setSelectedDestCategory] = useState<CategoryDTO | null>(null);
   const [itemsOpen, setItemsOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
-  const [fetching, setFetching] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [searching, setSearching] = useState(false);
   const [moving, setMoving] = useState(false);
 
   const products = selectedItems.filter((item) => item.type === "product");
@@ -67,12 +70,15 @@ const MoveMultipleItemsModal: React.FC<MoveMultipleItemsModalProps> = ({
   };
 
   const existingProductPaths = productExistsPaths();
+  const selectedCategoryIds = categories.map((cat) => cat.id);
+  const selectedCategoryPaths = categories.map((cat) => cat.path[0]);
 
   useEffect(() => {
     if (isOpen) {
-      loadAllCategories();
       setDestinationCategoryPath("");
+      setSelectedDestCategory(null);
       setSearchQuery("");
+      setSearchResults([]);
       setItemsOpen(false);
     }
   }, [isOpen]);
@@ -87,82 +93,41 @@ const MoveMultipleItemsModal: React.FC<MoveMultipleItemsModalProps> = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const flattenCategories = (cats: CategoryDTO[], cache: Record<string, CategoryDTO[]>): CategoryDTO[] => {
-    const result: CategoryDTO[] = [];
-    const traverse = (list: CategoryDTO[]) => {
-      for (const cat of list) {
-        result.push(cat);
-        const children = cache[cat.categoryPath] || [];
-        if (children.length) traverse(children);
-      }
-    };
-    traverse(cats);
-    return result;
-  };
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
 
-  const loadAllCategories = async () => {
-    try {
-      setFetching(true);
-      const mainCategories = await categoriesService.getCategories();
-
-      const selectedCategoryIds = categories.map((cat) => cat.id);
-      const selectedCategoryPaths = categories.map((cat) => cat.path[0]);
-
-      const filteredMain = mainCategories.filter((cat) => {
-        if (selectedCategoryIds.includes(cat._id)) return false;
-        for (const selectedPath of selectedCategoryPaths) {
-          if (cat.categoryPath.startsWith(selectedPath + "/")) return false;
-        }
-        return true;
-      });
-
-      const cache: Record<string, CategoryDTO[]> = {};
-      await loadSubcatsRecursively(filteredMain, cache, selectedCategoryIds, selectedCategoryPaths);
-
-      setFlatCategories(flattenCategories(filteredMain, cache));
-    } catch (error) {
-      toast.error("שגיאה בטעינת קטגוריות");
-      console.error(error);
-    } finally {
-      setFetching(false);
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setSearching(false);
+      return;
     }
-  };
 
-  const loadSubcatsRecursively = async (
-    cats: CategoryDTO[],
-    cache: Record<string, CategoryDTO[]>,
-    selectedCategoryIds: string[],
-    selectedCategoryPaths: string[]
-  ): Promise<void> => {
-    await Promise.all(
-      cats.map(async (cat) => {
-        if (!cache[cat.categoryPath]) {
-          try {
-            const subcats = await categoriesService.getDirectChildren(cat.categoryPath);
-            const filtered = subcats.filter((sub) => {
-              if (selectedCategoryIds.includes(sub._id)) return false;
-              for (const selectedPath of selectedCategoryPaths) {
-                if (sub.categoryPath.startsWith(selectedPath + "/")) return false;
-              }
-              return true;
-            });
-            cache[cat.categoryPath] = filtered;
-            if (filtered.length) await loadSubcatsRecursively(filtered, cache, selectedCategoryIds, selectedCategoryPaths);
-          } catch {
-            cache[cat.categoryPath] = [];
-          }
-        }
-      })
-    );
-  };
+    setSearching(true);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const results = await categoriesService.searchCategories(searchQuery.trim());
+        // Filter out selected categories and their descendants
+        setSearchResults(
+          results.filter((cat) => {
+            if (selectedCategoryIds.includes(cat._id)) return false;
+            for (const selectedPath of selectedCategoryPaths) {
+              if (cat.categoryPath.startsWith(selectedPath + "/")) return false;
+            }
+            return true;
+          })
+        );
+      } catch (error) {
+        toast.error("שגיאה בחיפוש קטגוריות");
+        console.error(error);
+      } finally {
+        setSearching(false);
+      }
+    }, 300);
 
-  const filteredCategories = searchQuery.trim()
-    ? flatCategories.filter(
-      (cat) =>
-        cat.categoryName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        cat.categoryPath.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-    : [];
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [searchQuery]);
 
   const handleMove = async () => {
     if (!destinationCategoryPath) {
@@ -223,7 +188,6 @@ const MoveMultipleItemsModal: React.FC<MoveMultipleItemsModalProps> = ({
   if (!isOpen) return null;
 
   const canMove = !!destinationCategoryPath;
-  const selectedDestCategory = flatCategories.find((c) => c.categoryPath === destinationCategoryPath);
 
   return (
     <div
@@ -235,7 +199,6 @@ const MoveMultipleItemsModal: React.FC<MoveMultipleItemsModalProps> = ({
         onClick={(e) => e.stopPropagation()}
         dir="rtl"
       >
-        {/* Header */}
         <h4 className="m-0 mb-1 text-xl text-slate-700 font-semibold tracking-tight text-center">
           העבר פריטים מרובים
         </h4>
@@ -279,9 +242,28 @@ const MoveMultipleItemsModal: React.FC<MoveMultipleItemsModalProps> = ({
                   <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-emerald-50">
                     <Package size={15} className="text-emerald-500" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-700 truncate">{item.name}</p>
-                    <p className="text-xs text-gray-400 truncate">{item.path.join(", ")}</p>
+                  <div className="flex-1 min-w-0 relative group">
+                    <p className="text-sm font-semibold text-gray-700 truncate">
+                      {item.name}
+                    </p>
+
+                    <p className="text-xs text-gray-400 truncate">
+                      {item.path.map((p, index) => (
+                        <span key={p}>
+                          <PathDisplay path={p} />
+                          {index < item.path.length - 1 && ", "}
+                        </span>
+                      ))}
+                    </p>
+
+                    <div className="absolute hidden group-hover:block bg-black text-white text-xs rounded-md px-3 py-2 top-full mt-1 right-0 z-50 shadow-lg">
+                      {item.path.map((p, index) => (
+                        <span key={`tooltip-${p}`}>
+                          <PathDisplay path={p} />
+                          {index < item.path.length - 1 && ", "}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -292,7 +274,9 @@ const MoveMultipleItemsModal: React.FC<MoveMultipleItemsModalProps> = ({
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-700 truncate">{item.name}</p>
-                    <p className="text-xs text-gray-400 truncate">{item.path[0]}</p>
+                    <p className="text-xs text-gray-400 truncate">
+                      <PathDisplay path={item.path[0]} />
+                    </p>
                   </div>
                 </div>
               ))}
@@ -305,14 +289,10 @@ const MoveMultipleItemsModal: React.FC<MoveMultipleItemsModalProps> = ({
 
           <div ref={searchRef} className="relative">
             <div
-              className={`flex items-center gap-2 border-2 rounded-lg px-3 py-2.5 transition-colors ${fetching
-                  ? "border-gray-200 bg-gray-50"
-                  : searchFocused
-                    ? "border-slate-700"
-                    : "border-gray-200"
-                }`}
+              className={`flex items-center gap-2 border-2 rounded-lg px-3 py-2.5 transition-colors
+                ${searching ? "border-gray-200 bg-gray-50" : searchFocused ? "border-slate-700" : "border-gray-200"}`}
             >
-              {fetching ? (
+              {searching ? (
                 <div className="w-4 h-4 border-2 border-gray-300 border-t-slate-500 rounded-full animate-spin shrink-0" />
               ) : (
                 <Search size={16} className="text-gray-400 shrink-0" />
@@ -325,15 +305,16 @@ const MoveMultipleItemsModal: React.FC<MoveMultipleItemsModalProps> = ({
                   setSearchFocused(true);
                 }}
                 onFocus={() => setSearchFocused(true)}
-                placeholder={fetching ? "טוען קטגוריות..." : "חפש קטגוריה..."}
+                placeholder="חפש קטגוריה..."
                 className="flex-1 outline-none text-sm text-gray-700 bg-transparent text-right placeholder:text-gray-400"
-                disabled={fetching}
               />
-              {searchQuery && !fetching && (
+              {searchQuery && (
                 <button
                   onClick={() => {
                     setSearchQuery("");
                     setDestinationCategoryPath("");
+                    setSelectedDestCategory(null);
+                    setSearchResults([]);
                   }}
                   className="text-gray-400 hover:text-gray-600"
                 >
@@ -342,18 +323,17 @@ const MoveMultipleItemsModal: React.FC<MoveMultipleItemsModalProps> = ({
               )}
             </div>
 
-            {/* Dropdown results */}
             {searchFocused && searchQuery.trim() && (
               <div className="absolute top-full right-0 left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-72 overflow-y-auto">
-                {fetching ? (
+                {searching ? (
                   <div className="flex items-center justify-center gap-2 p-4 text-sm text-gray-400">
                     <div className="w-4 h-4 border-2 border-gray-300 border-t-slate-700 rounded-full animate-spin" />
-                    טוען קטגוריות...
+                    מחפש...
                   </div>
-                ) : filteredCategories.length === 0 ? (
+                ) : searchResults.length === 0 ? (
                   <p className="text-sm text-gray-400 p-3 text-center">לא נמצאו קטגוריות</p>
                 ) : (
-                  filteredCategories.map((cat) => {
+                  searchResults.map((cat) => {
                     const isCurrentPath = currentPaths.has(cat.categoryPath);
                     const hasProductHere = existingProductPaths.has(cat.categoryPath);
                     const isSelected = destinationCategoryPath === cat.categoryPath;
@@ -361,12 +341,15 @@ const MoveMultipleItemsModal: React.FC<MoveMultipleItemsModalProps> = ({
                       <button
                         key={cat._id}
                         onClick={() => {
+                          if (isCurrentPath) return;
                           setDestinationCategoryPath(cat.categoryPath);
+                          setSelectedDestCategory(cat);
                           setSearchQuery(cat.categoryName);
                           setSearchFocused(false);
                         }}
                         disabled={isCurrentPath}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 text-right hover:bg-gray-50 transition-colors
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 text-right transition-colors
+                          ${isCurrentPath ? "opacity-50 cursor-not-allowed bg-gray-50" : "hover:bg-gray-50"}
                           ${isSelected ? "bg-slate-50" : ""}`}
                       >
                         {cat.categoryImage ? (
@@ -384,11 +367,12 @@ const MoveMultipleItemsModal: React.FC<MoveMultipleItemsModalProps> = ({
                           <p className="text-sm font-medium text-gray-800 truncate">
                             {cat.categoryName}
                             {isCurrentPath && (
-                              <span className="mr-1.5 text-xs text-amber-500">(קיים כאן)</span>
+                              <span className="mr-1.5 text-xs text-amber-500">(כבר קיים)</span>
                             )}
-                           
                           </p>
-                          <p className="text-xs text-gray-400 truncate">{cat.categoryPath}</p>
+                          <p className="text-xs text-gray-400 truncate">
+                            <PathDisplay path={cat.categoryPath} />
+                          </p>
                         </div>
                         {isSelected && <Check size={14} className="text-slate-700 shrink-0" />}
                       </button>

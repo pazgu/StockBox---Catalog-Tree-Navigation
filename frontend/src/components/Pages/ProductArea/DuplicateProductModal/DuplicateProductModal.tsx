@@ -29,13 +29,15 @@ const DuplicateProductModal: React.FC<DuplicateProductModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const [flatCategories, setFlatCategories] = useState<Category[]>([]);
-  const [selectedCategoryPaths, setSelectedCategoryPaths] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<Category[]>([]);
   const [searchFocused, setSearchFocused] = useState(false);
+  const [selectedCategoryPaths, setSelectedCategoryPaths] = useState<Set<string>>(new Set());
+  const [selectedCategories, setSelectedCategories] = useState<Category[]>([]);
   const [locationsOpen, setLocationsOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
-  const [fetching, setFetching] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [searching, setSearching] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
 
   const slugify = (name: string) => name.toLowerCase().replace(/\s+/g, "-");
@@ -52,9 +54,10 @@ const DuplicateProductModal: React.FC<DuplicateProductModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      loadAllCategories();
       setSelectedCategoryPaths(new Set());
+      setSelectedCategories([]);
       setSearchQuery("");
+      setSearchResults([]);
       setLocationsOpen(false);
     }
   }, [isOpen, currentPaths]);
@@ -69,70 +72,54 @@ const DuplicateProductModal: React.FC<DuplicateProductModalProps> = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const flattenCategories = (cats: Category[], cache: Record<string, Category[]>): Category[] => {
-    const result: Category[] = [];
-    const traverse = (list: Category[]) => {
-      for (const cat of list) {
-        result.push(cat);
-        const children = cache[cat.categoryPath] || [];
-        if (children.length) traverse(children);
-      }
-    };
-    traverse(cats);
-    return result;
-  };
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
 
-  const loadAllCategories = async () => {
-    try {
-      setFetching(true);
-      const mainCategories = await categoriesService.getCategories();
-      const cache: Record<string, Category[]> = {};
-      await loadSubcatsRecursively(mainCategories, cache);
-      setFlatCategories(flattenCategories(mainCategories, cache));
-    } catch (error) {
-      toast.error("שגיאה בטעינת קטגוריות");
-      console.error(error);
-    } finally {
-      setFetching(false);
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setSearching(false);
+      return;
     }
-  };
 
-  const loadSubcatsRecursively = async (
-    cats: Category[],
-    cache: Record<string, Category[]>
-  ): Promise<void> => {
-    await Promise.all(
-      cats.map(async (cat) => {
-        if (!cache[cat.categoryPath]) {
-          try {
-            const subcats = await categoriesService.getDirectChildren(cat.categoryPath);
-            cache[cat.categoryPath] = subcats;
-            if (subcats.length) await loadSubcatsRecursively(subcats, cache);
-          } catch {
-            cache[cat.categoryPath] = [];
-          }
-        }
-      })
-    );
-  };
+    setSearching(true);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const results = await categoriesService.searchCategories(searchQuery.trim());
+        setSearchResults(results);
+      } catch (error) {
+        toast.error("שגיאה בחיפוש קטגוריות");
+        console.error(error);
+      } finally {
+        setSearching(false);
+      }
+    }, 300);
 
-  const filteredCategories = searchQuery.trim()
-    ? flatCategories.filter(
-      (cat) =>
-        cat.categoryName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        cat.categoryPath.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-    : [];
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [searchQuery]);
 
-  const toggleSelection = (categoryPath: string) => {
-    if (isCurrentPath(categoryPath)) return;
+  const toggleSelection = (cat: Category) => {
+    if (isCurrentPath(cat.categoryPath)) return;
     const next = new Set(selectedCategoryPaths);
-    if (next.has(categoryPath)) {
-      next.delete(categoryPath);
+    const nextList = [...selectedCategories];
+    if (next.has(cat.categoryPath)) {
+      next.delete(cat.categoryPath);
+      const idx = nextList.findIndex((c) => c.categoryPath === cat.categoryPath);
+      if (idx !== -1) nextList.splice(idx, 1);
     } else {
-      next.add(categoryPath);
+      next.add(cat.categoryPath);
+      nextList.push(cat);
     }
     setSelectedCategoryPaths(next);
+    setSelectedCategories(nextList);
+  };
+
+  const removeSelection = (categoryPath: string) => {
+    const next = new Set(selectedCategoryPaths);
+    next.delete(categoryPath);
+    setSelectedCategoryPaths(next);
+    setSelectedCategories((prev) => prev.filter((c) => c.categoryPath !== categoryPath));
   };
 
   const handleDuplicate = async () => {
@@ -159,7 +146,6 @@ const DuplicateProductModal: React.FC<DuplicateProductModalProps> = ({
 
   if (!isOpen) return null;
 
-  const selectedList = flatCategories.filter((c) => selectedCategoryPaths.has(c.categoryPath));
   const canDuplicate = selectedCategoryPaths.size > 0;
 
   return (
@@ -201,19 +187,10 @@ const DuplicateProductModal: React.FC<DuplicateProductModalProps> = ({
             <div className="flex flex-col divide-y divide-gray-100">
               {currentCategoryPaths.map((path, i) => {
                 const label = path.split("/").pop() || path;
-                const matchedCat = flatCategories.find((c) => c.categoryPath === path);
                 return (
                   <div key={i} className="flex items-center gap-3 px-4 py-3 bg-white">
                     <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-gray-100">
-                      {matchedCat?.categoryImage ? (
-                        <img
-                          src={matchedCat.categoryImage}
-                          alt={label}
-                          className="w-9 h-9 rounded-full object-cover"
-                        />
-                      ) : (
-                        <FolderOpen size={15} className="text-gray-400" />
-                      )}
+                      <FolderOpen size={15} className="text-gray-400" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-gray-700 truncate">{label}</p>
@@ -236,14 +213,10 @@ const DuplicateProductModal: React.FC<DuplicateProductModalProps> = ({
 
           <div ref={searchRef} className="relative">
             <div
-              className={`flex items-center gap-2 border-2 rounded-lg px-3 py-2.5 transition-colors ${fetching
-                ? "border-gray-200 bg-gray-50"
-                : searchFocused
-                  ? "border-slate-700"
-                  : "border-gray-200"
-                }`}
+              className={`flex items-center gap-2 border-2 rounded-lg px-3 py-2.5 transition-colors
+                ${searching ? "border-gray-200 bg-gray-50" : searchFocused ? "border-slate-700" : "border-gray-200"}`}
             >
-              {fetching ? (
+              {searching ? (
                 <div className="w-4 h-4 border-2 border-gray-300 border-t-slate-500 rounded-full animate-spin shrink-0" />
               ) : (
                 <Search size={16} className="text-gray-400 shrink-0" />
@@ -256,13 +229,15 @@ const DuplicateProductModal: React.FC<DuplicateProductModalProps> = ({
                   setSearchFocused(true);
                 }}
                 onFocus={() => setSearchFocused(true)}
-                placeholder={fetching ? "טוען קטגוריות..." : "חפש קטגוריה..."}
+                placeholder="חפש קטגוריה..."
                 className="flex-1 outline-none text-sm text-gray-700 bg-transparent text-right placeholder:text-gray-400"
-                disabled={fetching}
               />
-              {searchQuery && !fetching && (
+              {searchQuery && (
                 <button
-                  onClick={() => setSearchQuery("")}
+                  onClick={() => {
+                    setSearchQuery("");
+                    setSearchResults([]);
+                  }}
                   className="text-gray-400 hover:text-gray-600"
                 >
                   <X size={14} />
@@ -272,27 +247,26 @@ const DuplicateProductModal: React.FC<DuplicateProductModalProps> = ({
 
             {searchFocused && searchQuery.trim() && (
               <div className="absolute top-full right-0 left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-72 overflow-y-auto">
-                {fetching ? (
+                {searching ? (
                   <div className="flex items-center justify-center gap-2 p-4 text-sm text-gray-400">
                     <div className="w-4 h-4 border-2 border-gray-300 border-t-slate-700 rounded-full animate-spin" />
-                    טוען קטגוריות...
+                    מחפש...
                   </div>
-                ) : filteredCategories.length === 0 ? (
+                ) : searchResults.length === 0 ? (
                   <p className="text-sm text-gray-400 p-3 text-center">לא נמצאו קטגוריות</p>
                 ) : (
-                  filteredCategories.map((cat) => {
+                  searchResults.map((cat) => {
                     const alreadyHere = isCurrentPath(cat.categoryPath);
                     const isChecked = selectedCategoryPaths.has(cat.categoryPath);
                     return (
                       <button
                         key={cat._id}
-                        onClick={() => !alreadyHere && toggleSelection(cat.categoryPath)}
+                        onClick={() => !alreadyHere && toggleSelection(cat)}
                         disabled={alreadyHere}
                         className={`w-full flex items-center gap-3 px-3 py-2.5 text-right transition-colors
                           ${alreadyHere ? "opacity-50 cursor-not-allowed bg-gray-50" : "hover:bg-gray-50 cursor-pointer"}
                           ${isChecked ? "bg-slate-50" : ""}`}
                       >
-                        {/* Checkbox */}
                         <div
                           className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors
                             ${alreadyHere
@@ -306,7 +280,6 @@ const DuplicateProductModal: React.FC<DuplicateProductModalProps> = ({
                             <Check size={10} className="text-white" strokeWidth={3} />
                           )}
                         </div>
-
                         {cat.categoryImage ? (
                           <img
                             src={cat.categoryImage}
@@ -325,7 +298,7 @@ const DuplicateProductModal: React.FC<DuplicateProductModalProps> = ({
                               <span className="mr-1.5 text-xs text-amber-500">(כבר קיים)</span>
                             )}
                           </p>
-                          <p className="text-xs text-gray-400 truncate">{cat.categoryPath}</p>
+                          <p className="text-xs text-gray-400 truncate"><PathDisplay path={cat.categoryPath}/></p>
                         </div>
                       </button>
                     );
@@ -335,18 +308,16 @@ const DuplicateProductModal: React.FC<DuplicateProductModalProps> = ({
             )}
           </div>
 
-          {selectedList.length > 0 && (
+          {selectedCategories.length > 0 && (
             <div className="mt-3 border-2 border-slate-700 rounded-lg overflow-hidden">
               <div className="px-3 py-2 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-600">
-                  קטגוריות נבחרות
-                </span>
+                <span className="text-xs font-semibold text-slate-600">קטגוריות נבחרות</span>
                 <span className="text-xs bg-slate-700 text-white rounded-full px-2 py-0.5 font-medium">
-                  {selectedList.length}
+                  {selectedCategories.length}
                 </span>
               </div>
               <div className="flex flex-col divide-y divide-gray-100">
-                {selectedList.map((cat) => (
+                {selectedCategories.map((cat) => (
                   <div key={cat._id} className="flex items-center gap-2 px-3 py-2 bg-white">
                     {cat.categoryImage ? (
                       <img
@@ -364,7 +335,7 @@ const DuplicateProductModal: React.FC<DuplicateProductModalProps> = ({
                       <p className="text-xs text-gray-400 truncate">{cat.categoryPath}</p>
                     </div>
                     <button
-                      onClick={() => toggleSelection(cat.categoryPath)}
+                      onClick={() => removeSelection(cat.categoryPath)}
                       className="text-gray-300 hover:text-red-400 transition-colors shrink-0"
                     >
                       <X size={14} />
