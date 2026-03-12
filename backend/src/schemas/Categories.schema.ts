@@ -21,6 +21,13 @@ CategorySchema.index(
   { categoryName: 'text' },
   { name: 'category_text_search' },
 );
+CategorySchema.index(
+  { categoryName: 1 },
+  {
+    name: 'category_name_search',
+    collation: { locale: 'en', strength: 2 }
+  }
+);
 export type CategoryDocument = HydratedDocument<Category>;
 
 CategorySchema.index({ categoryPath: 1 });

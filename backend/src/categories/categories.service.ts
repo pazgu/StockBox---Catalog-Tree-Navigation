@@ -38,7 +38,7 @@ export class CategoriesService {
     @InjectModel(NameLock.name) private nameLockModel: Model<NameLock>,
     private readonly permissionsService: PermissionsService,
     private readonly usersService: UsersService,
-  ) {}
+  ) { }
   nameKey = normalizeName(CreateCategoryDto.prototype.categoryName);
 
   async createCategory(
@@ -108,6 +108,39 @@ export class CategoriesService {
 
       throw err;
     }
+  }
+
+  async searchCategories(user: { userId: string; role: string }, query: string) {
+    if (!query || query.trim().length < 1) return [];
+
+    const trimmed = query.trim();
+    const isHebrew = /[\u0590-\u05FF]/.test(trimmed);
+
+    const categories = await this.categoryModel.find(
+      { categoryName: { $regex: trimmed, $options: 'i' } },
+      { categoryName: 1, categoryPath: 1, categoryImage: 1 }
+    )
+      .collation({ locale: isHebrew ? 'he' : 'en', strength: 2 })
+      .lean();
+
+    if (user.role === 'editor') {
+      return categories;
+    }
+    if (user.role !== 'viewer') {
+      return [];
+    }
+
+    const { userGroupIds, allowedByEntityId } =
+      await this.buildAllowedMapForUser(user);
+
+    return categories.filter((cat) =>
+      this.hasCategoryPermission(
+        cat._id.toString(),
+        user,
+        userGroupIds,
+        allowedByEntityId,
+      ),
+    );
   }
 
   async getCategoryByPath(categoryPath: string, user: any): Promise<Category> {
@@ -473,7 +506,7 @@ export class CategoriesService {
               $concat: [
                 newPath,
                 {
-                  $substr: [
+                  $substrCP: [
                     '$categoryPath',
                     oldPath.length,
                     { $strLenCP: '$categoryPath' },
@@ -486,7 +519,6 @@ export class CategoriesService {
       ],
       { updatePipeline: true },
     );
-
     const escapedOldPath = oldPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const productsToUpdate = await this.productModel.find({
       productPath: new RegExp(`^${escapedOldPath}`),

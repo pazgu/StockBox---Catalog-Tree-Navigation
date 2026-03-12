@@ -17,12 +17,14 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const [flatCategories, setFlatCategories] = useState<Category[]>([]);
-  const [destinationCategoryPath, setDestinationCategoryPath] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<Category[]>([]);
   const [searchFocused, setSearchFocused] = useState(false);
+  const [destinationCategoryPath, setDestinationCategoryPath] = useState<string>("");
+  const [selectedDestCategory, setSelectedDestCategory] = useState<Category | null>(null);
   const searchRef = useRef<HTMLDivElement>(null);
-  const [fetching, setFetching] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [searching, setSearching] = useState(false);
   const [moving, setMoving] = useState(false);
 
   const getCurrentParentPath = (): string => {
@@ -36,9 +38,10 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      loadAllCategories();
       setDestinationCategoryPath("");
+      setSelectedDestCategory(null);
       setSearchQuery("");
+      setSearchResults([]);
     }
   }, [isOpen]);
 
@@ -52,68 +55,39 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const flattenCategories = (cats: Category[], cache: Record<string, Category[]>): Category[] => {
-    const result: Category[] = [];
-    const traverse = (list: Category[]) => {
-      for (const cat of list) {
-        result.push(cat);
-        const children = cache[cat.categoryPath] || [];
-        if (children.length) traverse(children);
-      }
-    };
-    traverse(cats);
-    return result;
-  };
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
 
-  const loadAllCategories = async () => {
-    try {
-      setFetching(true);
-      const mainCategories = await categoriesService.getCategories();
-
-      const cache: Record<string, Category[]> = {};
-      await loadSubcatsRecursively(mainCategories, cache);
-
-      const all = flattenCategories(mainCategories, cache).filter((cat) => {
-        if (cat._id === category._id) return false;
-        if (cat.categoryPath.startsWith(category.categoryPath + "/")) return false;
-        return true;
-      });
-
-      setFlatCategories(all);
-    } catch (error) {
-      toast.error("שגיאה בטעינת קטגוריות");
-      console.error(error);
-    } finally {
-      setFetching(false);
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setSearching(false);
+      return;
     }
-  };
 
-  const loadSubcatsRecursively = async (
-    cats: Category[],
-    cache: Record<string, Category[]>
-  ): Promise<void> => {
-    await Promise.all(
-      cats.map(async (cat) => {
-        if (!cache[cat.categoryPath]) {
-          try {
-            const subcats = await categoriesService.getDirectChildren(cat.categoryPath);
-            cache[cat.categoryPath] = subcats;
-            if (subcats.length) await loadSubcatsRecursively(subcats, cache);
-          } catch {
-            cache[cat.categoryPath] = [];
-          }
-        }
-      })
-    );
-  };
+    setSearching(true);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const results = await categoriesService.searchCategories(searchQuery.trim());
+        // Filter out the category itself and any of its descendants
+        setSearchResults(
+          results.filter(
+            (cat) =>
+              cat._id !== category._id &&
+              !cat.categoryPath.startsWith(category.categoryPath + "/")
+          )
+        );
+      } catch (error) {
+        toast.error("שגיאה בחיפוש קטגוריות");
+        console.error(error);
+      } finally {
+        setSearching(false);
+      }
+    }, 300);
 
-  const filteredCategories = searchQuery.trim()
-    ? flatCategories.filter(
-      (cat) =>
-        cat.categoryName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        cat.categoryPath.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-    : [];
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [searchQuery]);
 
   const handleMove = async () => {
     if (!destinationCategoryPath) {
@@ -144,7 +118,6 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
   if (!isOpen) return null;
 
   const canMove = !!destinationCategoryPath && destinationCategoryPath !== currentParentPath;
-  const selectedDestCategory = flatCategories.find((c) => c.categoryPath === destinationCategoryPath);
 
   return (
     <div
@@ -163,12 +136,11 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
           <strong className="text-slate-700">{category.categoryName}</strong>
         </p>
 
+        {/* Current location */}
         <div className="mb-6 border border-gray-200 rounded-lg overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 bg-gray-50">
-            <div className="flex items-center gap-2">
-              <FolderOpen size={15} className="text-gray-400" />
-              <span className="text-sm font-medium text-gray-600">מיקום נוכחי</span>
-            </div>
+          <div className="flex items-center gap-2 px-4 py-3 bg-gray-50">
+            <FolderOpen size={15} className="text-gray-400" />
+            <span className="text-sm font-medium text-gray-600">מיקום נוכחי</span>
           </div>
           <div className="flex items-center gap-3 px-4 py-3 bg-white">
             <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-gray-100">
@@ -189,14 +161,10 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
 
           <div ref={searchRef} className="relative">
             <div
-              className={`flex items-center gap-2 border-2 rounded-lg px-3 py-2.5 transition-colors ${fetching
-                ? "border-gray-200 bg-gray-50"
-                : searchFocused
-                  ? "border-slate-700"
-                  : "border-gray-200"
-                }`}
+              className={`flex items-center gap-2 border-2 rounded-lg px-3 py-2.5 transition-colors
+                ${searching ? "border-gray-200 bg-gray-50" : searchFocused ? "border-slate-700" : "border-gray-200"}`}
             >
-              {fetching ? (
+              {searching ? (
                 <div className="w-4 h-4 border-2 border-gray-300 border-t-slate-500 rounded-full animate-spin shrink-0" />
               ) : (
                 <Search size={16} className="text-gray-400 shrink-0" />
@@ -209,15 +177,16 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
                   setSearchFocused(true);
                 }}
                 onFocus={() => setSearchFocused(true)}
-                placeholder={fetching ? "טוען קטגוריות..." : "חפש קטגוריה..."}
+                placeholder="חפש קטגוריה..."
                 className="flex-1 outline-none text-sm text-gray-700 bg-transparent text-right placeholder:text-gray-400"
-                disabled={fetching}
               />
-              {searchQuery && !fetching && (
+              {searchQuery && (
                 <button
                   onClick={() => {
                     setSearchQuery("");
                     setDestinationCategoryPath("");
+                    setSelectedDestCategory(null);
+                    setSearchResults([]);
                   }}
                   className="text-gray-400 hover:text-gray-600"
                 >
@@ -228,15 +197,15 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
 
             {searchFocused && searchQuery.trim() && (
               <div className="absolute top-full right-0 left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-72 overflow-y-auto">
-                {fetching ? (
+                {searching ? (
                   <div className="flex items-center justify-center gap-2 p-4 text-sm text-gray-400">
                     <div className="w-4 h-4 border-2 border-gray-300 border-t-slate-700 rounded-full animate-spin" />
-                    טוען קטגוריות...
+                    מחפש...
                   </div>
-                ) : filteredCategories.length === 0 ? (
+                ) : searchResults.length === 0 ? (
                   <p className="text-sm text-gray-400 p-3 text-center">לא נמצאו קטגוריות</p>
                 ) : (
-                  filteredCategories.map((cat) => {
+                  searchResults.map((cat) => {
                     const isCurrentParent = cat.categoryPath === currentParentPath;
                     const isSelected = destinationCategoryPath === cat.categoryPath;
                     return (
@@ -244,6 +213,7 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
                         key={cat._id}
                         onClick={() => {
                           setDestinationCategoryPath(cat.categoryPath);
+                          setSelectedDestCategory(cat);
                           setSearchQuery(cat.categoryName);
                           setSearchFocused(false);
                         }}
@@ -251,12 +221,16 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
                           ${isSelected ? "bg-slate-50" : ""}
                           ${isCurrentParent ? "opacity-60" : ""}`}
                       >
-                        {cat.categoryImage && (
+                        {cat.categoryImage ? (
                           <img
                             src={cat.categoryImage}
                             alt={cat.categoryName}
                             className="w-7 h-7 rounded-full object-cover shrink-0"
                           />
+                        ) : (
+                          <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+                            <FolderOpen size={13} className="text-gray-400" />
+                          </div>
                         )}
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-800 truncate">
@@ -278,12 +252,16 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
 
           {selectedDestCategory && (
             <div className="mt-3 flex items-center gap-2 p-3 bg-slate-50 border-2 border-slate-700 rounded-lg">
-              {selectedDestCategory.categoryImage && (
+              {selectedDestCategory.categoryImage ? (
                 <img
                   src={selectedDestCategory.categoryImage}
                   alt={selectedDestCategory.categoryName}
                   className="w-7 h-7 rounded-full object-cover"
                 />
+              ) : (
+                <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+                  <FolderOpen size={13} className="text-gray-400" />
+                </div>
               )}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-slate-700 truncate">
