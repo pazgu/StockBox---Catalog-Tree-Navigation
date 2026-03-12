@@ -646,7 +646,7 @@ export const Categories: FC<CategoriesProps> = () => {
                         </div>
                       </div>
 
-                      <div className="absolute left-3 top-3">
+                      <div className="absolute right-2 top-2">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -657,7 +657,7 @@ export const Categories: FC<CategoriesProps> = () => {
                               "product",
                             );
                           }}
-                          className="peer h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110 transition-all duration-200"
+                          className="peer h-9 w-9 rounded-full flex items-center justify-center hover:scale-110 transition-all duration-200"
                         >
                           <Heart
                             size={22}
