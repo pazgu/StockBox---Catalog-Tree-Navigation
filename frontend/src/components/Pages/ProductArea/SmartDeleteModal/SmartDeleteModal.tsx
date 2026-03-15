@@ -127,7 +127,7 @@ const SmartDeleteModal: React.FC<SmartDeleteModalProps> = ({
                       onClick={handleSelectAll}
                       className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium text-white bg-gradient-to-b from-indigo-500 to-indigo-600 shadow-sm shadow-indigo-500/30 border border-indigo-400/30 transition-all duration-200 hover:from-indigo-400 hover:to-indigo-500 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:from-indigo-600 active:to-indigo-700"
                     >
-                      בחר הכל
+                      בחירת הכל
                     </button>
 
                   </h5>

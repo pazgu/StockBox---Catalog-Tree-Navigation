@@ -58,7 +58,7 @@ const UsersList: React.FC<UsersListProps> = ({
           {selectedUsers.size === filteredUsers.length &&
           filteredUsers.length > 0
             ? "בטל בחירה"
-            : "בחר הכל"}
+            : "בחירת הכל"}
         </button>
         <span className="text-sm text-gray-600">
           {selectedUsers.size > 0

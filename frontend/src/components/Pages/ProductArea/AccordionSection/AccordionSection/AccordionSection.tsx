@@ -263,7 +263,7 @@ const AccordionSection: FC<AccordionSectionProps> = ({
 
           {showAccordionTypeSelector && (
             <div className="p-4 bg-white border rounded-lg mt-2">
-              <p className="mb-2">בחר סוג אקורדיון:</p>
+              <p className="mb-2"> סוג אקורדיון:</p>
               <div className="flex gap-2">
                 <button
                   onClick={() => confirmAddAccordion("content")}

@@ -285,7 +285,7 @@ const MoveMultipleItemsModal: React.FC<MoveMultipleItemsModalProps> = ({
         </div>
 
         <div className="mb-6">
-          <p className="text-sm font-medium text-gray-600 mb-2">בחר קטגוריית יעד</p>
+          <p className="text-sm font-medium text-gray-600 mb-2">בחירת קטגוריית יעד</p>
 
           <div ref={searchRef} className="relative">
             <div
