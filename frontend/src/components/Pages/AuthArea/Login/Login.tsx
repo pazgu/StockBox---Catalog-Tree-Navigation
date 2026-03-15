@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import isEmail from "validator/lib/isEmail";
 
 import NestedCatalogSVG from "./login.svg";
-interface LoginProps {}
+interface LoginProps { }
 
 const Login: FC<LoginProps> = () => {
   const { setUser } = useUser();
@@ -483,18 +483,29 @@ const Login: FC<LoginProps> = () => {
                       value={email}
                       onChange={(e) => {
                         const val = e.target.value;
-                        setEmail(val);
-                        const trimmed = val.trim();
+
+                        // remove Hebrew + Arabic characters
+                        const sanitizedValue = val.replace(/[\u0590-\u05FF\u0600-\u06FF]/g, "");
+                        setEmail(sanitizedValue);
+
+                        const trimmed = sanitizedValue.trim();
                         let error = "";
+
                         if (!trimmed) error = "כתובת מייל היא שדה חובה";
-                        else if (!isEmail(trimmed))
-                          error = "כתובת מייל לא תקינה";
+                        else if (!isEmail(trimmed)) error = "כתובת מייל לא תקינה";
+
                         setErrors({ ...errors, email: !!error });
                         setFieldErrors((prev) => ({ ...prev, email: error }));
                       }}
-                      className={`w-full py-3 px-4 pl-11 border-2 ${errors.email ? "border-red-300" : "border-gray-300"} rounded-lg text-right text-sm`}
+                      onKeyDown={(e) => {
+                        if (/[\u0590-\u05FF\u0600-\u06FF]/.test(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                      className={`w-full py-3 px-4 pl-11 border-2 ${errors.email ? "border-red-300" : "border-gray-300"
+                        } rounded-lg text-left text-sm`}
                       placeholder="הכנס אימייל..."
-                      dir="rtl"
+                      dir="ltr"
                     />
                     <MailQuestionIcon
                       size={20}
