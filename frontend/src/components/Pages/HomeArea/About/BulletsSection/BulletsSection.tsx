@@ -137,7 +137,7 @@ const BulletsSection: React.FC<BulletsSectionProps> = ({
                   type="button"
                   onClick={() => confirmField(key, title)}
                   className="mt-8 mb-4 h-10 w-10 rounded-full border border-green-600 text-green-700 hover:bg-green-50 grid place-items-center flex-shrink-0"
-                  title="אשר שינוי"
+                  title="אישור שינוי"
                 >
                   <Check size={18} />
                 </button>
@@ -222,7 +222,7 @@ const BulletsSection: React.FC<BulletsSectionProps> = ({
                       type="button"
                       onClick={() => confirmField(key, b.text)}
                       className="h-9 w-9 rounded-full border border-green-600 text-green-700 hover:bg-green-50 grid place-items-center flex-shrink-0"
-                      title="אשר שינוי"
+                      title="אישור שינוי"
                     >
                       <Check size={16} />
                     </button>

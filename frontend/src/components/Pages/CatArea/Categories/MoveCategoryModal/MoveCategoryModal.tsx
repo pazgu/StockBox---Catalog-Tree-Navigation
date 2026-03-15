@@ -96,7 +96,7 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
       return;
     }
     if (destinationCategoryPath === currentParentPath) {
-      toast.error("הקטגוריה היעד זהה לנוכחית");
+      toast.error("קטגורית היעד זהה לנוכחית");
       return;
     }
     try {
@@ -155,7 +155,7 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
         </div>
 
         <div className="mb-6">
-          <p className="text-sm font-medium text-gray-600 mb-2">בחר קטגוריית יעד</p>
+          <p className="text-sm font-medium text-gray-600 mb-2">בחירת קטגורית יעד</p>
           <small className="text-gray-400 block mb-3">
             שימו לב! התוכן תחת אותה קטגוריה יעבור איתה למיקום הנבחר
           </small>
@@ -178,7 +178,7 @@ const MoveCategoryModal: React.FC<MoveCategoryModalProps> = ({
                   setSearchFocused(true);
                 }}
                 onFocus={() => setSearchFocused(true)}
-                placeholder="חפש קטגוריה..."
+                placeholder="חיפוש קטגוריה..."
                 className="flex-1 outline-none text-sm text-gray-700 bg-transparent text-right placeholder:text-gray-400"
               />
               {searchQuery && (
