@@ -21,7 +21,7 @@ import { JwtAuthGuard } from 'src/gaurds/jwt-auth.guard';
 
 @Controller('users')
 export class UsersController {
-  constructor(private usersService: UsersService) {}
+  constructor(private usersService: UsersService) { }
   @Post()
   @UsePipes(new ValidationPipe())
   createUser(@Body() createUserDto: CreateUserDto) {
@@ -29,8 +29,11 @@ export class UsersController {
   }
 
   @Get()
-  GetAllUsers(@Query('role') role?: string) {
-    return this.usersService.getAllUsers(role);
+  GetAllUsers(
+    @Query('role') role?: string,
+    @Query('approved') approved?: string,
+  ) {
+    return this.usersService.getAllUsers(role, approved);
   }
 
   @Delete(':id')

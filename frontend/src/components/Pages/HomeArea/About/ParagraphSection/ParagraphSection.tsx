@@ -54,7 +54,7 @@ const ParagraphSection: React.FC<ParagraphSectionProps> = ({
                 type="button"
                 onClick={() => confirmField(key, section.title)}
                 className="h-10 w-10 rounded-full border border-green-600 text-green-700 hover:bg-green-50 grid place-items-center"
-                title="אשר שינוי"
+                title="אישור שינוי"
               >
                 <Check size={18} />
               </button>
@@ -90,7 +90,7 @@ const ParagraphSection: React.FC<ParagraphSectionProps> = ({
                   type="button"
                   onClick={() => confirmField(key, section.content ?? "")}
                   className="mt-1 h-10 w-10 rounded-full border border-green-600 text-green-700 hover:bg-green-50 grid place-items-center"
-                  title="אשר שינוי"
+                  title="אישור שינוי"
                 >
                   <Check size={18} />
                 </button>

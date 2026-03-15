@@ -62,7 +62,7 @@ export const permissionsService = {
 
   getPotentialViewers: async () => {
     const [users, groups] = await Promise.all([
-      api.get(`${environment.API_URL}/users?role=viewer`, getAuthHeader()),
+      api.get(`${environment.API_URL}/users?role=viewer&approved=true`, getAuthHeader()),
       api.get(`${environment.API_URL}/groups`, getAuthHeader()),
     ]);
     return { users: users.data, groups: groups.data };

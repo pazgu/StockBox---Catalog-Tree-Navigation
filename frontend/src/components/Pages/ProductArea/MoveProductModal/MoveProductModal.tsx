@@ -197,7 +197,7 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
                 <>
                   <p className="text-xs font-semibold text-amber-700">נדרשת בחירה</p>
                   <p className="text-sm text-amber-700">
-                    המוצר קיים במספר מיקומים — פתח את הרשימה ובחר מאיזו קטגוריה להעביר
+                    המוצר קיים במספר מיקומים — נא לפתוח את הרשימה ולבחור מאיזו קטגוריה להעביר
                   </p>
                 </>
               )}
@@ -263,7 +263,7 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
         </div>
 
         <div className="mb-6">
-          <p className="text-sm font-medium text-gray-600 mb-2">בחר קטגוריית יעד</p>
+          <p className="text-sm font-medium text-gray-600 mb-2">בחירת קטגוריית יעד</p>
 
           <div ref={searchRef} className="relative">
             <div className={`flex items-center gap-2 border-2 rounded-lg px-3 py-2.5 transition-colors

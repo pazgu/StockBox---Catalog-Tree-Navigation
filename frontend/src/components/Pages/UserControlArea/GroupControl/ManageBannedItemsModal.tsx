@@ -910,7 +910,7 @@ items.forEach((item) => {
                 onClick={handleSelectAll}
                 className="py-1 px-5 rounded-md text-[11px] font-medium bg-blue-500 text-white hover:bg-blue-600 transition-all shadow-sm hover:shadow-md"
               >
-                {allCurrentSelected ? "בטל בחירה" : "בחר הכל"}
+                {allCurrentSelected ? "בטל בחירה" : "בחירת הכל"}
               </button>
 
               {selectedItems.size > 0 && (

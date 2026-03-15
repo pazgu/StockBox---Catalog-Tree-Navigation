@@ -689,7 +689,7 @@ const SingleCat: FC = () => {
               >
                 {selectedItems.length === items.length
                   ? "בטל בחירת הכל"
-                  : "בחר הכל"}
+                  : "בחירת הכל"}
               </button>
               {selectedItems.length > 0 && (
                 <>
