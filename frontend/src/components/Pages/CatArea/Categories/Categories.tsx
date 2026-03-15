@@ -909,7 +909,12 @@ ${isMovingToRecycleBin ? "bg-orange-400 cursor-not-allowed text-white" : "bg-ora
                               מעביר לסל...
                             </span>
                           ) : (
-                            "העבר הכל לסל (כולל כל הצאצאים)"
+                              <span className="flex flex-col items-center gap-1">
+                                <span>העבר הכל לסל (כולל כל הצאצאים)</span>
+                                <span className="text-xs font-normal opacity-80">
+                                שים/י לב: מוצר שמופיע במספר קטגוריות (משוכפל) יועבר לסל מכל המיקומים שלו
+                                </span>
+                              </span>
                           )}
                         </button>
 
