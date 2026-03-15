@@ -24,7 +24,7 @@ export class UsersService {
     private groupsService: GroupsService,
     @Inject(forwardRef(() => PermissionsService))
     private permissionsService: PermissionsService,
-  ) { }
+  ) {}
 
   async getAllUsers(role?: string, approved?: string) {
     const filter: any = {};
