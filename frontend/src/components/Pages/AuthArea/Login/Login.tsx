@@ -472,7 +472,6 @@ const Login: FC<LoginProps> = () => {
                   )}
                 </div>
 
-                {/* אימייל */}
                 <div className="flex-1">
                   <label className="block text-right text-gray-700 font-semibold mb-4 text-base">
                     אימייל
@@ -484,7 +483,6 @@ const Login: FC<LoginProps> = () => {
                       onChange={(e) => {
                         const val = e.target.value;
 
-                        // remove Hebrew + Arabic characters
                         const sanitizedValue = val.replace(/[\u0590-\u05FF\u0600-\u06FF]/g, "");
                         setEmail(sanitizedValue);
 
@@ -547,7 +545,7 @@ const Login: FC<LoginProps> = () => {
                   focus:ring-offset-2
                 "
               >
-                התחבר
+                התחברות
               </button>
             </>
           )}
