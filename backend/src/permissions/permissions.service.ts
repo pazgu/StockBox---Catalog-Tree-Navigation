@@ -32,7 +32,7 @@ export class PermissionsService {
 
     private usersService: UsersService,
     private groupsService: GroupsService,
-  ) {}
+  ) { }
 
   async getPermissionsForUser(userId: string, userGroupIds?: string[]) {
     const allowedIds = [
@@ -643,7 +643,9 @@ export class PermissionsService {
         const paths = Array.isArray(p.productPath)
           ? p.productPath
           : [p.productPath];
+
         let attached = false;
+        const attachedCategoryPaths = new Set<string>();
 
         for (const rawPath of paths) {
           if (!rawPath) continue;
@@ -652,13 +654,18 @@ export class PermissionsService {
           const categoryPath =
             parts.length > 1 ? `/${parts.slice(0, -1).join('/')}` : null;
 
-          if (categoryPath && categoryByPath.has(categoryPath)) {
+          if (
+            categoryPath &&
+            categoryByPath.has(categoryPath) &&
+            !attachedCategoryPaths.has(categoryPath)
+          ) {
             categoryByPath.get(categoryPath).products.push({
               ...p,
               contextPath: categoryPath,
             });
+
+            attachedCategoryPaths.add(categoryPath);
             attached = true;
-            break;
           }
         }
 
