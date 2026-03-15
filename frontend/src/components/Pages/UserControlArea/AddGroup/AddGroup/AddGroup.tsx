@@ -150,7 +150,7 @@ const AddGroup: FC<AddGroupProps> = ({ onClose, onSave }) => {
                       ))
                     ) : (
                       <div className="p-3 text-center text-gray-500 text-sm">
-                        {searchTerm ? 'לא נמצאו תוצאות' : 'בחר משתמש'}
+                        {searchTerm ? 'לא נמצאו תוצאות' : 'בחירת משתמש'}
                       </div>
                     )}
                   </div>

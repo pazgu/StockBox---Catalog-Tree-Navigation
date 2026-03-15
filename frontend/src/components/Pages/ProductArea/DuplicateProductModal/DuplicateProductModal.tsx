@@ -206,7 +206,7 @@ const DuplicateProductModal: React.FC<DuplicateProductModalProps> = ({
         </div>
 
         <div className="mb-6">
-          <p className="text-sm font-medium text-gray-600 mb-1">בחר קטגוריות יעד</p>
+          <p className="text-sm font-medium text-gray-600 mb-1">בחירת קטגוריות יעד</p>
           <p className="text-xs text-gray-400 mb-3">
             המוצר יישאר במיקומים הקיימים וגם יתווסף לקטגוריות שתבחר
           </p>

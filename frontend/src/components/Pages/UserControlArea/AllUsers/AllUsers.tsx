@@ -554,7 +554,7 @@ const handleCancelEdit = () => {
                   ביטול
                 </button>
                 <button className={BTN_SUCCESS} onClick={confirmApprove}>
-                  כן, אשר
+                 אישור
                 </button>
               </div>
             </div>
