@@ -24,10 +24,21 @@ export class UsersService {
     private groupsService: GroupsService,
     @Inject(forwardRef(() => PermissionsService))
     private permissionsService: PermissionsService,
-  ) {}
+  ) { }
 
-  async getAllUsers(role?: string) {
-    const filter = role ? { role } : {};
+  async getAllUsers(role?: string, approved?: string) {
+    const filter: any = {};
+
+    if (role) {
+      filter.role = role;
+    }
+
+    if (approved === 'true') {
+      filter.approved = true;
+    } else if (approved === 'false') {
+      filter.approved = false;
+    }
+
     return this.userModel.find(filter).exec();
   }
   async createUser(createUserDto: CreateUserDto) {
