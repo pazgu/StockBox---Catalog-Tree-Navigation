@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -11,9 +11,11 @@ import { UsersModule } from 'src/users/users.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtAuthGuard } from 'src/gaurds/jwt-auth.guard';
 import { EditorGuard } from 'src/gaurds/editor.guard';
+import { SocketModule } from 'src/socket/socket.module';
 
 @Module({
   imports: [
+    forwardRef(() => SocketModule),
     ConfigModule,
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     PassportModule.register({ defaultStrategy: 'jwt' }),
