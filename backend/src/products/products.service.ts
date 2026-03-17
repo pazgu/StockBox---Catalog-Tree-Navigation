@@ -247,10 +247,12 @@ export class ProductsService {
         throw e;
       }
 
-      const parentPath = this.getParentPath(existing.productPath[0]);
       const newSlug = this.slugify(dto.productName);
-      const newPath = `${parentPath}/${newSlug}`;
-      dto.productPath = [newPath];
+      const newPaths = existing.productPath.map((fullPath) => {
+        const parentPath = this.getParentPath(fullPath);
+        return `${parentPath}/${newSlug}`;
+      });
+      dto.productPath = newPaths;
       (dto as any).nameKey = newNameKey;
     }
 
