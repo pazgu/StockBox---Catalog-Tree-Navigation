@@ -17,11 +17,13 @@ import { CreateUserDto } from './dto/createUser.dto';
 import { GroupsService } from 'src/groups/groups.service';
 import { PermissionsService } from 'src/permissions/permissions.service';
 import { forwardRef } from '@nestjs/common';
+import { SocketService } from 'src/socket/socket.service';
 @Injectable()
 export class UsersService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     private groupsService: GroupsService,
+    private socketService: SocketService,
     @Inject(forwardRef(() => PermissionsService))
     private permissionsService: PermissionsService,
   ) {}
@@ -86,8 +88,8 @@ export class UsersService {
       const existing = await this.userModel.findOne({
         _id: { $ne: id },
         $or: [
-          ...(updateUserDto.userName
-            ? [{ userName: updateUserDto.userName }]
+          ...(updateUserDto.userName 
+            ? [{ userName: updateUserDto.userName }] 
             : []),
           ...(updateUserDto.email ? [{ email: updateUserDto.email }] : []),
         ],
@@ -98,9 +100,28 @@ export class UsersService {
       }
     }
 
-    return this.userModel
+    const oldUser = await this.userModel.findById(id).select('role').lean();
+
+    const updatedUser = await this.userModel
       .findByIdAndUpdate(id, updateUserDto, { new: true })
       .exec();
+
+    if (!updatedUser) return updatedUser;
+
+    const roleChanged =
+      oldUser &&
+      updateUserDto.role &&
+      oldUser.role !== updateUserDto.role;
+
+    if (roleChanged) {
+      this.socketService.emitToUser(id, 'user_role_changed', {
+        newRole: updatedUser.role,
+      });
+    }
+
+    this.socketService.emitToRole(UserRole.EDITOR, 'user_updated', updatedUser);
+
+    return updatedUser;
   }
 
   toggleBlockUser(id: string, isBlocked: boolean) {

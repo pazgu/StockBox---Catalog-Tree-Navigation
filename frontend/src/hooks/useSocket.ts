@@ -5,6 +5,7 @@ interface UseSocketProps {
   token: string;
   onConnect?: () => void;
   onDisconnect?: () => void;
+  onRoleChanged?: () => void;
 }
 
 interface UseSocketReturn {
@@ -16,7 +17,12 @@ interface UseSocketReturn {
   offEvent: (event: string, callback?: (...args: any[]) => void) => void;
 }
 
-export const useSocket = ({ token, onConnect, onDisconnect }: UseSocketProps): UseSocketReturn => {
+export const useSocket = ({
+  token,
+  onConnect,
+  onDisconnect,
+  onRoleChanged,
+}: UseSocketProps): UseSocketReturn => {
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
@@ -38,11 +44,14 @@ export const useSocket = ({ token, onConnect, onDisconnect }: UseSocketProps): U
       console.log('Socket disconnected');
       onDisconnect?.();
     });
+    socket.on('user_role_changed', () => {
+      onRoleChanged?.();
+    });
 
     return () => {
       socket.disconnect();
     };
-  }, [token, onConnect, onDisconnect]);
+  }, [token, onConnect, onDisconnect, onRoleChanged]);
 
   const joinRoleRoom = useCallback((role: string) => {
     socketRef.current?.emit('join_role_room', role);
