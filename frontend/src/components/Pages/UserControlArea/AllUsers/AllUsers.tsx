@@ -92,9 +92,8 @@ const AllUsers: FC<AllUsersProps> = () => {
   useEffect(() => {
     joinRoleRoom("editor");
     onEvent("new_user_created", (user: User) => {
-      console.log("in new user on event:", user)
       setUsers(prev => [user, ...prev]);
-      toast.success(`משתמש חדש נוסף: ${user.firstName}`);
+      toast.info(`משתמש חדש נוסף: ${user.firstName}`);
     });
 
     onEvent("user_updated", (user: User) => {
