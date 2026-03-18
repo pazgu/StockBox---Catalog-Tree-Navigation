@@ -87,7 +87,7 @@ const SingleCat: FC = () => {
   const [isSavingProduct, setIsSavingProduct] = useState(false);
   const [isMovingToRecycleBin, setIsMovingToRecycleBin] = useState(false);
   const token = localStorage.getItem("token") || "";
-  const { joinRoleRoom, onEvent } = useSocket({ token });
+  const { joinRoleRoom, onEvent, offEvent } = useSocket({ token });
 
   const [hasDescendantsForMove, setHasDescendantsForMove] = useState<
     boolean | null
@@ -147,10 +147,9 @@ const SingleCat: FC = () => {
     onEvent("sub_category_added", handleNewSubCategory);
 
     return () => {
-      // cleanup if your hook supports it
-      // socket.off("sub_category_added", handleNewSubCategory);
+      offEvent("sub_category_added", handleNewSubCategory);
     };
-  }, [categoryPath, onEvent]);
+  }, [categoryPath, onEvent, offEvent]);
 
   useEffect(() => {
     setPreviousPath(categoryPath);

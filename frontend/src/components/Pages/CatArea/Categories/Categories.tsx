@@ -63,7 +63,7 @@ type FilterType = "all" | "categories" | "products";
 
 export const Categories: FC<CategoriesProps> = () => {
   const token = localStorage.getItem("token") || "";
-  const { joinRoleRoom, onEvent } = useSocket({ token });
+  const { joinRoleRoom, onEvent, offEvent } = useSocket({ token });
 
   const [showAddCatModal, setShowAddCatModal] = useState(false);
   const [showMoveToRecycleBinModal, setShowMoveToRecycleBinModal] =
@@ -124,9 +124,9 @@ export const Categories: FC<CategoriesProps> = () => {
   };
 
   useEffect(() => {
-    joinRoleRoom("editor")
-    onEvent("category_added", (newCategory: Category) => {
-      console.log("New category for me:", newCategory);
+    joinRoleRoom("editor");
+
+    const handleNewCategory = (newCategory: Category) => {
       setCategories(prev => [newCategory, ...prev]);
       setItems(prev => [
         {
@@ -140,9 +140,14 @@ export const Categories: FC<CategoriesProps> = () => {
         ...prev,
       ]);
       toast.info(`הקטגוריה "${newCategory.categoryName}" נוספה!`);
-    });
-  }, [joinRoleRoom, onEvent]);
+    };
 
+    onEvent("category_added", handleNewCategory);
+
+    return () => {
+      offEvent("category_added", handleNewCategory);
+    };
+  }, [joinRoleRoom, onEvent, offEvent]);
   useEffect(() => {
     if (role !== undefined) {
       if (role) {
