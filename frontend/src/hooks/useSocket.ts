@@ -14,6 +14,7 @@ interface UseSocketReturn {
   leaveRoleRoom: (role: string) => void;
   emitEvent: (event: string, data?: any) => void;
   onEvent: (event: string, callback: (...args: any[]) => void) => void;
+  offEvent: (event: string, callback?: (...args: any[]) => void) => void;
 }
 
 export const useSocket = ({
@@ -68,11 +69,22 @@ export const useSocket = ({
     socketRef.current?.on(event, callback);
   }, []);
 
+  const offEvent = useCallback((event: string, callback?: (...args: any[]) => void) => {
+    if (!socketRef.current) return;
+
+    if (callback) {
+      socketRef.current.off(event, callback);
+    } else {
+      socketRef.current.off(event);
+    }
+  }, []);
+
   return {
     socket: socketRef.current,
     joinRoleRoom,
     leaveRoleRoom,
     emitEvent,
     onEvent,
+    offEvent,
   };
 };

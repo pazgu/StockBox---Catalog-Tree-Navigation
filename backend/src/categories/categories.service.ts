@@ -28,6 +28,8 @@ import { Group } from 'src/schemas/Groups.schema';
 import mongoose from 'mongoose';
 import { NameLock } from 'src/schemas/NameLock.schema';
 import { normalizeName } from 'src/utils/nameLock';
+import { SocketService } from 'src/socket/socket.service';
+import { UserRole } from 'src/schemas/Users.schema';
 
 @Injectable()
 export class CategoriesService {
@@ -38,6 +40,7 @@ export class CategoriesService {
     @InjectModel(NameLock.name) private nameLockModel: Model<NameLock>,
     private readonly permissionsService: PermissionsService,
     private readonly usersService: UsersService,
+    private readonly socketService: SocketService
   ) { }
   nameKey = normalizeName(CreateCategoryDto.prototype.categoryName);
 
@@ -91,10 +94,31 @@ export class CategoriesService {
         { nameKey },
         { $set: { refId: savedCategory._id.toString() } },
       );
+      let userIds: string[] | null | undefined = null;
+      const path = savedCategory.categoryPath;
+      const pathAsString = Array.isArray(path) ? path[0] : path;
+      const rawParts = pathAsString.split('/').filter(Boolean);
+      const normalizedParts = rawParts[0] === 'categories' ? rawParts.slice(1) : rawParts;
+
+      const isRootCategory = normalizedParts.length === 1;
       if (createCategoryDto.allowAll) {
-        await this.permissionsService.assignPermissionsForNewEntity(
+        userIds = await this.permissionsService.assignPermissionsForNewEntity(
           savedCategory,
         );
+
+        if (userIds?.length) {
+          this.socketService.emitToUsers(userIds, 'sub_category_added', savedCategory);
+        } else {
+          this.socketService.emitToAll('category_added', savedCategory);
+        }
+      }
+      else {
+        if (isRootCategory) {
+          this.socketService.emitToRole(UserRole.EDITOR, "category_added", savedCategory);
+        } else {
+          this.socketService.emitToRole(UserRole.EDITOR, "sub_category_added", savedCategory);
+
+        }
       }
 
       return savedCategory;
@@ -457,7 +481,7 @@ export class CategoriesService {
     const oldPath = category.categoryPath;
     const { newParentPath } = moveCategoryDto;
 
-   
+
     const parentCategory = await this.categoryModel.findOne({
       categoryPath: newParentPath,
     });
