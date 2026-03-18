@@ -95,8 +95,16 @@ const AllUsers: FC<AllUsersProps> = () => {
       setUsers(prev => [user, ...prev]);
       toast.info(`משתמש חדש נוסף: ${user.firstName}`);
     });
-  }, [joinRoleRoom, onEvent]);
 
+    onEvent("user_updated", (user: User) => {
+      setUsers(prev => prev.map(u => u._id === user._id ? user : u));
+    });
+
+    onEvent("user_deleted", (id: string) => {
+      setUsers(prev => prev.filter(u => u._id !== id));
+    });
+  }, [joinRoleRoom, onEvent]);
+  
   const filteredUsers = users
     .filter(
       (user) =>

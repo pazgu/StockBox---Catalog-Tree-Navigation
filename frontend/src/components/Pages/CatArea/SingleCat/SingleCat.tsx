@@ -41,6 +41,7 @@ import {
   getSafeCategoryImage,
   getSafeProductImage,
 } from "../../../../lib/imageFallback";
+import { useSocket } from "../../../../hooks/useSocket";
 
 const hasImage = (images: any): boolean => {
   if (!images) return false;
@@ -85,6 +86,9 @@ const SingleCat: FC = () => {
   const [itemToEdit, setItemToEdit] = useState<DisplayItem | null>(null);
   const [isSavingProduct, setIsSavingProduct] = useState(false);
   const [isMovingToRecycleBin, setIsMovingToRecycleBin] = useState(false);
+  const token = localStorage.getItem("token") || "";
+  const { joinRoleRoom, onEvent } = useSocket({ token });
+
   const [hasDescendantsForMove, setHasDescendantsForMove] = useState<
     boolean | null
   >(null);
@@ -129,6 +133,24 @@ const SingleCat: FC = () => {
   useEffect(() => {
     loadAllContent();
   }, [categoryPath, id]);
+
+  useEffect(() => {
+    const handleNewSubCategory = (newCategory: CategoryDTO) => {
+      loadAllContent();
+      toast.success(`הקטגוריה "${newCategory.categoryName}" נוספה!`);
+
+    };
+    joinRoleRoom("editor")
+    if (id) {
+      joinRoleRoom(id)
+    }
+    onEvent("sub_category_added", handleNewSubCategory);
+
+    return () => {
+      // cleanup if your hook supports it
+      // socket.off("sub_category_added", handleNewSubCategory);
+    };
+  }, [categoryPath, onEvent]);
 
   useEffect(() => {
     setPreviousPath(categoryPath);
@@ -195,7 +217,7 @@ const SingleCat: FC = () => {
         try {
           const favorites = await userService.getFavorites();
           userFavorites = favorites.map((fav: any) => fav.id.toString());
-        } catch (err) {}
+        } catch (err) { }
       }
 
       const categoryItems: DisplayItem[] = subCategories.map(
@@ -515,7 +537,6 @@ const SingleCat: FC = () => {
         favorite: false,
       };
       setItems([...items, newItem]);
-      toast.success(`הקטגוריה "${data.name}" נוצרה בהצלחה!`);
       setShowAddSubCategoryModal(false);
     } catch (error) {
       const serverMessage =
@@ -622,15 +643,15 @@ const SingleCat: FC = () => {
       <header className="flex items-center gap-6 mb-10">
         {/* Category Image */}
         {categoryInfo && (
-         <img
-  src={getSafeCategoryImage(categoryInfo.categoryImage)}
-  alt={categoryInfo.categoryName}
-  className="w-32 h-32 rounded-full object-cover mt-0 border-0 ring-0 outline-none bg-transparent focus:outline-none focus:ring-0 focus:ring-offset-0"
-  onError={(e) => {
-    (e.currentTarget as HTMLImageElement).src =
-      getSafeCategoryImage(categoryInfo.categoryImage);
-  }}
-/>
+          <img
+            src={getSafeCategoryImage(categoryInfo.categoryImage)}
+            alt={categoryInfo.categoryName}
+            className="w-32 h-32 rounded-full object-cover mt-0 border-0 ring-0 outline-none bg-transparent focus:outline-none focus:ring-0 focus:ring-offset-0"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src =
+                getSafeCategoryImage(categoryInfo.categoryImage);
+            }}
+          />
         )}
 
         {/* Category Title and Stats */}
@@ -640,7 +661,7 @@ const SingleCat: FC = () => {
             {categoryInfo
               ? categoryInfo.categoryName
               : breadcrumbPathParts[breadcrumbPathParts.length - 1] ||
-                "קטגוריה"}
+              "קטגוריה"}
           </h1>
           <div className="flex items-center gap-4">
             <span className="text-base">סך הכל פריטים: {items.length}</span>
@@ -721,7 +742,7 @@ const SingleCat: FC = () => {
         </div>
       )}
 
-            {items.length === 0 ? (
+      {items.length === 0 ? (
         <div className="w-full h-40 flex justify-center items-center my-12 text-slate-500">
           <p className="text-lg">אין פריטים להצגה</p>
         </div>
@@ -730,16 +751,14 @@ const SingleCat: FC = () => {
           {items.map((item) => (
             <div
               key={item.id}
-              className={`flex flex-col items-center p-4 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 w-80 ${
-                selectedItems.includes(item.id)
-                  ? "bg-[#0D305B]/10"
-                  : "border-gray-200"
-              } ${!isSelectionMode ? "cursor-pointer" : ""}`}
+              className={`flex flex-col items-center p-4 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 w-80 ${selectedItems.includes(item.id)
+                ? "bg-[#0D305B]/10"
+                : "border-gray-200"
+                } ${!isSelectionMode ? "cursor-pointer" : ""}`}
             >
               <div
-                className={`absolute top-2 left-2 px-3 py-1 text-xs font-medium ${
-                  item.type === "category" ? " text-blue-700" : " text-green-700"
-                }`}
+                className={`absolute top-2 left-2 px-3 py-1 text-xs font-medium ${item.type === "category" ? " text-blue-700" : " text-green-700"
+                  }`}
               >
                 {item.type === "category" ? (
                   <>
@@ -867,17 +886,17 @@ const SingleCat: FC = () => {
               >
                 {item.type === "category" ? (
                   <img
-  src={getSafeCategoryImage(
-    typeof item.images === "string" ? item.images : null,
-  )}
-  alt={item.name}
-  className="max-h-full max-w-full object-contain"
-  onError={(e) => {
-    (e.currentTarget as HTMLImageElement).src = getSafeCategoryImage(
-      typeof item.images === "string" ? item.images : null,
-    );
-  }}
-/>
+                    src={getSafeCategoryImage(
+                      typeof item.images === "string" ? item.images : null,
+                    )}
+                    alt={item.name}
+                    className="max-h-full max-w-full object-contain"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = getSafeCategoryImage(
+                        typeof item.images === "string" ? item.images : null,
+                      );
+                    }}
+                  />
                 ) : hasImage(item.images) ? (
                   <div className="h-full w-full flex justify-center items-center">
                     <ImagePreviewHover
@@ -887,18 +906,18 @@ const SingleCat: FC = () => {
                     />
                   </div>
                 ) : (
-                 <img
-  src={getSafeProductImage(
-    Array.isArray(item.images) ? item.images : [],
-  )}
-  alt={item.name}
-  className="max-h-full max-w-full object-contain"
-  onError={(e) => {
-    (e.currentTarget as HTMLImageElement).src = getSafeProductImage(
-      Array.isArray(item.images) ? item.images : [],
-    );
-  }}
-/>
+                  <img
+                    src={getSafeProductImage(
+                      Array.isArray(item.images) ? item.images : [],
+                    )}
+                    alt={item.name}
+                    className="max-h-full max-w-full object-contain"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = getSafeProductImage(
+                        Array.isArray(item.images) ? item.images : [],
+                      );
+                    }}
+                  />
                 )}
               </div>
 
@@ -1086,7 +1105,7 @@ const SingleCat: FC = () => {
             ${isMovingToRecycleBin ? "opacity-70 cursor-not-allowed" : "hover:bg-orange-700"}`}
               >
                 {isMovingToRecycleBin &&
-                categoryMoveStrategyLoading === "cascade" ? (
+                  categoryMoveStrategyLoading === "cascade" ? (
                   <span className="flex items-center justify-center gap-2">
                     <Spinner className="size-4 text-white" />
                     מעביר לסל...
@@ -1103,7 +1122,7 @@ const SingleCat: FC = () => {
     ${isMovingToRecycleBin ? "opacity-70 cursor-not-allowed" : "hover:bg-blue-200"}`}
               >
                 {isMovingToRecycleBin &&
-                categoryMoveStrategyLoading === "move_up" ? (
+                  categoryMoveStrategyLoading === "move_up" ? (
                   <span className="flex items-center justify-center gap-2">
                     <Spinner className="size-4 text-blue-900" />
                     מעביר לסל...
@@ -1188,7 +1207,7 @@ const SingleCat: FC = () => {
                   ? itemToMove.path
                   : [itemToMove.path || categoryPath]
               }
-              currentCategoryPath={categoryPath} 
+              currentCategoryPath={categoryPath}
               onClose={() => {
                 setShowMoveModal(false);
                 setItemToMove(null);
@@ -1203,12 +1222,12 @@ const SingleCat: FC = () => {
                 categoryName: itemToMove.name,
                 categoryPath: itemToMove.path[0],
                 categoryImage: getSafeCategoryImage(
-  Array.isArray(itemToMove.images)
-    ? itemToMove.images[0]
-    : typeof itemToMove.images === "string"
-      ? itemToMove.images
-      : null,
-),
+                  Array.isArray(itemToMove.images)
+                    ? itemToMove.images[0]
+                    : typeof itemToMove.images === "string"
+                      ? itemToMove.images
+                      : null,
+                ),
               }}
               onClose={() => {
                 setShowMoveModal(false);
@@ -1255,12 +1274,12 @@ const SingleCat: FC = () => {
             categoryName: itemToEdit.name,
             categoryPath: itemToEdit.path[0],
             categoryImage: getSafeCategoryImage(
-  Array.isArray(itemToEdit.images)
-    ? itemToEdit.images[0]
-    : typeof itemToEdit.images === "string"
-      ? itemToEdit.images
-      : null,
-),
+              Array.isArray(itemToEdit.images)
+                ? itemToEdit.images[0]
+                : typeof itemToEdit.images === "string"
+                  ? itemToEdit.images
+                  : null,
+            ),
           }}
           onClose={() => {
             setShowEditModal(false);
