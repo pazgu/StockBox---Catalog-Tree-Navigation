@@ -9,6 +9,7 @@ import { UpdateAboutBlockDto } from './dto/UpdateAboutBlock.dto';
 import { About, AboutDocument } from '../schemas/About.schema';
 import { cloudinary } from '../utils/cloudinary/cloudinary';
 import type { Express } from 'express';
+import { SocketService } from 'src/socket/socket.service';
 
 const ABOUT_SINGLETON_ID = 'ABOUT_SINGLETON';
 
@@ -16,7 +17,8 @@ const ABOUT_SINGLETON_ID = 'ABOUT_SINGLETON';
 export class AboutService {
   constructor(
     @InjectModel(About.name) private readonly aboutModel: Model<AboutDocument>,
-  ) {}
+    private readonly socketService: SocketService,
+  ) { }
 
   private async getOrCreateSingleton(): Promise<AboutDocument> {
     const existing = await this.aboutModel.findById(ABOUT_SINGLETON_ID).exec();
@@ -26,6 +28,12 @@ export class AboutService {
       _id: ABOUT_SINGLETON_ID,
       blocks: [],
       images: [],
+    });
+  }
+
+  private emitAboutUpdated(updatedAt?: Date) {
+    this.socketService.emitToAll('about_updated', {
+      updatedAt: updatedAt?.toISOString?.() ?? new Date().toISOString(),
     });
   }
 
@@ -49,12 +57,13 @@ export class AboutService {
 
     doc.blocks = dto.blocks ?? [];
     doc.images = keep;
-
     const saved = await doc.save();
 
     await Promise.all(
       removed.map((img) => this.safeCloudinaryDestroy(img.public_id)),
     );
+
+    this.emitAboutUpdated(saved.updatedAt);
 
     return {
       blocks: saved.blocks ?? [],
@@ -77,9 +86,11 @@ export class AboutService {
 
     const saved = await doc.save();
 
+    this.emitAboutUpdated(saved.updatedAt);
+
     return {
       blocks: saved.blocks ?? [],
-      images: saved.images ?? [],
+      images: this.toImageUrls(saved.images ?? []),
       updatedAt: saved.updatedAt,
     };
   }
@@ -93,6 +104,7 @@ export class AboutService {
     doc.images = [...(doc.images ?? []), ...uploaded];
 
     const saved = await doc.save();
+    this.emitAboutUpdated(saved.updatedAt);
 
     return {
       blocks: saved.blocks ?? [],
@@ -118,6 +130,8 @@ export class AboutService {
 
     await this.safeCloudinaryDestroy(old?.public_id);
 
+    this.emitAboutUpdated(saved.updatedAt);
+
     return {
       blocks: saved.blocks ?? [],
       images: this.toImageUrls(saved.images ?? []),
@@ -139,6 +153,8 @@ export class AboutService {
 
     await this.safeCloudinaryDestroy(removed?.public_id);
 
+    this.emitAboutUpdated(saved.updatedAt);
+
     return {
       blocks: saved.blocks ?? [],
       images: this.toImageUrls(saved.images ?? []),
@@ -155,6 +171,8 @@ export class AboutService {
     const saved = await doc.save();
 
     await Promise.all(imgs.map((x) => this.safeCloudinaryDestroy(x.public_id)));
+
+    this.emitAboutUpdated(saved.updatedAt);
 
     return {
       blocks: saved.blocks ?? [],
@@ -203,6 +221,8 @@ export class AboutService {
     const saved = await doc.save();
 
     await this.safeCloudinaryDestroy(removed?.public_id);
+
+    this.emitAboutUpdated(saved.updatedAt);
 
     return {
       blocks: saved.blocks ?? [],
