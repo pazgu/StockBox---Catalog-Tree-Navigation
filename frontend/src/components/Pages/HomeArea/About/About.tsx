@@ -353,11 +353,18 @@ const About: FC<AboutProps> = () => {
     pendingAddedFiles,
   ]);
 
-  const handleSaveChanges = useCallback(async () => {
-    if (!hasActualChanges()) {
-      setIsEditing(false);
-      return;
-    }
+ const handleSaveChanges = useCallback(async () => {
+  if (hasUnconfirmedChanges) {
+    toast.error(
+      "לא ניתן לשמור לפני אישור כל השינויים (לחיצה על ✓ ליד השדות ששונו).",
+    );
+    return;
+  }
+
+  if (!hasActualChanges()) {
+    setIsEditing(false);
+    return;
+  }
 
     const invalidIndex = sections.findIndex(
       (s) => !isSectionFilledEnough(s),
@@ -372,7 +379,7 @@ const About: FC<AboutProps> = () => {
       return;
     }
 
-       try {
+    try {
       setIsSaving(true);
 
       const payload = {
@@ -422,7 +429,7 @@ const About: FC<AboutProps> = () => {
       });
       setIsEditing(false);
       toast.success(TOAST.saveSuccess);
-       } catch (e) {
+    } catch (e) {
       toast.error(TOAST.saveError);
     } finally {
       setIsSaving(false);
@@ -434,6 +441,7 @@ const About: FC<AboutProps> = () => {
     originalData.sections,
     originalData.images,
     hasActualChanges,
+    hasUnconfirmedChanges,
     TOAST.saveSuccess,
     TOAST.saveError,
   ]);
@@ -606,15 +614,21 @@ const About: FC<AboutProps> = () => {
       <div className="max-w-6xl mx-auto flex items-start gap-15 py-10 flex-wrap lg:flex-nowrap">
         <div className="flex-1 p-5 lg:ml-[400px] order-2 lg:order-1">
           <AboutFloatingActions
-            role={role}
-            isEditing={isEditing}
-            isSaving={isSaving}
-            handleCancelClick={handleCancelClick}
-            cancelPendingExit={cancelPendingExit}
-            setEditExitAction={setEditExitAction}
-            debouncedSaveChanges={debouncedSaveChanges}
-            setIsEditing={setIsEditing}
-          />
+  role={role}
+  isEditing={isEditing}
+  isSaving={isSaving}
+  hasUnconfirmedChanges={hasUnconfirmedChanges}
+  onBlockedSave={() =>
+    toast.error(
+      "לא ניתן לשמור לפני אישור כל השינויים (לחיצה על ✓ ליד השדות ששונו).",
+    )
+  }
+  handleCancelClick={handleCancelClick}
+  cancelPendingExit={cancelPendingExit}
+  setEditExitAction={setEditExitAction}
+  debouncedSaveChanges={debouncedSaveChanges}
+  setIsEditing={setIsEditing}
+/>
           {/* Render all sections dynamically */}
           {sections.map((section, sectionIndex) => (
             <div
@@ -622,19 +636,15 @@ const About: FC<AboutProps> = () => {
               ref={(el) => {
                 sectionRefs.current[sectionIndex] = el;
               }}
-              draggable={isEditing && !hasUnconfirmedChanges}
-              onDragStart={() => handleSectionDragStart(sectionIndex)}
               onDragOver={(e) => handleSectionDragOver(e, sectionIndex)}
               onDragEnter={() => handleSectionDragEnter(sectionIndex)}
-              onDragEnd={handleSectionDragEnd}
               className={`relative my-6 transition-all duration-200 ${isEditing
-                ? "border-2 border-dashed border-stockblue/30 rounded-xl p-4 cursor-move hover:border-stockblue/50"
-                : ""
+                  ? "border-2 border-dashed border-stockblue/30 rounded-xl p-4 hover:border-stockblue/50"
+                  : ""
                 } ${draggedSectionIndex === sectionIndex
                   ? "opacity-40 scale-95 rotate-1"
                   : ""
-                } ${dragOverIndex === sectionIndex &&
-                  draggedSectionIndex !== sectionIndex
+                } ${dragOverIndex === sectionIndex && draggedSectionIndex !== sectionIndex
                   ? "border-stockblue border-solid bg-stockblue/5 scale-[1.02]"
                   : ""
                 }`}
@@ -644,6 +654,9 @@ const About: FC<AboutProps> = () => {
                 isCtaSection={section.type === "cta"}
                 sectionIndex={sectionIndex}
                 removeSection={removeSection}
+                hasUnconfirmedChanges={hasUnconfirmedChanges}
+                onDragStart={() => handleSectionDragStart(sectionIndex)}
+                onDragEnd={handleSectionDragEnd}
               />
 
               {section.type === "intro" && (
