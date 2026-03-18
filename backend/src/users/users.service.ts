@@ -17,6 +17,8 @@ import { CreateUserDto } from './dto/createUser.dto';
 import { GroupsService } from 'src/groups/groups.service';
 import { PermissionsService } from 'src/permissions/permissions.service';
 import { forwardRef } from '@nestjs/common';
+import { SocketService } from 'src/socket/socket.service';
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -24,6 +26,7 @@ export class UsersService {
     private groupsService: GroupsService,
     @Inject(forwardRef(() => PermissionsService))
     private permissionsService: PermissionsService,
+    private socketService: SocketService,
   ) {}
 
   async getAllUsers(role?: string, approved?: string) {
@@ -41,6 +44,7 @@ export class UsersService {
 
     return this.userModel.find(filter).exec();
   }
+
   async createUser(createUserDto: CreateUserDto) {
     const existing = await this.userModel.findOne({
       $or: [
@@ -68,6 +72,8 @@ export class UsersService {
       await defaultGroup.save();
     }
 
+    this.socketService.emitToRole('editor', 'new_user_created', savedUser);
+
     return savedUser;
   }
 
@@ -78,7 +84,13 @@ export class UsersService {
 
   async deleteUser(id: string) {
     await this.permissionsService.deletePermissionsForAllowed(id);
-    return this.userModel.findByIdAndDelete(id).exec();
+    const deleted = await this.userModel.findByIdAndDelete(id).exec();
+
+    if (deleted) {
+      this.socketService.emitToRole('editor', 'user_deleted', id);
+    }
+
+    return deleted;
   }
 
   async updateUser(id: string, updateUserDto: Partial<CreateUserDto>) {
@@ -98,9 +110,19 @@ export class UsersService {
       }
     }
 
-    return this.userModel
+    const updatedUser = await this.userModel
       .findByIdAndUpdate(id, updateUserDto, { new: true })
       .exec();
+
+    if (updatedUser) {
+      this.socketService.emitToRole('editor', 'user_updated', updatedUser);
+
+      if (updateUserDto.approved === true) {
+        this.socketService.emitToUser(id, 'user_approved', updatedUser);
+      }
+    }
+
+    return updatedUser;
   }
 
   toggleBlockUser(id: string, isBlocked: boolean) {
@@ -108,6 +130,7 @@ export class UsersService {
       .findByIdAndUpdate(id, { isBlocked }, { new: true })
       .exec();
   }
+
   async addFavorite(userId: string, itemId: string, type: FavoriteType) {
     try {
       if (!Types.ObjectId.isValid(userId)) {
@@ -142,6 +165,7 @@ export class UsersService {
       throw new InternalServerErrorException('Failed to add favorite');
     }
   }
+
   async removeFavorite(userId: string, itemId: string) {
     try {
       if (!Types.ObjectId.isValid(userId)) {
@@ -216,6 +240,7 @@ export class UsersService {
       throw new InternalServerErrorException('Failed to fetch favorites');
     }
   }
+
   async isFavorite(userId: string, itemId: string): Promise<boolean> {
     try {
       if (!Types.ObjectId.isValid(userId)) {
