@@ -43,13 +43,13 @@ import {
   AboutBottomDropZone,
 } from "./AboutPageParts";
 import UnsavedChangesDialog from "../../SharedComponents/UnsavedChangesDialog/UnsavedChangesDialog";
+import { useSocket } from "../../../../hooks/useSocket";
 
 interface AboutProps { }
 
 const About: FC<AboutProps> = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
-  const [isPageLoading, setIsPageLoading] = useState(true);
   const [editExitAction, setEditExitAction] = useState<"save" | "cancel" | null>(null);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [editableImages, setEditableImages] = useState<ImageItem[]>([]);
@@ -57,7 +57,11 @@ const About: FC<AboutProps> = () => {
   const images = editableImages.map((i) => i.url);
   const navigate = useNavigate();
   const { role } = useUser();
+  const token = localStorage.getItem("token") || "";
+  const { onEvent, offEvent } = useSocket({ token });
   const replaceInputRef = React.useRef<HTMLInputElement>(null);
+  const [isPageLoading, setIsPageLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const addInputRef = React.useRef<HTMLInputElement>(null);
   const [sections, setSections] = useState<SectionType[]>([]);
   const contentSectionsCount = useMemo(
@@ -146,34 +150,55 @@ const About: FC<AboutProps> = () => {
     });
   }, [images.length]);
 
-  const touchStartXRef = React.useRef<number | null>(null);
-  React.useEffect(() => {
-    (async () => {
-      try {
-        setIsPageLoading(true);
-        const res = await aboutApi.get();
-        const loadedSections = blocksToSections(res.blocks ?? []);
-        const loadedImages: ImageItem[] = (res.images ?? []).map((url) => ({
-          url,
-        }));
+  const fetchAboutData = useCallback(async () => {
+    try {
+      setIsPageLoading(true);
 
-        const withCta = ensureCtaSection(loadedSections);
-        setSections(withCta);
-        setEditableImages(loadedImages);
-        setOriginalData({
-          sections: withCta,
-          images: loadedImages,
-        });
+      const res = await aboutApi.get();
+      const loadedSections = blocksToSections(res.blocks ?? []);
+      const loadedImages: ImageItem[] = (res.images ?? []).map((url) => ({
+        url,
+      }));
 
-        setConfirmedSnapshot(buildSnapshotFromSections(withCta));
-        setDirtyKeys(new Set());
-      } catch (e) {
-        toast.error(TOAST.loadError);
-      } finally {
-        setIsPageLoading(false);
-      }
-    })();
+      const withCta = ensureCtaSection(loadedSections);
+
+      setSections(withCta);
+      setEditableImages(loadedImages);
+      setOriginalData({
+        sections: withCta,
+        images: loadedImages,
+      });
+
+      setConfirmedSnapshot(buildSnapshotFromSections(withCta));
+      setDirtyKeys(new Set());
+
+      setCurrentImageIndex((prev) =>
+        normalizeImageIndex(prev, loadedImages.length),
+      );
+    } catch (e) {
+      toast.error(TOAST.loadError);
+    } finally {
+      setIsPageLoading(false);
+    }
   }, []);
+
+  const touchStartXRef = React.useRef<number | null>(null);
+  useEffect(() => {
+    void fetchAboutData();
+  }, [fetchAboutData]);
+
+  useEffect(() => {
+    const handleAboutUpdated = () => {
+      if (isEditing) return;
+      void fetchAboutData();
+    };
+
+    onEvent("about_updated", handleAboutUpdated);
+
+    return () => {
+      offEvent("about_updated", handleAboutUpdated);
+    };
+  }, [onEvent, offEvent, fetchAboutData, isEditing]);
 
   const handleAddSection = (
     afterIndex: number,
@@ -347,7 +372,9 @@ const About: FC<AboutProps> = () => {
       return;
     }
 
-    try {
+       try {
+      setIsSaving(true);
+
       const payload = {
         blocks: sectionsToBlocks(sections),
         images: editableImages.filter((i) => !i.isPreview).map((i) => i.url),
@@ -357,6 +384,7 @@ const About: FC<AboutProps> = () => {
         setIsImagesLoading(true);
         try {
           const res = await aboutApi.uploadImages(pendingAddedFiles);
+
           setEditableImages((prev) => {
             revokePreviewUrls(prev);
             return prev;
@@ -365,6 +393,7 @@ const About: FC<AboutProps> = () => {
           const serverAfterUpload = res.images ?? [];
           const originalUrls = originalData.images.map((i) => i.url);
           const alreadyInPayload = payload.images;
+
           const newlyAdded = serverAfterUpload.filter(
             (u) => !originalUrls.includes(u) && !alreadyInPayload.includes(u),
           );
@@ -383,28 +412,6 @@ const About: FC<AboutProps> = () => {
         }
       }
 
-      const originalUrls = originalData.images.map((i) => i.url);
-      const finalUrls = payload.images;
-      const removedUrls = originalUrls.filter((u) => !finalUrls.includes(u));
-
-      if (removedUrls.length > 0) {
-        const latest = await aboutApi.get();
-        let serverImages = [...(latest.images ?? [])];
-
-        if (finalUrls.length === 0) {
-          await aboutApi.clearImages();
-          serverImages = [];
-        } else {
-          for (const url of removedUrls) {
-            const idx = serverImages.indexOf(url);
-            if (idx !== -1) {
-              const res = await aboutApi.deleteImageAt(idx);
-              serverImages = [...(res.images ?? [])];
-            }
-          }
-        }
-      }
-
       await aboutApi.replace(payload);
 
       setConfirmedSnapshot(buildSnapshotFromSections(sections));
@@ -415,8 +422,10 @@ const About: FC<AboutProps> = () => {
       });
       setIsEditing(false);
       toast.success(TOAST.saveSuccess);
-    } catch (e) {
+       } catch (e) {
       toast.error(TOAST.saveError);
+    } finally {
+      setIsSaving(false);
     }
   }, [
     sections,
@@ -599,6 +608,7 @@ const About: FC<AboutProps> = () => {
           <AboutFloatingActions
             role={role}
             isEditing={isEditing}
+            isSaving={isSaving}
             handleCancelClick={handleCancelClick}
             cancelPendingExit={cancelPendingExit}
             setEditExitAction={setEditExitAction}
