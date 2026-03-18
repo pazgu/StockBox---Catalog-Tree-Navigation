@@ -12,6 +12,7 @@ import { LoginDto } from './dtos/Login.dto';
 import { User, UserRole } from 'src/schemas/Users.schema';
 import { UsersService } from 'src/users/users.service';
 import { BadRequestException } from '@nestjs/common';
+import { SocketService } from 'src/socket/socket.service';
 
 @Injectable()
 export class AuthService {
@@ -19,6 +20,7 @@ export class AuthService {
     @InjectModel(User.name) private readonly userModel: Model<User>,
     private readonly jwtService: JwtService,
     private readonly usersService: UsersService,
+    private readonly socketService: SocketService
   ) {}
 
   async login(dto: LoginDto) {
@@ -56,6 +58,15 @@ export class AuthService {
         approved: false,
         requestSent: false,
         isBlocked: false,
+      });
+
+      this.socketService.emitToRole(UserRole.EDITOR, 'new_user_created', {
+        id: newUser._id,
+        email: newUser.email,
+        userName: newUser.userName,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        role: newUser.role,
       });
 
       throw new ForbiddenException({
