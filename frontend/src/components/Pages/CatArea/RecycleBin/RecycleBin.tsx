@@ -321,11 +321,11 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
                       </div>
                     </div>
 
-                    <div className="absolute right-3 top-3 flex gap-2">
+                    <div className="absolute right-3 top-3 flex gap-2 z-10">
                       <div className="relative group">
                         <button
                           onClick={() => handleRestoreClick(item)}
-                          className="h-8 w-8 rounded-full bg-green-600 hover:bg-green-700 text-white flex items-center justify-center hover:scale-110 transition-all duration-200"
+                          className="h-8 w-8 rounded-full bg-green-600 hover:bg-green-700 text-white flex items-center justify-center  transition-all duration-200"
                         >
                           <RotateCcw size={18} />
                         </button>
@@ -344,7 +344,7 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
                       <div className="relative group">
                         <button
                           onClick={() => handlePermanentDeleteClick(item)}
-                          className="h-8 w-8 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center hover:scale-110 transition-all duration-200"
+                          className="h-8 w-8 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center  transition-all duration-200"
                         >
                           <Trash2 size={18} />
                         </button>

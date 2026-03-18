@@ -150,13 +150,24 @@ class CategoriesService {
       return null;
     }
   }
+  async searchCategories(query: string): Promise<CategoryDTO[]> {
+    try {
+      const response = await api.get<CategoryDTO[]>(`${this.baseUrl}/search`, {
+        params: { q: query },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error searching categories:", error);
+      throw error;
+    }
+  }
 
   async hasDescendants(id: string): Promise<boolean> {
-  const res = await api.get<{ hasDescendants: boolean }>(
-    `${this.baseUrl}/${id}/has-descendants`,
-  );
-  return res.data.hasDescendants;
-}
+    const res = await api.get<{ hasDescendants: boolean }>(
+      `${this.baseUrl}/${id}/has-descendants`,
+    );
+    return res.data.hasDescendants;
+  }
 
 }
 

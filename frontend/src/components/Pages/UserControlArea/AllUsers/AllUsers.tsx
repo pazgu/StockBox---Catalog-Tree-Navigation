@@ -9,6 +9,7 @@ import { User } from "../../../models/user.models";
 import { groupService } from "../../../../services/GroupService";
 import isEmail from "validator/lib/isEmail";
 import { useUser } from "../../../../context/UserContext";
+import { useSocket } from "../../../../hooks/useSocket";
 import AllUsersSkeleton from "./AllUsersSkeleton";
 const ROLE_OPTIONS: Array<{ value: User["role"]; label: string }> = [
   { value: "editor", label: "עורך" },
@@ -43,24 +44,26 @@ interface AllUsersProps {}
 
 const AllUsers: FC<AllUsersProps> = () => {
   const navigate = useNavigate();
-  const { id } = useUser();  
+  const { id } = useUser();
+  const token = localStorage.getItem("token") || "";
+  const { joinRoleRoom, onEvent } = useSocket({ token });
 
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   useEffect(() => {
-  (async () => {
-    try {
-      setIsLoading(true);
-      const data = await userService.getAll();
-      setUsers(data);
-    } catch (e) {
-      toast.error("שגיאה בטעינת המשתמשים");
-      setUsers([]);
-    } finally {
-      setIsLoading(false);
-    }
-  })();
-}, []);
+    (async () => {
+      try {
+        setIsLoading(true);
+        const data = await userService.getAll();
+        setUsers(data);
+      } catch (e) {
+        toast.error("שגיאה בטעינת המשתמשים");
+        setUsers([]);
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+  }, []);
   const isMe = (userId: string | undefined) => userId === id;
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
@@ -85,6 +88,22 @@ const AllUsers: FC<AllUsersProps> = () => {
     }
   }, [searchParams]);
 
+
+  useEffect(() => {
+    joinRoleRoom("editor");
+    onEvent("new_user_created", (user: User) => {
+      setUsers(prev => [user, ...prev]);
+      toast.info(`משתמש חדש נוסף: ${user.firstName}`);
+    });
+
+    onEvent("user_updated", (user: User) => {
+      setUsers(prev => prev.map(u => u._id === user._id ? user : u));
+    });
+
+    onEvent("user_deleted", (id: string) => {
+      setUsers(prev => prev.filter(u => u._id !== id));
+    });
+  }, [joinRoleRoom, onEvent]);
   const filteredUsers = users
     .filter(
       (user) =>
@@ -325,12 +344,12 @@ const AllUsers: FC<AllUsersProps> = () => {
     }
   };
 
-const handleCancelEdit = () => {
-  setShowEditModal(false);
-  setUserToEdit(null);
-  setOriginalUser(null);
-  setEditErrors({});
-};
+  const handleCancelEdit = () => {
+    setShowEditModal(false);
+    setUserToEdit(null);
+    setOriginalUser(null);
+    setEditErrors({});
+  };
 
   return (
     <div className=" font-sans text-[#0D305B] rtl bg-[#fffaf1]">
@@ -392,142 +411,139 @@ const handleCancelEdit = () => {
         )}
 
         {isLoading ? (
-  <AllUsersSkeleton count={usersPerPage} />
-) : (
-  <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-    {currentUsers.map((user, index) => (
-            <div
-              key={user._id}
-              className={`rounded-xl p-4 text-center shadow-sm relative min-h-[110px] transition-transform hover:-translate-y-1 hover:shadow-md border-gray-100 ${
-                user.approved ? "bg-[#fffdf8]" : "bg-gray-100"
-              }`}
-            >
-              {!user.approved && (
-                <div
-                  className="absolute top-2 left-2 text-red-600 bg-red-100 px-3 py-1 rounded-full text-xs font-medium cursor-pointer hover:bg-red-200 "
-                  onClick={() => handleApproveClick(index)}
-                >
-                  ממתין לאישור
-                </div>
-              )}
-
-              <div className="absolute top-2 right-2 flex gap-2">
-                <button
-                  className="p-1 w-6 h-6 rounded hover:bg-gray-100 opacity-60 hover:opacity-100 transition"
-                  onClick={() => handleEditClick(user)}
-                >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 18 18"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
+          <AllUsersSkeleton count={usersPerPage} />
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {currentUsers.map((user, index) => (
+              <div
+                key={user._id}
+                className={`rounded-xl p-4 text-center shadow-sm relative min-h-[110px] transition-transform hover:-translate-y-1 hover:shadow-md border-gray-100 ${user.approved ? "bg-[#fffdf8]" : "bg-gray-100"
+                  }`}
+              >
+                {!user.approved && (
+                  <div
+                    className="absolute top-2 left-2 text-red-600 bg-red-100 px-3 py-1 rounded-full text-xs font-medium cursor-pointer hover:bg-red-200 "
+                    onClick={() => handleApproveClick(index)}
                   >
-                    <path
-                      d="M11.5 2a1.9 1.9 0 0 1 2.6 2.6L4.8 13.9 1 15l1.1-3.8L11.5 2z"
-                      stroke="#666"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </button>
-                {user._id != id && (
+                    ממתין לאישור
+                  </div>
+                )}
+
+                <div className="absolute top-2 right-2 flex gap-2">
                   <button
-                  className="w-6 h-6 rounded flex items-center justify-center
+                    className="p-1 w-6 h-6 rounded hover:bg-gray-100 opacity-60 hover:opacity-100 transition"
+                    onClick={() => handleEditClick(user)}
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 18 18"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M11.5 2a1.9 1.9 0 0 1 2.6 2.6L4.8 13.9 1 15l1.1-3.8L11.5 2z"
+                        stroke="#666"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+                  {user._id != id && (
+                    <button
+                      className="w-6 h-6 rounded flex items-center justify-center
              hover:text-red-500
              opacity-60 hover:opacity-100 transition"
-                  onClick={() => handleDeleteClick(index)}
-                >
+                      onClick={() => handleDeleteClick(index)}
+                    >
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 16 16"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M6 2h4M4 4h8M5 4v9a1 1 0 001 1h4a1 1 0 001-1V4"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
+                  )}
+
+
+                  {user.approved && user.role !== "editor" && (
+                    <button
+                      className={`p-1 rounded transition ${user.isBlocked
+                        ? "bg-red-600 text-white hover:bg-red-700"
+                        : "hover:bg-gray-100 opacity-60 hover:opacity-100"
+                        }`}
+                      onClick={() => setBlockUserIndex(index)}
+                    >
+                      <Ban size={14} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Avatar */}
+                <div className="w-10 h-10 rounded-full bg-gray-100 border border-gray-200 mx-auto flex items-center justify-center mb-2">
                   <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 16 16"
+                    className="w-5 h-5 text-gray-400"
+                    viewBox="0 0 24 24"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
                   >
                     <path
-                      d="M6 2h4M4 4h8M5 4v9a1 1 0 001 1h4a1 1 0 001-1V4"
+                      d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"
                       stroke="currentColor"
-                      strokeWidth="1.5"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <circle
+                      cx="12"
+                      cy="7"
+                      r="4"
+                      stroke="currentColor"
+                      strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     />
                   </svg>
-                </button>
-                ) }
-              
-
-                {user.approved && user.role !== "editor" && (
-                  <button
-                    className={`p-1 rounded transition ${
-                      user.isBlocked
-                        ? "bg-red-600 text-white hover:bg-red-700"
-                        : "hover:bg-gray-100 opacity-60 hover:opacity-100"
-                    }`}
-                    onClick={() => setBlockUserIndex(index)}
-                  >
-                    <Ban size={14} />
-                  </button>
-                )}
-              </div>
-
-              {/* Avatar */}
-              <div className="w-10 h-10 rounded-full bg-gray-100 border border-gray-200 mx-auto flex items-center justify-center mb-2">
-                <svg
-                  className="w-5 h-5 text-gray-400"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <circle
-                    cx="12"
-                    cy="7"
-                    r="4"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </div>
-
-              <div>
-                <div className="text-sm text-gray-600">
-                  {user.approved ? "שם:" : "שם משתמש:"}
-                </div>
-                <div className="font-semibold text-[#0D305B]">
-                  {user.approved ? user.firstName : user.userName}
                 </div>
 
-                <div className="text-sm text-gray-600">{user.email}</div>
+                <div>
+                  <div className="text-sm text-gray-600">
+                    {user.approved ? "שם:" : "שם משתמש:"}
+                  </div>
+                  <div className="font-semibold text-[#0D305B]">
+                    {user.approved ? user.firstName : user.userName}
+                  </div>
 
-                <div
-                  className={`inline-block mt-2 text-xs px-2 py-1 rounded-full font-semibold ${
-                    user.isBlocked
+                  <div className="text-sm text-gray-600">{user.email}</div>
+
+                  <div
+                    className={`inline-block mt-2 text-xs px-2 py-1 rounded-full font-semibold ${user.isBlocked
                       ? "bg-red-200 text-red-700"
                       : isMe(user._id)
-                      ? "bg-blue-100 text-blue-700"
-                      : "bg-[#0D305B]/10 text-[#0D305B]"
-                  }`}
-                >
-                        {user.isBlocked
-                          ? "משתמש חסום"
-                          : `${roleLabel(user.role)}${isMe(user._id) ? " (אני)" : ""}`}
+                        ? "bg-blue-100 text-blue-700"
+                        : "bg-[#0D305B]/10 text-[#0D305B]"
+                      }`}
+                  >
+                    {user.isBlocked
+                      ? "משתמש חסום"
+                      : `${roleLabel(user.role)}${isMe(user._id) ? " (אני)" : ""}`}
 
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-)}
+            ))}
+          </div>
+        )}
 
         {/* Approval Dialog */}
         {approveUserIndex !== null && (
@@ -554,7 +570,7 @@ const handleCancelEdit = () => {
                   ביטול
                 </button>
                 <button className={BTN_SUCCESS} onClick={confirmApprove}>
-                  כן, אשר
+                  אישור
                 </button>
               </div>
             </div>
@@ -575,11 +591,10 @@ const handleCancelEdit = () => {
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
             <button
               key={page}
-              className={`px-3 py-1 border rounded ${
-                page === currentPage
-                  ? "bg-[#0D305B] text-[#F0E4D0]"
-                  : "text-gray-600 hover:bg-[#0D305B] hover:text-[#F0E4D0]"
-              }`}
+              className={`px-3 py-1 border rounded ${page === currentPage
+                ? "bg-[#0D305B] text-[#F0E4D0]"
+                : "text-gray-600 hover:bg-[#0D305B] hover:text-[#F0E4D0]"
+                }`}
               onClick={() => goToPage(page)}
             >
               {page}
@@ -817,30 +832,29 @@ const handleCancelEdit = () => {
               </div>
 
               {/* Action buttons */}
-        <div className="flex justify-end gap-4 mt-8 pt-6 border-t-2 border-gray-200">
-          {(() => {
-            const isUnchanged =
-              originalUser &&
-              userToEdit.firstName === originalUser.firstName &&
-              userToEdit.lastName === originalUser.lastName &&
-              userToEdit.userName === originalUser.userName &&
-              userToEdit.email === originalUser.email &&
-              userToEdit.role === originalUser.role;
+              <div className="flex justify-end gap-4 mt-8 pt-6 border-t-2 border-gray-200">
+                {(() => {
+                  const isUnchanged =
+                    originalUser &&
+                    userToEdit.firstName === originalUser.firstName &&
+                    userToEdit.lastName === originalUser.lastName &&
+                    userToEdit.userName === originalUser.userName &&
+                    userToEdit.email === originalUser.email &&
+                    userToEdit.role === originalUser.role;
 
-            return (
-              <button
-                className={`px-8 py-3 rounded-xl bg-gradient-to-r from-[#0D305B] to-[#15457a] text-white font-bold shadow-lg transition-all ${
-                  isUnchanged
-                    ? "opacity-50 cursor-not-allowed"
-                    : "hover:from-[#15457a] hover:to-[#1e5a9e] hover:shadow-xl"
-                }`}
-                onClick={handleSaveEdit}
-                disabled={!!isUnchanged}
-              >
-                שמירת שינויים
-              </button>
-            );
-          })()}
+                  return (
+                    <button
+                      className={`px-8 py-3 rounded-xl bg-gradient-to-r from-[#0D305B] to-[#15457a] text-white font-bold shadow-lg transition-all ${isUnchanged
+                        ? "opacity-50 cursor-not-allowed"
+                        : "hover:from-[#15457a] hover:to-[#1e5a9e] hover:shadow-xl"
+                        }`}
+                      onClick={handleSaveEdit}
+                      disabled={!!isUnchanged}
+                    >
+                      שמירת שינויים
+                    </button>
+                  );
+                })()}
 
                 <button
                   className="px-6 py-3 rounded-xl border-2 border-gray-300 hover:bg-gray-50 transition-colors font-bold text-gray-700"

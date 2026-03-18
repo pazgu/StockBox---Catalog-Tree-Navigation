@@ -117,7 +117,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         className={`flex items-center gap-3 py-2 px-3 my-1 rounded-2xl border transition-all duration-300 group relative flex-shrink-0
           ${styles.container}
           ${isSelected || isSelectedWithChildren ? `shadow-md z-10` : "shadow-sm"}
-          ${isSelected || shouldHighlightFromParent ? "!bg-blue-50/60" : ""}
+          ${isSelected || shouldHighlightFromParent ? "!bg-blue-100" : ""}
         `}
         style={{
           marginRight: `${level * 32}px`,

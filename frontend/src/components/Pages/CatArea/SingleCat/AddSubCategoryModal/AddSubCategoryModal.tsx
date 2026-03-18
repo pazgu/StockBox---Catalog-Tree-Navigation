@@ -83,7 +83,6 @@ const MAX_EDIT_NAME_LEN = 30;
 const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   const [categoryName, setCategoryName] = React.useState("");
   const [errorMessage, setErrorMessage] = React.useState("");
-  const FORBIDDEN_CHARS = /[;|"'*<>]/;
   const [rawImage, setRawImage] = React.useState<HTMLImageElement | null>(null);
   const [zoom, setZoom] = React.useState(1);
   const [offset, setOffset] = React.useState({ x: 0, y: 0 });
@@ -174,17 +173,17 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     return out.toDataURL("image/jpeg", 0.92);
   };
 
+  const ALLOWED_CHARS = /^[\u0590-\u05FFa-zA-Z0-9 ._-]*$/;
+
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.slice(0, MAX_EDIT_NAME_LEN);
     setCategoryName(value);
-
-    const ALLOWED_CHARS = /^[\u0590-\u05FFa-zA-Z0-9 ._-]*$/;
 
     if (!value) {
       setErrorMessage("");
     } else if (!ALLOWED_CHARS.test(value)) {
       setErrorMessage(
-        "שם קטגוריה יכול להכיל רק אותיות, מספרים ותווים . - _"
+        "שם קטגוריה יכול להכיל רק אותיות, מספרים ותווים . _"
       );
     } else {
       setErrorMessage("");
@@ -205,8 +204,8 @@ const AddSubCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
       return;
     }
 
-    if (FORBIDDEN_CHARS.test(categoryName)) {
-      toast.error('שם תת-קטגוריה מכיל תווים אסורים ; | " \' * < >');
+    if (!ALLOWED_CHARS.test(categoryName.trim())) {
+      toast.error("שם תת-קטגוריה יכול להכיל רק אותיות, מספרים ותווים . - _");
       return;
     }
 

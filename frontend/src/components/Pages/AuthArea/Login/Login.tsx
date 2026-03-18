@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import isEmail from "validator/lib/isEmail";
 
 import NestedCatalogSVG from "./login.svg";
-interface LoginProps {}
+interface LoginProps { }
 
 const Login: FC<LoginProps> = () => {
   const { setUser } = useUser();
@@ -159,7 +159,7 @@ const Login: FC<LoginProps> = () => {
       } else if (error?.response?.status === 409) {
         toast.error("שם משתמש או אימייל שגויים/כבר קיימים במערכת");
       } else if (error?.response?.status === 400) {
-        toast.info("המשתמש לא נמצא במערכת, לא להזין נתוני משתמש חדש");
+        toast.info("המשתמש לא נמצא במערכת, נא להזין נתוני משתמש חדש");
         setIsReturningUser(false);
       } else {
         toast.error("שגיאה לא צפויה, נא לנסות שוב");
@@ -472,7 +472,6 @@ const Login: FC<LoginProps> = () => {
                   )}
                 </div>
 
-                {/* אימייל */}
                 <div className="flex-1">
                   <label className="block text-right text-gray-700 font-semibold mb-4 text-base">
                     אימייל
@@ -483,18 +482,28 @@ const Login: FC<LoginProps> = () => {
                       value={email}
                       onChange={(e) => {
                         const val = e.target.value;
-                        setEmail(val);
-                        const trimmed = val.trim();
+
+                        const sanitizedValue = val.replace(/[\u0590-\u05FF\u0600-\u06FF]/g, "");
+                        setEmail(sanitizedValue);
+
+                        const trimmed = sanitizedValue.trim();
                         let error = "";
+
                         if (!trimmed) error = "כתובת מייל היא שדה חובה";
-                        else if (!isEmail(trimmed))
-                          error = "כתובת מייל לא תקינה";
+                        else if (!isEmail(trimmed)) error = "כתובת מייל לא תקינה";
+
                         setErrors({ ...errors, email: !!error });
                         setFieldErrors((prev) => ({ ...prev, email: error }));
                       }}
-                      className={`w-full py-3 px-4 pl-11 border-2 ${errors.email ? "border-red-300" : "border-gray-300"} rounded-lg text-right text-sm`}
+                      onKeyDown={(e) => {
+                        if (/[\u0590-\u05FF\u0600-\u06FF]/.test(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                      className={`w-full py-3 px-4 pl-11 border-2 ${errors.email ? "border-red-300" : "border-gray-300"
+                        } rounded-lg text-left text-sm`}
                       placeholder="הכנס אימייל..."
-                      dir="rtl"
+                      dir="ltr"
                     />
                     <MailQuestionIcon
                       size={20}
@@ -536,7 +545,7 @@ const Login: FC<LoginProps> = () => {
                   focus:ring-offset-2
                 "
               >
-                התחבר
+                התחברות
               </button>
             </>
           )}

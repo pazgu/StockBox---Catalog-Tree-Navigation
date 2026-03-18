@@ -4,209 +4,45 @@ import React, { FC, useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
-import {
-  Compass,
-  Edit2,
-  Check,
-  GripVertical,
-  Trash2,
-  X,
-  Save,
-  FileText,
-  ListChecks,
-  LayoutGrid,
-  Plus,
-} from "lucide-react";
-import { ICONS_HE } from "../../../../mockdata/icons";
 import FeaturesSection from "./FeaturesSection/FeaturesSection";
 import AboutImagesPanel from "./AboutImagesPanel/AboutImagesPanel";
-import AddSectionButton from "./AddSectionButton/AddSectionButton/AddSectionButton";
 import { aboutApi } from "../../../../services/aboutApi";
 import BulletsSection from "./BulletsSection/BulletsSection";
-import { AboutBlock } from "@/components/models/about.models";
 import { debounce } from "../../../../lib/utils";
 import AboutSkeleton from "./AboutSkeleton/AboutSkeleton";
-
-const uid = () => crypto.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
-const CTA_SECTION_ID = "__cta_section__";
-
-type FeatureItem = {
-  id: string;
-  icon: string;
-  title: string;
-  description: string;
-};
-type BulletItem = { id: string; text: string };
-
-type ImageItem = {
-  url: string;
-  isPreview?: boolean;
-};
-
-type SectionType = {
-  id: string;
-  type: "features" | "bullets" | "intro" | "paragraph" | "cta";
-  title: string;
-  content?: string;
-
-  features?: FeatureItem[];
-  bullets?: BulletItem[];
-};
-const getHeaderOffset = () => {
-  const header = document.querySelector("header");
-  const h = header?.getBoundingClientRect().height ?? 0;
-  return h + 16;
-};
-
-const clampDropIndex = (arr: SectionType[], dropIndex: number) => {
-  return Math.max(0, Math.min(dropIndex, arr.length));
-};
-
-const blocksToSections = (blocks: AboutBlock[]): SectionType[] => {
-  return blocks.map((b) => {
-    if (b.type === "intro") {
-      return {
-        id: b.id,
-        type: "intro",
-        title: b.data?.title ?? "",
-        content: b.data?.content ?? "",
-      };
-    }
-
-    if (b.type === "features") {
-      return {
-        id: b.id,
-        type: "features",
-        title: b.data?.title ?? "",
-        features: (b.data?.features ?? []).map((f: any) => ({
-          id: f.id ?? uid(),
-          icon: f.icon ?? "star",
-          title: f.title ?? "",
-          description: f.description ?? "",
-        })),
-      };
-    }
-
-    if (b.type === "paragraph") {
-      return {
-        id: b.id,
-        type: "paragraph",
-        title: b.data?.title ?? "",
-        content: b.data?.content ?? "",
-      };
-    }
-
-    if (b.type === "cta") {
-      return {
-        id: b.id,
-        type: "cta",
-        title: "",
-      };
-    }
-
-    return {
-      id: b.id,
-      type: "bullets",
-      title: b.data?.title ?? "",
-      bullets: (b.data?.bullets ?? []).map((x: any) => ({
-        id: x.id ?? uid(),
-        text: x.text ?? "",
-      })),
-    };
-  });
-};
-
-
-
-const sectionsToBlocks = (sections: SectionType[]): AboutBlock[] => {
-  return sections.map((s) => {
-    if (s.type === "intro") {
-      return {
-        id: s.id,
-        type: "intro",
-        data: { title: s.title, content: s.content ?? "" },
-      };
-    }
-
-    if (s.type === "features") {
-      return {
-        id: s.id,
-        type: "features",
-        data: { title: s.title, features: s.features ?? [] },
-      };
-    }
-
-    if (s.type === "paragraph") {
-      return {
-        id: s.id,
-        type: "paragraph",
-        data: { title: s.title, content: s.content ?? "" },
-      };
-    }
-
-    if (s.type === "cta") {
-      return {
-        id: s.id,
-        type: "cta",
-        data: {},
-      };
-    }
-
-    return {
-      id: s.id,
-      type: "bullets",
-      data: { title: s.title, bullets: s.bullets ?? [] },
-    };
-  });
-};
-
-const IconMap: { [key: string]: FC<any> } = Object.fromEntries(
-  ICONS_HE.map((i) => [i.value, i.component]),
-);
-
-const iconOptions = ICONS_HE.map((i) => ({ value: i.value, label: i.label }));
-
-
-
-type FieldKind =
-  | "sectionTitle"
-  | "introContent"
-  | "paragraphContent"
-  | "featuresTitle"
-  | "bulletsTitle"
-  | "featureTitle"
-  | "featureDescription"
-  | "featureIcon"
-  | "featureCard"
-  | "bulletText";
-
-const mkKey = (kind: FieldKind, sectionId: string, itemId?: string) =>
-  [kind, sectionId, itemId].filter(Boolean).join("::");
-
-const isBlank = (v?: string | null) => !v || v.trim().length === 0;
-
-const isSectionFilledEnough = (s: SectionType) => {
-  if (s.type === "cta") return true;
-  if (isBlank(s.title)) return false;
-
-  if (s.type === "intro" || s.type === "paragraph") {
-    return !isBlank(s.content);
-  }
-
-  if (s.type === "features") {
-    const features = s.features ?? [];
-    if (features.length === 0) return false;
-    return features.every((f) => !isBlank(f.title) && !isBlank(f.description));
-  }
-
-  if (s.type === "bullets") {
-    const bullets = s.bullets ?? [];
-    if (bullets.length === 0) return false;
-    return bullets.every((b) => !isBlank(b.text));
-  }
-
-  return true;
-};
+import {
+  uid,
+  CTA_SECTION_ID,
+  type FeatureItem,
+  type BulletItem,
+  type ImageItem,
+  type SectionType,
+  createNewSection,
+  mkKey,
+  isSectionFilledEnough,
+  getHeaderOffset,
+  blocksToSections,
+  sectionsToBlocks,
+  buildSnapshotFromSections,
+  IconMap,
+  iconOptions,
+  ensureCtaSection,
+  scrollToSectionAndFocus,
+  reorderSections,
+  normalizeImageIndex,
+  revokePreviewUrls,
+} from "./about.utils";
+import IntroSection from "./IntroSection/IntroSection";
+import ParagraphSection from "./ParagraphSection/ParagraphSection";
+import CtaSection from "./CtaSection/CtaSection";
+import {
+  AboutFloatingActions,
+  EmptyAboutSectionsState,
+  AboutSectionTopActions,
+  AboutSectionFooterActions,
+  AboutBottomDropZone,
+} from "./AboutPageParts";
+import UnsavedChangesDialog from "../../SharedComponents/UnsavedChangesDialog/UnsavedChangesDialog";
 
 interface AboutProps { }
 
@@ -216,41 +52,28 @@ const About: FC<AboutProps> = () => {
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [editExitAction, setEditExitAction] = useState<"save" | "cancel" | null>(null);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
-
   const [editableImages, setEditableImages] = useState<ImageItem[]>([]);
-
   const [pendingAddedFiles, setPendingAddedFiles] = useState<File[]>([]);
-
   const images = editableImages.map((i) => i.url);
   const navigate = useNavigate();
   const { role } = useUser();
-
   const replaceInputRef = React.useRef<HTMLInputElement>(null);
   const addInputRef = React.useRef<HTMLInputElement>(null);
-
   const [sections, setSections] = useState<SectionType[]>([]);
-
   const contentSectionsCount = useMemo(
     () => sections.filter((s) => s.type !== "cta").length,
     [sections],
   );
 
   const isEmptyContent = contentSectionsCount === 0;
-
   const [dirtyKeys, setDirtyKeys] = useState<Set<string>>(new Set());
   const [isImagesLoading, setIsImagesLoading] = useState(false);
-
   const [confirmedSnapshot, setConfirmedSnapshot] = useState<
     Record<string, string>
   >({});
-
   const isDirty = (key: string) => dirtyKeys.has(key);
   const hasUnconfirmedChanges = dirtyKeys.size > 0;
-
   const getSnapshotValue = (key: string) => confirmedSnapshot[key] ?? "";
-
-  const realSections = useMemo(() => sections, [sections]);
-
   const markDirty = (key: string, currentValue: string) => {
     const snap = getSnapshotValue(key);
 
@@ -284,12 +107,10 @@ const About: FC<AboutProps> = () => {
   } as const;
 
   const lastToastRef = React.useRef<string | null>(null);
-
   const toastErrorOnce = (msg: string) => {
     if (lastToastRef.current === msg) return;
     lastToastRef.current = msg;
     toast.error(msg);
-
     window.setTimeout(() => {
       if (lastToastRef.current === msg) lastToastRef.current = null;
     }, 1200);
@@ -311,39 +132,6 @@ const About: FC<AboutProps> = () => {
   const dragCounterRef = React.useRef(0);
   const draggedIndexRef = React.useRef<number | null>(null);
   const pendingScrollToSectionIdRef = React.useRef<string | null>(null);
-
-  const scrollToSectionById = (id: string) => {
-    const idx = sections.findIndex((s) => s.id === id);
-    if (idx === -1) return;
-
-    const el = sectionRefs.current[idx];
-    if (!el) return;
-
-    const y =
-      el.getBoundingClientRect().top + window.scrollY - getHeaderOffset();
-    window.scrollTo({ top: y, behavior: "smooth" });
-  };
-  const focusFirstFieldInSection = (el: HTMLDivElement) => {
-    const field = el.querySelector("input, textarea, select") as
-      | HTMLInputElement
-      | HTMLTextAreaElement
-      | HTMLSelectElement
-      | null;
-
-    if (!field) return;
-
-    field.focus();
-
-    // select text only for input/textarea
-    if (
-      field instanceof HTMLInputElement ||
-      field instanceof HTMLTextAreaElement
-    ) {
-      field.select?.();
-    }
-  };
-
-  const imageWrapRef = React.useRef<HTMLDivElement | null>(null);
   const goPrev = React.useCallback(() => {
     setCurrentImageIndex((i) => {
       if (images.length === 0) return 0;
@@ -359,63 +147,25 @@ const About: FC<AboutProps> = () => {
   }, [images.length]);
 
   const touchStartXRef = React.useRef<number | null>(null);
-
   React.useEffect(() => {
     (async () => {
       try {
         setIsPageLoading(true);
         const res = await aboutApi.get();
-
         const loadedSections = blocksToSections(res.blocks ?? []);
-
         const loadedImages: ImageItem[] = (res.images ?? []).map((url) => ({
           url,
         }));
 
-        const hasCta = loadedSections.some((s) => s.type === "cta");
-
-        const withCta: SectionType[] = hasCta
-          ? loadedSections
-          : [...loadedSections, { id: CTA_SECTION_ID, type: "cta", title: "" }];
-
+        const withCta = ensureCtaSection(loadedSections);
         setSections(withCta);
         setEditableImages(loadedImages);
-
         setOriginalData({
           sections: withCta,
           images: loadedImages,
         });
 
-        const snap: Record<string, string> = {};
-
-        withCta.forEach((s) => {
-          snap[mkKey("sectionTitle", s.id)] = s.title ?? "";
-
-          if (s.type === "intro")
-            snap[mkKey("introContent", s.id)] = s.content ?? "";
-          if (s.type === "paragraph")
-            snap[mkKey("paragraphContent", s.id)] = s.content ?? "";
-
-          if (s.type === "features") {
-            snap[mkKey("featuresTitle", s.id)] = s.title ?? "";
-            (s.features ?? []).forEach((f) => {
-              snap[mkKey("featureCard", s.id, f.id)] = JSON.stringify({
-                title: f.title ?? "",
-                description: f.description ?? "",
-                icon: f.icon ?? "",
-              });
-            });
-          }
-
-          if (s.type === "bullets") {
-            snap[mkKey("bulletsTitle", s.id)] = s.title ?? "";
-            (s.bullets ?? []).forEach((b) => {
-              snap[mkKey("bulletText", s.id, b.id)] = b.text ?? "";
-            });
-          }
-        });
-
-        setConfirmedSnapshot(snap);
+        setConfirmedSnapshot(buildSnapshotFromSections(withCta));
         setDirtyKeys(new Set());
       } catch (e) {
         toast.error(TOAST.loadError);
@@ -434,40 +184,10 @@ const About: FC<AboutProps> = () => {
       return;
     }
 
-    const newSection: SectionType =
-      type === "features"
-        ? {
-          id: `features-${Date.now()}`,
-          type: "features",
-          title: "",
-          features: [
-            {
-              id: uid(),
-              icon: "star",
-              title: "",
-              description: "",
-            },
-          ],
-        }
-        : type === "bullets"
-          ? {
-            id: `bullets-${Date.now()}`,
-            type: "bullets",
-            title: "",
-            bullets: [{ id: uid(), text: "" }],
-          }
-          : {
-            id: `paragraph-${Date.now()}`,
-            type: "paragraph",
-            title: "",
-            content: "",
-          };
-
+    const newSection = createNewSection(type);
     pendingScrollToSectionIdRef.current = newSection.id;
-
     setSections((prev) => {
       const ctaIndex = prev.findIndex((s) => s.type === "cta");
-
       const safeAfterIndex =
         ctaIndex !== -1 && afterIndex >= ctaIndex ? ctaIndex - 1 : afterIndex;
 
@@ -520,7 +240,6 @@ const About: FC<AboutProps> = () => {
 
     const from = draggedIndexRef.current;
     if (from === null || from === index) return;
-
     setDragOverIndex(index);
 
     const headerOffset = getHeaderOffset();
@@ -528,7 +247,6 @@ const About: FC<AboutProps> = () => {
     const bottomThreshold = 140;
     const speed = 24;
     const y = e.clientY;
-
     if (y < topThreshold) {
       window.scrollBy({ top: -speed, behavior: "auto" });
     } else if (window.innerHeight - y < bottomThreshold) {
@@ -539,41 +257,16 @@ const About: FC<AboutProps> = () => {
   const handleSectionDragEnd = () => {
     const from = draggedIndexRef.current;
     const toRaw = dragOverIndex;
-
     setDraggedSectionIndex(null);
     setDragOverIndex(null);
     dragCounterRef.current = 0;
     draggedIndexRef.current = null;
-
     if (from === null || toRaw === null || from === toRaw) return;
-
-    setSections((prev) => {
-      const arr = [...prev];
-      const [moved] = arr.splice(from, 1);
-
-      const adjustedTo =
-        toRaw === prev.length ? arr.length : from < toRaw ? toRaw - 1 : toRaw;
-
-      const to = clampDropIndex(arr, adjustedTo);
-      arr.splice(to, 0, moved);
-      return arr;
-    });
+    setSections((prev) => reorderSections(prev, from, toRaw));
   };
 
   const handleSectionDragEnter = (index: number) => {
     setDragOverIndex(index);
-  };
-
-  const onTouchStart = (e: React.TouchEvent) => {
-    touchStartXRef.current = e.touches[0].clientX;
-  };
-
-  const onTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartXRef.current == null) return;
-    const dx = e.changedTouches[0].clientX - touchStartXRef.current;
-    touchStartXRef.current = null;
-    if (dx > 40) goPrev();
-    if (dx < -40) goNext();
   };
 
   const handleNavigateToCategories = () => {
@@ -592,50 +285,35 @@ const About: FC<AboutProps> = () => {
     return () => clearInterval(interval);
   }, [images.length, isEditing]);
   useEffect(() => {
-    if (images.length === 0) {
-      setCurrentImageIndex(0);
-      return;
-    }
+    const normalizedIndex = normalizeImageIndex(
+      currentImageIndex,
+      images.length,
+    );
 
-    if (
-      Number.isNaN(currentImageIndex) ||
-      currentImageIndex < 0 ||
-      currentImageIndex >= images.length
-    ) {
-      setCurrentImageIndex(0);
+    if (normalizedIndex !== currentImageIndex) {
+      setCurrentImageIndex(normalizedIndex);
     }
   }, [images.length, currentImageIndex]);
 
   useEffect(() => {
-    const id = pendingScrollToSectionIdRef.current;
-    if (!id) return;
-
-    requestAnimationFrame(() => {
-      const idx = sections.findIndex((s) => s.id === id);
-      const el = idx === -1 ? null : sectionRefs.current[idx];
-
-      if (el) {
-        const y =
-          el.getBoundingClientRect().top + window.scrollY - getHeaderOffset();
-        window.scrollTo({ top: y, behavior: "smooth" });
-
-        setTimeout(() => focusFirstFieldInSection(el), 250);
-      }
-
-      pendingScrollToSectionIdRef.current = null;
-    });
+    scrollToSectionAndFocus(
+      pendingScrollToSectionIdRef.current,
+      sections,
+      sectionRefs,
+      () => {
+        pendingScrollToSectionIdRef.current = null;
+      },
+    );
   }, [sections]);
 
   const hasActualChanges = useCallback(() => {
     if (pendingAddedFiles.length > 0) return true;
 
-    const currentBlocks = sectionsToBlocks(realSections);
+    const currentBlocks = sectionsToBlocks(sections);
     const originalBlocks = sectionsToBlocks(originalData.sections);
-
     const currentImages = editableImages
       .filter((i) => !i.isPreview)
       .map((i) => i.url);
-
     const originalImages = originalData.images.map((i) => i.url);
 
     return (
@@ -643,7 +321,7 @@ const About: FC<AboutProps> = () => {
       JSON.stringify(currentImages) !== JSON.stringify(originalImages)
     );
   }, [
-    realSections,
+    sections,
     originalData.sections,
     originalData.images,
     editableImages,
@@ -656,7 +334,7 @@ const About: FC<AboutProps> = () => {
       return;
     }
 
-    const invalidIndex = realSections.findIndex(
+    const invalidIndex = sections.findIndex(
       (s) => !isSectionFilledEnough(s),
     );
 
@@ -671,7 +349,7 @@ const About: FC<AboutProps> = () => {
 
     try {
       const payload = {
-        blocks: sectionsToBlocks(realSections),
+        blocks: sectionsToBlocks(sections),
         images: editableImages.filter((i) => !i.isPreview).map((i) => i.url),
       };
 
@@ -679,17 +357,14 @@ const About: FC<AboutProps> = () => {
         setIsImagesLoading(true);
         try {
           const res = await aboutApi.uploadImages(pendingAddedFiles);
-
           setEditableImages((prev) => {
-            prev.filter((i) => i.isPreview).forEach((p) => URL.revokeObjectURL(p.url));
+            revokePreviewUrls(prev);
             return prev;
           });
 
           const serverAfterUpload = res.images ?? [];
-
           const originalUrls = originalData.images.map((i) => i.url);
           const alreadyInPayload = payload.images;
-
           const newlyAdded = serverAfterUpload.filter(
             (u) => !originalUrls.includes(u) && !alreadyInPayload.includes(u),
           );
@@ -710,7 +385,6 @@ const About: FC<AboutProps> = () => {
 
       const originalUrls = originalData.images.map((i) => i.url);
       const finalUrls = payload.images;
-
       const removedUrls = originalUrls.filter((u) => !finalUrls.includes(u));
 
       if (removedUrls.length > 0) {
@@ -733,43 +407,12 @@ const About: FC<AboutProps> = () => {
 
       await aboutApi.replace(payload);
 
-      const snap: Record<string, string> = {};
-
-      realSections.forEach((s) => {
-        snap[mkKey("sectionTitle", s.id)] = s.title ?? "";
-
-        if (s.type === "intro")
-          snap[mkKey("introContent", s.id)] = s.content ?? "";
-        if (s.type === "paragraph")
-          snap[mkKey("paragraphContent", s.id)] = s.content ?? "";
-
-        if (s.type === "features") {
-          snap[mkKey("featuresTitle", s.id)] = s.title ?? "";
-          (s.features ?? []).forEach((f) => {
-            snap[mkKey("featureCard", s.id, f.id)] = JSON.stringify({
-              title: f.title ?? "",
-              description: f.description ?? "",
-              icon: f.icon ?? "",
-            });
-          });
-        }
-
-        if (s.type === "bullets") {
-          snap[mkKey("bulletsTitle", s.id)] = s.title ?? "";
-          (s.bullets ?? []).forEach((b) => {
-            snap[mkKey("bulletText", s.id, b.id)] = b.text ?? "";
-          });
-        }
-      });
-
-      setConfirmedSnapshot(snap);
+      setConfirmedSnapshot(buildSnapshotFromSections(sections));
       setDirtyKeys(new Set());
-
       setOriginalData({
-        sections: realSections,
+        sections: sections,
         images: payload.images.map((url) => ({ url })),
       });
-
       setIsEditing(false);
       toast.success(TOAST.saveSuccess);
     } catch (e) {
@@ -790,52 +433,17 @@ const About: FC<AboutProps> = () => {
 
     setPendingAddedFiles([]);
     setEditableImages((prev) => {
-      prev.filter((i) => i.isPreview).forEach((p) => URL.revokeObjectURL(p.url));
+      revokePreviewUrls(prev);
       return prev;
     });
     setSections(originalData.sections);
     setEditableImages(originalData.images);
-
     const snap = buildSnapshotFromSections(originalData.sections);
     setConfirmedSnapshot(snap);
     setDirtyKeys(new Set());
-
     setCurrentImageIndex(0);
     setIsEditing(false);
   }, [originalData.sections, originalData.images]);
-
-  const buildSnapshotFromSections = (secs: SectionType[]) => {
-    const snap: Record<string, string> = {};
-
-    secs.forEach((s) => {
-      snap[mkKey("sectionTitle", s.id)] = s.title ?? "";
-
-      if (s.type === "intro")
-        snap[mkKey("introContent", s.id)] = s.content ?? "";
-      if (s.type === "paragraph")
-        snap[mkKey("paragraphContent", s.id)] = s.content ?? "";
-
-      if (s.type === "features") {
-        snap[mkKey("featuresTitle", s.id)] = s.title ?? "";
-        (s.features ?? []).forEach((f) => {
-          snap[mkKey("featureCard", s.id, f.id)] = JSON.stringify({
-            title: f.title ?? "",
-            description: f.description ?? "",
-            icon: f.icon ?? "",
-          });
-        });
-      }
-
-      if (s.type === "bullets") {
-        snap[mkKey("bulletsTitle", s.id)] = s.title ?? "";
-        (s.bullets ?? []).forEach((b) => {
-          snap[mkKey("bulletText", s.id, b.id)] = b.text ?? "";
-        });
-      }
-    });
-
-    return snap;
-  };
 
   useEffect(() => {
     sectionRefs.current = sectionRefs.current.slice(0, sections.length);
@@ -894,7 +502,6 @@ const About: FC<AboutProps> = () => {
     });
 
     setPendingAddedFiles((prev) => [...prev, ...files]);
-
     input.value = "";
   };
 
@@ -939,7 +546,6 @@ const About: FC<AboutProps> = () => {
     [cancelEdit],
   );
 
-
   const cancelPendingExit = () => {
     (debouncedSaveChanges as any).cancel?.();
     (debouncedCancelEdit as any).cancel?.();
@@ -964,7 +570,6 @@ const About: FC<AboutProps> = () => {
     const speed = 25;
     const viewportHeight = window.innerHeight;
     const cursorY = e.clientY;
-
     if (cursorY < threshold) {
       const scrollAmount = -speed * ((threshold - cursorY) / threshold);
       window.scrollBy({ top: scrollAmount, behavior: "auto" });
@@ -991,48 +596,15 @@ const About: FC<AboutProps> = () => {
     >
       <div className="max-w-6xl mx-auto flex items-start gap-15 py-10 flex-wrap lg:flex-nowrap">
         <div className="flex-1 p-5 lg:ml-[400px] order-2 lg:order-1">
-          {role === "editor" && (
-            <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-50">
-              {isEditing && (
-                <div className="relative">
-                  <button
-                    onClick={handleCancelClick}
-                    aria-label="ביטול עריכה"
-                    className="peer flex items-center justify-center w-14 h-14 rounded-full font-semibold bg-white text-red-600 shadow-lg ring-2 ring-red-500/20 hover:ring-red-500/30 hover:bg-red-50 transition-all duration-300"
-                  >
-                    <X size={22} />
-                  </button>
-                  <span className="absolute right-16 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs px-3 py-2 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                    ביטול עריכה
-                  </span>
-                </div>
-              )}
-
-              <div className="relative">
-                <button
-                  onClick={() => {
-                    cancelPendingExit();
-
-                    if (isEditing) {
-                      setEditExitAction("save");
-                      debouncedSaveChanges();
-                      return;
-                    }
-
-                    setEditExitAction(null);
-                    setIsEditing(true);
-                  }}
-                  aria-label={isEditing ? "שמירת שינויים" : "עריכה"}
-                  className="peer flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300"
-                >
-                  {isEditing ? <Save size={22}></Save> : <Edit2 size={22} />}
-                </button>
-                <span className="absolute right-16 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs px-3 py-2 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                  {isEditing ? "שמירת שינויים" : "עריכה"}
-                </span>
-              </div>
-            </div>
-          )}
+          <AboutFloatingActions
+            role={role}
+            isEditing={isEditing}
+            handleCancelClick={handleCancelClick}
+            cancelPendingExit={cancelPendingExit}
+            setEditExitAction={setEditExitAction}
+            debouncedSaveChanges={debouncedSaveChanges}
+            setIsEditing={setIsEditing}
+          />
           {/* Render all sections dynamically */}
           {sections.map((section, sectionIndex) => (
             <div
@@ -1057,112 +629,25 @@ const About: FC<AboutProps> = () => {
                   : ""
                 }`}
             >
-              {isEditing && section.type !== "cta" && (
-                <div className="absolute -right-3 -top-3 flex gap-2 z-20">
-                  <div className="group relative">
-                    <div className="p-2 bg-stockblue text-white rounded-lg cursor-grab active:cursor-grabbing shadow-md hover:bg-stockblue/90 transition">
-                      <GripVertical size={20} />
-                    </div>
-                    <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-50">
-                      יש לגרור לשינוי סדר
-                    </span>
-                  </div>
-                  {isEditing && (
-                    <div className="group relative">
-                      <button
-                        onClick={() => {
-                          removeSection(sectionIndex);
-                        }}
-                        className="p-2 bg-red-500 text-white rounded-lg transition shadow-md hover:bg-red-600"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                      <span className="absolute top-1/2 -translate-y-1/2 right-full mr-2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-50">
-                        מחיקת מקטע
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
+              <AboutSectionTopActions
+                isEditing={isEditing}
+                isCtaSection={section.type === "cta"}
+                sectionIndex={sectionIndex}
+                removeSection={removeSection}
+              />
 
-              {/* INTRO SECTION */}
               {section.type === "intro" && (
-                <>
-                  {/* Intro Title */}
-                  {(() => {
-                    const key = mkKey("sectionTitle", section.id);
-
-                    return isEditing ? (
-                      <div className="flex items-center gap-2 mb-5">
-                        <input
-                          type="text"
-                          value={section.title}
-                          placeholder="כותרת חדשה"
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            updateSectionTitle(sectionIndex, val);
-                            markDirty(key, val);
-                          }}
-                          className="text-[2.5rem] text-stockblue font-bold text-center w-full border-2 border-stockblue/30 rounded-lg px-4 py-2 focus:outline-none focus:border-stockblue"
-                        />
-
-                        {isDirty(key) && (
-                          <button
-                            type="button"
-                            onClick={() => confirmField(key, section.title)}
-                            className="h-10 w-10 rounded-full border border-green-600 text-green-700 hover:bg-green-50 grid place-items-center"
-                            title="אשר שינוי"
-                          >
-                            <Check size={18} />
-                          </button>
-                        )}
-                      </div>
-                    ) : (
-                      <h1 className="text-[2.5rem] text-stockblue mb-5 font-bold text-center">
-                        {section.title}
-                      </h1>
-                    );
-                  })()}
-
-                  {/* Intro Content */}
-                  <div className="relative bg-white/60 backdrop-blur-[20px] px-9 py-8 my-4 mb-6 border border-white/30 shadow-[0_2px_16px_rgba(13,48,91,0.04),0_1px_4px_rgba(13,48,91,0.02)] rounded-[20px] transition-all duration-300 ease-out hover:transform hover:-translate-y-0.5 hover:shadow-[0_4px_24px_rgba(13,48,91,0.06),0_2px_8px_rgba(13,48,91,0.03)] hover:border-stockblue/10 before:content-[''] before:absolute before:top-0 before:right-0 before:w-[3px] before:h-full before:bg-gradient-to-b before:from-stockblue before:to-stockblue/30 before:rounded-r-[2px] before:opacity-70">
-                    {(() => {
-                      const key = mkKey("introContent", section.id);
-
-                      return isEditing ? (
-                        <div className="flex items-start gap-2">
-                          <textarea
-                            value={section.content || ""}
-                            placeholder="תיאור חדש"
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              updateTextContent(sectionIndex, val);
-                              markDirty(key, val);
-                            }}
-                            className="w-full leading-[1.7] text-stockblue/85 font-normal text-[1.1rem] text-justify border-2 border-stockblue/30 rounded-lg px-4 py-3 focus:outline-none focus:border-stockblue min-h-[150px]"
-                          />
-
-                          {isDirty(key) && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                confirmField(key, section.content ?? "")
-                              }
-                              className="mt-1 h-10 w-10 rounded-full border border-green-600 text-green-700 hover:bg-green-50 grid place-items-center"
-                              title="אשר שינוי"
-                            >
-                              <Check size={18} />
-                            </button>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="leading-[1.7] text-stockblue/85 font-normal m-0 text-[1.1rem] text-justify">
-                          <strong>StockBox</strong> {section.content}
-                        </p>
-                      );
-                    })()}
-                  </div>
-                </>
+                <IntroSection
+                  section={section}
+                  sectionIndex={sectionIndex}
+                  isEditing={isEditing}
+                  updateSectionTitle={updateSectionTitle}
+                  updateTextContent={updateTextContent}
+                  markDirty={markDirty}
+                  confirmField={confirmField}
+                  isDirty={isDirty}
+                  mkKey={mkKey}
+                />
               )}
 
               {section.type === "features" && (
@@ -1345,274 +830,60 @@ const About: FC<AboutProps> = () => {
               )}
 
               {section.type === "paragraph" && (
-                <>
-                  {/* Paragraph Title */}
-                  {(() => {
-                    const key = mkKey("sectionTitle", section.id);
-
-                    return isEditing ? (
-                      <div className="flex items-center gap-2 mb-4">
-                        <input
-                          type="text"
-                          value={section.title}
-                          placeholder="כותרת ראשית"
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            updateSectionTitle(sectionIndex, val);
-                            markDirty(key, val);
-                          }}
-                          className="text-[1.8rem] text-stockblue font-bold w-full border-2 border-stockblue/30 rounded-lg px-4 py-2 focus:outline-none focus:border-stockblue"
-                        />
-
-                        {isDirty(key) && (
-                          <button
-                            type="button"
-                            onClick={() => confirmField(key, section.title)}
-                            className="h-10 w-10 rounded-full border border-green-600 text-green-700 hover:bg-green-50 grid place-items-center"
-                            title="אשר שינוי"
-                          >
-                            <Check size={18} />
-                          </button>
-                        )}
-                      </div>
-                    ) : (
-                      <h2 className="text-[1.8rem] text-stockblue mb-4 font-bold">
-                        {section.title}
-                      </h2>
-                    );
-                  })()}
-
-                  {/* Paragraph Content */}
-                  <div className="relative bg-white/60 backdrop-blur-[20px] px-9 py-8 my-4 mb-6 border border-white/30 shadow-[0_2px_16px_rgba(13,48,91,0.04),0_1px_4px_rgba(13,48,91,0.02)] rounded-[20px]">
-                    {(() => {
-                      const key = mkKey("paragraphContent", section.id);
-
-                      return isEditing ? (
-                        <div className="flex items-start gap-2">
-                          <textarea
-                            value={section.content || ""}
-                            placeholder="תוכן חדש"
-
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              updateTextContent(sectionIndex, val);
-                              markDirty(key, val);
-                            }}
-                            className="w-full leading-[1.7] text-stockblue/85 text-[1.1rem] text-justify border-2 border-stockblue/30 rounded-lg px-4 py-3 focus:outline-none focus:border-stockblue min-h-[120px]"
-                          />
-
-                          {isDirty(key) && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                confirmField(key, section.content ?? "")
-                              }
-                              className="mt-1 h-10 w-10 rounded-full border border-green-600 text-green-700 hover:bg-green-50 grid place-items-center"
-                              title="אשר שינוי"
-                            >
-                              <Check size={18} />
-                            </button>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="leading-[1.7] text-stockblue/85 m-0 text-[1.1rem] text-justify">
-                          {section.content}
-                        </p>
-                      );
-                    })()}
-                  </div>
-                </>
+                <ParagraphSection
+                  section={section}
+                  sectionIndex={sectionIndex}
+                  isEditing={isEditing}
+                  updateSectionTitle={updateSectionTitle}
+                  updateTextContent={updateTextContent}
+                  markDirty={markDirty}
+                  confirmField={confirmField}
+                  isDirty={isDirty}
+                  mkKey={mkKey}
+                />
               )}
 
               {section.type === "cta" && (
-                <div className="flex justify-center my-10">
-                  {isEditing && (
-                    <div className="absolute -top-4 -right-4 group">
-                      <div className="bg-stockblue text-white p-3 rounded-xl shadow-lg cursor-move transition hover:bg-stockblue/90">
-                        <GripVertical size={18} />
-                      </div>
-
-                      <span className="absolute top-1/2 -translate-y-1/2 right-full mr-3 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-50">
-                        יש לגרור לשינוי סדר
-                      </span>
-                    </div>
-                  )}
-
-                  <button
-                    onClick={handleNavigateToCategories}
-                    className="group inline-flex items-center gap-3 rounded-2xl border border-stockblue/20 bg-gradient-to-r from-white/90 via-white/80 to-blue-50/60 px-10 py-4 text-[1.15rem] font-bold text-stockblue backdrop-blur-sm shadow-[0_8px_28px_rgba(13,48,91,0.18)] hover:shadow-[0_12px_38px_rgba(13,48,91,0.3)] hover:scale-105 active:scale-95 transition-all duration-300 ease-out"
-                  >
-                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-stockblue text-white shadow-[0_4px_14px_rgba(13,48,91,0.35)] group-hover:rotate-12 transition-transform duration-300">
-                      <Compass size={22} />
-                    </span>
-                    גלו את התכולות והאמצעים
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-[22px] w-[22px] -scale-x-100 transition-transform duration-300 group-hover:translate-x-1"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M5 12h14" />
-                      <path d="m12 5 7 7-7 7" />
-                    </svg>
-                  </button>
-                </div>
+                <CtaSection
+                  isEditing={isEditing}
+                  handleNavigateToCategories={handleNavigateToCategories}
+                />
               )}
 
-              {isEditing && section.type !== "cta" && (
-                <div className="mt-6 flex justify-center">
-                  <AddSectionButton
-                    index={sectionIndex}
-                    handleAddSection={handleAddSection}
-                    disabled={hasUnconfirmedChanges}
-                    disabledReason={TOAST.unconfirmedChangesBlocked}
-                    canAdd={isSectionFilledEnough(section)}
-                    blockedReason="לפני שמוסיפים מקטע חדש — צריך למלא כותרת + תוכן במקטע הנוכחי."
-                    onBlockedAdd={() =>
-                      toast.error(
-                        "אי אפשר להוסיף מקטע חדש לפני שממלאים את המקטע הנוכחי.",
-                      )
-                    }
-                  />
-                </div>
-              )}
+              <AboutSectionFooterActions
+                isEditing={isEditing}
+                isCtaSection={section.type === "cta"}
+                sectionIndex={sectionIndex}
+                hasUnconfirmedChanges={hasUnconfirmedChanges}
+                canAdd={isSectionFilledEnough(section)}
+                handleAddSection={handleAddSection}
+                disabledReason={TOAST.unconfirmedChangesBlocked}
+                blockedReason="לפני שמוסיפים מקטע חדש — צריך למלא כותרת + תוכן במקטע הנוכחי."
+                onBlockedAdd={() =>
+                  toast.error(
+                    "אי אפשר להוסיף מקטע חדש לפני שממלאים את המקטע הנוכחי.",
+                  )
+                }
+              />
             </div>
           ))}
 
-          {isEditing && isEmptyContent && (
-            <div className="my-6 border-2 border-dashed border-stockblue/20 rounded-2xl p-10 bg-white/50 backdrop-blur-sm shadow-sm">
-              <div className="text-center mb-6">
-                <h3 className="text-stockblue font-bold text-xl mb-2">
-                  הוספת תוכן לעמוד{" "}
-                </h3>
-                <p className="text-stockblue/70 text-sm">
-                  יש לבחור סוג מקטע להתחלה :{" "}
-                </p>
-              </div>
+          <EmptyAboutSectionsState
+            isEditing={isEditing}
+            isEmptyContent={isEmptyContent}
+            hasUnconfirmedChanges={hasUnconfirmedChanges}
+            handleAddSection={handleAddSection}
+            unconfirmedChangesBlockedText={TOAST.unconfirmedChangesBlocked}
+          />
 
-              <div className="flex flex-wrap justify-center gap-3">
-                {/* Paragraph */}
-                <button
-                  type="button"
-                  disabled={hasUnconfirmedChanges}
-                  onClick={() => handleAddSection(-1, "paragraph")}
-                  title={
-                    hasUnconfirmedChanges
-                      ? TOAST.unconfirmedChangesBlocked
-                      : "הוסף מקטע פסקה"
-                  }
-                  className={`group inline-flex items-center gap-2 rounded-full px-5 py-2 font-semibold border shadow-md transition-all duration-300
-          ${hasUnconfirmedChanges
-                      ? "text-gray-400 border-gray-200 bg-white cursor-not-allowed opacity-60"
-                      : "text-stockblue border-stockblue/30 bg-white hover:bg-stockblue hover:text-white"
-                    }`}
-                >
-                  <span
-                    className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition-all duration-300
-            ${hasUnconfirmedChanges
-                        ? "border-gray-200 bg-gray-50"
-                        : "border-stockblue/20 bg-stockblue/5 group-hover:bg-white/10 group-hover:border-white/30"
-                      }`}
-                  >
-                    <FileText size={18} />
-                  </span>
-                  פסקה
-                  <Plus
-                    size={16}
-                    className="opacity-70 group-hover:opacity-100"
-                  />
-                </button>
-
-                {/* Bullets */}
-                <button
-                  type="button"
-                  disabled={hasUnconfirmedChanges}
-                  onClick={() => handleAddSection(-1, "bullets")}
-                  title={
-                    hasUnconfirmedChanges
-                      ? TOAST.unconfirmedChangesBlocked
-                      : "הוסף מקטע נקודות"
-                  }
-                  className={`group inline-flex items-center gap-2 rounded-full px-5 py-2 font-semibold border shadow-md transition-all duration-300
-          ${hasUnconfirmedChanges
-                      ? "text-gray-400 border-gray-200 bg-white cursor-not-allowed opacity-60"
-                      : "text-stockblue border-stockblue/30 bg-white hover:bg-stockblue hover:text-white"
-                    }`}
-                >
-                  <span
-                    className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition-all duration-300
-            ${hasUnconfirmedChanges
-                        ? "border-gray-200 bg-gray-50"
-                        : "border-stockblue/20 bg-stockblue/5 group-hover:bg-white/10 group-hover:border-white/30"
-                      }`}
-                  >
-                    <ListChecks size={18} />
-                  </span>
-                  נקודות
-                  <Plus
-                    size={16}
-                    className="opacity-70 group-hover:opacity-100"
-                  />
-                </button>
-
-                {/* Features */}
-                <button
-                  type="button"
-                  disabled={hasUnconfirmedChanges}
-                  onClick={() => handleAddSection(-1, "features")}
-                  title={
-                    hasUnconfirmedChanges
-                      ? TOAST.unconfirmedChangesBlocked
-                      : "הוסף מקטע פיצ'רים"
-                  }
-                  className={`group inline-flex items-center gap-2 rounded-full px-5 py-2 font-semibold border shadow-md transition-all duration-300
-          ${hasUnconfirmedChanges
-                      ? "text-gray-400 border-gray-200 bg-white cursor-not-allowed opacity-60"
-                      : "text-stockblue border-stockblue/30 bg-white hover:bg-stockblue hover:text-white"
-                    }`}
-                >
-                  <span
-                    className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition-all duration-300
-            ${hasUnconfirmedChanges
-                        ? "border-gray-200 bg-gray-50"
-                        : "border-stockblue/20 bg-stockblue/5 group-hover:bg-white/10 group-hover:border-white/30"
-                      }`}
-                  >
-                    <LayoutGrid size={18} />
-                  </span>
-                  פיצ׳רים
-                  <Plus
-                    size={16}
-                    className="opacity-70 group-hover:opacity-100"
-                  />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {isEditing && !hasUnconfirmedChanges && (
-            <div
-              onDragOver={(e) => {
-                e.preventDefault();
-                const from = draggedIndexRef.current;
-                if (from === null) return;
-                setDragOverIndex(sections.length);
-              }}
-              onDragEnter={() => {
-                const from = draggedIndexRef.current;
-                if (from === null) return;
-                setDragOverIndex(sections.length);
-              }}
-              className={`my-6 h-12 rounded-xl transition-all duration-200 ${dragOverIndex === sections.length
-                ? "border-2 border-solid border-stockblue bg-stockblue/5"
-                : "border-2 border-dashed border-stockblue/15"
-                }`}
-            />
-          )}
+          <AboutBottomDropZone
+            isEditing={isEditing}
+            hasUnconfirmedChanges={hasUnconfirmedChanges}
+            dragOverIndex={dragOverIndex}
+            sectionsLength={sections.length}
+            draggedIndexRef={draggedIndexRef}
+            setDragOverIndex={setDragOverIndex}
+          />
         </div>
 
         {/* Image Panel */}
@@ -1633,77 +904,15 @@ const About: FC<AboutProps> = () => {
           isLoading={isImagesLoading}
         />
       </div>
-      {showCancelConfirm && (
-        <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4"
-          onClick={() => setShowCancelConfirm(false)}
-        >
-          <div
-            className="bg-gradient-to-br from-white via-[#fffdf8] to-[#fff9ed] rounded-2xl w-full max-w-md shadow-2xl border border-gray-100 text-right overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-            dir="rtl"
-          >
-            <div className="p-8">
-              <div className="flex justify-start w-full mb-5">
-                <h2 className="flex items-center gap-3 text-2xl font-bold text-[#0D305B]">
-                  <svg
-                    className="w-7 h-7 text-[#0D305B]"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M12 8v5"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                    />
-                    <circle cx="12" cy="16" r="1" fill="currentColor" />
-                    <path
-                      d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                  <span>ישנם שינויים שלא נשמרו</span>
-                </h2>
-              </div>
-
-              <div className="bg-white/70 border border-blue-100 rounded-xl p-4 shadow-sm mb-6">
-                <p className="text-gray-800 font-semibold mb-2">
-                  האם אתם בטוחים שברצונכם לצאת ללא שמירה?
-                </p>
-                <p className="text-sm text-gray-600">
-                  כל השינויים שבוצעו יאבדו.
-                </p>
-              </div>
-
-              <div className="flex justify-center items-center gap-4 pt-2 border-t-2 border-gray-200 flex-wrap">
-                <button
-                  type="button"
-                  onClick={() => setShowCancelConfirm(false)}
-                  className="px-6 py-3 rounded-xl border-2 border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors font-bold"
-                >
-                  חזרה לעריכה
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowCancelConfirm(false);
-                    setEditExitAction("cancel");
-                    debouncedCancelEdit();
-                  }}
-                  className="px-8 py-3 rounded-xl text-white bg-[#0D305B] hover:bg-[#15457a] transition-colors font-bold shadow-lg"
-                >
-                  יציאה ללא שמירה
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <UnsavedChangesDialog
+        open={showCancelConfirm}
+        onClose={() => setShowCancelConfirm(false)}
+        onConfirm={() => {
+          setShowCancelConfirm(false);
+          setEditExitAction("cancel");
+          debouncedCancelEdit();
+        }}
+      />
     </div>
   );
 };

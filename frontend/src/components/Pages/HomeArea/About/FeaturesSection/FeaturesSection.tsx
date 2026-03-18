@@ -161,7 +161,7 @@ const FeaturesSection: FC<FeaturesSectionProps> = ({
                   type="button"
                   onClick={() => confirmField(key, title)}
                   className="h-10 w-10 rounded-full border border-green-600 text-green-700 hover:bg-green-50 grid place-items-center flex-shrink-0"
-                  title="אשר שינוי"
+                  title="אישור שינוי"
                 >
                   <Check size={18} />
                 </button>
@@ -301,7 +301,7 @@ const FeaturesSection: FC<FeaturesSectionProps> = ({
                         type="button"
                         onClick={() => confirmField(cardKey, getCardValue(feature))}
                         className="mt-1 h-9 w-9 rounded-full border border-green-600 text-green-700 hover:bg-green-50 grid place-items-center flex-shrink-0"
-                        title="אשר שינוי"
+                        title="אישור שינוי"
                       >
                         <Check size={16} />
                       </button>

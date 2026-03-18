@@ -794,10 +794,8 @@ const ProductPermissions: React.FC = () => {
                                 >
                                   <div className="bg-white border rounded-lg max-h-48 overflow-y-auto">
                                     {pathState.groups.map((group) => {
-                                      const blockedByProduct =
-                                        isBlockedInProduct(group._id);
-                                      const blockedByCategory =
-                                        isBlockedInCategory(pathData, group._id);
+                                      const blockedByProduct = !group.members && !productPermissions.some(p => p.allowed === group._id);                    
+                                      const blockedByCategory = !group.members && isBlockedInCategory(pathData, group._id);
                                       return (
                                         <div
                                           key={group._id}

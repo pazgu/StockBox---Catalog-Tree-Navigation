@@ -24,7 +24,7 @@ import { RequireAuth } from "../../../components/Pages/AuthArea/ProtectRoutes/Re
 interface LayoutProps {}
 
 const Layout: FC<LayoutProps> = () => {
-    return (
+  return (
     <div className="Layout">
       <Header />
 
@@ -136,7 +136,15 @@ const Layout: FC<LayoutProps> = () => {
         </Routes>
       </main>
 
-      <Toaster richColors />
+      <Toaster
+        richColors
+        toastOptions={{
+          style: {
+            maxWidth: "500px",
+            width: "500px",
+          },
+        }}
+      />
       <Footer />
     </div>
   );

@@ -17,6 +17,9 @@ import { join } from 'path';
 import { existsSync } from 'fs';
 import { SearchModule } from './search/search.module';
 import { RecycleBinModule } from './recycle-bin/recycle-bin.module';
+import { SocketGateway } from './socket/socket.gateway';
+import { SocketModule } from './socket/socket.module';
+import { JwtModule } from '@nestjs/jwt';
 
 const envPath = existsSync(join(process.cwd(), '.env'))
   ? join(process.cwd(), '.env')
@@ -45,8 +48,10 @@ const envPath = existsSync(join(process.cwd(), '.env'))
     AboutModule,
     SearchModule,
     RecycleBinModule,
+    SocketModule,
+    JwtModule
   ],
   controllers: [PermissionsController, CommonController],
-  providers: [CommonService],
+  providers: [CommonService, SocketGateway],
 })
 export class AppModule {}

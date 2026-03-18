@@ -60,7 +60,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const refreshUsers = async () => {
     try {
-      const response = await api.get<User[]>(`${API_URL}/users`);
+      const response = await api.get<User[]>(`${API_URL}/users?approved=true`);
       setUsers(response.data);
     } catch (err) {
       console.error("Error fetching users:", err);
