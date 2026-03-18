@@ -18,6 +18,8 @@ interface AboutFloatingActionsProps {
   role?: string | null;
   isEditing: boolean;
   isSaving: boolean;
+  hasUnconfirmedChanges: boolean;
+  onBlockedSave: () => void;
   handleCancelClick: () => void;
   cancelPendingExit: () => void;
   setEditExitAction: (value: "save" | "cancel" | null) => void;
@@ -30,6 +32,9 @@ interface AboutSectionTopActionsProps {
   isCtaSection: boolean;
   sectionIndex: number;
   removeSection: (index: number) => void;
+  hasUnconfirmedChanges: boolean;
+  onDragStart: () => void;
+  onDragEnd: () => void;
 }
 
 export const AboutSectionTopActions: React.FC<AboutSectionTopActionsProps> = ({
@@ -37,17 +42,37 @@ export const AboutSectionTopActions: React.FC<AboutSectionTopActionsProps> = ({
   isCtaSection,
   sectionIndex,
   removeSection,
+  hasUnconfirmedChanges,
+  onDragStart,
+  onDragEnd,
 }) => {
   if (!isEditing || isCtaSection) return null;
 
   return (
     <div className="absolute -right-3 -top-3 flex gap-2 z-20">
       <div className="group relative">
-        <div className="p-2 bg-stockblue text-white rounded-lg cursor-grab active:cursor-grabbing shadow-md hover:bg-stockblue/90 transition">
+        <button
+          type="button"
+          draggable={!hasUnconfirmedChanges}
+          onDragStart={onDragStart}
+          onDragEnd={onDragEnd}
+          className={`p-2 text-white rounded-lg shadow-md transition ${hasUnconfirmedChanges
+            ? "bg-slate-400 cursor-not-allowed opacity-60"
+            : "bg-stockblue cursor-grab active:cursor-grabbing hover:bg-stockblue/90"
+            }`}
+          title={
+            hasUnconfirmedChanges
+              ? "לא ניתן לשנות סדר לפני אישור כל השינויים"
+              : "שינוי סדר"
+          }
+        >
           <GripVertical size={20} />
-        </div>
+        </button>
+
         <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-50">
-          יש לגרור לשינוי סדר
+          {hasUnconfirmedChanges
+            ? "יש לאשר שינויים לפני גרירה"
+            : "שינוי סדר"}
         </span>
       </div>
 
@@ -72,6 +97,8 @@ export const AboutFloatingActions: React.FC<AboutFloatingActionsProps> = ({
   role,
   isEditing,
   isSaving,
+  hasUnconfirmedChanges,
+  onBlockedSave,
   handleCancelClick,
   cancelPendingExit,
   setEditExitAction,
@@ -98,41 +125,51 @@ export const AboutFloatingActions: React.FC<AboutFloatingActionsProps> = ({
       )}
 
       <div className="relative">
-  <button
-    onClick={() => {
-      if (isSaving) return;
+        <button
+          onClick={() => {
+  if (isSaving) return;
 
-      cancelPendingExit();
+  cancelPendingExit();
 
-      if (isEditing) {
-        setEditExitAction("save");
-        debouncedSaveChanges();
-        return;
-      }
+  if (isEditing) {
+    if (hasUnconfirmedChanges) {
+      onBlockedSave();
+      return;
+    }
 
-      setEditExitAction(null);
-      setIsEditing(true);
-    }}
-    disabled={isSaving}
-    aria-label={isEditing ? "שמירת שינויים" : "עריכה"}
-    className={`peer flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white shadow-lg ring-2 transition-all duration-300 ${
-      isSaving
-        ? "bg-slate-400 cursor-not-allowed ring-slate-300"
-        : "bg-stockblue ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90"
-    }`}
-  >
-    {isSaving ? (
-      <Spinner className="size-5 text-white" />
-    ) : isEditing ? (
-      <Save size={22} />
-    ) : (
-      <Edit2 size={22} />
-    )}
-  </button>
-  <span className="absolute right-16 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs px-3 py-2 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-    {isSaving ? "שומר..." : isEditing ? "שמירת שינויים" : "עריכה"}
-  </span>
-</div>
+    setEditExitAction("save");
+    debouncedSaveChanges();
+    return;
+  }
+
+  setEditExitAction(null);
+  setIsEditing(true);
+}}
+          disabled={isSaving}
+          aria-label={isEditing ? "שמירת שינויים" : "עריכה"}
+          className={`peer flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white shadow-lg ring-2 transition-all duration-300 ${isSaving
+            ? "bg-slate-400 cursor-not-allowed ring-slate-300"
+            : "bg-stockblue ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90"
+            }`}
+        >
+          {isSaving ? (
+            <Spinner className="size-5 text-white" />
+          ) : isEditing ? (
+            <Save size={22} />
+          ) : (
+            <Edit2 size={22} />
+          )}
+        </button>
+      <span className="absolute right-16 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs px-3 py-2 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+  {isSaving
+    ? "שומר..."
+    : isEditing && hasUnconfirmedChanges
+    ? "אישור שינויים"
+    : isEditing
+    ? "שמירת שינויים"
+    : "עריכה"}
+</span>
+      </div>
     </div>
   );
 };
@@ -165,22 +202,22 @@ export const AboutSectionFooterActions: React.FC<
   blockedReason,
   onBlockedAdd,
 }) => {
-  if (!isEditing || isCtaSection) return null;
+    if (!isEditing || isCtaSection) return null;
 
-  return (
-    <div className="mt-6 flex justify-center">
-      <AddSectionButton
-        index={sectionIndex}
-        handleAddSection={handleAddSection}
-        disabled={hasUnconfirmedChanges}
-        disabledReason={disabledReason}
-        canAdd={canAdd}
-        blockedReason={blockedReason}
-        onBlockedAdd={onBlockedAdd}
-      />
-    </div>
-  );
-};
+    return (
+      <div className="mt-6 flex justify-center">
+        <AddSectionButton
+          index={sectionIndex}
+          handleAddSection={handleAddSection}
+          disabled={hasUnconfirmedChanges}
+          disabledReason={disabledReason}
+          canAdd={canAdd}
+          blockedReason={blockedReason}
+          onBlockedAdd={onBlockedAdd}
+        />
+      </div>
+    );
+  };
 
 interface AboutBottomDropZoneProps {
   isEditing: boolean;
@@ -214,11 +251,10 @@ export const AboutBottomDropZone: React.FC<AboutBottomDropZoneProps> = ({
         if (from === null) return;
         setDragOverIndex(sectionsLength);
       }}
-      className={`my-6 h-12 rounded-xl transition-all duration-200 ${
-        dragOverIndex === sectionsLength
-          ? "border-2 border-solid border-stockblue bg-stockblue/5"
-          : "border-2 border-dashed border-stockblue/15"
-      }`}
+      className={`my-6 h-12 rounded-xl transition-all duration-200 ${dragOverIndex === sectionsLength
+        ? "border-2 border-solid border-stockblue bg-stockblue/5"
+        : "border-2 border-dashed border-stockblue/15"
+        }`}
     />
   );
 };
@@ -262,19 +298,17 @@ export const EmptyAboutSectionsState: React.FC<EmptyAboutSectionsStateProps> = (
               : "הוסף מקטע פסקה"
           }
           className={`group inline-flex items-center gap-2 rounded-full px-5 py-2 font-semibold border shadow-md transition-all duration-300
-      ${
-        hasUnconfirmedChanges
-          ? "text-gray-400 border-gray-200 bg-white cursor-not-allowed opacity-60"
-          : "text-stockblue border-stockblue/30 bg-white hover:bg-stockblue hover:text-white"
-      }`}
+      ${hasUnconfirmedChanges
+              ? "text-gray-400 border-gray-200 bg-white cursor-not-allowed opacity-60"
+              : "text-stockblue border-stockblue/30 bg-white hover:bg-stockblue hover:text-white"
+            }`}
         >
           <span
             className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition-all duration-300
-        ${
-          hasUnconfirmedChanges
-            ? "border-gray-200 bg-gray-50"
-            : "border-stockblue/20 bg-stockblue/5 group-hover:bg-white/10 group-hover:border-white/30"
-        }`}
+        ${hasUnconfirmedChanges
+                ? "border-gray-200 bg-gray-50"
+                : "border-stockblue/20 bg-stockblue/5 group-hover:bg-white/10 group-hover:border-white/30"
+              }`}
           >
             <FileText size={18} />
           </span>
@@ -292,19 +326,17 @@ export const EmptyAboutSectionsState: React.FC<EmptyAboutSectionsStateProps> = (
               : "הוסף מקטע נקודות"
           }
           className={`group inline-flex items-center gap-2 rounded-full px-5 py-2 font-semibold border shadow-md transition-all duration-300
-      ${
-        hasUnconfirmedChanges
-          ? "text-gray-400 border-gray-200 bg-white cursor-not-allowed opacity-60"
-          : "text-stockblue border-stockblue/30 bg-white hover:bg-stockblue hover:text-white"
-      }`}
+      ${hasUnconfirmedChanges
+              ? "text-gray-400 border-gray-200 bg-white cursor-not-allowed opacity-60"
+              : "text-stockblue border-stockblue/30 bg-white hover:bg-stockblue hover:text-white"
+            }`}
         >
           <span
             className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition-all duration-300
-        ${
-          hasUnconfirmedChanges
-            ? "border-gray-200 bg-gray-50"
-            : "border-stockblue/20 bg-stockblue/5 group-hover:bg-white/10 group-hover:border-white/30"
-        }`}
+        ${hasUnconfirmedChanges
+                ? "border-gray-200 bg-gray-50"
+                : "border-stockblue/20 bg-stockblue/5 group-hover:bg-white/10 group-hover:border-white/30"
+              }`}
           >
             <ListChecks size={18} />
           </span>
@@ -322,19 +354,17 @@ export const EmptyAboutSectionsState: React.FC<EmptyAboutSectionsStateProps> = (
               : "הוסף מקטע פיצ'רים"
           }
           className={`group inline-flex items-center gap-2 rounded-full px-5 py-2 font-semibold border shadow-md transition-all duration-300
-      ${
-        hasUnconfirmedChanges
-          ? "text-gray-400 border-gray-200 bg-white cursor-not-allowed opacity-60"
-          : "text-stockblue border-stockblue/30 bg-white hover:bg-stockblue hover:text-white"
-      }`}
+      ${hasUnconfirmedChanges
+              ? "text-gray-400 border-gray-200 bg-white cursor-not-allowed opacity-60"
+              : "text-stockblue border-stockblue/30 bg-white hover:bg-stockblue hover:text-white"
+            }`}
         >
           <span
             className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition-all duration-300
-        ${
-          hasUnconfirmedChanges
-            ? "border-gray-200 bg-gray-50"
-            : "border-stockblue/20 bg-stockblue/5 group-hover:bg-white/10 group-hover:border-white/30"
-        }`}
+        ${hasUnconfirmedChanges
+                ? "border-gray-200 bg-gray-50"
+                : "border-stockblue/20 bg-stockblue/5 group-hover:bg-white/10 group-hover:border-white/30"
+              }`}
           >
             <LayoutGrid size={18} />
           </span>
