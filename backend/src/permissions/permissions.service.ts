@@ -10,7 +10,7 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model } from 'mongoose';
-import { AnyBulkWriteOperation, Filter, UpdateFilter } from 'mongodb';
+import { AnyBulkWriteOperation, Filter, ObjectId, UpdateFilter } from 'mongodb';
 import { EntityType, Permission } from 'src/schemas/Permissions.schema';
 import { Types } from 'mongoose';
 import { CreatePermissionDto } from './dto/createPermission.dto';
@@ -447,6 +447,12 @@ export class PermissionsService {
           allowed: p.allowed,
         }));
         await this.permissionModel.insertMany(permissions, { ordered: false });
+
+        const userIds: string[] = parentPermissions
+          .map(p => p.allowed)
+          .filter(id => id != null)
+          .map(id => id.toString());
+        return userIds;
       }
 
       return;
@@ -466,6 +472,11 @@ export class PermissionsService {
       (id) => !usersInGroupsSet.has(id),
     );
 
+    const finalUserIds = [
+      ...individualUserIds,
+      ...usersInGroups,
+    ];
+
     const permissions = [
       ...individualUserIds.map((id) => ({
         entityType: EntityType.CATEGORY,
@@ -482,6 +493,7 @@ export class PermissionsService {
     if (permissions.length) {
       await this.permissionModel.insertMany(permissions, { ordered: false });
     }
+    return null;
   }
 
   async updatePermissionsOnMove(

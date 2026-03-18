@@ -104,6 +104,7 @@ const AllUsers: FC<AllUsersProps> = () => {
       setUsers(prev => prev.filter(u => u._id !== id));
     });
   }, [joinRoleRoom, onEvent]);
+  
   const filteredUsers = users
     .filter(
       (user) =>
