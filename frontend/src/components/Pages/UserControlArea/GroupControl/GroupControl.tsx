@@ -69,18 +69,17 @@ const GroupControl: React.FC = () => {
   }, [showAddGroupModal]);
 
   useEffect(() => {
+    fetchGroups();
+  }, []);
+  useEffect(() => {
     joinRoleRoom("editor");
 
     onEvent("new_group_created", (group: Group) => {
-      console.log("new_group_created", group);
-
       setGroups((prev) => {
         if (prev.some((g) => g.id === group.id)) return prev;
         return [...prev, group];
       });
     });
-
-    fetchGroups();
   }, [joinRoleRoom, onEvent]);
   const fetchGroups = async () => {
     try {
@@ -99,7 +98,6 @@ const GroupControl: React.FC = () => {
         setSelectedGroup(transformedGroups[0].id);
       }
     } catch (error) {
-      console.error("Error fetching groups:", error);
       toast.error("שגיאה בטעינת קבוצות");
     } finally {
       setIsLoading(false);
