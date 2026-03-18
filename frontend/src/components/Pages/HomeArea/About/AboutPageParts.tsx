@@ -11,11 +11,13 @@ import {
   Trash2,
 } from "lucide-react";
 import AddSectionButton from "./AddSectionButton/AddSectionButton/AddSectionButton";
+import { Spinner } from "../../../ui/spinner";
 type SectionKind = "features" | "bullets" | "paragraph";
 
 interface AboutFloatingActionsProps {
   role?: string | null;
   isEditing: boolean;
+  isSaving: boolean;
   handleCancelClick: () => void;
   cancelPendingExit: () => void;
   setEditExitAction: (value: "save" | "cancel" | null) => void;
@@ -69,6 +71,7 @@ export const AboutSectionTopActions: React.FC<AboutSectionTopActionsProps> = ({
 export const AboutFloatingActions: React.FC<AboutFloatingActionsProps> = ({
   role,
   isEditing,
+  isSaving,
   handleCancelClick,
   cancelPendingExit,
   setEditExitAction,
@@ -95,28 +98,41 @@ export const AboutFloatingActions: React.FC<AboutFloatingActionsProps> = ({
       )}
 
       <div className="relative">
-        <button
-          onClick={() => {
-            cancelPendingExit();
+  <button
+    onClick={() => {
+      if (isSaving) return;
 
-            if (isEditing) {
-              setEditExitAction("save");
-              debouncedSaveChanges();
-              return;
-            }
+      cancelPendingExit();
 
-            setEditExitAction(null);
-            setIsEditing(true);
-          }}
-          aria-label={isEditing ? "שמירת שינויים" : "עריכה"}
-          className="peer flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300"
-        >
-          {isEditing ? <Save size={22} /> : <Edit2 size={22} />}
-        </button>
-        <span className="absolute right-16 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs px-3 py-2 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-          {isEditing ? "שמירת שינויים" : "עריכה"}
-        </span>
-      </div>
+      if (isEditing) {
+        setEditExitAction("save");
+        debouncedSaveChanges();
+        return;
+      }
+
+      setEditExitAction(null);
+      setIsEditing(true);
+    }}
+    disabled={isSaving}
+    aria-label={isEditing ? "שמירת שינויים" : "עריכה"}
+    className={`peer flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white shadow-lg ring-2 transition-all duration-300 ${
+      isSaving
+        ? "bg-slate-400 cursor-not-allowed ring-slate-300"
+        : "bg-stockblue ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90"
+    }`}
+  >
+    {isSaving ? (
+      <Spinner className="size-5 text-white" />
+    ) : isEditing ? (
+      <Save size={22} />
+    ) : (
+      <Edit2 size={22} />
+    )}
+  </button>
+  <span className="absolute right-16 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs px-3 py-2 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+    {isSaving ? "שומר..." : isEditing ? "שמירת שינויים" : "עריכה"}
+  </span>
+</div>
     </div>
   );
 };
