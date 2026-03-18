@@ -6,8 +6,10 @@ import { Group, GroupSchema } from '../schemas/Groups.schema';
 import { User, UserSchema } from '../schemas/Users.schema';
 import { PermissionsModule } from 'src/permissions/permissions.module';
 import { forwardRef } from '@nestjs/common';
+import { SocketModule } from 'src/socket/socket.module';
 @Module({
   imports: [
+    forwardRef(() => SocketModule),
     MongooseModule.forFeature([
       { name: Group.name, schema: GroupSchema },
       { name: User.name, schema: UserSchema },
