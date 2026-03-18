@@ -40,13 +40,13 @@ const BTN_DANGER =
 const BTN_SUCCESS =
   "px-8 h-12 rounded-xl font-bold text-white transition-colors shadow-lg bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 hover:shadow-xl";
 
-interface AllUsersProps {}
+interface AllUsersProps { }
 
 const AllUsers: FC<AllUsersProps> = () => {
   const navigate = useNavigate();
   const { id } = useUser();
   const token = localStorage.getItem("token") || "";
-  const { joinRoleRoom, onEvent, offEvent } = useSocket({ token });
+  const { joinRoleRoom, onEvent } = useSocket({ token });
 
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -89,34 +89,22 @@ const AllUsers: FC<AllUsersProps> = () => {
   }, [searchParams]);
 
 
-useEffect(() => {
-  joinRoleRoom("editor");
+  useEffect(() => {
+    joinRoleRoom("editor");
+    onEvent("new_user_created", (user: User) => {
+      setUsers(prev => [user, ...prev]);
+      toast.info(`משתמש חדש נוסף: ${user.firstName}`);
+    });
 
-  onEvent("new_user_created", (user: User) => {
-    setUsers((prev) => [user, ...prev]);
-    toast.info(`משתמש חדש נוסף: ${user.firstName}`);
-  });
+    onEvent("user_updated", (user: User) => {
+      setUsers(prev => prev.map(u => u._id === user._id ? user : u));
+    });
 
-  onEvent("user_updated", (user: User) => {
-    setUsers((prev) => prev.map((u) => u._id === user._id ? user : u));
-  });
+    onEvent("user_deleted", (id: string) => {
+      setUsers(prev => prev.filter(u => u._id !== id));
+    });
+  }, [joinRoleRoom, onEvent]);
 
-  onEvent("user_deleted", (deletedId: string) => {
-    setUsers((prev) => prev.filter((u) => u._id !== deletedId));
-  });
-
-  onEvent("user_approved", () => {
-    toast.success("חשבונך אושר! ברוך הבא 🎉");
-  });
-
-  return () => {
-    offEvent("new_user_created");
-    offEvent("user_updated");
-    offEvent("user_deleted");
-    offEvent("user_approved");
-  };
-}, [joinRoleRoom, onEvent, offEvent]);
-  
   const filteredUsers = users
     .filter(
       (user) =>
