@@ -13,6 +13,7 @@ interface UseSocketReturn {
   leaveRoleRoom: (role: string) => void;
   emitEvent: (event: string, data?: any) => void;
   onEvent: (event: string, callback: (...args: any[]) => void) => void;
+  offEvent: (event: string, callback?: (...args: any[]) => void) => void;
 }
 
 export const useSocket = ({ token, onConnect, onDisconnect }: UseSocketProps): UseSocketReturn => {
@@ -22,7 +23,7 @@ export const useSocket = ({ token, onConnect, onDisconnect }: UseSocketProps): U
     if (!token) return;
 
     const socket = io('http://localhost:4000', {
-      auth: { token }, 
+      auth: { token },
       transports: ['websocket'],
     });
 
@@ -59,11 +60,22 @@ export const useSocket = ({ token, onConnect, onDisconnect }: UseSocketProps): U
     socketRef.current?.on(event, callback);
   }, []);
 
+  const offEvent = useCallback((event: string, callback?: (...args: any[]) => void) => {
+    if (!socketRef.current) return;
+
+    if (callback) {
+      socketRef.current.off(event, callback);
+    } else {
+      socketRef.current.off(event);
+    }
+  }, []);
+
   return {
     socket: socketRef.current,
     joinRoleRoom,
     leaveRoleRoom,
     emitEvent,
     onEvent,
+    offEvent,
   };
 };
