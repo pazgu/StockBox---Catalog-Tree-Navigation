@@ -29,6 +29,7 @@ import { Group } from 'src/schemas/Groups.schema';
 import { NameLock } from 'src/schemas/NameLock.schema';
 import { UsersService } from 'src/users/users.service';
 import { normalizeName } from 'src/utils/nameLock';
+import { SocketService } from 'src/socket/socket.service';
 @Injectable()
 export class ProductsService {
   constructor(
@@ -39,6 +40,7 @@ export class ProductsService {
     private usersService: UsersService,
 
     private permissionsService: PermissionsService,
+    private socketService: SocketService,
   ) {}
 
   async findAll(): Promise<Product[]> {
@@ -291,6 +293,7 @@ export class ProductsService {
         .deleteOne({ nameKey: oldNameKey })
         .catch(() => undefined);
     }
+    this.socketService.emitToAll('product_updated', updatedProduct);
 
     return updatedProduct;
   }
