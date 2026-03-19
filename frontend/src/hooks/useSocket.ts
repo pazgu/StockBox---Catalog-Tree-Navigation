@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback,useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 
 interface UseSocketProps {
@@ -10,6 +10,7 @@ interface UseSocketProps {
 
 interface UseSocketReturn {
   socket: Socket | null;
+  isReady: boolean;
   joinRoleRoom: (role: string) => void;
   leaveRoleRoom: (role: string) => void;
   emitEvent: (event: string, data?: any) => void;
@@ -23,8 +24,8 @@ export const useSocket = ({
   onDisconnect,
   onRoleChanged,
 }: UseSocketProps): UseSocketReturn => {
-  const socketRef = useRef<Socket | null>(null);
-
+const socketRef = useRef<Socket | null>(null);
+const [isReady, setIsReady] = useState(false);
   useEffect(() => {
     if (!token) return;
 
@@ -37,6 +38,7 @@ export const useSocket = ({
 
     socket.on('connect', () => {
       console.log('Socket connected:', socket.id);
+      setIsReady(true); 
       onConnect?.();
     });
 
@@ -49,6 +51,7 @@ export const useSocket = ({
     });
 
     return () => {
+      setIsReady(false);
       socket.disconnect();
     };
   }, [token, onConnect, onDisconnect, onRoleChanged]);
@@ -81,6 +84,7 @@ export const useSocket = ({
 
   return {
     socket: socketRef.current,
+    isReady,
     joinRoleRoom,
     leaveRoleRoom,
     emitEvent,
