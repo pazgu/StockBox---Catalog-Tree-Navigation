@@ -74,9 +74,19 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     }, 1500);
   }, []);
 
+  const handleUserDeleted = useCallback(() => {
+    toast.warning("החשבון שלך נמחק על ידי חבר צוות.", { duration: 8000 });
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setTimeout(() => {
+      window.location.href = "/login";
+    }, 1500);
+  }, []);
+
   useSocket({
     token,
     onRoleChanged: handleRoleChanged,
+    onUserDeleted: handleUserDeleted,
   });
 
   const refreshUsers = async () => {

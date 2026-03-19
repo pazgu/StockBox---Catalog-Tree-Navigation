@@ -61,7 +61,7 @@ export class AuthService {
       });
 
       this.socketService.emitToRole(UserRole.EDITOR, 'new_user_created', {
-        id: newUser._id,
+        _id: newUser._id,
         email: newUser.email,
         userName: newUser.userName,
         firstName: newUser.firstName,

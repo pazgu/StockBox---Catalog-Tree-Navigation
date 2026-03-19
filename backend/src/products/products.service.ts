@@ -161,7 +161,7 @@ export class ProductsService {
         cleanCustomFields = [];
       }
     }
-    const nameKey = normalizeName(createProductDto.productName); // NEW
+    const nameKey = normalizeName(createProductDto.productName); 
     try {
       await this.nameLockModel.create({
         nameKey,
@@ -307,7 +307,7 @@ export class ProductsService {
     const { newCategoryPath } = moveProductDto;
 
     for (const path of newCategoryPath) {
-      if (path === '/categories') continue; // root is always valid, no DB check needed
+      if (path === '/categories') continue; 
       const categoryExists = await this.categoryModel.findOne({
         categoryPath: path,
       });
