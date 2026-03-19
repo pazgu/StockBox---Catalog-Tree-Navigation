@@ -10,6 +10,7 @@ import { Group, GroupSchema } from 'src/schemas/Groups.schema';
 import { UsersModule } from 'src/users/users.module';
 import { NameLock, NameLockSchema } from 'src/schemas/NameLock.schema';
 import { SocketModule } from 'src/socket/socket.module';
+
 @Module({
   imports: [
     SocketModule,
@@ -27,6 +28,7 @@ import { SocketModule } from 'src/socket/socket.module';
     ]),
     PermissionsModule,
     UsersModule,
+    SocketModule,
   ],
   providers: [CategoriesService],
   controllers: [CategoriesController],
