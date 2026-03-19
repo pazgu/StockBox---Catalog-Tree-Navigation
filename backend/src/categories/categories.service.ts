@@ -28,6 +28,8 @@ import { Group } from 'src/schemas/Groups.schema';
 import mongoose from 'mongoose';
 import { NameLock } from 'src/schemas/NameLock.schema';
 import { normalizeName } from 'src/utils/nameLock';
+import { SocketService } from 'src/socket/socket.service';
+
 
 @Injectable()
 export class CategoriesService {
@@ -38,6 +40,7 @@ export class CategoriesService {
     @InjectModel(NameLock.name) private nameLockModel: Model<NameLock>,
     private readonly permissionsService: PermissionsService,
     private readonly usersService: UsersService,
+    private readonly socketService: SocketService,
   ) { }
   nameKey = normalizeName(CreateCategoryDto.prototype.categoryName);
 
@@ -96,7 +99,7 @@ export class CategoriesService {
           savedCategory,
         );
       }
-
+      this.socketService.emitToAll('category_created', savedCategory);
       return savedCategory;
     } catch (err: any) {
       await this.nameLockModel.deleteOne({ nameKey }).catch(() => undefined);
@@ -444,7 +447,7 @@ export class CategoriesService {
         { updatePipeline: true },
       );
     }
-
+    this.socketService.emitToAll('category_updated', updatedCategory);
     return updatedCategory;
   }
 
@@ -537,11 +540,14 @@ export class CategoriesService {
       newParentPath,
     );
 
+     const updatedCategory = await this.categoryModel.findById(id);
+    this.socketService.emitToAll('category_updated', updatedCategory);
     return {
       success: true,
       message: `Subcategory moved successfully from ${oldPath} to ${newPath}`,
-      category: await this.categoryModel.findById(id),
+      category: updatedCategory,
     };
+   
   }
 
   async getCategoryById(id: string) {
