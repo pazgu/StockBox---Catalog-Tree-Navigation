@@ -137,8 +137,8 @@ export class ProductsService {
     const fd = new FormData();
 
     if (payload.productName) fd.append("productName", payload.productName);
-    if (payload.productDescription)
-      fd.append("productDescription", payload.productDescription);
+    if (payload.productDescription !== undefined)
+    fd.append("productDescription", payload.productDescription ?? "");
     if (payload.productPath) fd.append("productPath", payload.productPath);
 
     const imgs = payload.productImages ?? [];
