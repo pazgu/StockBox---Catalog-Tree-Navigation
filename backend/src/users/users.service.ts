@@ -82,6 +82,7 @@ export class UsersService {
     await this.permissionsService.deletePermissionsForAllowed(id);
     const deleted = await this.userModel.findByIdAndDelete(id).exec();
     if (deleted) {
+      this.socketService.emitToUser(id, 'user_deleted_self', {});
       this.socketService.emitToRole('editor', 'user_deleted', {
         id,
         name: `${deleted.firstName} ${deleted.lastName}`,
