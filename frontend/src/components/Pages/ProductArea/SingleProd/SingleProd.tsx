@@ -456,7 +456,15 @@ const SingleProd: FC<SingleProdProps> = () => {
       toast.error("לא ניתן לשמור שדות ריקים");
       return;
     }
-
+    const hasEmptyFolder = folders.some((folder) => folder.files.length === 0);
+    if (hasEmptyFolder) {
+      toast.error("לא ניתן לשמור תיקייה ריקה ללא קבצים");
+      return;
+    }
+    if (!title.trim()) {
+      toast.error("שם מוצר הוא שדה חובה");
+      return;
+    }
     if (!ALLOWED_CHARS.test(title.trim())) {
       toast.error("ניתן להשתמש רק באותיות, מספרים, רווחים והתווים . - _");
       return;
@@ -480,7 +488,6 @@ const SingleProd: FC<SingleProdProps> = () => {
         {
           title: "Default Group",
           folders: folders
-            .filter((folder) => folder.files.length > 0)
             .map((folder) => ({
               ...(folder._id ? { _id: folder._id } : {}),
               folderName: folder.name,
@@ -525,10 +532,14 @@ const SingleProd: FC<SingleProdProps> = () => {
       toast.success("שינויים נשמרו בהצלחה");
       setEditSnapshot(null);
       setIsEditing(false);
-    } catch (err) {
-      console.error(err);
-      toast.error("לא הצלחנו לשמור את המוצר. נסה שוב בבקשה.");
-    } finally {
+  } catch (err: any) {
+  const msg = err?.message || "";
+  if (msg.includes("שם זה כבר קיים")) {
+    toast.error("שם זה כבר קיים. נא לבחור שם ייחודי אחר.");
+  } else {
+    toast.error("לא הצלחנו לשמור את המוצר. נסה שוב בבקשה.");
+  }
+} finally {
       setIsSaving(false);
     }
   };
