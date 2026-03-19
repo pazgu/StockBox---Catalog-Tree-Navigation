@@ -80,7 +80,14 @@ export class UsersService {
 
   async deleteUser(id: string) {
     await this.permissionsService.deletePermissionsForAllowed(id);
-    return this.userModel.findByIdAndDelete(id).exec();
+    const deleted = await this.userModel.findByIdAndDelete(id).exec();
+    if (deleted) {
+      this.socketService.emitToRole('editor', 'user_deleted', {
+        id,
+        name: `${deleted.firstName} ${deleted.lastName}`,
+      });
+    }
+    return deleted;
   }
 
   async updateUser(id: string, updateUserDto: Partial<CreateUserDto>) {
@@ -109,9 +116,7 @@ export class UsersService {
     if (!updatedUser) return updatedUser;
 
     const roleChanged =
-      oldUser &&
-      updateUserDto.role &&
-      oldUser.role !== updateUserDto.role;
+      oldUser && updateUserDto.role && oldUser.role !== updateUserDto.role;
 
     if (roleChanged) {
       this.socketService.emitToUser(id, 'user_role_changed', {
