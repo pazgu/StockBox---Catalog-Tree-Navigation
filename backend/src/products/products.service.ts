@@ -39,7 +39,7 @@ export class ProductsService {
     private usersService: UsersService,
 
     private permissionsService: PermissionsService,
-  ) { }
+  ) {}
 
   async findAll(): Promise<Product[]> {
     return this.productModel.find().exec();
@@ -258,6 +258,11 @@ export class ProductsService {
 
     let updatedProduct;
     try {
+      if (Array.isArray(dto.uploadFolders) && dto.uploadFolders.length === 0) {
+        await this.productModel.findByIdAndUpdate(id, {
+          $set: { uploadFolders: [] },
+        });
+      }
       updatedProduct = await this.productModel.findByIdAndUpdate(
         id,
         { $set: dto },
@@ -300,7 +305,9 @@ export class ProductsService {
 
     for (const path of newCategoryPath) {
       if (path === '/categories') continue; // root is always valid, no DB check needed
-      const categoryExists = await this.categoryModel.findOne({ categoryPath: path });
+      const categoryExists = await this.categoryModel.findOne({
+        categoryPath: path,
+      });
       if (!categoryExists) {
         throw new BadRequestException(`Category path does not exist: ${path}`);
       }
