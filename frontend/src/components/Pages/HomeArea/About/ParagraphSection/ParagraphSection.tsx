@@ -50,14 +50,19 @@ const ParagraphSection: React.FC<ParagraphSectionProps> = ({
             />
 
             {isDirty(key) && (
-              <button
-                type="button"
-                onClick={() => confirmField(key, section.title)}
-                className="h-10 w-10 rounded-full border border-green-600 text-green-700 hover:bg-green-50 grid place-items-center"
-                title="אישור שינוי"
-              >
-                <Check size={18} />
-              </button>
+              <div className="group relative flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={() => confirmField(key, section.title)}
+                  className="h-10 w-10 rounded-full border border-green-600 text-green-700 hover:bg-green-50 grid place-items-center"
+                >
+                  <Check size={18} />
+                </button>
+
+                <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-50">
+                  אישור שינוי
+                </span>
+              </div>
             )}
           </div>
         ) : (
@@ -86,14 +91,19 @@ const ParagraphSection: React.FC<ParagraphSectionProps> = ({
               />
 
               {isDirty(key) && (
-                <button
-                  type="button"
-                  onClick={() => confirmField(key, section.content ?? "")}
-                  className="mt-1 h-10 w-10 rounded-full border border-green-600 text-green-700 hover:bg-green-50 grid place-items-center"
-                  title="אישור שינוי"
-                >
-                  <Check size={18} />
-                </button>
+                <div className="group relative mt-1 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => confirmField(key, section.content ?? "")}
+                    className="h-10 w-10 rounded-full border border-green-600 text-green-700 hover:bg-green-50 grid place-items-center"
+                  >
+                    <Check size={18} />
+                  </button>
+
+                  <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-50">
+                    אישור שינוי
+                  </span>
+                </div>
               )}
             </div>
           ) : (
