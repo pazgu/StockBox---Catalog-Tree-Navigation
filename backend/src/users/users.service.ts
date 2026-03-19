@@ -17,6 +17,7 @@ import { CreateUserDto } from './dto/createUser.dto';
 import { GroupsService } from 'src/groups/groups.service';
 import { PermissionsService } from 'src/permissions/permissions.service';
 import { forwardRef } from '@nestjs/common';
+import { SocketService } from 'src/socket/socket.service';
 @Injectable()
 export class UsersService {
   constructor(
@@ -24,6 +25,7 @@ export class UsersService {
     private groupsService: GroupsService,
     @Inject(forwardRef(() => PermissionsService))
     private permissionsService: PermissionsService,
+    private socketService: SocketService,
   ) {}
 
   async getAllUsers(role?: string, approved?: string) {
@@ -78,7 +80,14 @@ export class UsersService {
 
   async deleteUser(id: string) {
     await this.permissionsService.deletePermissionsForAllowed(id);
-    return this.userModel.findByIdAndDelete(id).exec();
+    const deleted = await this.userModel.findByIdAndDelete(id).exec();
+    if (deleted) {
+      this.socketService.emitToRole('editor', 'user_deleted', {
+        id,
+        name: `${deleted.firstName} ${deleted.lastName}`,
+      });
+    }
+    return deleted;
   }
 
   async updateUser(id: string, updateUserDto: Partial<CreateUserDto>) {

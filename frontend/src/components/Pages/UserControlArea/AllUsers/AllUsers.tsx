@@ -100,8 +100,9 @@ const AllUsers: FC<AllUsersProps> = () => {
       setUsers(prev => prev.map(u => u._id === user._id ? user : u));
     });
 
-    onEvent("user_deleted", (id: string) => {
+    onEvent("user_deleted", ({ id, name }: { id: string; name: string }) => {
       setUsers(prev => prev.filter(u => u._id !== id));
+      toast.info(`המשתמש ${name} נמחק מהמערכת`);
     });
   }, [joinRoleRoom, onEvent]);
   const filteredUsers = users
@@ -138,7 +139,6 @@ const AllUsers: FC<AllUsersProps> = () => {
 
       await userService.remove(userIdToDelete);
 
-      setUsers((prev) => prev.filter((u) => u._id !== userIdToDelete));
 
       if (
         currentPage > Math.ceil((users.length - 1) / usersPerPage) &&
@@ -148,7 +148,6 @@ const AllUsers: FC<AllUsersProps> = () => {
       }
 
       setDeleteUserIndex(null);
-      toast.info("המשתמש נמחק בהצלחה!");
     }
   };
   const confirmBlock = async () => {
