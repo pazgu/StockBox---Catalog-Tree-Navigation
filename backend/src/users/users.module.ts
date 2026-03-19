@@ -6,7 +6,6 @@ import { User, UserSchema } from 'src/schemas/Users.schema';
 import { GroupsModule } from 'src/groups/groups.module';
 import { PermissionsModule } from 'src/permissions/permissions.module';
 import { SocketModule } from 'src/socket/socket.module';
-
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),

@@ -105,6 +105,7 @@ const AllUsers: FC<AllUsersProps> = () => {
       toast.info(`המשתמש ${name} נמחק מהמערכת`);
     });
   }, [joinRoleRoom, onEvent]);
+  
   const filteredUsers = users
     .filter(
       (user) =>
