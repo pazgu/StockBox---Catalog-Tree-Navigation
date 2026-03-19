@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
@@ -15,6 +16,9 @@ import { CreateGroupDto } from './dto/createGroup.dto';
 import { UpdateGroupDto } from './dto/updateGroup.dto';
 import { PermissionsService } from 'src/permissions/permissions.service';
 import { forwardRef } from '@nestjs/common';
+import { SocketService } from 'src/socket/socket.service';
+import { User, UserRole } from 'src/schemas/Users.schema';
+
 @Injectable()
 export class GroupsService {
   constructor(
@@ -22,6 +26,7 @@ export class GroupsService {
     private readonly groupModel: Model<GroupDocument>,
     @Inject(forwardRef(() => PermissionsService))
     private permissionsService: PermissionsService,
+    private readonly socketService: SocketService,
   ) {}
 
   async findAll(): Promise<GroupDocument[]> {
@@ -60,6 +65,15 @@ export class GroupsService {
     await newGroup.save();
 
     await newGroup.populate('members', 'username firstName lastName');
+
+    this.socketService.emitToRole(UserRole.EDITOR, 'new_group_created', {
+      id: newGroup._id.toString(),
+      name: newGroup.groupName,
+      members:
+        newGroup.members?.map((m: any) =>
+          typeof m === 'string' ? m : m._id.toString(),
+        ) ?? [],
+    });
 
     return newGroup;
   }

@@ -5,6 +5,7 @@ interface UseSocketProps {
   token: string;
   onConnect?: () => void;
   onDisconnect?: () => void;
+  onRoleChanged?: () => void;
 }
 
 interface UseSocketReturn {
@@ -13,16 +14,22 @@ interface UseSocketReturn {
   leaveRoleRoom: (role: string) => void;
   emitEvent: (event: string, data?: any) => void;
   onEvent: (event: string, callback: (...args: any[]) => void) => void;
+  offEvent: (event: string, callback?: (...args: any[]) => void) => void;
 }
 
-export const useSocket = ({ token, onConnect, onDisconnect }: UseSocketProps): UseSocketReturn => {
+export const useSocket = ({
+  token,
+  onConnect,
+  onDisconnect,
+  onRoleChanged,
+}: UseSocketProps): UseSocketReturn => {
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
     if (!token) return;
 
     const socket = io('http://localhost:4000', {
-      auth: { token }, 
+      auth: { token },
       transports: ['websocket'],
     });
 
@@ -37,11 +44,14 @@ export const useSocket = ({ token, onConnect, onDisconnect }: UseSocketProps): U
       console.log('Socket disconnected');
       onDisconnect?.();
     });
+    socket.on('user_role_changed', () => {
+      onRoleChanged?.();
+    });
 
     return () => {
       socket.disconnect();
     };
-  }, [token, onConnect, onDisconnect]);
+  }, [token, onConnect, onDisconnect, onRoleChanged]);
 
   const joinRoleRoom = useCallback((role: string) => {
     socketRef.current?.emit('join_role_room', role);
@@ -59,11 +69,22 @@ export const useSocket = ({ token, onConnect, onDisconnect }: UseSocketProps): U
     socketRef.current?.on(event, callback);
   }, []);
 
+  const offEvent = useCallback((event: string, callback?: (...args: any[]) => void) => {
+    if (!socketRef.current) return;
+
+    if (callback) {
+      socketRef.current.off(event, callback);
+    } else {
+      socketRef.current.off(event);
+    }
+  }, []);
+
   return {
     socket: socketRef.current,
     joinRoleRoom,
     leaveRoleRoom,
     emitEvent,
     onEvent,
+    offEvent,
   };
 };

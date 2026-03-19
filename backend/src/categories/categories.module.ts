@@ -13,6 +13,7 @@ import { SocketModule } from 'src/socket/socket.module';
 
 @Module({
   imports: [
+    SocketModule,
     MongooseModule.forFeature([
       {
         name: Category.name,
@@ -32,4 +33,4 @@ import { SocketModule } from 'src/socket/socket.module';
   providers: [CategoriesService],
   controllers: [CategoriesController],
 })
-export class CategoriesModule {}
+export class CategoriesModule { }

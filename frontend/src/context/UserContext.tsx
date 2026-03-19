@@ -1,7 +1,9 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { UserRole, User } from "../../src/components/models/user.models";
 import { environment } from "../environments/environment.development";
 import api from "../services/axios";
+import { useSocket } from "../hooks/useSocket";
+import { toast } from "sonner";
 
 interface UserContextType {
   user: User | null;
@@ -29,6 +31,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const [id, setId] = useState<string | null>(null);
 
   const [isAuthReady, setIsAuthReady] = useState(false);
+  const [token, setToken] = useState<string>(localStorage.getItem("token") || "");
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -49,14 +52,32 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   useEffect(() => {
-    if (user) {
-      localStorage.setItem("user", JSON.stringify(user));
-      setId((user as any).id ?? (user as any)._id ?? null);
-    } else {
-      localStorage.removeItem("user");
-      setId(null);
-    }
-  }, [user]);
+  if (user) {
+    localStorage.setItem("user", JSON.stringify(user));
+    setId((user as any).id ?? (user as any)._id ?? null);
+    setToken(localStorage.getItem("token") || "");
+  } else {
+    localStorage.removeItem("user");
+    setId(null);
+    setToken("");
+  }
+}, [user]);
+
+  const handleRoleChanged = useCallback(() => {
+    toast.warning("התפקיד שלך עודכן על ידי חבר צוות. יש להתחבר מחדש.", {
+      duration: 8000,
+    });
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setTimeout(() => {
+      window.location.href = "/login";
+    }, 1500);
+  }, []);
+
+  useSocket({
+    token,
+    onRoleChanged: handleRoleChanged,
+  });
 
   const refreshUsers = async () => {
     try {
@@ -69,9 +90,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const blockUser = async (id: string, isBlocked: boolean) => {
     try {
-      const response = await api.patch<User>(`${API_URL}/${id}/block`, {
+      const response = await api.patch<User>(`${API_URL}/${id}/block`, { 
         isBlocked,
-      });
+       });
       setUsers((prev) => prev.map((u) => (u._id === id ? response.data : u)));
     } catch (err) {
       console.error("Error blocking user:", err);
