@@ -155,7 +155,10 @@ export class ProductsService {
       fd.append("customFields", JSON.stringify(payload.customFields));
     }
 
-    if (payload.uploadFolders) {
+    if (payload.uploadFolders !== undefined) {
+  if (payload.uploadFolders.length === 0) {
+    fd.append("emptyUploadFolders", "true");
+  } else {
       payload.uploadFolders.forEach((group, gi) => {
         fd.append(`uploadFolders[${gi}][title]`, group.title);
         if (group._id) fd.append(`uploadFolders[${gi}][_id]`, group._id);
@@ -188,7 +191,8 @@ export class ProductsService {
           });
         });
       });
-    }
+  }
+}
 
     try {
       const { data } = await api.patch<ProductDataDto>(
@@ -206,7 +210,8 @@ export class ProductsService {
         throw new Error("Only editors can update products");
       if (status === 404) throw new Error("Product not found");
 
-      throw new Error("Failed to update product");
+      throw new Error((err.response?.data as any)?.message || "Failed to update product");
+
     }
   }
 
