@@ -141,11 +141,30 @@ export const Categories: FC<CategoriesProps> = () => {
       ]);
       toast.info(`הקטגוריה "${newCategory.categoryName}" נוספה!`);
     };
+    const handleCategoryUpdated = (updatedCategory: Category) => {
+      setCategories(prev =>
+        prev.map(c => c._id === updatedCategory._id ? updatedCategory : c)
+      );
+      setItems(prev =>
+        prev.map(item =>
+          item.id === updatedCategory._id
+            ? {
+                ...item,
+                name: updatedCategory.categoryName,
+                images: updatedCategory.categoryImage,
+                path: [updatedCategory.categoryPath],
+              }
+            : item
+        )
+      );
+    };
 
     onEvent("category_added", handleNewCategory);
+    onEvent("category_updated", handleCategoryUpdated);
 
     return () => {
       offEvent("category_added", handleNewCategory);
+      offEvent("category_updated", handleCategoryUpdated);
     };
   }, [joinRoleRoom, onEvent, offEvent]);
   useEffect(() => {
