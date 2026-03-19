@@ -10,12 +10,17 @@ import { useUser } from "../../../../context/UserContext";
 import { toast } from "sonner";
 import { Group } from "../../../models/group.models";
 import { categoriesService } from "../../../../services/CategoryService";
+import { useSocket } from "../../../../hooks/useSocket";
 
 import { groupService } from "../../../../services/GroupService";
 import { permissionsService } from "../../../../services/permissions.service";
 import { is } from "zod/v4/locales";
 
 const GroupControl: React.FC = () => {
+  const token = localStorage.getItem("token") || "";
+
+  const { joinRoleRoom, onEvent } = useSocket({ token });
+
   const [selectedGroup, setSelectedGroup] = useState("");
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
@@ -32,7 +37,9 @@ const GroupControl: React.FC = () => {
 
   const [groupToEdit, setGroupToEdit] = useState<Group | null>(null);
   const [editedGroupName, setEditedGroupName] = useState("");
-const [bannedItemsByGroup, setBannedItemsByGroup] = useState<Record<string, BannedItem[]>>({})
+  const [bannedItemsByGroup, setBannedItemsByGroup] = useState<
+    Record<string, BannedItem[]>
+  >({});
 
   const [groups, setGroups] = useState<Group[]>([]);
   const [isBannedLoading, setIsBannedLoading] = useState(false);
@@ -40,10 +47,9 @@ const [bannedItemsByGroup, setBannedItemsByGroup] = useState<Record<string, Bann
   const SELECTED_GROUP_STORAGE_KEY = "groupControl:selectedGroupId";
 
   useEffect(() => {
-  if (!selectedGroup) return;
-  loadBlockedItemsForGroup(selectedGroup);
-}, [selectedGroup]);
-
+    if (!selectedGroup) return;
+    loadBlockedItemsForGroup(selectedGroup);
+  }, [selectedGroup]);
 
   useEffect(() => {
     if (!role) return;
@@ -51,8 +57,6 @@ const [bannedItemsByGroup, setBannedItemsByGroup] = useState<Record<string, Bann
       navigate("/", { replace: true });
     }
   }, [navigate, role]);
-
-
 
   useEffect(() => {
     if (selectedGroup) {
@@ -67,6 +71,16 @@ const [bannedItemsByGroup, setBannedItemsByGroup] = useState<Record<string, Bann
   useEffect(() => {
     fetchGroups();
   }, []);
+  useEffect(() => {
+    joinRoleRoom("editor");
+
+    onEvent("new_group_created", (group: Group) => {
+      setGroups((prev) => {
+        if (prev.some((g) => g.id === group.id)) return prev;
+        return [...prev, group];
+      });
+    });
+  }, [joinRoleRoom, onEvent]);
   const fetchGroups = async () => {
     try {
       setIsLoading(true);
@@ -78,38 +92,33 @@ const [bannedItemsByGroup, setBannedItemsByGroup] = useState<Record<string, Bann
       const exists =
         savedGroupId && transformedGroups.some((g) => g.id === savedGroupId);
 
-    if (exists) {
-  setSelectedGroup(savedGroupId!);
-} else if (transformedGroups.length > 0) {
-  setSelectedGroup(transformedGroups[0].id);
-}
-
-
+      if (exists) {
+        setSelectedGroup(savedGroupId!);
+      } else if (transformedGroups.length > 0) {
+        setSelectedGroup(transformedGroups[0].id);
+      }
     } catch (error) {
-      console.error("Error fetching groups:", error);
       toast.error("שגיאה בטעינת קבוצות");
     } finally {
       setIsLoading(false);
     }
   };
 
- const loadBlockedItemsForGroup = async (groupId: string) => {
-  try {
-    setIsBannedLoading(true);
-    const data = await permissionsService.getBlockedItemsForGroup(groupId);
+  const loadBlockedItemsForGroup = async (groupId: string) => {
+    try {
+      setIsBannedLoading(true);
+      const data = await permissionsService.getBlockedItemsForGroup(groupId);
 
-    setBannedItemsByGroup(prev => ({
-      ...prev,
-      [groupId]: data.blocked
-    }));
-
-  } catch (err) {
-    toast.error("שגיאה בטעינת פריטים חסומים");
-  } finally {
-    setIsBannedLoading(false);
-  }
-};
-
+      setBannedItemsByGroup((prev) => ({
+        ...prev,
+        [groupId]: data.blocked,
+      }));
+    } catch (err) {
+      toast.error("שגיאה בטעינת פריטים חסומים");
+    } finally {
+      setIsBannedLoading(false);
+    }
+  };
 
   const currentGroup = useMemo(
     () => groups.find((g) => g.id === selectedGroup),
@@ -137,8 +146,6 @@ const [bannedItemsByGroup, setBannedItemsByGroup] = useState<Record<string, Bann
 
     try {
       const newGroup = await groupService.createGroup(trimmedName);
-
-      setGroups((prev) => [...prev, newGroup]);
       setSelectedGroup(newGroup.id);
       toast.success(`הקבוצה "${trimmedName}" נוצרה בהצלחה`);
       closeAddGroupModal();
@@ -201,8 +208,6 @@ const [bannedItemsByGroup, setBannedItemsByGroup] = useState<Record<string, Bann
 
       await groupService.updateGroupMembers(selectedGroup, newMembers);
 
-    
-
       toast.info(`${selectedUsers.size} משתמשים הוסרו מהקבוצה`);
       setSelectedUsers(new Set());
     } catch (error) {
@@ -221,8 +226,6 @@ const [bannedItemsByGroup, setBannedItemsByGroup] = useState<Record<string, Bann
         groupId,
         newMembers,
       );
-
-    
 
       toast.success(`${userIds.length} משתמשים נוספו בהצלחה לקבוצה`);
     } catch (error) {
@@ -268,8 +271,6 @@ const [bannedItemsByGroup, setBannedItemsByGroup] = useState<Record<string, Bann
 
     try {
       await groupService.updateGroupName(groupToEdit.id, trimmedName);
-
-    
 
       toast.success("שם הקבוצה עודכן בהצלחה");
       setGroupToEdit(null);

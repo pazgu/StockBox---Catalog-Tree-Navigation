@@ -24,7 +24,6 @@ import { ProductsService } from "../../../../services/ProductService";
 import { DisplayItem } from "../../../../components/models/item.models";
 import { ProductDto } from "../../../../components/models/product.models";
 import { handleEntityRouteError } from "../../../../lib/routing/handleEntityRouteError";
-import MoveMultipleItemsModal from "../SingleCat/MoveMultipleItemsModal/MoveMultipleItemsModal";
 import DuplicateProductModal from "../../ProductArea/DuplicateProductModal/DuplicateProductModal";
 import { usePath } from "../../../../context/PathContext";
 import ImagePreviewHover from "../../ProductArea/ImageCarousel/ImageCarousel/ImagePreviewHover";
@@ -34,6 +33,7 @@ import { truncateDisplay } from "../../../../lib/utils";
 import { environment } from "../../../../environments/environment";
 import MoveCategoryModal from "./MoveCategoryModal/MoveCategoryModal";
 import MoveProductModal from "../../ProductArea/MoveProductModal/MoveProductModal";
+import { useSocket } from "../../../../hooks/useSocket";
 interface CategoriesProps { }
 
 export interface Category {
@@ -62,6 +62,9 @@ type CategoryEditPayload = Category & { imageFile?: File };
 type FilterType = "all" | "categories" | "products";
 
 export const Categories: FC<CategoriesProps> = () => {
+  const token = localStorage.getItem("token") || "";
+  const { joinRoleRoom, onEvent, offEvent } = useSocket({ token });
+
   const [showAddCatModal, setShowAddCatModal] = useState(false);
   const [showMoveToRecycleBinModal, setShowMoveToRecycleBinModal] =
     useState(false);
@@ -120,6 +123,31 @@ export const Categories: FC<CategoriesProps> = () => {
     setMoveSelectedItems([]);
   };
 
+  useEffect(() => {
+    joinRoleRoom("editor");
+
+    const handleNewCategory = (newCategory: Category) => {
+      setCategories(prev => [newCategory, ...prev]);
+      setItems(prev => [
+        {
+          id: newCategory._id,
+          name: newCategory.categoryName,
+          images: newCategory.categoryImage,
+          type: "category",
+          path: [newCategory.categoryPath],
+          favorite: false,
+        },
+        ...prev,
+      ]);
+      toast.info(`הקטגוריה "${newCategory.categoryName}" נוספה!`);
+    };
+
+    onEvent("category_added", handleNewCategory);
+
+    return () => {
+      offEvent("category_added", handleNewCategory);
+    };
+  }, [joinRoleRoom, onEvent, offEvent]);
   useEffect(() => {
     if (role !== undefined) {
       if (role) {
@@ -328,7 +356,6 @@ export const Categories: FC<CategoriesProps> = () => {
 
       setCategories((prev) => [...prev, newCategory]);
       setShowAddCatModal(false);
-      toast.success(`הקטגוריה "${name}" נוצרה בהצלחה!`);
     } catch (error: any) {
       const serverMessage =
         error?.response?.data?.message || error?.response?.data?.error;
@@ -909,12 +936,12 @@ ${isMovingToRecycleBin ? "bg-orange-400 cursor-not-allowed text-white" : "bg-ora
                               מעביר לסל...
                             </span>
                           ) : (
-                              <span className="flex flex-col items-center gap-1">
-                                <span>העבר הכל לסל (כולל כל הצאצאים)</span>
-                                <span className="text-xs font-normal opacity-80">
+                            <span className="flex flex-col items-center gap-1">
+                              <span>העבר הכל לסל (כולל כל הצאצאים)</span>
+                              <span className="text-xs font-normal opacity-80">
                                 שים/י לב: מוצר שמופיע במספר קטגוריות (משוכפל) יועבר לסל מכל המיקומים שלו
-                                </span>
                               </span>
+                            </span>
                           )}
                         </button>
 
