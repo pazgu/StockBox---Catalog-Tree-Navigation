@@ -40,13 +40,13 @@ const BTN_DANGER =
 const BTN_SUCCESS =
   "px-8 h-12 rounded-xl font-bold text-white transition-colors shadow-lg bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 hover:shadow-xl";
 
-interface AllUsersProps {}
+interface AllUsersProps { }
 
 const AllUsers: FC<AllUsersProps> = () => {
   const navigate = useNavigate();
   const { id } = useUser();
   const token = localStorage.getItem("token") || "";
-  const { joinRoleRoom, onEvent } = useSocket({ token });
+  const { joinRoleRoom, onEvent, offEvent } = useSocket({ token });
 
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -91,20 +91,39 @@ const AllUsers: FC<AllUsersProps> = () => {
 
   useEffect(() => {
     joinRoleRoom("editor");
-    onEvent("new_user_created", (user: User) => {
+
+    const handleNewUser = (user: User) => {
       setUsers(prev => [user, ...prev]);
       toast.info(`משתמש חדש נוסף: ${user.firstName}`);
-    });
+    };
 
-    onEvent("user_updated", (user: User) => {
+    const handleUserUpdated = (user: User) => {
       setUsers(prev => prev.map(u => u._id === user._id ? user : u));
-    });
+    };
 
-    onEvent("user_deleted", (id: string) => {
+    const handleUserDeleted = ({ id, name }: { id: string; name: string }) => {
       setUsers(prev => prev.filter(u => u._id !== id));
-    });
-  }, [joinRoleRoom, onEvent]);
-  
+      toast.info(`המשתמש ${name} נמחק מהמערכת`);
+    };
+
+    const handleUserApproved = (user: User) => {
+      setUsers(prev => prev.map(u => u._id === user._id ? user : u));
+      toast.info(`המשתמש ${user.firstName} ${user.lastName} אושר למערכת`);
+    };
+
+    onEvent("new_user_created", handleNewUser);
+    onEvent("user_updated", handleUserUpdated);
+    onEvent("user_deleted", handleUserDeleted);
+    onEvent("user_approved", handleUserApproved);
+
+    return () => {
+      offEvent("new_user_created", handleNewUser);
+      offEvent("user_updated", handleUserUpdated);
+      offEvent("user_deleted", handleUserDeleted);
+      offEvent("user_approved", handleUserApproved);
+    };
+  }, [joinRoleRoom, onEvent, offEvent]);
+
   const filteredUsers = users
     .filter(
       (user) =>
@@ -139,7 +158,6 @@ const AllUsers: FC<AllUsersProps> = () => {
 
       await userService.remove(userIdToDelete);
 
-      setUsers((prev) => prev.filter((u) => u._id !== userIdToDelete));
 
       if (
         currentPage > Math.ceil((users.length - 1) / usersPerPage) &&
@@ -149,7 +167,6 @@ const AllUsers: FC<AllUsersProps> = () => {
       }
 
       setDeleteUserIndex(null);
-      toast.info("המשתמש נמחק בהצלחה!");
     }
   };
   const confirmBlock = async () => {
@@ -191,7 +208,7 @@ const AllUsers: FC<AllUsersProps> = () => {
       }
 
       try {
-        const updatedUser = await userService.update(userId, {
+        await userService.update(userId, {
           approved: true,
         });
 
@@ -208,10 +225,6 @@ const AllUsers: FC<AllUsersProps> = () => {
             ]);
           }
         }
-
-        setUsers((prev) =>
-          prev.map((u) => (u._id === userId ? updatedUser : u)),
-        );
 
         toast.success("המשתמש אושר בהצלחה!");
         setApproveUserIndex(null);
@@ -417,7 +430,7 @@ const AllUsers: FC<AllUsersProps> = () => {
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {currentUsers.map((user, index) => (
               <div
-                key={user._id}
+                key={user._id ?? user.email}
                 className={`rounded-xl p-4 text-center shadow-sm relative min-h-[110px] transition-transform hover:-translate-y-1 hover:shadow-md border-gray-100 ${user.approved ? "bg-[#fffdf8]" : "bg-gray-100"
                   }`}
               >

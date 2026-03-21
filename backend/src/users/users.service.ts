@@ -26,7 +26,7 @@ export class UsersService {
     private socketService: SocketService,
     @Inject(forwardRef(() => PermissionsService))
     private permissionsService: PermissionsService,
-  ) {}
+  ) { }
 
   async getAllUsers(role?: string, approved?: string) {
     const filter: any = {};
@@ -80,7 +80,15 @@ export class UsersService {
 
   async deleteUser(id: string) {
     await this.permissionsService.deletePermissionsForAllowed(id);
-    return this.userModel.findByIdAndDelete(id).exec();
+    const deleted = await this.userModel.findByIdAndDelete(id).exec();
+    if (deleted) {
+      this.socketService.emitToUser(id, 'user_deleted_self', {});
+      this.socketService.emitToRole('editor', 'user_deleted', {
+        id,
+        name: `${deleted.firstName} ${deleted.lastName}`,
+      });
+    }
+    return deleted;
   }
 
   async updateUser(id: string, updateUserDto: Partial<CreateUserDto>) {
@@ -100,7 +108,7 @@ export class UsersService {
       }
     }
 
-    const oldUser = await this.userModel.findById(id).select('role').lean();
+    const oldUser = await this.userModel.findById(id).select('role approved').lean();
 
     const updatedUser = await this.userModel
       .findByIdAndUpdate(id, updateUserDto, { new: true })
@@ -109,14 +117,19 @@ export class UsersService {
     if (!updatedUser) return updatedUser;
 
     const roleChanged =
-      oldUser &&
-      updateUserDto.role &&
-      oldUser.role !== updateUserDto.role;
+      oldUser && updateUserDto.role && oldUser.role !== updateUserDto.role;
 
     if (roleChanged) {
       this.socketService.emitToUser(id, 'user_role_changed', {
         newRole: updatedUser.role,
       });
+    }
+
+    const justApproved =
+      oldUser && !oldUser.approved && updateUserDto.approved === true;
+
+    if (justApproved) {
+      this.socketService.emitToRole(UserRole.EDITOR, 'user_approved', updatedUser);
     }
 
     this.socketService.emitToRole(UserRole.EDITOR, 'user_updated', updatedUser);
@@ -264,7 +277,7 @@ export class UsersService {
   }
   async getAllViewerIds(): Promise<string[]> {
     const users = await this.userModel
-      .find({ role: UserRole.VIEWER }) 
+      .find({ role: UserRole.VIEWER })
       .select('_id')
       .lean();
 
