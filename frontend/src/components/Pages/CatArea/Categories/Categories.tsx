@@ -126,8 +126,11 @@ export const Categories: FC<CategoriesProps> = () => {
   useEffect(() => {
     joinRoleRoom("editor");
 
+    if (id) {
+      joinRoleRoom(id);
+    }
+
     const handleNewCategory = (newCategory: Category) => {
-      setCategories(prev => [newCategory, ...prev]);
       setItems(prev => [
         {
           id: newCategory._id,
@@ -142,13 +145,64 @@ export const Categories: FC<CategoriesProps> = () => {
       toast.info(`הקטגוריה "${newCategory.categoryName}" נוספה!`);
     };
 
+    const handleMovedCategory = (data: { category: Category; oldPath: string; newPath: string }) => {
+      const { category, oldPath, newPath } = data;
+
+      const newParentPath = newPath.split("/").slice(0, -1).join("/");
+      const oldParentPath = oldPath.split("/").slice(0, -1).join("/");
+      const socketPreviousPath = localStorage.getItem("previousPath")
+
+      if (socketPreviousPath === oldPath) {
+        navigate(newPath);
+        return;
+      }
+
+      if (socketPreviousPath === oldParentPath) {
+        setCategories(prev =>
+          prev.filter(cat => cat.categoryPath !== oldPath)
+        );
+
+        setItems(prev =>
+          prev.filter(item => item.path[0] !== oldPath)
+        );
+      }
+
+      if (socketPreviousPath === newParentPath) {
+        setCategories(prev => {
+          if (prev.some(cat => cat._id === category._id)) return prev;
+
+          return [{ ...category, categoryPath: newPath }, ...prev];
+        });
+
+        setItems(prev => {
+          if (prev.some(item => item.id === category._id)) return prev;
+
+          return [
+            {
+              id: category._id,
+              name: category.categoryName,
+              images: category.categoryImage,
+              type: "category",
+              path: [newPath],
+              favorite: false,
+            },
+            ...prev,
+          ];
+        });
+      }
+    };
+
     onEvent("category_added", handleNewCategory);
+    onEvent("category_moved", handleMovedCategory);
 
     return () => {
       offEvent("category_added", handleNewCategory);
+      offEvent("category_moved", handleMovedCategory);
     };
-  }, [joinRoleRoom, onEvent, offEvent]);
+  }, [joinRoleRoom, onEvent, offEvent, id]);
+
   useEffect(() => {
+    setPreviousPath("/categories")
     if (role !== undefined) {
       if (role) {
         loadCategoriesAndFavorites();
@@ -499,7 +553,11 @@ export const Categories: FC<CategoriesProps> = () => {
                   >
                     <div className="flex items-center justify-center relative">
                       <div
-                        onClick={() => navigate(item.path[0])}
+                        onClick={() => {
+                          setPreviousPath(item.path[0])
+                          navigate(item.path[0])
+                        }
+                        }
                         className="relative"
                       >
                         <div className="absolute top-3 left-3 z-10">

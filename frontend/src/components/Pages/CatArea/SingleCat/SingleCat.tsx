@@ -42,6 +42,7 @@ import {
   getSafeProductImage,
 } from "../../../../lib/imageFallback";
 import { useSocket } from "../../../../hooks/useSocket";
+import { Category } from "../Categories/Categories";
 
 const hasImage = (images: any): boolean => {
   if (!images) return false;
@@ -135,21 +136,43 @@ const SingleCat: FC = () => {
   }, [categoryPath, id]);
 
   useEffect(() => {
-    const handleNewSubCategory = (newCategory: CategoryDTO) => {
-      loadAllContent();
-      toast.success(`הקטגוריה "${newCategory.categoryName}" נוספה!`);
+    joinRoleRoom("editor");
+    if (id) joinRoleRoom(id);
 
+    const handleNewSubCategory = (newCategory: CategoryDTO) => {
+      const newParentPath = newCategory.categoryPath.split("/").slice(0, -1).join("/");
+      const socketPreviousPath = localStorage.getItem("previousPath")
+
+      if (socketPreviousPath === newParentPath) {
+        loadAllContent();
+        toast.success(`הקטגוריה "${newCategory.categoryName}" נוספה!`);
+      }
     };
-    joinRoleRoom("editor")
-    if (id) {
-      joinRoleRoom(id)
-    }
+
+    const handleMovedCategory = (data: { category: Category; oldPath: string; newPath: string }) => {
+      const { oldPath, newPath } = data;
+
+      const newParentPath = newPath.split("/").slice(0, -1).join("/");
+      const oldParentPath = oldPath.split("/").slice(0, -1).join("/");
+      const socketPreviousPath = localStorage.getItem("previousPath")
+
+      if (socketPreviousPath === oldPath) {
+        navigate(newPath);
+        return;
+      }
+
+      if (socketPreviousPath === oldParentPath || socketPreviousPath === newParentPath) {
+        loadAllContent();
+      }
+    };
     onEvent("sub_category_added", handleNewSubCategory);
+    onEvent("category_moved", handleMovedCategory);
 
     return () => {
       offEvent("sub_category_added", handleNewSubCategory);
+      offEvent("category_moved", handleMovedCategory);
     };
-  }, [categoryPath, onEvent, offEvent]);
+  }, [categoryPath, id, joinRoleRoom, onEvent, offEvent]);
 
   useEffect(() => {
     setPreviousPath(categoryPath);
@@ -276,18 +299,6 @@ const SingleCat: FC = () => {
     }
   };
 
-  const handleItemClick = (item: DisplayItem) => {
-    if (isSelectionMode) return;
-
-    const path = item.path[0];
-    const cleanPath = path.startsWith("/") ? path : `/${path}`;
-
-    if (item.type === "category") {
-      navigate(cleanPath);
-    } else {
-      navigate(`/products/${item.id}`);
-    }
-  };
 
   const toggleFavorite = useDebouncedFavorite(items, setItems, 500);
 

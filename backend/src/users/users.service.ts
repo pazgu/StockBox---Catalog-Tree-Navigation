@@ -88,8 +88,8 @@ export class UsersService {
       const existing = await this.userModel.findOne({
         _id: { $ne: id },
         $or: [
-          ...(updateUserDto.userName 
-            ? [{ userName: updateUserDto.userName }] 
+          ...(updateUserDto.userName
+            ? [{ userName: updateUserDto.userName }]
             : []),
           ...(updateUserDto.email ? [{ email: updateUserDto.email }] : []),
         ],
@@ -260,6 +260,14 @@ export class UsersService {
 
   async getAllUserIds(): Promise<string[]> {
     const users = await this.userModel.find().select('_id').lean();
+    return users.map((u) => u._id.toString());
+  }
+  async getAllViewerIds(): Promise<string[]> {
+    const users = await this.userModel
+      .find({ role: UserRole.VIEWER }) 
+      .select('_id')
+      .lean();
+
     return users.map((u) => u._id.toString());
   }
 }
