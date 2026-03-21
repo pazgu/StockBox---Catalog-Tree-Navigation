@@ -459,7 +459,7 @@ export class PermissionsService {
     }
 
     const [allUserIds, allGroupIds] = await Promise.all([
-      this.usersService.getAllUserIds(),
+      this.usersService.getAllViewerIds(),
       this.groupsService.getAllGroupIds(),
     ]);
 
@@ -471,11 +471,6 @@ export class PermissionsService {
     const individualUserIds = allUserIds.filter(
       (id) => !usersInGroupsSet.has(id),
     );
-
-    const finalUserIds = [
-      ...individualUserIds,
-      ...usersInGroups,
-    ];
 
     const permissions = [
       ...individualUserIds.map((id) => ({
@@ -500,7 +495,7 @@ export class PermissionsService {
     entityId: string,
     entityType: EntityType,
     newParentPath: string,
-  ): Promise<void> {
+  ): Promise<string[]> {
     const parentCategory = await this.categoryModel
       .findOne({ categoryPath: newParentPath })
       .select('_id')
@@ -508,7 +503,7 @@ export class PermissionsService {
 
     if (!parentCategory) {
       console.warn(`Parent category not found for path: ${newParentPath}`);
-      return;
+      return[];
     }
     const parentAllowedUsers = await this.getAllowedUsersForEntity(
       parentCategory._id.toString(),
@@ -545,6 +540,7 @@ export class PermissionsService {
         }
       }
     }
+    return parentAllowedUsers;
   }
   async assignPermissionsOnDuplicate(
     productId: string,
