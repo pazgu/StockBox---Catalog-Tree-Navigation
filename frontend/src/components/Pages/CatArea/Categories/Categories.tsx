@@ -131,6 +131,7 @@ export const Categories: FC<CategoriesProps> = () => {
     }
 
     const handleNewCategory = (newCategory: Category) => {
+      setCategories(prev => [newCategory, ...prev]);
       setItems(prev => [
         {
           id: newCategory._id,
@@ -199,11 +200,11 @@ export const Categories: FC<CategoriesProps> = () => {
         prev.map(item =>
           item.id === updatedCategory._id
             ? {
-                ...item,
-                name: updatedCategory.categoryName,
-                images: updatedCategory.categoryImage,
-                path: [updatedCategory.categoryPath],
-              }
+              ...item,
+              name: updatedCategory.categoryName,
+              images: updatedCategory.categoryImage,
+              path: [updatedCategory.categoryPath],
+            }
             : item
         )
       );
