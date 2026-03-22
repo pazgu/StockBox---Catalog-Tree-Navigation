@@ -30,6 +30,7 @@ import { NameLock } from 'src/schemas/NameLock.schema';
 import { UsersService } from 'src/users/users.service';
 import { normalizeName } from 'src/utils/nameLock';
 import { SocketService } from 'src/socket/socket.service';
+import { UserRole } from 'src/schemas/Users.schema';
 @Injectable()
 export class ProductsService {
   constructor(
@@ -41,7 +42,7 @@ export class ProductsService {
 
     private permissionsService: PermissionsService,
     private socketService: SocketService,
-  ) {}
+  ) { }
 
   async findAll(): Promise<Product[]> {
     return this.productModel.find().exec();
@@ -161,7 +162,7 @@ export class ProductsService {
         cleanCustomFields = [];
       }
     }
-    const nameKey = normalizeName(createProductDto.productName); 
+    const nameKey = normalizeName(createProductDto.productName);
     try {
       await this.nameLockModel.create({
         nameKey,
@@ -191,11 +192,18 @@ export class ProductsService {
         { $set: { refId: savedProduct._id.toString() } },
       );
       if (createProductDto.allowAll) {
-        await this.permissionsService.assignPermissionsForNewEntity(
-          savedProduct,
-        );
+        const userIds = await this.permissionsService.assignPermissionsForNewEntity(savedProduct);
+        if (userIds?.length) {
+          this.socketService.emitToUsers(userIds, 'product_added', savedProduct);
+          this.socketService.emitToRole(UserRole.EDITOR, 'product_added', savedProduct);
+        } else {
+          this.socketService.emitToAll('product_added', savedProduct);
+        }
+      } else {
+        this.socketService.emitToRole(UserRole.EDITOR, 'product_added', savedProduct);
       }
 
+      this.socketService.emitToAll('product_created', savedProduct);
       return savedProduct;
     } catch (error: any) {
       await this.nameLockModel.deleteOne({ nameKey }).catch(() => undefined);
@@ -307,7 +315,7 @@ export class ProductsService {
     const { newCategoryPath } = moveProductDto;
 
     for (const path of newCategoryPath) {
-      if (path === '/categories') continue; 
+      if (path === '/categories') continue;
       const categoryExists = await this.categoryModel.findOne({
         categoryPath: path,
       });

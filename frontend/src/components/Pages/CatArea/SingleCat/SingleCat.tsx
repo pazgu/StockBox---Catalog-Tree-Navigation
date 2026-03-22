@@ -207,15 +207,46 @@ const SingleCat: FC = () => {
       });
     };
 
+    const handleNewProduct = (newProduct: any) => {
+      const currentPath = categoryPathRef.current;
+
+      const belongsHere = Array.isArray(newProduct.productPath)
+        ? newProduct.productPath.some((p: string) => p.startsWith(currentPath + "/"))
+        : newProduct.productPath?.startsWith(currentPath + "/");
+
+      if (!belongsHere) return;
+
+      setItems(prev => {
+        if (prev.some(item => item.id === newProduct._id)) return prev;
+        return [
+          ...prev,
+          {
+            id: newProduct._id,
+            name: newProduct.productName,
+            images: newProduct.productImages || [],
+            type: "product",
+            path: Array.isArray(newProduct.productPath)
+              ? newProduct.productPath
+              : [newProduct.productPath],
+            description: newProduct.productDescription,
+            customFields: newProduct.customFields,
+            favorite: false,
+          },
+        ];
+      });
+      toast.info(`המוצר "${newProduct.productName}" נוסף!`);
+    };
+
     onEvent("sub_category_added", handleNewSubCategory);
     onEvent("category_moved", handleMovedCategory);
     onEvent("category_updated", handleCategoryUpdated);
+    onEvent("product_added", handleNewProduct);
 
     return () => {
       offEvent("sub_category_added", handleNewSubCategory);
       offEvent("category_moved", handleMovedCategory);
       offEvent("category_updated", handleCategoryUpdated);
-
+      offEvent("product_added", handleNewProduct);
     };
   }, [id, joinRoleRoom, onEvent, offEvent]);
 
