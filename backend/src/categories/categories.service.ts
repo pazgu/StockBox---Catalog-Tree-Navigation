@@ -298,6 +298,7 @@ export class CategoriesService {
   ) {
     const category = await this.categoryModel.findById(id);
     if (!category) throw new NotFoundException('Category not found');
+    const oldPath = category.categoryPath;
 
     const oldCategoryPath = category.categoryPath;
 
@@ -468,7 +469,10 @@ export class CategoriesService {
         { updatePipeline: true },
       );
     }
-    this.socketService.emitToAll('category_updated', updatedCategory);
+    this.socketService.emitToAll('category_updated', {
+      updatedCategory,
+      oldPath
+    });
     return updatedCategory;
   }
 

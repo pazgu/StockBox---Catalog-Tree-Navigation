@@ -192,18 +192,18 @@ export const Categories: FC<CategoriesProps> = () => {
         });
       }
     };
-    const handleCategoryUpdated = (updatedCategory: Category) => {
+    const handleCategoryUpdated = (data: { updatedCategory: Category }, oldPath: string) => {
       setCategories(prev =>
-        prev.map(c => c._id === updatedCategory._id ? updatedCategory : c)
+        prev.map(c => c._id === data.updatedCategory._id ? data.updatedCategory : c)
       );
       setItems(prev =>
         prev.map(item =>
-          item.id === updatedCategory._id
+          item.id === data.updatedCategory._id
             ? {
               ...item,
-              name: updatedCategory.categoryName,
-              images: updatedCategory.categoryImage,
-              path: [updatedCategory.categoryPath],
+              name: data.updatedCategory.categoryName,
+              images: data.updatedCategory.categoryImage,
+              path: [data.updatedCategory.categoryPath],
             }
             : item
         )
