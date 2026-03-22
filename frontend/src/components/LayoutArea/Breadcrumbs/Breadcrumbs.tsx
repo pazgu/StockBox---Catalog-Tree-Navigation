@@ -2,6 +2,7 @@ import { FC, useRef, useState, useEffect, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import catIcon from "../../../assets/newcat.png";
 import { ChevronLeft, ChevronRight, FolderOpen } from "lucide-react";
+import { usePath } from "../../../context/PathContext";
 
 interface BreadcrumbsProps {
   path?: string[];
@@ -13,7 +14,7 @@ const Breadcrumbs: FC<BreadcrumbsProps> = ({ path }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
-
+  const { setPreviousPath } = usePath();
   const segmentMap: Record<string, string> = {
     categories: "תכולות ואמצעים",
   };
@@ -108,7 +109,10 @@ const Breadcrumbs: FC<BreadcrumbsProps> = ({ path }) => {
                 <span className="relative group/text shrink-0">
                   <span
                     role={isLast ? undefined : "button"}
-                    onClick={() => !isLast && navigate(encodeURI(pathToHere))}
+                    onClick={() => {
+                      setPreviousPath(pathToHere)
+                      !isLast && navigate(encodeURI(pathToHere))
+                    }}
                     dir={
                       /[\u0590-\u05FF\uFB1D-\uFB4F]/.test(finalDisplayName)
                         ? "rtl"
