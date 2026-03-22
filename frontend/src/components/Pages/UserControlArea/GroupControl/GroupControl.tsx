@@ -19,7 +19,7 @@ import { is } from "zod/v4/locales";
 const GroupControl: React.FC = () => {
   const token = localStorage.getItem("token") || "";
 
-  const { joinRoleRoom, onEvent } = useSocket({ token });
+  const { joinRoleRoom, onEvent, offEvent } = useSocket({ token });
 
   const [selectedGroup, setSelectedGroup] = useState("");
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
@@ -74,13 +74,19 @@ const GroupControl: React.FC = () => {
   useEffect(() => {
     joinRoleRoom("editor");
 
-    onEvent("new_group_created", (group: Group) => {
+    const handleAddGroup = (group: Group) => {
       setGroups((prev) => {
         if (prev.some((g) => g.id === group.id)) return prev;
         return [...prev, group];
       });
-    });
-  }, [joinRoleRoom, onEvent]);
+    };
+
+    onEvent("new_group_created", handleAddGroup);
+    return () => {
+      offEvent("new_group_created", handleAddGroup);
+    };
+  }, [joinRoleRoom, onEvent, offEvent]);
+
   const fetchGroups = async () => {
     try {
       setIsLoading(true);
