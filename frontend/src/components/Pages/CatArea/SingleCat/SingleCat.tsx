@@ -165,12 +165,31 @@ const SingleCat: FC = () => {
         loadAllContent();
       }
     };
+
+    const handleCategoryUpdated = (updatedCategory: Category) => {
+      setItems(prev =>
+        prev.map(item =>
+          item.id === updatedCategory._id
+            ? {
+              ...item,
+              name: updatedCategory.categoryName,
+              images: updatedCategory.categoryImage,
+              path: [updatedCategory.categoryPath],
+            }
+            : item
+        )
+      );
+    };
+
     onEvent("sub_category_added", handleNewSubCategory);
     onEvent("category_moved", handleMovedCategory);
+    onEvent("category_updated", handleCategoryUpdated);
 
     return () => {
       offEvent("sub_category_added", handleNewSubCategory);
       offEvent("category_moved", handleMovedCategory);
+      offEvent("category_updated", handleCategoryUpdated);
+
     };
   }, [categoryPath, id, joinRoleRoom, onEvent, offEvent]);
 
