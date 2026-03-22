@@ -17,6 +17,7 @@ import { Product } from 'src/schemas/Products.schema';
 import { PermissionsService } from 'src/permissions/permissions.service';
 import { EntityType } from 'src/schemas/Permissions.schema';
 import { NameLock } from 'src/schemas/NameLock.schema';
+import { SocketService } from 'src/socket/socket.service';
 
 @Injectable()
 export class RecycleBinService {
@@ -26,6 +27,7 @@ export class RecycleBinService {
     @InjectModel(Product.name) private productModel: Model<Product>,
     @InjectModel(NameLock.name) private nameLockModel: Model<NameLock>,
     private permissionsService: PermissionsService,
+    private socketService: SocketService,
   ) {}
 
   async getRecycleBinItems(): Promise<RecycleBin[]> {
@@ -218,6 +220,12 @@ export class RecycleBinService {
       categoryId,
       EntityType.CATEGORY,
     );
+
+    this.socketService.emitToRole('editor', 'recycle_bin_updated', {
+      action: 'added',
+      itemType: 'category',
+      itemName: category.categoryName,
+    });
 
     return {
       success: true,
@@ -465,6 +473,12 @@ export class RecycleBinService {
     }
 
     await this.recycleBinModel.findByIdAndDelete(recycleBinItem._id);
+
+    this.socketService.emitToRole('editor', 'recycle_bin_updated', {
+      action: 'restored',
+      itemType: 'category',
+      itemName: recycleBinItem.itemName,
+    });
 
     return {
       success: true,
