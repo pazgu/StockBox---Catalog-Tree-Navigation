@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { FC, useState, ChangeEvent, useEffect } from "react";
+import React, { FC, useState, ChangeEvent, useEffect, useRef } from "react";
 import {
   Heart,
   Lock,
@@ -42,6 +42,7 @@ import {
   getSafeProductImage,
 } from "../../../../lib/imageFallback";
 import { useSocket } from "../../../../hooks/useSocket";
+import { Category } from "../Categories/Categories";
 
 const hasImage = (images: any): boolean => {
   if (!images) return false;
@@ -95,6 +96,7 @@ const SingleCat: FC = () => {
   const [showFabButtons, setShowFabButtons] = useState(false);
 
   const location = useLocation();
+
   const params = useParams();
   const { role, user, id } = useUser();
   const navigate = useNavigate();
@@ -117,7 +119,6 @@ const SingleCat: FC = () => {
     return "";
   };
   const categoryPath = getCategoryPathFromUrl();
-
   const breadcrumbPathParts = categoryPath
     .replace("/categories/", "")
     .split("/")
@@ -132,28 +133,93 @@ const SingleCat: FC = () => {
 
   useEffect(() => {
     loadAllContent();
+
   }, [categoryPath, id]);
 
+  const categoryPathRef = useRef(categoryPath);
   useEffect(() => {
-    const handleNewSubCategory = (newCategory: CategoryDTO) => {
-      loadAllContent();
-      toast.success(`הקטגוריה "${newCategory.categoryName}" נוספה!`);
+    categoryPathRef.current = categoryPath;
+  }, [categoryPath]);
 
+  useEffect(() => {
+    joinRoleRoom("editor");
+    if (id) joinRoleRoom(id);
+
+    const handleNewSubCategory = (newCategory: CategoryDTO) => {
+      const newParentPath = newCategory.categoryPath.split("/").slice(0, -1).join("/");
+      const socketPreviousPath = localStorage.getItem("previousPath")
+
+      if (socketPreviousPath === newParentPath) {
+        loadAllContent();
+        toast.success(`הקטגוריה "${newCategory.categoryName}" נוספה!`);
+      }
     };
-    joinRoleRoom("editor")
-    if (id) {
-      joinRoleRoom(id)
-    }
+
+    const handleMovedCategory = (data: { category: Category; oldPath: string; newPath: string }) => {
+      const { oldPath, newPath } = data;
+
+      const newParentPath = newPath.split("/").slice(0, -1).join("/");
+      const oldParentPath = oldPath.split("/").slice(0, -1).join("/");
+      const socketPreviousPath = localStorage.getItem("previousPath")
+
+      if (socketPreviousPath === oldPath) {
+        navigate(newPath);
+        return;
+      }
+
+      if (socketPreviousPath === oldParentPath || socketPreviousPath === newParentPath) {
+        loadAllContent();
+      }
+    };
+
+    const handleCategoryUpdated = (data: { updatedCategory: Category; oldPath: string; }) => {
+      setItems(prev =>
+        prev.map(item =>
+          item.id === data.updatedCategory._id
+            ? {
+              ...item,
+              name: data.updatedCategory.categoryName,
+              images: data.updatedCategory.categoryImage,
+              path: [data.updatedCategory.categoryPath],
+            }
+            : item
+        )
+      );
+
+
+      const isCurrentCategory = categoryPathRef.current === data.oldPath;
+      if (isCurrentCategory) {
+        navigate(data.updatedCategory.categoryPath);
+      }
+
+      setCategoryInfo(prev => {
+        if (!prev) return prev;
+
+        if (prev._id === data.updatedCategory._id) {
+          return {
+            ...prev,
+            categoryName: data.updatedCategory.categoryName,
+            categoryImage: data.updatedCategory.categoryImage,
+            categoryPath: data.updatedCategory.categoryPath,
+          };
+        }
+        return prev;
+      });
+    };
+
     onEvent("sub_category_added", handleNewSubCategory);
+    onEvent("category_moved", handleMovedCategory);
+    onEvent("category_updated", handleCategoryUpdated);
 
     return () => {
       offEvent("sub_category_added", handleNewSubCategory);
-    };
-  }, [categoryPath, onEvent, offEvent]);
+      offEvent("category_moved", handleMovedCategory);
+      offEvent("category_updated", handleCategoryUpdated);
 
-  useEffect(() => {
-    setPreviousPath(categoryPath);
-  }, [categoryPath, setPreviousPath]);
+    };
+  }, [id, joinRoleRoom, onEvent, offEvent]);
+
+
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -276,18 +342,6 @@ const SingleCat: FC = () => {
     }
   };
 
-  const handleItemClick = (item: DisplayItem) => {
-    if (isSelectionMode) return;
-
-    const path = item.path[0];
-    const cleanPath = path.startsWith("/") ? path : `/${path}`;
-
-    if (item.type === "category") {
-      navigate(cleanPath);
-    } else {
-      navigate(`/products/${item.id}`);
-    }
-  };
 
   const toggleFavorite = useDebouncedFavorite(items, setItems, 500);
 
@@ -879,6 +933,7 @@ const SingleCat: FC = () => {
                     setPreviousPath(location.pathname);
                     navigate(`/products/${item.id}`);
                   } else {
+                    setPreviousPath(item.path[0]);
                     navigate(encodeURI(item.path[0]));
                   }
                 }}

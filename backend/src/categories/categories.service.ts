@@ -108,6 +108,7 @@ export class CategoriesService {
 
         if (userIds?.length) {
           this.socketService.emitToUsers(userIds, 'sub_category_added', savedCategory);
+          this.socketService.emitToRole(UserRole.EDITOR, "sub_category_added", savedCategory);
         } else {
           this.socketService.emitToAll('category_added', savedCategory);
         }
@@ -117,10 +118,9 @@ export class CategoriesService {
           this.socketService.emitToRole(UserRole.EDITOR, "category_added", savedCategory);
         } else {
           this.socketService.emitToRole(UserRole.EDITOR, "sub_category_added", savedCategory);
-
         }
       }
-     this.socketService.emitToAll('category_created', savedCategory);
+      this.socketService.emitToAll('category_created', savedCategory);
       return savedCategory;
     } catch (err: any) {
       await this.nameLockModel.deleteOne({ nameKey }).catch(() => undefined);
@@ -298,6 +298,7 @@ export class CategoriesService {
   ) {
     const category = await this.categoryModel.findById(id);
     if (!category) throw new NotFoundException('Category not found');
+    const oldPath = category.categoryPath;
 
     const oldCategoryPath = category.categoryPath;
 
@@ -468,7 +469,10 @@ export class CategoriesService {
         { updatePipeline: true },
       );
     }
-    this.socketService.emitToAll('category_updated', updatedCategory);
+    this.socketService.emitToAll('category_updated', {
+      updatedCategory,
+      oldPath
+    });
     return updatedCategory;
   }
 
@@ -555,20 +559,34 @@ export class CategoriesService {
         { $set: { productPath: updatedPaths } },
       );
     }
-    await this.permissionsService.updatePermissionsOnMove(
+    const usersBefore =
+      await this.permissionsService.getAllowedUsersForEntity(
+        id,
+        EntityType.CATEGORY
+      );
+    const usersAfter = await this.permissionsService.updatePermissionsOnMove(
       id,
       EntityType.CATEGORY,
       newParentPath,
     );
+    const affectedUsersSet = new Set([...usersBefore, ...usersAfter]);
+    const affectedUsersArray = [...affectedUsersSet];
 
-     const updatedCategory = await this.categoryModel.findById(id);
-    this.socketService.emitToAll('category_updated', updatedCategory);
+    const payload = {
+      category,
+      oldPath,
+      newPath,
+    };
+
+    this.socketService.emitToUsers(affectedUsersArray, "category_moved", payload);
+    this.socketService.emitToRole(UserRole.EDITOR, "category_moved", payload);
+    const updatedCategory = await this.categoryModel.findById(id);
     return {
       success: true,
       message: `Subcategory moved successfully from ${oldPath} to ${newPath}`,
       category: updatedCategory,
     };
-   
+
   }
 
   async getCategoryById(id: string) {

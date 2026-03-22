@@ -128,16 +128,34 @@ export class GroupsService {
         }
       }
     }
-
+    this.socketService.emitToRole(UserRole.EDITOR, 'group_edited', {
+      id: updatedGroup._id.toString(),
+      name: updatedGroup.groupName,
+      members:
+        updatedGroup.members?.map((m: any) =>
+          typeof m === 'string' ? m : m._id.toString(),
+        ) ?? [],
+    });
     return updatedGroup;
   }
 
   async delete(id: string): Promise<void> {
     const result = await this.groupModel.findByIdAndDelete(id).exec();
-    await this.permissionsService.deletePermissionsForAllowed(id);
+
     if (!result) {
       throw new NotFoundException(`Group with ID ${id} not found`);
     }
+
+    await this.permissionsService.deletePermissionsForAllowed(id);
+
+    this.socketService.emitToRole(UserRole.EDITOR, 'group_deleted', {
+      id: result._id.toString(),
+      name: result.groupName,
+      members:
+        result.members?.map((m: any) =>
+          typeof m === 'string' ? m : m._id.toString(),
+        ) ?? [],
+    });
   }
 
   async getOrCreateDefaultGroup(): Promise<GroupDocument> {

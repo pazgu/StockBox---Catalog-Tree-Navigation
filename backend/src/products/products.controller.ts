@@ -124,19 +124,22 @@ export class ProductsController {
         ? JSON.parse(body.customFields)
         : undefined,
       productImages: existingImages,
-      uploadFolders: body.uploadFolders
-        ? [].concat(body.uploadFolders).map((group: any) => ({
-            title: group.title,
-            folders: group.folders.map((folder: any) => ({
-              _id: folder._id,
-              folderName: folder.folderName,
-              files: folder.files.map((f: any) => ({
-                _id: f._id,
-                link: f.link,
-              })),
-            })),
-          }))
-        : undefined,
+      uploadFolders:
+        body.emptyUploadFolders === 'true'
+          ? []
+          : body.uploadFolders
+            ? [].concat(body.uploadFolders).map((group: any) => ({
+                title: group.title,
+                folders: group.folders.map((folder: any) => ({
+                  _id: folder._id,
+                  folderName: folder.folderName,
+                  files: folder.files.map((f: any) => ({
+                    _id: f._id,
+                    link: f.link,
+                  })),
+                })),
+              }))
+            : undefined,
     };
     return this.productsService.update(id, dto);
   }

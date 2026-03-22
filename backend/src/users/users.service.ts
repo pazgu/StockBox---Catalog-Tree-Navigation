@@ -26,7 +26,7 @@ export class UsersService {
     private socketService: SocketService,
     @Inject(forwardRef(() => PermissionsService))
     private permissionsService: PermissionsService,
-  ) {}
+  ) { }
 
   async getAllUsers(role?: string, approved?: string) {
     const filter: any = {};
@@ -108,7 +108,7 @@ export class UsersService {
       }
     }
 
-    const oldUser = await this.userModel.findById(id).select('role').lean();
+    const oldUser = await this.userModel.findById(id).select('role approved').lean();
 
     const updatedUser = await this.userModel
       .findByIdAndUpdate(id, updateUserDto, { new: true })
@@ -123,6 +123,13 @@ export class UsersService {
       this.socketService.emitToUser(id, 'user_role_changed', {
         newRole: updatedUser.role,
       });
+    }
+
+    const justApproved =
+      oldUser && !oldUser.approved && updateUserDto.approved === true;
+
+    if (justApproved) {
+      this.socketService.emitToRole(UserRole.EDITOR, 'user_approved', updatedUser);
     }
 
     this.socketService.emitToRole(UserRole.EDITOR, 'user_updated', updatedUser);
@@ -266,6 +273,14 @@ export class UsersService {
 
   async getAllUserIds(): Promise<string[]> {
     const users = await this.userModel.find().select('_id').lean();
+    return users.map((u) => u._id.toString());
+  }
+  async getAllViewerIds(): Promise<string[]> {
+    const users = await this.userModel
+      .find({ role: UserRole.VIEWER })
+      .select('_id')
+      .lean();
+
     return users.map((u) => u._id.toString());
   }
 }

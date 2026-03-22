@@ -39,6 +39,7 @@ import { useDebouncedFavoriteSingle } from "../../../../hooks/useDebouncedFavori
 import { isLength } from "validator";
 import { environment } from "../../../../environments/environment.development";
 import UnsavedChangesDialog from "../../SharedComponents/UnsavedChangesDialog/UnsavedChangesDialog";
+import { useSocket } from '../../../../hooks/useSocket';
 interface SingleProdProps { }
 
 function normalizeImages(images: string[]) {
@@ -48,6 +49,8 @@ function normalizeImages(images: string[]) {
 
 const SingleProd: FC<SingleProdProps> = () => {
   const { role, id } = useUser();
+  const token = localStorage.getItem('token') || '';
+  const { onEvent, offEvent } = useSocket({ token });
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -176,8 +179,61 @@ const SingleProd: FC<SingleProdProps> = () => {
     };
 
     loadProduct();
-  }, [productId, navigate, id]);
+}, [productId, navigate, id]);
 
+  useEffect(() => {
+    if (!productId) return;
+
+    const handleProductUpdated = (updatedProduct: ProductDto) => {
+      if (updatedProduct._id !== productId) return;
+      if (isEditing) return;
+
+      setTitle(updatedProduct.productName);
+      setDescription(updatedProduct.productDescription || '');
+
+      const defaultUrl = environment.DEFAULT_PRODUCT_IMAGE_URL;
+      const cleaned = normalizeImages(updatedProduct.productImages || []).filter(
+        (url) => url !== defaultUrl,
+      );
+      setProductImages(cleaned);
+      setCurrentImageIndex(0);
+
+      if (Array.isArray(updatedProduct.customFields)) {
+        const accordion = updatedProduct.customFields.map((field: any) => ({
+          id: field._id,
+          uiId: field._id,
+          title: field.title,
+          type: field.type,
+          content:
+            field.type === 'bullets'
+              ? JSON.stringify(field.bullets)
+              : field.content,
+        }));
+        setAccordionData(accordion);
+      }
+
+      const folders =
+        updatedProduct.uploadFolders?.[0]?.folders.map((folder: any) => ({
+          uiId: folder._id,
+          name: folder.folderName,
+          files: folder.files.map((file: any) => ({
+            uiId: file._id,
+            name: file.link.split('/').pop(),
+            type: '',
+            url: file.link,
+            size: 0,
+          })),
+        })) || [];
+
+      setFolders(folders);
+    };
+
+    onEvent('product_updated', handleProductUpdated);
+
+    return () => {
+      offEvent('product_updated', handleProductUpdated);
+    };
+  }, [productId, isEditing, onEvent, offEvent]);
   const location = useLocation();
   const breadcrumbPath = useMemo<string[]>(
     () => [
@@ -456,7 +512,15 @@ const SingleProd: FC<SingleProdProps> = () => {
       toast.error("לא ניתן לשמור שדות ריקים");
       return;
     }
-
+    const hasEmptyFolder = folders.some((folder) => folder.files.length === 0);
+    if (hasEmptyFolder) {
+      toast.error("לא ניתן לשמור תיקייה ריקה ללא קבצים");
+      return;
+    }
+    if (!title.trim()) {
+      toast.error("שם מוצר הוא שדה חובה");
+      return;
+    }
     if (!ALLOWED_CHARS.test(title.trim())) {
       toast.error("ניתן להשתמש רק באותיות, מספרים, רווחים והתווים . - _");
       return;
@@ -480,7 +544,6 @@ const SingleProd: FC<SingleProdProps> = () => {
         {
           title: "Default Group",
           folders: folders
-            .filter((folder) => folder.files.length > 0)
             .map((folder) => ({
               ...(folder._id ? { _id: folder._id } : {}),
               folderName: folder.name,
@@ -525,10 +588,14 @@ const SingleProd: FC<SingleProdProps> = () => {
       toast.success("שינויים נשמרו בהצלחה");
       setEditSnapshot(null);
       setIsEditing(false);
-    } catch (err) {
-      console.error(err);
-      toast.error("לא הצלחנו לשמור את המוצר. נסה שוב בבקשה.");
-    } finally {
+  } catch (err: any) {
+  const msg = err?.message || "";
+  if (msg.includes("שם זה כבר קיים")) {
+    toast.error("שם זה כבר קיים. נא לבחור שם ייחודי אחר.");
+  } else {
+    toast.error("לא הצלחנו לשמור את המוצר. נסה שוב בבקשה.");
+  }
+} finally {
       setIsSaving(false);
     }
   };
