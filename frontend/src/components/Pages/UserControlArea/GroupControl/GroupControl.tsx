@@ -71,6 +71,7 @@ const GroupControl: React.FC = () => {
   useEffect(() => {
     fetchGroups();
   }, []);
+
   useEffect(() => {
     joinRoleRoom("editor");
 
@@ -81,11 +82,33 @@ const GroupControl: React.FC = () => {
       });
     };
 
+    const handleDeleteGroup = ({ id }: { id: string }) => {
+      setGroups((prev) => {
+        if (!prev.some((g) => g.id === id)) return prev;
+        return prev.filter((g) => g.id !== id);
+      });
+    };
+    const handleUpdateGroup = (updated: Group) => {
+      setGroups((prev) => {
+        const index = prev.findIndex((g) => g.id === updated.id);
+        if (index === -1) return prev;
+
+        const newGroups = [...prev];
+        newGroups[index] = updated;
+        return newGroups;
+      });
+    };
+
+    onEvent("group_edited", handleUpdateGroup);
     onEvent("new_group_created", handleAddGroup);
+    onEvent("group_deleted", handleDeleteGroup);
+
     return () => {
       offEvent("new_group_created", handleAddGroup);
+      offEvent("group_deleted", handleDeleteGroup);
+      offEvent("group_edited", handleUpdateGroup);
     };
-  }, [joinRoleRoom, onEvent, offEvent]);
+  }, []);
 
   const fetchGroups = async () => {
     try {
