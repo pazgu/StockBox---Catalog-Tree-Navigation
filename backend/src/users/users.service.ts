@@ -275,4 +275,12 @@ export class UsersService {
     const users = await this.userModel.find().select('_id').lean();
     return users.map((u) => u._id.toString());
   }
+  async getAllViewerIds(): Promise<string[]> {
+    const users = await this.userModel
+      .find({ role: UserRole.VIEWER })
+      .select('_id')
+      .lean();
+
+    return users.map((u) => u._id.toString());
+  }
 }

@@ -108,6 +108,7 @@ export class CategoriesService {
 
         if (userIds?.length) {
           this.socketService.emitToUsers(userIds, 'sub_category_added', savedCategory);
+          this.socketService.emitToRole(UserRole.EDITOR, "sub_category_added", savedCategory);
         } else {
           this.socketService.emitToAll('category_added', savedCategory);
         }
@@ -117,7 +118,6 @@ export class CategoriesService {
           this.socketService.emitToRole(UserRole.EDITOR, "category_added", savedCategory);
         } else {
           this.socketService.emitToRole(UserRole.EDITOR, "sub_category_added", savedCategory);
-
         }
       }
      this.socketService.emitToAll('category_created', savedCategory);
@@ -555,12 +555,27 @@ export class CategoriesService {
         { $set: { productPath: updatedPaths } },
       );
     }
-    await this.permissionsService.updatePermissionsOnMove(
+    const usersBefore =
+      await this.permissionsService.getAllowedUsersForEntity(
+        id,
+        EntityType.CATEGORY
+      );
+    const usersAfter = await this.permissionsService.updatePermissionsOnMove(
       id,
       EntityType.CATEGORY,
       newParentPath,
     );
+    const affectedUsersSet = new Set([...usersBefore, ...usersAfter]);
+    const affectedUsersArray = [...affectedUsersSet];
 
+    const payload = {
+      category,
+      oldPath,
+      newPath,
+    };
+
+    this.socketService.emitToUsers(affectedUsersArray, "category_moved", payload);
+    this.socketService.emitToRole(UserRole.EDITOR, "category_moved", payload);
      const updatedCategory = await this.categoryModel.findById(id);
     this.socketService.emitToAll('category_updated', updatedCategory);
     return {
