@@ -12,6 +12,7 @@ import {
   getSafeCategoryImage,
   getSafeProductImage,
 } from "../../../../lib/imageFallback";
+import { useSocket } from "../../../../hooks/useSocket";
 
 type FilterType = "all" | "categories" | "products";
 
@@ -32,6 +33,8 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
   const [isRestoring, setIsRestoring] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEmptying, setIsEmptying] = useState(false);
+  const token = localStorage.getItem("token") || "";
+  const { joinRoleRoom, onEvent, offEvent } = useSocket({ token });
 
   useEffect(() => {
     if (role !== undefined) {
@@ -42,6 +45,28 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
       }
     }
   }, [role]);
+
+  useEffect(() => {
+    joinRoleRoom("editor");
+    const handleUpdate = ({
+      action,
+      itemName,
+    }: {
+      action: string;
+      itemName: string;
+    }) => {
+      loadRecycleBinItems();
+      toast.info(
+        action === "added"
+          ? `${itemName} הועבר לסל המיחזור`
+          : `${itemName} שוחזר מסל המיחזור`,
+      );
+    };
+    onEvent("recycle_bin_updated", handleUpdate);
+    return () => {
+      offEvent("recycle_bin_updated", handleUpdate);
+    };
+  }, [joinRoleRoom, onEvent, offEvent]);
 
   const loadRecycleBinItems = async () => {
     try {
@@ -77,11 +102,6 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
       });
 
       await loadRecycleBinItems();
-      toast.success(
-        <span className="inline-block max-w-full break-words">
-          "{selectedItem.itemName}" שוחזר בהצלחה
-        </span>,
-      );
       setShowRestoreModal(false);
       setSelectedItem(null);
     } catch (error) {
@@ -362,13 +382,19 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
                     </div>
 
                     <div className="h-36 w-full flex justify-center items-center p-5 grayscale">
-                     <img
-                        src={getSafeProductImage(item.productImages, item.itemImage)}
+                      <img
+                        src={getSafeProductImage(
+                          item.productImages,
+                          item.itemImage,
+                        )}
                         alt={item.itemName}
                         className="h-32 w-32 object-contain"
                         onError={(e) => {
                           (e.currentTarget as HTMLImageElement).src =
-                            getSafeProductImage(item.productImages, item.itemImage);
+                            getSafeProductImage(
+                              item.productImages,
+                              item.itemImage,
+                            );
                         }}
                       />
                     </div>

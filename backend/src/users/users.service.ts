@@ -26,7 +26,7 @@ export class UsersService {
     private socketService: SocketService,
     @Inject(forwardRef(() => PermissionsService))
     private permissionsService: PermissionsService,
-  ) { }
+  ) {}
 
   async getAllUsers(role?: string, approved?: string) {
     const filter: any = {};
@@ -108,7 +108,10 @@ export class UsersService {
       }
     }
 
-    const oldUser = await this.userModel.findById(id).select('role approved').lean();
+    const oldUser = await this.userModel
+      .findById(id)
+      .select('role approved')
+      .lean();
 
     const updatedUser = await this.userModel
       .findByIdAndUpdate(id, updateUserDto, { new: true })
@@ -129,7 +132,11 @@ export class UsersService {
       oldUser && !oldUser.approved && updateUserDto.approved === true;
 
     if (justApproved) {
-      this.socketService.emitToRole(UserRole.EDITOR, 'user_approved', updatedUser);
+      this.socketService.emitToRole(
+        UserRole.EDITOR,
+        'user_approved',
+        updatedUser,
+      );
     }
 
     this.socketService.emitToRole(UserRole.EDITOR, 'user_updated', updatedUser);
