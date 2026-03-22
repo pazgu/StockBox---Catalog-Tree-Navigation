@@ -206,7 +206,37 @@ const SingleCat: FC = () => {
         return prev;
       });
     };
+    const handleMovedProduct = (data: { savedProduct: ProductDto; sourceCategoryPath: string; newCategoryPath: string[]; }) => {
+      const { savedProduct: product, sourceCategoryPath, newCategoryPath } = data;
+      const socketPreviousPath = localStorage.getItem("previousPath") || "";
 
+      setItems(prev => {
+        let updated = [...prev];
+
+        if (socketPreviousPath === sourceCategoryPath) {
+          updated = updated.filter(item => item.id !== product._id);
+        }
+
+        if (newCategoryPath.includes(socketPreviousPath)) {
+          if (!updated.some(item => item.id === product._id)) {
+            updated = [
+              {
+                id: product._id || "",
+                name: product.productName,
+                images: product.productImages || [],
+                type: "product",
+                path: product.productPath,
+                favorite: false,
+              },
+              ...updated,
+            ];
+          }
+        }
+
+        return updated;
+      });
+    };
+    onEvent("product_moved", handleMovedProduct);
     onEvent("sub_category_added", handleNewSubCategory);
     onEvent("category_moved", handleMovedCategory);
     onEvent("category_updated", handleCategoryUpdated);
@@ -215,7 +245,7 @@ const SingleCat: FC = () => {
       offEvent("sub_category_added", handleNewSubCategory);
       offEvent("category_moved", handleMovedCategory);
       offEvent("category_updated", handleCategoryUpdated);
-
+      offEvent("product_moved", handleMovedProduct);
     };
   }, [id, joinRoleRoom, onEvent, offEvent]);
 

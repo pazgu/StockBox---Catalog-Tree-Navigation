@@ -209,15 +209,26 @@ export const Categories: FC<CategoriesProps> = () => {
         )
       );
     };
+    const handleMovedProduct = (data: { savedProduct: ProductDto; sourceCategoryPath: string; newCategoryPath: string[] }) => {
+      const { savedProduct: product, sourceCategoryPath, newCategoryPath } = data;
+      const socketPreviousPath = localStorage.getItem("previousPath");
+
+      if (socketPreviousPath === sourceCategoryPath) {
+        setItems(prev => prev.filter(item => item.id !== product._id));
+      }
+
+    };
 
     onEvent("category_added", handleNewCategory);
     onEvent("category_moved", handleMovedCategory);
     onEvent("category_updated", handleCategoryUpdated);
-
+    onEvent("product_moved", handleMovedProduct);
     return () => {
       offEvent("category_added", handleNewCategory);
       offEvent("category_moved", handleMovedCategory);
       offEvent("category_updated", handleCategoryUpdated);
+      offEvent("product_moved", handleMovedProduct);
+
     };
   }, [joinRoleRoom, onEvent, offEvent, id]);
 

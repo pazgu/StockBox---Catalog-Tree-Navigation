@@ -50,7 +50,7 @@ function normalizeImages(images: string[]) {
 const SingleProd: FC<SingleProdProps> = () => {
   const { role, id } = useUser();
   const token = localStorage.getItem('token') || '';
-  const { onEvent, offEvent } = useSocket({ token });
+  const { onEvent, offEvent, joinRoleRoom } = useSocket({ token });
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -81,7 +81,7 @@ const SingleProd: FC<SingleProdProps> = () => {
   const [isUploadingImages, setIsUploadingImages] = useState(false);
   const { productId } = useParams<{ productId: string }>();
   const [user, setUser] = useState<User | null>(null);
-  const { previousPath } = usePath();
+  const { previousPath, setPreviousPath } = usePath();
   const [isLoading, setIsLoading] = useState(true);
   const [isReplacingImage, setIsReplacingImage] = useState(false);
   const MAX_EDIT_NAME_LEN = 30;
@@ -179,11 +179,15 @@ const SingleProd: FC<SingleProdProps> = () => {
     };
 
     loadProduct();
-}, [productId, navigate, id]);
+  }, [productId, navigate, id]);
 
   useEffect(() => {
-    if (!productId) return;
 
+    if (!productId) return;
+    joinRoleRoom("editor")
+    if (id) {
+      joinRoleRoom(id);
+    }
     const handleProductUpdated = (updatedProduct: ProductDto) => {
       if (updatedProduct._id !== productId) return;
       if (isEditing) return;
@@ -227,11 +231,26 @@ const SingleProd: FC<SingleProdProps> = () => {
 
       setFolders(folders);
     };
+    const handleMovedProduct = (data: {
+      savedProduct: ProductDto;
+      sourceCategoryPath: string;
+      newCategoryPath: string[];
+    }) => {
+      const { savedProduct: product, newCategoryPath } = data;
+
+      if (product._id !== productId) return;
+
+      if (isEditing) return;
+      console.log("nav")
+      setPreviousPath(newCategoryPath[0]);
+      navigate(`/products/${product._id}`, { replace: true });
+    };
 
     onEvent('product_updated', handleProductUpdated);
-
+    onEvent('product_moved', handleMovedProduct);
     return () => {
       offEvent('product_updated', handleProductUpdated);
+      offEvent('product_moved', handleMovedProduct);
     };
   }, [productId, isEditing, onEvent, offEvent]);
   const location = useLocation();
@@ -588,14 +607,14 @@ const SingleProd: FC<SingleProdProps> = () => {
       toast.success("שינויים נשמרו בהצלחה");
       setEditSnapshot(null);
       setIsEditing(false);
-  } catch (err: any) {
-  const msg = err?.message || "";
-  if (msg.includes("שם זה כבר קיים")) {
-    toast.error("שם זה כבר קיים. נא לבחור שם ייחודי אחר.");
-  } else {
-    toast.error("לא הצלחנו לשמור את המוצר. נסה שוב בבקשה.");
-  }
-} finally {
+    } catch (err: any) {
+      const msg = err?.message || "";
+      if (msg.includes("שם זה כבר קיים")) {
+        toast.error("שם זה כבר קיים. נא לבחור שם ייחודי אחר.");
+      } else {
+        toast.error("לא הצלחנו לשמור את המוצר. נסה שוב בבקשה.");
+      }
+    } finally {
       setIsSaving(false);
     }
   };

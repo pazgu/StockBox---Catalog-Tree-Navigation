@@ -30,6 +30,7 @@ import { NameLock } from 'src/schemas/NameLock.schema';
 import { UsersService } from 'src/users/users.service';
 import { normalizeName } from 'src/utils/nameLock';
 import { SocketService } from 'src/socket/socket.service';
+import { UserRole } from 'src/schemas/Users.schema';
 @Injectable()
 export class ProductsService {
   constructor(
@@ -41,7 +42,7 @@ export class ProductsService {
 
     private permissionsService: PermissionsService,
     private socketService: SocketService,
-  ) {}
+  ) { }
 
   async findAll(): Promise<Product[]> {
     return this.productModel.find().exec();
@@ -161,7 +162,7 @@ export class ProductsService {
         cleanCustomFields = [];
       }
     }
-    const nameKey = normalizeName(createProductDto.productName); 
+    const nameKey = normalizeName(createProductDto.productName);
     try {
       await this.nameLockModel.create({
         nameKey,
@@ -298,16 +299,16 @@ export class ProductsService {
     return updatedProduct;
   }
 
-  async moveProduct(id: string, moveProductDto: MoveProductDto) {
+  async moveProduct(id: string, moveProductDto: MoveProductDto & { sourceCategoryPath: string }) {
     const product = await this.productModel.findById(id);
     if (!product) {
       throw new NotFoundException('Product not found');
     }
 
-    const { newCategoryPath } = moveProductDto;
+    const { newCategoryPath, sourceCategoryPath } = moveProductDto;
 
     for (const path of newCategoryPath) {
-      if (path === '/categories') continue; 
+      if (path === '/categories') continue;
       const categoryExists = await this.categoryModel.findOne({
         categoryPath: path,
       });
@@ -335,14 +336,17 @@ export class ProductsService {
     }
 
     product.productPath = newPaths;
-    await product.save();
+    const savedProduct=await product.save();
     if (newCategoryPath.length > 0) {
-      await this.permissionsService.updatePermissionsOnMove(
+      const allowedUsers = await this.permissionsService.updatePermissionsOnMove(
         id,
         EntityType.PRODUCT,
         newCategoryPath[0],
       );
+      this.socketService.emitToUsers(allowedUsers, "product_moved", { newCategoryPath, sourceCategoryPath, savedProduct })
+      this.socketService.emitToRole(UserRole.EDITOR, "product_moved", { newCategoryPath, sourceCategoryPath, savedProduct })
     }
+
 
     return {
       success: true,

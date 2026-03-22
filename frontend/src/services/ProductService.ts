@@ -23,7 +23,7 @@ export class ProductsService {
     };
   }
 
- static async getProductsByPath(path: string): Promise<ProductDto[]> {
+  static async getProductsByPath(path: string): Promise<ProductDto[]> {
     const cleanPath = path.startsWith("/") ? path.substring(1) : path;
 
     try {
@@ -39,9 +39,9 @@ export class ProductsService {
       throw e;
     }
   }
- 
 
-    static async createProduct(
+
+  static async createProduct(
     payload: CreateProductPayload,
   ): Promise<ProductDto> {
     const fd = new FormData();
@@ -84,26 +84,26 @@ export class ProductsService {
 
 
   static async getById(id: string): Promise<ProductDataDto> {
-  const { data } = await api.get(`${environment.API_URL}/products/${id}`);
+    const { data } = await api.get(`${environment.API_URL}/products/${id}`);
 
-  return {
-    ...data,
-    productImages:
-      Array.isArray(data.productImages) && data.productImages.length > 0
-        ? data.productImages
-        : [getSafeProductImage(data.productImages, data.image)],
-  };
-}
+    return {
+      ...data,
+      productImages:
+        Array.isArray(data.productImages) && data.productImages.length > 0
+          ? data.productImages
+          : [getSafeProductImage(data.productImages, data.image)],
+    };
+  }
 
-  
+
   static async moveProduct(
     productId: string,
-    newCategoryPath: string[],
+    moveProductDto: { sourceCategoryPath: string; newCategoryPath: string[] },
   ): Promise<{ success: boolean; message: string; product: ProductDto }> {
     try {
       const { data } = await api.post(
         `${this.baseUrl}/${productId}/move`,
-        { newCategoryPath },
+        moveProductDto,
         this.getAuthHeaders(),
       );
       return data;
@@ -112,7 +112,6 @@ export class ProductsService {
       throw error;
     }
   }
-
   static async duplicateProduct(
     productId: string,
     additionalCategoryPaths: string[],
@@ -138,7 +137,7 @@ export class ProductsService {
 
     if (payload.productName) fd.append("productName", payload.productName);
     if (payload.productDescription !== undefined)
-    fd.append("productDescription", payload.productDescription ?? "");
+      fd.append("productDescription", payload.productDescription ?? "");
     if (payload.productPath) fd.append("productPath", payload.productPath);
 
     const imgs = payload.productImages ?? [];
@@ -156,43 +155,43 @@ export class ProductsService {
     }
 
     if (payload.uploadFolders !== undefined) {
-  if (payload.uploadFolders.length === 0) {
-    fd.append("emptyUploadFolders", "true");
-  } else {
-      payload.uploadFolders.forEach((group, gi) => {
-        fd.append(`uploadFolders[${gi}][title]`, group.title);
-        if (group._id) fd.append(`uploadFolders[${gi}][_id]`, group._id);
+      if (payload.uploadFolders.length === 0) {
+        fd.append("emptyUploadFolders", "true");
+      } else {
+        payload.uploadFolders.forEach((group, gi) => {
+          fd.append(`uploadFolders[${gi}][title]`, group.title);
+          if (group._id) fd.append(`uploadFolders[${gi}][_id]`, group._id);
 
-        group.folders.forEach((folder, fi) => {
-          fd.append(
-            `uploadFolders[${gi}][folders][${fi}][folderName]`,
-            folder.folderName,
-          );
-          if (folder._id)
-            fd.append(`uploadFolders[${gi}][folders][${fi}][_id]`, folder._id);
+          group.folders.forEach((folder, fi) => {
+            fd.append(
+              `uploadFolders[${gi}][folders][${fi}][folderName]`,
+              folder.folderName,
+            );
+            if (folder._id)
+              fd.append(`uploadFolders[${gi}][folders][${fi}][_id]`, folder._id);
 
-          folder.files.forEach((file, fli) => {
-            if (file.file instanceof File) {
-              fd.append(
-                `uploadFolders[${gi}][folders][${fi}][files][${fli}][file]`,
-                file.file,
-              );
-            } else if (file.link) {
-              fd.append(
-                `uploadFolders[${gi}][folders][${fi}][files][${fli}][link]`,
-                file.link,
-              );
-            }
-            if (file._id)
-              fd.append(
-                `uploadFolders[${gi}][folders][${fi}][files][${fli}][_id]`,
-                file._id,
-              );
+            folder.files.forEach((file, fli) => {
+              if (file.file instanceof File) {
+                fd.append(
+                  `uploadFolders[${gi}][folders][${fi}][files][${fli}][file]`,
+                  file.file,
+                );
+              } else if (file.link) {
+                fd.append(
+                  `uploadFolders[${gi}][folders][${fi}][files][${fli}][link]`,
+                  file.link,
+                );
+              }
+              if (file._id)
+                fd.append(
+                  `uploadFolders[${gi}][folders][${fi}][files][${fli}][_id]`,
+                  file._id,
+                );
+            });
           });
         });
-      });
-  }
-}
+      }
+    }
 
     try {
       const { data } = await api.patch<ProductDataDto>(
@@ -224,28 +223,28 @@ export class ProductsService {
   }
 
 
-static async deleteFromSpecificPaths(
-  id: string,
-  paths: string[],
-): Promise<{ success: boolean; message: string }> {
-  try {
-    const { data } = await api.delete(
-      `${this.baseUrl}/${id}/paths`,
-      {
-        ...this.getAuthHeaders(),
-        data: { paths },
-      },
-    );
-    return data;
-  } catch (error) {
-    const err = error as AxiosError;
-    const status = err.response?.status;
-    
-    if (status === 401) throw new Error("Unauthorized - please login");
-    if (status === 403) throw new Error("Only editors can delete products");
-    if (status === 404) throw new Error("Product not found");
+  static async deleteFromSpecificPaths(
+    id: string,
+    paths: string[],
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      const { data } = await api.delete(
+        `${this.baseUrl}/${id}/paths`,
+        {
+          ...this.getAuthHeaders(),
+          data: { paths },
+        },
+      );
+      return data;
+    } catch (error) {
+      const err = error as AxiosError;
+      const status = err.response?.status;
 
-    throw new Error("Failed to delete product from specific paths");
+      if (status === 401) throw new Error("Unauthorized - please login");
+      if (status === 403) throw new Error("Only editors can delete products");
+      if (status === 404) throw new Error("Product not found");
+
+      throw new Error("Failed to delete product from specific paths");
+    }
   }
-}
 }
