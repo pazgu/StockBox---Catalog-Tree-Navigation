@@ -183,8 +183,6 @@ const SingleCat: FC = () => {
           localStorage.getItem("previousPath") ||
           location.pathname;
 
-        console.log("permissions event received, reloading:", currentPath);
-
         await loadAllContent(currentPath);
         toast.info("הרשאות עודכנו, טוען...");
       } catch (err: any) {
@@ -425,7 +423,6 @@ const SingleCat: FC = () => {
           );
         } else {
           const newPath = currentPath.replace(itemPath, parentPath);
-          console.log("navigating to:", newPath);
           navigate(newPath);
         }
         return;
@@ -483,7 +480,6 @@ const SingleCat: FC = () => {
   }, [categoryPath]);
 
   const loadAllContent = async (pathOverride?: string) => {
-    console.log("loadAllContent called");
     const currentCategoryPath = pathOverride ?? categoryPath;
     try {
       setLoading(true);
