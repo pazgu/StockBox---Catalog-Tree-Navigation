@@ -35,7 +35,7 @@ import MoveCategoryModal from "./MoveCategoryModal/MoveCategoryModal";
 import MoveProductModal from "../../ProductArea/MoveProductModal/MoveProductModal";
 import { useSocket } from "../../../../hooks/useSocket";
 import SmartDeleteModal from "../../ProductArea/SmartDeleteModal/SmartDeleteModal";
-interface CategoriesProps { }
+interface CategoriesProps {}
 
 export interface Category {
   _id: string;
@@ -164,13 +164,13 @@ export const Categories: FC<CategoriesProps> = () => {
     }
 
     const handleNewCategory = (newCategory: Category) => {
-      setCategories(prev => {
-        if (prev.some(c => c._id === newCategory._id)) return prev;
+      setCategories((prev) => {
+        if (prev.some((c) => c._id === newCategory._id)) return prev;
         return [newCategory, ...prev];
       });
 
-      setItems(prev => {
-        if (prev.some(item => item.id === newCategory._id)) return prev;
+      setItems((prev) => {
+        if (prev.some((item) => item.id === newCategory._id)) return prev;
 
         return [
           {
@@ -186,14 +186,16 @@ export const Categories: FC<CategoriesProps> = () => {
       });
     };
 
-
-
-    const handleMovedCategory = (data: { category: Category; oldPath: string; newPath: string }) => {
+    const handleMovedCategory = (data: {
+      category: Category;
+      oldPath: string;
+      newPath: string;
+    }) => {
       const { category, oldPath, newPath } = data;
 
       const newParentPath = newPath.split("/").slice(0, -1).join("/");
       const oldParentPath = oldPath.split("/").slice(0, -1).join("/");
-      const socketPreviousPath = localStorage.getItem("previousPath")
+      const socketPreviousPath = localStorage.getItem("previousPath");
 
       if (socketPreviousPath === oldPath) {
         navigate(newPath);
@@ -201,24 +203,22 @@ export const Categories: FC<CategoriesProps> = () => {
       }
 
       if (socketPreviousPath === oldParentPath) {
-        setCategories(prev =>
-          prev.filter(cat => cat.categoryPath !== oldPath)
+        setCategories((prev) =>
+          prev.filter((cat) => cat.categoryPath !== oldPath),
         );
 
-        setItems(prev =>
-          prev.filter(item => item.path[0] !== oldPath)
-        );
+        setItems((prev) => prev.filter((item) => item.path[0] !== oldPath));
       }
 
       if (socketPreviousPath === newParentPath) {
-        setCategories(prev => {
-          if (prev.some(cat => cat._id === category._id)) return prev;
+        setCategories((prev) => {
+          if (prev.some((cat) => cat._id === category._id)) return prev;
 
           return [{ ...category, categoryPath: newPath }, ...prev];
         });
 
-        setItems(prev => {
-          if (prev.some(item => item.id === category._id)) return prev;
+        setItems((prev) => {
+          if (prev.some((item) => item.id === category._id)) return prev;
 
           return [
             {
@@ -234,41 +234,54 @@ export const Categories: FC<CategoriesProps> = () => {
         });
       }
     };
-    const handleCategoryUpdated = (data: { updatedCategory: Category }, oldPath: string) => {
-      setCategories(prev =>
-        prev.map(c => c._id === data.updatedCategory._id ? data.updatedCategory : c)
+    const handleCategoryUpdated = (
+      data: { updatedCategory: Category },
+      oldPath: string,
+    ) => {
+      setCategories((prev) =>
+        prev.map((c) =>
+          c._id === data.updatedCategory._id ? data.updatedCategory : c,
+        ),
       );
-      setItems(prev =>
-        prev.map(item =>
+      setItems((prev) =>
+        prev.map((item) =>
           item.id === data.updatedCategory._id
             ? {
-              ...item,
-              name: data.updatedCategory.categoryName,
-              images: data.updatedCategory.categoryImage,
-              path: [data.updatedCategory.categoryPath],
-            }
-            : item
-        )
+                ...item,
+                name: data.updatedCategory.categoryName,
+                images: data.updatedCategory.categoryImage,
+                path: [data.updatedCategory.categoryPath],
+              }
+            : item,
+        ),
       );
     };
-    const handleMovedProduct = (data: { savedProduct: ProductDto; sourceCategoryPath: string; newCategoryPath: string[] }) => {
-      const { savedProduct: product, sourceCategoryPath, newCategoryPath } = data;
+    const handleMovedProduct = (data: {
+      savedProduct: ProductDto;
+      sourceCategoryPath: string;
+      newCategoryPath: string[];
+    }) => {
+      const {
+        savedProduct: product,
+        sourceCategoryPath,
+        newCategoryPath,
+      } = data;
       const socketPreviousPath = localStorage.getItem("previousPath");
 
       if (socketPreviousPath === sourceCategoryPath) {
-        setItems(prev => prev.filter(item => item.id !== product._id));
+        setItems((prev) => prev.filter((item) => item.id !== product._id));
       }
-
     };
 
     const handleProductUpdated = (updatedProduct: any) => {
       setItems((prev) =>
         prev.map((item) => {
-          if (item.type !== 'product' || item.id !== updatedProduct._id) return item;
+          if (item.type !== "product" || item.id !== updatedProduct._id)
+            return item;
 
           const defaultUrl = environment.DEFAULT_PRODUCT_IMAGE_URL;
           const images = (updatedProduct.productImages || []).filter(
-            (url: string) => typeof url === 'string' && url.trim(),
+            (url: string) => typeof url === "string" && url.trim(),
           );
 
           return {
@@ -319,7 +332,9 @@ export const Categories: FC<CategoriesProps> = () => {
       loadCategoriesAndFavorites();
       toast.info("הרשאות עודכנו, טוען...");
     };
-
+    const handleCategoryPermissionsChanged = () => {
+      loadCategoriesAndFavorites();
+    };
 
     const handleNewProduct = (product: ProductDto) => {
       const productPaths = Array.isArray(product.productPath)
@@ -360,7 +375,7 @@ export const Categories: FC<CategoriesProps> = () => {
     onEvent("product_deleted", handleProductDeleted);
     onEvent("recycle_bin_updated", handleRecycleBinUpdated);
     onEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
-
+    onEvent("category_permissions_changed", handleCategoryPermissionsChanged);
     return () => {
       offEvent("product_added", handleNewProduct);
       offEvent("category_added", handleNewCategory);
@@ -369,13 +384,16 @@ export const Categories: FC<CategoriesProps> = () => {
       offEvent("product_moved", handleMovedProduct);
       offEvent("product_updated", handleProductUpdated);
       offEvent("recycle_bin_updated", handleRecycleBinUpdated);
-      offEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
+      offEvent(
+        "banned_items_permissions_updated",
+        handleBannedPermissionsUpdated,
+      );
       offEvent("product_deleted", handleProductDeleted);
-
+      offEvent("category_permissions_changed", handleCategoryPermissionsChanged);
     };
   }, [id]);
   useEffect(() => {
-    setPreviousPath("/categories")
+    setPreviousPath("/categories");
     if (role !== undefined) {
       if (role) {
         loadCategoriesAndFavorites();
@@ -532,7 +550,9 @@ export const Categories: FC<CategoriesProps> = () => {
         rootPath,
       );
 
-      toast.success(`המוצר "${productToMoveToRecycleBin.name}" הוסר מהשורש בלבד!`);
+      toast.success(
+        `המוצר "${productToMoveToRecycleBin.name}" הוסר מהשורש בלבד!`,
+      );
     } catch (error) {
       toast.error("שגיאה בהסרה מהשורש");
     } finally {
@@ -552,7 +572,9 @@ export const Categories: FC<CategoriesProps> = () => {
         productToMoveToRecycleBin.id,
       );
 
-      toast.success(`המוצר "${productToMoveToRecycleBin.name}" הועבר לסל המיחזור!`);
+      toast.success(
+        `המוצר "${productToMoveToRecycleBin.name}" הועבר לסל המיחזור!`,
+      );
     } catch (error) {
       toast.error("שגיאה בהעברה לסל המיחזור");
     } finally {
@@ -726,38 +748,39 @@ export const Categories: FC<CategoriesProps> = () => {
         <div className="flex justify-center gap-3 mb-8 flex-wrap mt-8">
           <button
             onClick={() => setActiveFilter("all")}
-            className={`px-6 py-2 rounded-full font-medium transition-all ${activeFilter === "all"
-              ? "bg-blue-950 text-white shadow-md"
-              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-              }`}
+            className={`px-6 py-2 rounded-full font-medium transition-all ${
+              activeFilter === "all"
+                ? "bg-blue-950 text-white shadow-md"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}
           >
             הכל
           </button>
 
           <button
             onClick={() => setActiveFilter("categories")}
-            className={`px-6 py-2 rounded-full font-medium transition-all ${activeFilter === "categories"
-              ? "bg-blue-950 text-white shadow-md"
-              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-              }`}
+            className={`px-6 py-2 rounded-full font-medium transition-all ${
+              activeFilter === "categories"
+                ? "bg-blue-950 text-white shadow-md"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}
           >
             קטגוריות
           </button>
 
           <button
             onClick={() => setActiveFilter("products")}
-            className={`px-6 py-2 rounded-full font-medium transition-all ${activeFilter === "products"
-              ? "bg-blue-950 text-white shadow-md"
-              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-              }`}
+            className={`px-6 py-2 rounded-full font-medium transition-all ${
+              activeFilter === "products"
+                ? "bg-blue-950 text-white shadow-md"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}
           >
             מוצרים
           </button>
         </div>
       ) : (
-        <div className="text-right mt-8 mb-6">
-
-        </div>
+        <div className="text-right mt-8 mb-6"></div>
       )}
 
       {items.length === 0 ? (
@@ -782,10 +805,9 @@ export const Categories: FC<CategoriesProps> = () => {
                     <div className="flex items-center justify-center relative">
                       <div
                         onClick={() => {
-                          setPreviousPath(item.path[0])
-                          navigate(item.path[0])
-                        }
-                        }
+                          setPreviousPath(item.path[0]);
+                          navigate(item.path[0]);
+                        }}
                         className="relative"
                       >
                         <div className="absolute top-3 left-3 z-10">
@@ -1099,38 +1121,48 @@ export const Categories: FC<CategoriesProps> = () => {
         </>
       )}
 
+      {showMoveModal &&
+        moveSelectedItems.length === 1 &&
+        moveSelectedItems[0].type === "product" && (
+          <MoveProductModal
+            isOpen={showMoveModal}
+            productId={moveSelectedItems[0].id}
+            productName={moveSelectedItems[0].name}
+            currentPaths={moveSelectedItems[0].path}
+            onClose={closeMoveModal}
+            onSuccess={loadCategoriesAndFavorites}
+            currentCategoryPath={
+              moveSelectedItems[0].path
+                .find((p) =>
+                  p.startsWith(`/categories/${moveSelectedItems[0].name}`),
+                )
+                ?.slice(
+                  0,
+                  moveSelectedItems[0].path
+                    .find((p) =>
+                      p.startsWith(`/categories/${moveSelectedItems[0].name}`),
+                    )
+                    ?.lastIndexOf("/"),
+                ) ?? ""
+            }
+          />
+        )}
 
-      {showMoveModal && moveSelectedItems.length === 1 && moveSelectedItems[0].type === "product" && (
-        <MoveProductModal
-          isOpen={showMoveModal}
-          productId={moveSelectedItems[0].id}
-          productName={moveSelectedItems[0].name}
-          currentPaths={moveSelectedItems[0].path}
-          onClose={closeMoveModal}
-          onSuccess={loadCategoriesAndFavorites}
-          currentCategoryPath={moveSelectedItems[0].path.find(p =>
-            p.startsWith(`/categories/${moveSelectedItems[0].name}`)
-          )?.slice(0, moveSelectedItems[0].path.find(p =>
-            p.startsWith(`/categories/${moveSelectedItems[0].name}`)
-          )?.lastIndexOf("/")) ?? ""
-          } />
-      )}
-
-      {showMoveModal && moveSelectedItems.length === 1 && moveSelectedItems[0].type === "category" && (
-        <MoveCategoryModal
-          isOpen={showMoveModal}
-          category={{
-            _id: moveSelectedItems[0].id,
-            categoryName: moveSelectedItems[0].name,
-            categoryPath: moveSelectedItems[0].path[0],
-            categoryImage: moveSelectedItems[0].images[0] ?? "",
-          }}
-          onClose={closeMoveModal}
-          onSuccess={loadCategoriesAndFavorites}
-        />
-      )}
-
-
+      {showMoveModal &&
+        moveSelectedItems.length === 1 &&
+        moveSelectedItems[0].type === "category" && (
+          <MoveCategoryModal
+            isOpen={showMoveModal}
+            category={{
+              _id: moveSelectedItems[0].id,
+              categoryName: moveSelectedItems[0].name,
+              categoryPath: moveSelectedItems[0].path[0],
+              categoryImage: moveSelectedItems[0].images[0] ?? "",
+            }}
+            onClose={closeMoveModal}
+            onSuccess={loadCategoriesAndFavorites}
+          />
+        )}
 
       <DuplicateProductModal
         isOpen={showDuplicateModal}
@@ -1249,7 +1281,7 @@ export const Categories: FC<CategoriesProps> = () => {
 ${isMovingToRecycleBin ? "bg-orange-400 cursor-not-allowed text-white" : "bg-orange-600 text-white hover:bg-orange-700 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"}`}
                         >
                           {isMovingToRecycleBin &&
-                            moveStrategyLoading === "cascade" ? (
+                          moveStrategyLoading === "cascade" ? (
                             <span className="flex items-center justify-center gap-2">
                               <Spinner className="size-4 text-white" />
                               מעביר לסל...
@@ -1258,7 +1290,8 @@ ${isMovingToRecycleBin ? "bg-orange-400 cursor-not-allowed text-white" : "bg-ora
                             <span className="flex flex-col items-center gap-1">
                               <span>העבר הכל לסל (כולל כל הצאצאים)</span>
                               <span className="text-xs font-normal opacity-80">
-                                שים/י לב: מוצר שמופיע במספר קטגוריות (משוכפל) יועבר לסל מכל המיקומים שלו
+                                שים/י לב: מוצר שמופיע במספר קטגוריות (משוכפל)
+                                יועבר לסל מכל המיקומים שלו
                               </span>
                             </span>
                           )}
@@ -1271,7 +1304,7 @@ ${isMovingToRecycleBin ? "bg-orange-400 cursor-not-allowed text-white" : "bg-ora
 ${isMovingToRecycleBin ? "bg-blue-200 cursor-not-allowed text-blue-900" : "bg-blue-100 text-blue-900 hover:bg-blue-200 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"}`}
                         >
                           {isMovingToRecycleBin &&
-                            moveStrategyLoading === "move_up" ? (
+                          moveStrategyLoading === "move_up" ? (
                             <span className="flex items-center justify-center gap-2">
                               <Spinner className="size-4 text-blue-900" />
                               מעביר לסל...
