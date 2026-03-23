@@ -83,11 +83,28 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     }, 1500);
   }, []);
 
-  useSocket({
-    token,
-    onRoleChanged: handleRoleChanged,
-    onUserDeleted: handleUserDeleted,
-  });
+const handlePermissionsUpdated = useCallback(() => {
+  const currentPath = window.location.pathname;
+
+  if (currentPath === '/') return;
+
+  if (currentPath === '/categories') {
+    window.location.reload();
+    return;
+  }
+
+  toast.info('ההרשאות שלך עודכנו. מעביר לדף הראשי...', { duration: 4000 });
+  setTimeout(() => {
+    window.location.href = '/categories';
+  }, 1000);
+}, []);
+
+useSocket({
+  token,
+  onRoleChanged: handleRoleChanged,
+  onUserDeleted: handleUserDeleted,
+  onPermissionsUpdated: handlePermissionsUpdated,
+});
 
   const refreshUsers = async () => {
     try {

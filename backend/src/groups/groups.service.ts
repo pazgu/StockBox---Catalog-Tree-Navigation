@@ -93,6 +93,13 @@ export class GroupsService {
       }
     }
 
+    const oldMemberIds: Set<string> = new Set();
+    if (Array.isArray(updateGroupDto.members)) {
+      const groupBefore = await this.groupModel.findById(id).lean().exec();
+      if (!groupBefore) throw new NotFoundException(`Group with ID ${id} not found`);
+      (groupBefore.members ?? []).forEach((m: any) => oldMemberIds.add(m.toString()));
+    }
+
     const updatedGroup = await this.groupModel
       .findByIdAndUpdate(id, updateGroupDto, { new: true })
       .populate('members', 'username firstName lastName')
@@ -128,13 +135,29 @@ export class GroupsService {
         }
       }
     }
+
+    if (Array.isArray(updateGroupDto.members)) {
+      const newMemberIds = new Set(
+        (updatedGroup.members ?? []).map((m: any) =>
+          typeof m === 'object' ? m._id.toString() : m.toString(),
+        ),
+      );
+
+      const affectedUserIds = [
+        ...[...oldMemberIds].filter((uid) => !newMemberIds.has(uid)),
+        ...[...newMemberIds].filter((uid) => !oldMemberIds.has(uid)),
+      ];
+
+      this.socketService.emitToUsers(affectedUserIds, 'permissions_updated');
+    }
+
     this.socketService.emitToRole(UserRole.EDITOR, 'group_edited', {
       id: updatedGroup._id.toString(),
       name: updatedGroup.groupName,
       members:
         updatedGroup.members?.map((m: any) =>
-          typeof m === 'string' ? m : m._id.toString(),
-        ) ?? [],
+        typeof m === 'string' ? m : m._id.toString(),
+      ) ?? [],
     });
     return updatedGroup;
   }
