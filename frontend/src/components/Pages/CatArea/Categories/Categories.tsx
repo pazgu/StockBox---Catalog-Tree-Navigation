@@ -209,6 +209,15 @@ export const Categories: FC<CategoriesProps> = () => {
         )
       );
     };
+    const handleMovedProduct = (data: { savedProduct: ProductDto; sourceCategoryPath: string; newCategoryPath: string[] }) => {
+      const { savedProduct: product, sourceCategoryPath, newCategoryPath } = data;
+      const socketPreviousPath = localStorage.getItem("previousPath");
+
+      if (socketPreviousPath === sourceCategoryPath) {
+        setItems(prev => prev.filter(item => item.id !== product._id));
+      }
+
+    };
 
     const handleProductUpdated = (updatedProduct: any) => {
       setItems((prev) =>
@@ -232,12 +241,13 @@ export const Categories: FC<CategoriesProps> = () => {
     onEvent("category_added", handleNewCategory);
     onEvent("category_moved", handleMovedCategory);
     onEvent("category_updated", handleCategoryUpdated);
-    onEvent("product_updated", handleProductUpdated);
+    onEvent("product_moved", handleMovedProduct); onEvent("product_updated", handleProductUpdated);
 
     return () => {
       offEvent("category_added", handleNewCategory);
       offEvent("category_moved", handleMovedCategory);
       offEvent("category_updated", handleCategoryUpdated);
+      offEvent("product_moved", handleMovedProduct);
       offEvent("product_updated", handleProductUpdated);
     };
   }, [joinRoleRoom, onEvent, offEvent, id]);
