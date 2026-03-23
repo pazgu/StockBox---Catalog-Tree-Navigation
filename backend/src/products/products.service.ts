@@ -192,11 +192,18 @@ export class ProductsService {
         { $set: { refId: savedProduct._id.toString() } },
       );
       if (createProductDto.allowAll) {
-        await this.permissionsService.assignPermissionsForNewEntity(
-          savedProduct,
-        );
+        const userIds = await this.permissionsService.assignPermissionsForNewEntity(savedProduct);
+        if (userIds?.length) {
+          this.socketService.emitToUsers(userIds, 'product_added', savedProduct);
+          this.socketService.emitToRole(UserRole.EDITOR, 'product_added', savedProduct);
+        } else {
+          this.socketService.emitToAll('product_added', savedProduct);
+        }
+      } else {
+        this.socketService.emitToRole(UserRole.EDITOR, 'product_added', savedProduct);
       }
 
+      this.socketService.emitToAll('product_created', savedProduct);
       return savedProduct;
     } catch (error: any) {
       await this.nameLockModel.deleteOne({ nameKey }).catch(() => undefined);

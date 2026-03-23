@@ -219,16 +219,37 @@ export const Categories: FC<CategoriesProps> = () => {
 
     };
 
+    const handleProductUpdated = (updatedProduct: any) => {
+      setItems((prev) =>
+        prev.map((item) => {
+          if (item.type !== 'product' || item.id !== updatedProduct._id) return item;
+
+          const defaultUrl = environment.DEFAULT_PRODUCT_IMAGE_URL;
+          const images = (updatedProduct.productImages || []).filter(
+            (url: string) => typeof url === 'string' && url.trim(),
+          );
+
+          return {
+            ...item,
+            name: updatedProduct.productName,
+            images,
+          };
+        }),
+      );
+    };
+
     onEvent("category_added", handleNewCategory);
     onEvent("category_moved", handleMovedCategory);
     onEvent("category_updated", handleCategoryUpdated);
-    onEvent("product_moved", handleMovedProduct);
+    onEvent("product_moved", handleMovedProduct); onEvent("product_updated", handleProductUpdated);
+
     return () => {
       offEvent("category_added", handleNewCategory);
       offEvent("category_moved", handleMovedCategory);
       offEvent("category_updated", handleCategoryUpdated);
       offEvent("product_moved", handleMovedProduct);
 
+      offEvent("product_updated", handleProductUpdated);
     };
   }, [joinRoleRoom, onEvent, offEvent, id]);
 

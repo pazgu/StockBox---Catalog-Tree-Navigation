@@ -237,15 +237,65 @@ const SingleCat: FC = () => {
       });
     };
     onEvent("product_moved", handleMovedProduct);
+    const handleNewProduct = (newProduct: any) => {
+      const currentPath = categoryPathRef.current;
+
+      const belongsHere = Array.isArray(newProduct.productPath)
+        ? newProduct.productPath.some((p: string) => p.startsWith(currentPath + "/"))
+        : newProduct.productPath?.startsWith(currentPath + "/");
+
+      if (!belongsHere) return;
+
+      setItems(prev => {
+        if (prev.some(item => item.id === newProduct._id)) return prev;
+        return [
+          ...prev,
+          {
+            id: newProduct._id,
+            name: newProduct.productName,
+            images: newProduct.productImages || [],
+            type: "product",
+            path: Array.isArray(newProduct.productPath)
+              ? newProduct.productPath
+              : [newProduct.productPath],
+            description: newProduct.productDescription,
+            customFields: newProduct.customFields,
+            favorite: false,
+          },
+        ];
+      });
+      toast.info(`המוצר "${newProduct.productName}" נוסף!`);
+    };
+    const handleProductUpdated = (updatedProduct: any) => {
+      setItems((prev) =>
+        prev.map((item) => {
+          if (item.type !== 'product' || item.id !== updatedProduct._id) return item;
+
+          const images = (updatedProduct.productImages || []).filter(
+            (url: string) => typeof url === 'string' && url.trim(),
+          );
+
+          return {
+            ...item,
+            name: updatedProduct.productName,
+            images,
+          };
+        }),
+      );
+    };
+
     onEvent("sub_category_added", handleNewSubCategory);
     onEvent("category_moved", handleMovedCategory);
     onEvent("category_updated", handleCategoryUpdated);
+    onEvent("product_added", handleNewProduct);
+    onEvent("product_updated", handleProductUpdated);
 
     return () => {
       offEvent("sub_category_added", handleNewSubCategory);
       offEvent("category_moved", handleMovedCategory);
       offEvent("category_updated", handleCategoryUpdated);
-      offEvent("product_moved", handleMovedProduct);
+      offEvent("product_moved", handleMovedProduct); offEvent("product_added", handleNewProduct);
+      offEvent("product_updated", handleProductUpdated);
     };
   }, [id, joinRoleRoom, onEvent, offEvent]);
 
