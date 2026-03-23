@@ -25,7 +25,7 @@ const Header: React.FC<HeaderProps> = ({
   const location = useLocation();
   const navigate = useNavigate();
   const { setPreviousPath } = usePath();
-  const { role, setUser } = useUser();
+  const { role, user, setUser } = useUser();
 
   const handleSearchSelect = (item: any) => {
     setIsMobileMenuOpen(false);
@@ -92,6 +92,18 @@ const Header: React.FC<HeaderProps> = ({
             : "bg-[#0D305B] shadow-lg h-40"
         }`}
       >
+     <div className="flex items-center gap-2">
+        {role && user && (
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-[#BA9F71] flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+              {user.userName?.[0]?.toUpperCase()}
+            </div>
+            <span className="text-white text-sm font-medium">
+              {user.userName}
+            </span>
+          </div>
+        )}
+
         {role && (
           <button
             aria-label="Logout"
@@ -99,14 +111,15 @@ const Header: React.FC<HeaderProps> = ({
             onClick={handleLogout}
           >
             <LogOut
-              size={21}
-              className="transition-all duration-300 group-hover:scale-110 group-hover:text-[#BA9F71]"
-            />
+             size={21} 
+            className="transition-all duration-300 group-hover:scale-110 group-hover:text-[#BA9F71]"
+             />
             <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-3 py-2 rounded opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
               התנתקות
             </span>
           </button>
         )}
+      </div>
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-20">
             <div className="hidden sm:block flex-shrink-0 transform transition-transform duration-300 hover:scale-105 cursor-pointer">
