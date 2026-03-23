@@ -7,6 +7,7 @@ interface UseSocketProps {
   onDisconnect?: () => void;
   onRoleChanged?: () => void;
   onUserDeleted?: () => void;
+  onPermissionsUpdated?: () => void;
 }
 
 interface UseSocketReturn {
@@ -25,6 +26,7 @@ export const useSocket = ({
   onDisconnect,
   onRoleChanged,
   onUserDeleted,
+  onPermissionsUpdated,
 }: UseSocketProps): UseSocketReturn => {
 const socketRef = useRef<Socket | null>(null);
 const [isReady, setIsReady] = useState(false);
@@ -53,6 +55,9 @@ const [isReady, setIsReady] = useState(false);
     });
     socket.on('user_deleted_self', () => {
       onUserDeleted?.();
+    });
+    socket.on('permissions_updated', () => {
+      onPermissionsUpdated?.();
     });
 
     return () => {

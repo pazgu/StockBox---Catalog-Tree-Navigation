@@ -32,17 +32,14 @@ import { AuthGuard } from '@nestjs/passport';
 @Controller('categories')
 @UseGuards(AuthGuard('jwt'), PermissionGuard)
 export class CategoriesController {
-  constructor(private categoriesService: CategoriesService) { }
+  constructor(private categoriesService: CategoriesService) {}
 
   @Get()
   async findAll(@Req() req) {
     return await this.categoriesService.getCategories(req.user);
   }
   @Get('search')
-  async searchCategories(
-    @Req() req,
-    @Query('q') query: string,
-  ) {
+  async searchCategories(@Req() req, @Query('q') query: string) {
     return await this.categoriesService.searchCategories(req.user, query);
   }
 
