@@ -343,7 +343,7 @@ export class ProductsService {
     }
 
     product.productPath = newPaths;
-    const savedProduct=await product.save();
+    const savedProduct = await product.save();
     if (newCategoryPath.length > 0) {
       const allowedUsers = await this.permissionsService.updatePermissionsOnMove(
         id,
@@ -539,8 +539,19 @@ export class ProductsService {
             product.productImages.map((url) => this.deleteProductImage(url)),
           );
         }
+
         await this.productModel.findByIdAndDelete(id);
         await this.usersService.removeItemFromAllUserFavorites(id);
+
+        this.socketService.emitToAll('product_deleted', {
+          productId: id,
+          deletedPaths: pathsToDelete,
+          remainingPaths: [],
+          deletedCompletely: true,
+          movedToRecycleBin: false,
+          productName: product.productName,
+        });
+
         return {
           success: true,
           message: `Product "${product.productName}" deleted completely`,
@@ -549,6 +560,15 @@ export class ProductsService {
 
       product.productPath = updatedPaths;
       await product.save();
+
+      this.socketService.emitToAll('product_deleted', {
+        productId: id,
+        deletedPaths: pathsToDelete,
+        remainingPaths: updatedPaths,
+        deletedCompletely: false,
+        movedToRecycleBin: false,
+        productName: product.productName,
+      });
 
       return {
         success: true,
