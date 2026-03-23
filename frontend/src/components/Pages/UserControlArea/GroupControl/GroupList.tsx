@@ -29,7 +29,7 @@ const GroupList: React.FC<GroupListProps> = ({
   );
 
   return (
-   <div className="col-span-12 lg:col-span-3 
+   <div className="col-span-12 lg:col-span-3 mb-4 lg:mb-0
   bg-gray-50 border-l lg:border-r border-gray-200 
   p-6 text-right 
   flex flex-col min-h-0">
@@ -59,7 +59,7 @@ const GroupList: React.FC<GroupListProps> = ({
           <p className="text-sm">לחץ/י על "קבוצה חדשה" כדי להתחיל</p>
         </div>
       ) : (
-        <div className="space-y-3 flex-1 overflow-y-auto overflow-x-hidden pr-2 pt-4">
+        <div className="space-y-3 overflow-y-auto overflow-x-hidden pr-2 pt-4 max-h-[50vh] lg:max-h-full">
           {filteredGroups.map((group, idx) => (
             <div
               key={group.id}
