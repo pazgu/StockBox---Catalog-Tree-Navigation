@@ -129,6 +129,10 @@ export const Categories: FC<CategoriesProps> = () => {
     if (id) {
       joinRoleRoom(id);
     }
+    const groupId = localStorage.getItem("groupControl:selectedGroupId");
+    if (groupId && role === "viewer") {
+      joinRoleRoom(groupId);
+    }
 
     const handleNewCategory = (newCategory: Category) => {
       setCategories(prev => [newCategory, ...prev]);
@@ -240,12 +244,17 @@ export const Categories: FC<CategoriesProps> = () => {
     const handleRecycleBinUpdated = () => {
       loadCategoriesAndFavorites();
     };
+    const handleBannedPermissionsUpdated = () => {
+      loadCategoriesAndFavorites();
+      toast.info("הרשאות עודכנו, טוען...");
+    };
 
     onEvent("category_added", handleNewCategory);
     onEvent("category_moved", handleMovedCategory);
     onEvent("category_updated", handleCategoryUpdated);
     onEvent("product_moved", handleMovedProduct); onEvent("product_updated", handleProductUpdated);
     onEvent("recycle_bin_updated", handleRecycleBinUpdated);
+    onEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
 
     return () => {
       offEvent("category_added", handleNewCategory);
@@ -253,7 +262,9 @@ export const Categories: FC<CategoriesProps> = () => {
       offEvent("category_updated", handleCategoryUpdated);
       offEvent("product_moved", handleMovedProduct);
       offEvent("product_updated", handleProductUpdated);
-      offEvent("recycle_bin_updated", handleRecycleBinUpdated); 
+      offEvent("recycle_bin_updated", handleRecycleBinUpdated);
+      offEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
+
     };
   }, [joinRoleRoom, onEvent, offEvent, id]);
 

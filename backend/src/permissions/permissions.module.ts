@@ -10,9 +10,11 @@ import { UsersModule } from 'src/users/users.module';
 import { Product, ProductSchema } from 'src/schemas/Products.schema';
 import { Group, GroupSchema } from 'src/schemas/Groups.schema';
 import { User, UserSchema } from 'src/schemas/Users.schema';
+import { SocketModule } from 'src/socket/socket.module';
 
 @Module({
   imports: [
+    SocketModule,
     MongooseModule.forFeature([
       { name: Permission.name, schema: PermissionSchema },
       { name: Category.name, schema: CategorySchema },
@@ -27,4 +29,4 @@ import { User, UserSchema } from 'src/schemas/Users.schema';
   controllers: [PermissionsController],
   exports: [PermissionsService, PermissionGuard, MongooseModule],
 })
-export class PermissionsModule {}
+export class PermissionsModule { }
