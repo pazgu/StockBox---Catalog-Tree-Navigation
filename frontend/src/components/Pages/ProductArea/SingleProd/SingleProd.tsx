@@ -189,6 +189,15 @@ const SingleProd: FC<SingleProdProps> = () => {
     if (groupId && role === "viewer") {
       joinRoleRoom(groupId);
     }
+    const handleCategoryPermissionsChanged = (data: {
+      categoryPath: string;
+    }) => {
+      const previousPath = localStorage.getItem("previousPath") || "";
+
+      if (!data.categoryPath.startsWith(previousPath)) return;
+
+      loadProduct();
+    };
 
     const handleProductUpdated = (updatedProduct: ProductDto) => {
       if (updatedProduct._id !== productId) return;
@@ -279,13 +288,13 @@ const SingleProd: FC<SingleProdProps> = () => {
     onEvent('product_updated', handleProductUpdated);
     onEvent('product_moved', handleMovedProduct);
     onEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
-
+    onEvent("category_permissions_changed", handleCategoryPermissionsChanged);
     onEvent('product_deleted', handleProductDeleted);
     return () => {
       offEvent('product_updated', handleProductUpdated);
       offEvent('product_moved', handleMovedProduct);
       offEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
-
+      offEvent("category_permissions_changed", handleCategoryPermissionsChanged);
       offEvent('product_deleted', handleProductDeleted);
     };
   }, [productId, isEditing, onEvent, offEvent]);
@@ -570,9 +579,9 @@ const SingleProd: FC<SingleProdProps> = () => {
       return;
     }
     if (newFolderName.trim()) {
-  toast.error("חובה ליצור או למחוק את התיקייה לפני השמירה");
-  return;
-}
+      toast.error("חובה ליצור או למחוק את התיקייה לפני השמירה");
+      return;
+    }
 
     const hasEmptyFolder = folders.some((folder) => folder.files.length === 0);
     if (hasEmptyFolder) {
@@ -639,12 +648,12 @@ const SingleProd: FC<SingleProdProps> = () => {
         JSON.stringify(folders) !== JSON.stringify(editSnapshot.folders)
       );
 
-      if (!hasChanges) {
-        setIsEditing(false);
-        setNewFolderName("");
-        setShowNewFolderInput(false);
-        return;
-      } 
+    if (!hasChanges) {
+      setIsEditing(false);
+      setNewFolderName("");
+      setShowNewFolderInput(false);
+      return;
+    }
 
     try {
       setIsSaving(true);

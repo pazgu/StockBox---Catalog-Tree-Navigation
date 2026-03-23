@@ -178,7 +178,12 @@ const SingleCat: FC = () => {
     const socketPreviousPath = localStorage.getItem("previousPath");
     const handleBannedPermissionsUpdated = async () => {
       try {
-        await loadAllContent(socketPreviousPath || location.pathname);
+        const currentPath =
+          categoryPathRef.current ||
+          localStorage.getItem("previousPath") ||
+          location.pathname;
+
+        await loadAllContent(currentPath);
         toast.info("הרשאות עודכנו, טוען...");
       } catch (err: any) {
         console.error("Reload failed", err);
@@ -257,19 +262,27 @@ const SingleCat: FC = () => {
         return prev;
       });
     };
-    const handleMovedProduct = (data: { savedProduct: ProductDto; sourceCategoryPath: string; newCategoryPath: string[]; }) => {
-      const { savedProduct: product, sourceCategoryPath, newCategoryPath } = data;
+    const handleMovedProduct = (data: {
+      savedProduct: ProductDto;
+      sourceCategoryPath: string;
+      newCategoryPath: string[];
+    }) => {
+      const {
+        savedProduct: product,
+        sourceCategoryPath,
+        newCategoryPath,
+      } = data;
       const socketPreviousPath = localStorage.getItem("previousPath") || "";
 
-      setItems(prev => {
+      setItems((prev) => {
         let updated = [...prev];
 
         if (socketPreviousPath === sourceCategoryPath) {
-          updated = updated.filter(item => item.id !== product._id);
+          updated = updated.filter((item) => item.id !== product._id);
         }
 
         if (newCategoryPath.includes(socketPreviousPath)) {
-          if (!updated.some(item => item.id === product._id)) {
+          if (!updated.some((item) => item.id === product._id)) {
             updated = [
               {
                 id: product._id || "",
@@ -291,13 +304,15 @@ const SingleCat: FC = () => {
       const currentPath = categoryPathRef.current;
 
       const belongsHere = Array.isArray(newProduct.productPath)
-        ? newProduct.productPath.some((p: string) => p.startsWith(currentPath + "/"))
+        ? newProduct.productPath.some((p: string) =>
+          p.startsWith(currentPath + "/"),
+        )
         : newProduct.productPath?.startsWith(currentPath + "/");
 
       if (!belongsHere) return;
 
-      setItems(prev => {
-        if (prev.some(item => item.id === newProduct._id)) return prev;
+      setItems((prev) => {
+        if (prev.some((item) => item.id === newProduct._id)) return prev;
         return [
           ...prev,
           {
@@ -318,10 +333,11 @@ const SingleCat: FC = () => {
     const handleProductUpdated = (updatedProduct: any) => {
       setItems((prev) =>
         prev.map((item) => {
-          if (item.type !== 'product' || item.id !== updatedProduct._id) return item;
+          if (item.type !== "product" || item.id !== updatedProduct._id)
+            return item;
 
           const images = (updatedProduct.productImages || []).filter(
-            (url: string) => typeof url === 'string' && url.trim(),
+            (url: string) => typeof url === "string" && url.trim(),
           );
 
           return {
@@ -407,7 +423,6 @@ const SingleCat: FC = () => {
           );
         } else {
           const newPath = currentPath.replace(itemPath, parentPath);
-          console.log("navigating to:", newPath);
           navigate(newPath);
         }
         return;
@@ -416,6 +431,15 @@ const SingleCat: FC = () => {
       if (categoryPathRef.current === parentPath) {
         loadAllContent(categoryPathRef.current);
       }
+    };
+    const handleCategoryPermissionsChanged = (data: {
+      categoryPath: string;
+    }) => {
+      const previousPath = localStorage.getItem("previousPath") || "";
+
+      if (!data.categoryPath.startsWith(previousPath)) return;
+
+      loadAllContent();
     };
     onEvent("product_moved", handleMovedProduct);
     onEvent("sub_category_added", handleNewSubCategory);
@@ -426,7 +450,7 @@ const SingleCat: FC = () => {
     onEvent("product_deleted", handleProductDeleted);
     onEvent("recycle_bin_updated", handleRecycleBinUpdated);
     onEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
-
+    onEvent("category_permissions_changed", handleCategoryPermissionsChanged);
 
     return () => {
       offEvent("sub_category_added", handleNewSubCategory);
@@ -437,8 +461,11 @@ const SingleCat: FC = () => {
       offEvent("product_updated", handleProductUpdated);
       offEvent("product_deleted", handleProductDeleted);
       offEvent("recycle_bin_updated", handleRecycleBinUpdated);
-      offEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
-
+      offEvent(
+        "banned_items_permissions_updated",
+        handleBannedPermissionsUpdated,
+      );
+      offEvent("category_permissions_changed", handleCategoryPermissionsChanged);
     };
   }, [id, joinRoleRoom, onEvent, offEvent]);
 
@@ -462,7 +489,6 @@ const SingleCat: FC = () => {
   }, [categoryPath]);
 
   const loadAllContent = async (pathOverride?: string) => {
-    console.log("loadAllContent called");
     const currentCategoryPath = pathOverride ?? categoryPath;
     try {
       setLoading(true);
@@ -565,7 +591,6 @@ const SingleCat: FC = () => {
       toast.error("שגיאה בעדכון הקטגוריה");
     }
   };
-
 
   const toggleFavorite = useDebouncedFavorite(items, setItems, 500);
 
