@@ -82,6 +82,18 @@ export class PermissionsService {
       allowed,
     });
 
+    const emitPermissionChanged = () => {
+      this.socketService.emitToUser(
+        allowed.toString(),
+        'category_permissions_changed',
+        {
+          userId: allowed.toString(),
+          categoryId: entityId.toString(),
+          action: 'created',
+        },
+      );
+    };
+
     if (entityType === EntityType.CATEGORY) {
       await this.categoryModel.updateOne(
         { _id: entityId },
@@ -90,11 +102,16 @@ export class PermissionsService {
     }
 
     if (entityType !== EntityType.CATEGORY || !inheritToChildren) {
+      emitPermissionChanged();
       return created;
     }
 
     const descendants = await this.getAllCategoryDescendants(entityId);
-    if (!descendants.length) return created;
+
+    if (!descendants.length) {
+      emitPermissionChanged();
+      return created;
+    }
 
     const bulkOps: AnyBulkWriteOperation<Permission>[] = descendants.map(
       (child) => ({
@@ -117,15 +134,8 @@ export class PermissionsService {
     );
 
     await this.permissionModel.bulkWrite(bulkOps);
-    this.socketService.emitToUser(
-      allowed.toString(),
-      'category_permissions_changed',
-      {
-        userId: allowed.toString(),
-        categoryId: entityId.toString(),
-        action: 'created',
-      },
-    );
+
+    emitPermissionChanged();
     return created;
   }
 
@@ -205,9 +215,13 @@ export class PermissionsService {
         }
       }
       const groupId = validDtos[0].allowed.toString();
-      this.socketService.emitToGroup(groupId, "banned_items_permissions_updated", {
-        createdPermissions,
-      });
+      this.socketService.emitToGroup(
+        groupId,
+        'banned_items_permissions_updated',
+        {
+          createdPermissions,
+        },
+      );
     }
 
     const result = {
@@ -244,8 +258,6 @@ export class PermissionsService {
       .exec();
 
     const groupId = permissions[0].allowed.toString();
-
-
 
     const foundIds = new Set(permissions.map((p) => p._id.toString()));
     const notFoundIds = ids.filter((id) => !foundIds.has(id));
@@ -289,9 +301,13 @@ export class PermissionsService {
       })
       .exec();
 
-
-    this.socketService.emitToGroup(groupId, "banned_items_permissions_updated");
-
+    this.socketService.emitToGroup(
+      groupId,
+      'banned_items_permissions_updated',
+      {
+        groupId,
+      },
+    );
     return {
       success: true,
       total: ids.length,
@@ -330,7 +346,15 @@ export class PermissionsService {
           .exec();
       }
     }
-
+    this.socketService.emitToUser(
+      permission.allowed.toString(),
+      'category_permissions_changed',
+      {
+        userId: permission.allowed.toString(),
+        categoryId: permission.entityId.toString(),
+        action: 'deleted',
+      },
+    );
     return this.permissionModel.findByIdAndDelete(id).exec();
   }
 

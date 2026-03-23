@@ -178,7 +178,14 @@ const SingleCat: FC = () => {
     const socketPreviousPath = localStorage.getItem("previousPath");
     const handleBannedPermissionsUpdated = async () => {
       try {
-        await loadAllContent(socketPreviousPath || location.pathname);
+        const currentPath =
+          categoryPathRef.current ||
+          localStorage.getItem("previousPath") ||
+          location.pathname;
+
+        console.log("permissions event received, reloading:", currentPath);
+
+        await loadAllContent(currentPath);
         toast.info("הרשאות עודכנו, טוען...");
       } catch (err: any) {
         console.error("Reload failed", err);
@@ -229,11 +236,11 @@ const SingleCat: FC = () => {
         prev.map((item) =>
           item.id === data.updatedCategory._id
             ? {
-              ...item,
-              name: data.updatedCategory.categoryName,
-              images: data.updatedCategory.categoryImage,
-              path: [data.updatedCategory.categoryPath],
-            }
+                ...item,
+                name: data.updatedCategory.categoryName,
+                images: data.updatedCategory.categoryImage,
+                path: [data.updatedCategory.categoryPath],
+              }
             : item,
         ),
       );
@@ -257,19 +264,27 @@ const SingleCat: FC = () => {
         return prev;
       });
     };
-    const handleMovedProduct = (data: { savedProduct: ProductDto; sourceCategoryPath: string; newCategoryPath: string[]; }) => {
-      const { savedProduct: product, sourceCategoryPath, newCategoryPath } = data;
+    const handleMovedProduct = (data: {
+      savedProduct: ProductDto;
+      sourceCategoryPath: string;
+      newCategoryPath: string[];
+    }) => {
+      const {
+        savedProduct: product,
+        sourceCategoryPath,
+        newCategoryPath,
+      } = data;
       const socketPreviousPath = localStorage.getItem("previousPath") || "";
 
-      setItems(prev => {
+      setItems((prev) => {
         let updated = [...prev];
 
         if (socketPreviousPath === sourceCategoryPath) {
-          updated = updated.filter(item => item.id !== product._id);
+          updated = updated.filter((item) => item.id !== product._id);
         }
 
         if (newCategoryPath.includes(socketPreviousPath)) {
-          if (!updated.some(item => item.id === product._id)) {
+          if (!updated.some((item) => item.id === product._id)) {
             updated = [
               {
                 id: product._id || "",
@@ -291,13 +306,15 @@ const SingleCat: FC = () => {
       const currentPath = categoryPathRef.current;
 
       const belongsHere = Array.isArray(newProduct.productPath)
-        ? newProduct.productPath.some((p: string) => p.startsWith(currentPath + "/"))
+        ? newProduct.productPath.some((p: string) =>
+            p.startsWith(currentPath + "/"),
+          )
         : newProduct.productPath?.startsWith(currentPath + "/");
 
       if (!belongsHere) return;
 
-      setItems(prev => {
-        if (prev.some(item => item.id === newProduct._id)) return prev;
+      setItems((prev) => {
+        if (prev.some((item) => item.id === newProduct._id)) return prev;
         return [
           ...prev,
           {
@@ -318,10 +335,11 @@ const SingleCat: FC = () => {
     const handleProductUpdated = (updatedProduct: any) => {
       setItems((prev) =>
         prev.map((item) => {
-          if (item.type !== 'product' || item.id !== updatedProduct._id) return item;
+          if (item.type !== "product" || item.id !== updatedProduct._id)
+            return item;
 
           const images = (updatedProduct.productImages || []).filter(
-            (url: string) => typeof url === 'string' && url.trim(),
+            (url: string) => typeof url === "string" && url.trim(),
           );
 
           return {
@@ -426,7 +444,7 @@ const SingleCat: FC = () => {
     onEvent("product_deleted", handleProductDeleted);
     onEvent("recycle_bin_updated", handleRecycleBinUpdated);
     onEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
-
+    onEvent("category_permissions_changed", handleBannedPermissionsUpdated);
 
     return () => {
       offEvent("sub_category_added", handleNewSubCategory);
@@ -437,8 +455,11 @@ const SingleCat: FC = () => {
       offEvent("product_updated", handleProductUpdated);
       offEvent("product_deleted", handleProductDeleted);
       offEvent("recycle_bin_updated", handleRecycleBinUpdated);
-      offEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
-
+      offEvent(
+        "banned_items_permissions_updated",
+        handleBannedPermissionsUpdated,
+      );
+      offEvent("category_permissions_changed", handleBannedPermissionsUpdated);
     };
   }, [id, joinRoleRoom, onEvent, offEvent]);
 
@@ -506,7 +527,7 @@ const SingleCat: FC = () => {
         try {
           const favorites = await userService.getFavorites();
           userFavorites = favorites.map((fav: any) => fav.id.toString());
-        } catch (err) { }
+        } catch (err) {}
       }
 
       const categoryItems: DisplayItem[] = subCategories.map(
@@ -565,7 +586,6 @@ const SingleCat: FC = () => {
       toast.error("שגיאה בעדכון הקטגוריה");
     }
   };
-
 
   const toggleFavorite = useDebouncedFavorite(items, setItems, 500);
 
@@ -928,7 +948,7 @@ const SingleCat: FC = () => {
             {categoryInfo
               ? categoryInfo.categoryName
               : breadcrumbPathParts[breadcrumbPathParts.length - 1] ||
-              "קטגוריה"}
+                "קטגוריה"}
           </h1>
           <div className="flex items-center gap-4">
             <span className="text-base">סך הכל פריטים: {items.length}</span>
@@ -1018,16 +1038,18 @@ const SingleCat: FC = () => {
           {items.map((item) => (
             <div
               key={item.id}
-              className={`flex flex-col items-center p-4 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 w-80 ${selectedItems.includes(item.id)
-                ? "bg-[#0D305B]/10"
-                : "border-gray-200"
-                } ${!isSelectionMode ? "cursor-pointer" : ""}`}
+              className={`flex flex-col items-center p-4 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 w-80 ${
+                selectedItems.includes(item.id)
+                  ? "bg-[#0D305B]/10"
+                  : "border-gray-200"
+              } ${!isSelectionMode ? "cursor-pointer" : ""}`}
             >
               <div
-                className={`absolute top-2 left-2 px-3 py-1 text-xs font-medium ${item.type === "category"
-                  ? " text-blue-700"
-                  : " text-green-700"
-                  }`}
+                className={`absolute top-2 left-2 px-3 py-1 text-xs font-medium ${
+                  item.type === "category"
+                    ? " text-blue-700"
+                    : " text-green-700"
+                }`}
               >
                 {item.type === "category" ? (
                   <>
@@ -1377,7 +1399,7 @@ const SingleCat: FC = () => {
             ${isMovingToRecycleBin ? "opacity-70 cursor-not-allowed" : "hover:bg-orange-700"}`}
               >
                 {isMovingToRecycleBin &&
-                  categoryMoveStrategyLoading === "cascade" ? (
+                categoryMoveStrategyLoading === "cascade" ? (
                   <span className="flex items-center justify-center gap-2">
                     <Spinner className="size-4 text-white" />
                     מעביר לסל...
@@ -1394,7 +1416,7 @@ const SingleCat: FC = () => {
     ${isMovingToRecycleBin ? "opacity-70 cursor-not-allowed" : "hover:bg-blue-200"}`}
               >
                 {isMovingToRecycleBin &&
-                  categoryMoveStrategyLoading === "move_up" ? (
+                categoryMoveStrategyLoading === "move_up" ? (
                   <span className="flex items-center justify-center gap-2">
                     <Spinner className="size-4 text-blue-900" />
                     מעביר לסל...
