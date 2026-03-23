@@ -14,7 +14,7 @@ import { SocketModule } from 'src/socket/socket.module';
 
 @Module({
   imports: [
-    forwardRef(() => SocketModule),
+    SocketModule,
     MongooseModule.forFeature([
       { name: Permission.name, schema: PermissionSchema },
       { name: Category.name, schema: CategorySchema },
@@ -29,4 +29,4 @@ import { SocketModule } from 'src/socket/socket.module';
   controllers: [PermissionsController],
   exports: [PermissionsService, PermissionGuard, MongooseModule],
 })
-export class PermissionsModule {}
+export class PermissionsModule { }

@@ -204,6 +204,10 @@ export class PermissionsService {
           );
         }
       }
+      const groupId = validDtos[0].allowed.toString();
+      this.socketService.emitToGroup(groupId, "banned_items_permissions_updated", {
+        createdPermissions,
+      });
     }
 
     const result = {
@@ -238,6 +242,11 @@ export class PermissionsService {
         _id: { $in: ids.map((id) => new mongoose.Types.ObjectId(id)) },
       })
       .exec();
+
+    const groupId = permissions[0].allowed.toString();
+
+
+
     const foundIds = new Set(permissions.map((p) => p._id.toString()));
     const notFoundIds = ids.filter((id) => !foundIds.has(id));
     const categoryPermissions = permissions.filter(
@@ -279,6 +288,10 @@ export class PermissionsService {
         },
       })
       .exec();
+
+
+    this.socketService.emitToGroup(groupId, "banned_items_permissions_updated");
+
     return {
       success: true,
       total: ids.length,

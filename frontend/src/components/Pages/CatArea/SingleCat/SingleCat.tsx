@@ -60,6 +60,29 @@ const NoImageCard: React.FC<{ label?: string }> = ({ label = "אין תמונה"
   );
 };
 
+type ProductDeletedPayload = {
+  productId: string;
+  deletedPaths: string[];
+  remainingPaths: string[];
+  deletedCompletely: boolean;
+  movedToRecycleBin: boolean;
+  productName: string;
+};
+
+const isDirectChildOfPath = (parentPath: string, fullPath: string) => {
+  if (!parentPath || parentPath === "/categories") {
+    const parts = fullPath.replace("/categories/", "").split("/");
+    return parts.length === 1;
+  }
+
+  if (!fullPath.startsWith(parentPath + "/")) return false;
+
+  const remaining = fullPath.substring(parentPath.length);
+  const slashCount = (remaining.match(/\//g) || []).length;
+
+  return slashCount === 1;
+};
+
 const SingleCat: FC = () => {
   const [items, setItems] = useState<DisplayItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -148,13 +171,25 @@ const SingleCat: FC = () => {
   useEffect(() => {
     joinRoleRoom("editor");
     if (id) joinRoleRoom(id);
+    const groupId = localStorage.getItem("groupControl:selectedGroupId");
+    if (groupId && role === "viewer") {
+      joinRoleRoom(groupId);
+    }
+    const socketPreviousPath = localStorage.getItem("previousPath");
+    const handleBannedPermissionsUpdated = async () => {
+      try {
+        await loadAllContent(socketPreviousPath || location.pathname);
+        toast.info("הרשאות עודכנו, טוען...");
+      } catch (err: any) {
+        console.error("Reload failed", err);
+      }
+    };
 
     const handleNewSubCategory = (newCategory: CategoryDTO) => {
       const newParentPath = newCategory.categoryPath
         .split("/")
         .slice(0, -1)
         .join("/");
-      const socketPreviousPath = localStorage.getItem("previousPath");
 
       if (socketPreviousPath === newParentPath) {
         loadAllContent();
@@ -194,11 +229,11 @@ const SingleCat: FC = () => {
         prev.map((item) =>
           item.id === data.updatedCategory._id
             ? {
-                ...item,
-                name: data.updatedCategory.categoryName,
-                images: data.updatedCategory.categoryImage,
-                path: [data.updatedCategory.categoryPath],
-              }
+              ...item,
+              name: data.updatedCategory.categoryName,
+              images: data.updatedCategory.categoryImage,
+              path: [data.updatedCategory.categoryPath],
+            }
             : item,
         ),
       );
@@ -252,7 +287,6 @@ const SingleCat: FC = () => {
         return updated;
       });
     };
-    onEvent("product_moved", handleMovedProduct);
     const handleNewProduct = (newProduct: any) => {
       const currentPath = categoryPathRef.current;
 
@@ -280,7 +314,6 @@ const SingleCat: FC = () => {
           },
         ];
       });
-      toast.info(`המוצר "${newProduct.productName}" נוסף!`);
     };
     const handleProductUpdated = (updatedProduct: any) => {
       setItems((prev) =>
@@ -296,6 +329,41 @@ const SingleCat: FC = () => {
             name: updatedProduct.productName,
             images,
           };
+        }),
+      );
+    };
+
+    const handleProductDeleted = (data: ProductDeletedPayload) => {
+      const currentPath = categoryPathRef.current;
+
+      setItems((prev) =>
+        prev.flatMap((item) => {
+          if (item.type !== "product" || item.id !== data.productId) {
+            return [item];
+          }
+
+          if (data.deletedCompletely) {
+            return [];
+          }
+
+          const nextPaths = item.path.filter(
+            (path) => !data.deletedPaths.includes(path),
+          );
+
+          const stillBelongsHere = nextPaths.some((path) =>
+            isDirectChildOfPath(currentPath, path),
+          );
+
+          if (!stillBelongsHere) {
+            return [];
+          }
+
+          return [
+            {
+              ...item,
+              path: nextPaths,
+            },
+          ];
         }),
       );
     };
@@ -349,21 +417,28 @@ const SingleCat: FC = () => {
         loadAllContent(categoryPathRef.current);
       }
     };
-
+    onEvent("product_moved", handleMovedProduct);
     onEvent("sub_category_added", handleNewSubCategory);
     onEvent("category_moved", handleMovedCategory);
     onEvent("category_updated", handleCategoryUpdated);
     onEvent("product_added", handleNewProduct);
     onEvent("product_updated", handleProductUpdated);
+    onEvent("product_deleted", handleProductDeleted);
     onEvent("recycle_bin_updated", handleRecycleBinUpdated);
+    onEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
+
 
     return () => {
       offEvent("sub_category_added", handleNewSubCategory);
       offEvent("category_moved", handleMovedCategory);
       offEvent("category_updated", handleCategoryUpdated);
-      offEvent("product_moved", handleMovedProduct); offEvent("product_added", handleNewProduct);
+      offEvent("product_moved", handleMovedProduct);
+      offEvent("product_added", handleNewProduct);
       offEvent("product_updated", handleProductUpdated);
+      offEvent("product_deleted", handleProductDeleted);
       offEvent("recycle_bin_updated", handleRecycleBinUpdated);
+      offEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
+
     };
   }, [id, joinRoleRoom, onEvent, offEvent]);
 
@@ -431,7 +506,7 @@ const SingleCat: FC = () => {
         try {
           const favorites = await userService.getFavorites();
           userFavorites = favorites.map((fav: any) => fav.id.toString());
-        } catch (err) {}
+        } catch (err) { }
       }
 
       const categoryItems: DisplayItem[] = subCategories.map(
@@ -562,7 +637,7 @@ const SingleCat: FC = () => {
       );
 
       toast.success(`המוצר "${itemToDelete.name}" הוסר מקטגוריה זו!`);
-      setItems(items.filter((item) => item.id !== itemToDelete.id));
+      setItems((prev) => prev.filter((item) => item.id !== itemToDelete.id));
     } catch (error) {
       toast.error("שגיאה בהסרה מקטגוריה זו");
     } finally {
@@ -580,7 +655,7 @@ const SingleCat: FC = () => {
       await recycleBinService.moveProductToRecycleBin(itemToDelete.id);
 
       toast.success(`המוצר "${itemToDelete.name}" הועבר לסל המיחזור!`);
-      setItems(items.filter((item) => item.id !== itemToDelete.id));
+      setItems((prev) => prev.filter((item) => item.id !== itemToDelete.id));
     } catch (error) {
       toast.error("שגיאה בהעברה לסל המיחזור");
     } finally {
@@ -596,12 +671,12 @@ const SingleCat: FC = () => {
       setIsMovingToRecycleBin(true);
       await ProductsService.deleteFromSpecificPaths(itemToDelete.id, paths);
 
-      const stillInCurrentCategory = paths.every(
-        (path) => !path.startsWith(categoryPath),
+      const removedFromCurrent = paths.some((path) =>
+        isDirectChildOfPath(categoryPath, path),
       );
 
-      if (!stillInCurrentCategory) {
-        setItems(items.filter((item) => item.id !== itemToDelete.id));
+      if (removedFromCurrent) {
+        setItems((prev) => prev.filter((item) => item.id !== itemToDelete.id));
       }
 
       toast.success(
@@ -685,17 +760,6 @@ const SingleCat: FC = () => {
         allowAll: data.allowAll,
       });
 
-      const newItem: DisplayItem = {
-        id: createdProduct._id!,
-        name: createdProduct.productName,
-        images: createdProduct.productImages || [],
-        type: "product",
-        path: createdProduct.productPath,
-        favorite: false,
-        description: createdProduct.productDescription,
-      };
-
-      setItems((prev) => [...prev, newItem]);
       toast.success(`המוצר "${data.name}" נוצר בהצלחה!`);
       setShowAddProductModal(false);
     } catch (error: any) {
@@ -864,7 +928,7 @@ const SingleCat: FC = () => {
             {categoryInfo
               ? categoryInfo.categoryName
               : breadcrumbPathParts[breadcrumbPathParts.length - 1] ||
-                "קטגוריה"}
+              "קטגוריה"}
           </h1>
           <div className="flex items-center gap-4">
             <span className="text-base">סך הכל פריטים: {items.length}</span>
@@ -954,18 +1018,16 @@ const SingleCat: FC = () => {
           {items.map((item) => (
             <div
               key={item.id}
-              className={`flex flex-col items-center p-4 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 w-80 ${
-                selectedItems.includes(item.id)
-                  ? "bg-[#0D305B]/10"
-                  : "border-gray-200"
-              } ${!isSelectionMode ? "cursor-pointer" : ""}`}
+              className={`flex flex-col items-center p-4 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 w-80 ${selectedItems.includes(item.id)
+                ? "bg-[#0D305B]/10"
+                : "border-gray-200"
+                } ${!isSelectionMode ? "cursor-pointer" : ""}`}
             >
               <div
-                className={`absolute top-2 left-2 px-3 py-1 text-xs font-medium ${
-                  item.type === "category"
-                    ? " text-blue-700"
-                    : " text-green-700"
-                }`}
+                className={`absolute top-2 left-2 px-3 py-1 text-xs font-medium ${item.type === "category"
+                  ? " text-blue-700"
+                  : " text-green-700"
+                  }`}
               >
                 {item.type === "category" ? (
                   <>
@@ -1315,7 +1377,7 @@ const SingleCat: FC = () => {
             ${isMovingToRecycleBin ? "opacity-70 cursor-not-allowed" : "hover:bg-orange-700"}`}
               >
                 {isMovingToRecycleBin &&
-                categoryMoveStrategyLoading === "cascade" ? (
+                  categoryMoveStrategyLoading === "cascade" ? (
                   <span className="flex items-center justify-center gap-2">
                     <Spinner className="size-4 text-white" />
                     מעביר לסל...
@@ -1332,7 +1394,7 @@ const SingleCat: FC = () => {
     ${isMovingToRecycleBin ? "opacity-70 cursor-not-allowed" : "hover:bg-blue-200"}`}
               >
                 {isMovingToRecycleBin &&
-                categoryMoveStrategyLoading === "move_up" ? (
+                  categoryMoveStrategyLoading === "move_up" ? (
                   <span className="flex items-center justify-center gap-2">
                     <Spinner className="size-4 text-blue-900" />
                     מעביר לסל...

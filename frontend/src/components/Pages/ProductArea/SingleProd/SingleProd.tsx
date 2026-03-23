@@ -98,20 +98,9 @@ const SingleProd: FC<SingleProdProps> = () => {
       setErrorMessage("");
     }
   };
-  useEffect(() => {
-    if (!productId) {
-      setIsLoading(false);
-      return;
-    }
-    const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(productId);
-    if (!isValidObjectId) {
-      navigate("/404", { replace: true });
-      return;
-    }
-
-
-    const loadProduct = async () => {
-      setIsLoading(true);
+  const loadProduct = async () => {
+    setIsLoading(true);
+    if (productId)
       try {
         const product = await ProductsService.getById(productId);
 
@@ -176,11 +165,19 @@ const SingleProd: FC<SingleProdProps> = () => {
       } finally {
         setIsLoading(false);
       }
-    };
+  };
+
+
+  useEffect(() => {
+    if (!productId) return;
+    const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(productId);
+    if (!isValidObjectId) {
+      navigate("/404", { replace: true });
+      return;
+    }
 
     loadProduct();
   }, [productId, navigate, id]);
-
   useEffect(() => {
 
     if (!productId) return;
@@ -188,6 +185,11 @@ const SingleProd: FC<SingleProdProps> = () => {
     if (id) {
       joinRoleRoom(id);
     }
+    const groupId = localStorage.getItem("groupControl:selectedGroupId");
+    if (groupId && role === "viewer") {
+      joinRoleRoom(groupId);
+    }
+
     const handleProductUpdated = (updatedProduct: ProductDto) => {
       if (updatedProduct._id !== productId) return;
       if (isEditing) return;
@@ -245,12 +247,45 @@ const SingleProd: FC<SingleProdProps> = () => {
       setPreviousPath(newCategoryPath[0]);
       navigate(`/products/${product._id}`, { replace: true });
     };
+    const handleBannedPermissionsUpdated = async () => {
+      try {
+        await loadProduct();
+        toast.info("הרשאות עודכנו, טוען...");
+      } catch (err: any) {
+        console.error("Reload failed", err);
+      }
+    };
+
+    const handleProductDeleted = (data: {
+      productId: string;
+      deletedPaths: string[];
+      remainingPaths: string[];
+      deletedCompletely: boolean;
+      movedToRecycleBin?: boolean;
+      productName?: string;
+    }) => {
+      if (data.productId !== productId) return;
+
+      setPreviousPath("/categories");
+      toast.info(
+        data.movedToRecycleBin
+          ? `המוצר "${title || data.productName || ""}" הועבר לסל המיחזור`
+          : `המוצר "${title || data.productName || ""}" נמחק`,
+      );
+      navigate("/categories", { replace: true });
+    };
 
     onEvent('product_updated', handleProductUpdated);
     onEvent('product_moved', handleMovedProduct);
+    onEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
+
+    onEvent('product_deleted', handleProductDeleted);
     return () => {
       offEvent('product_updated', handleProductUpdated);
       offEvent('product_moved', handleMovedProduct);
+      offEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
+
+      offEvent('product_deleted', handleProductDeleted);
     };
   }, [productId, isEditing, onEvent, offEvent]);
   const location = useLocation();

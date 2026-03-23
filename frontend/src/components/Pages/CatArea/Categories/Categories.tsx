@@ -34,6 +34,7 @@ import { environment } from "../../../../environments/environment";
 import MoveCategoryModal from "./MoveCategoryModal/MoveCategoryModal";
 import MoveProductModal from "../../ProductArea/MoveProductModal/MoveProductModal";
 import { useSocket } from "../../../../hooks/useSocket";
+import SmartDeleteModal from "../../ProductArea/SmartDeleteModal/SmartDeleteModal";
 interface CategoriesProps { }
 
 export interface Category {
@@ -60,6 +61,33 @@ const NoImageCard: React.FC<{ label?: string }> = ({ label = "אין תמונה"
 
 type CategoryEditPayload = Category & { imageFile?: File };
 type FilterType = "all" | "categories" | "products";
+
+type ProductDeletedPayload = {
+  productId: string;
+  deletedPaths: string[];
+  remainingPaths: string[];
+  deletedCompletely: boolean;
+  movedToRecycleBin: boolean;
+  productName: string;
+};
+
+const isDirectChildOfPath = (parentPath: string, fullPath: string) => {
+  if (!parentPath || parentPath === "/categories") {
+    const parts = fullPath.replace("/categories/", "").split("/");
+    return parts.length === 1;
+  }
+
+  if (!fullPath.startsWith(parentPath + "/")) return false;
+
+  const remaining = fullPath.substring(parentPath.length);
+  const slashCount = (remaining.match(/\//g) || []).length;
+
+  return slashCount === 1;
+};
+
+const getRootProductPath = (paths: string[]) => {
+  return paths.find((path) => isDirectChildOfPath("/categories", path));
+};
 
 export const Categories: FC<CategoriesProps> = () => {
   const token = localStorage.getItem("token") || "";
@@ -88,6 +116,7 @@ export const Categories: FC<CategoriesProps> = () => {
   const [showMoveModal, setShowMoveModal] = useState(false);
   const [moveSelectedItems, setMoveSelectedItems] = useState<DisplayItem[]>([]);
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [showSmartDeleteModal, setShowSmartDeleteModal] = useState(false);
   const [duplicateProductId, setDuplicateProductId] = useState("");
   const [duplicateProductName, setDuplicateProductName] = useState("");
   const [duplicateCurrentPaths, setDuplicateCurrentPaths] = useState<string[]>(
@@ -129,22 +158,35 @@ export const Categories: FC<CategoriesProps> = () => {
     if (id) {
       joinRoleRoom(id);
     }
+    const groupId = localStorage.getItem("groupControl:selectedGroupId");
+    if (groupId && role === "viewer") {
+      joinRoleRoom(groupId);
+    }
 
     const handleNewCategory = (newCategory: Category) => {
-      setCategories(prev => [newCategory, ...prev]);
-      setItems(prev => [
-        {
-          id: newCategory._id,
-          name: newCategory.categoryName,
-          images: newCategory.categoryImage,
-          type: "category",
-          path: [newCategory.categoryPath],
-          favorite: false,
-        },
-        ...prev,
-      ]);
-      toast.info(`הקטגוריה "${newCategory.categoryName}" נוספה!`);
+      setCategories(prev => {
+        if (prev.some(c => c._id === newCategory._id)) return prev;
+        return [newCategory, ...prev];
+      });
+
+      setItems(prev => {
+        if (prev.some(item => item.id === newCategory._id)) return prev;
+
+        return [
+          {
+            id: newCategory._id,
+            name: newCategory.categoryName,
+            images: newCategory.categoryImage,
+            type: "category",
+            path: [newCategory.categoryPath],
+            favorite: false,
+          },
+          ...prev,
+        ];
+      });
     };
+
+
 
     const handleMovedCategory = (data: { category: Category; oldPath: string; newPath: string }) => {
       const { category, oldPath, newPath } = data;
@@ -237,26 +279,101 @@ export const Categories: FC<CategoriesProps> = () => {
         }),
       );
     };
+
+    const handleProductDeleted = (data: ProductDeletedPayload) => {
+      setItems((prev) =>
+        prev.flatMap((item) => {
+          if (item.type !== "product" || item.id !== data.productId) {
+            return [item];
+          }
+
+          if (data.deletedCompletely) {
+            return [];
+          }
+
+          const nextPaths = item.path.filter(
+            (path) => !data.deletedPaths.includes(path),
+          );
+
+          const stillBelongsToRoot = nextPaths.some((path) =>
+            isDirectChildOfPath("/categories", path),
+          );
+
+          if (!stillBelongsToRoot) {
+            return [];
+          }
+
+          return [
+            {
+              ...item,
+              path: nextPaths,
+            },
+          ];
+        }),
+      );
+    };
     const handleRecycleBinUpdated = () => {
       loadCategoriesAndFavorites();
     };
+    const handleBannedPermissionsUpdated = () => {
+      loadCategoriesAndFavorites();
+      toast.info("הרשאות עודכנו, טוען...");
+    };
 
+
+    const handleNewProduct = (product: ProductDto) => {
+      const productPaths = Array.isArray(product.productPath)
+        ? product.productPath
+        : [product.productPath];
+
+      const belongsToRoot = productPaths.some((path) =>
+        isDirectChildOfPath("/categories", path),
+      );
+
+      if (!belongsToRoot) return;
+
+      setItems((prev) => {
+        if (prev.some((item) => item.id === product._id)) return prev;
+
+        return [
+          {
+            id: product._id!,
+            name: product.productName,
+            images: product.productImages || [],
+            type: "product",
+            path: productPaths,
+            description: product.productDescription,
+            customFields: product.customFields,
+            favorite: false,
+          },
+          ...prev,
+        ];
+      });
+    };
+
+    onEvent("product_added", handleNewProduct);
     onEvent("category_added", handleNewCategory);
     onEvent("category_moved", handleMovedCategory);
     onEvent("category_updated", handleCategoryUpdated);
-    onEvent("product_moved", handleMovedProduct); onEvent("product_updated", handleProductUpdated);
+    onEvent("product_moved", handleMovedProduct);
+    onEvent("product_updated", handleProductUpdated);
+    onEvent("product_deleted", handleProductDeleted);
     onEvent("recycle_bin_updated", handleRecycleBinUpdated);
+    onEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
 
     return () => {
+      offEvent("product_added", handleNewProduct);
       offEvent("category_added", handleNewCategory);
       offEvent("category_moved", handleMovedCategory);
       offEvent("category_updated", handleCategoryUpdated);
       offEvent("product_moved", handleMovedProduct);
       offEvent("product_updated", handleProductUpdated);
-      offEvent("recycle_bin_updated", handleRecycleBinUpdated); 
-    };
-  }, [joinRoleRoom, onEvent, offEvent, id]);
+      offEvent("recycle_bin_updated", handleRecycleBinUpdated);
+      offEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
+      offEvent("product_deleted", handleProductDeleted);
 
+    };
+  }, [id]);
   useEffect(() => {
     setPreviousPath("/categories")
     if (role !== undefined) {
@@ -387,8 +504,62 @@ export const Categories: FC<CategoriesProps> = () => {
   };
   const handleMoveProductToRecycleBin = async (product: DisplayItem) => {
     setProductToMoveToRecycleBin(product);
+
+    if (product.path.length > 1) {
+      setShowSmartDeleteModal(true);
+      return;
+    }
+
     setHasDescendantsForMove(false);
     setShowMoveToRecycleBinModal(true);
+  };
+
+  const handleRemoveRootProductFromCurrent = async () => {
+    if (!productToMoveToRecycleBin) return;
+
+    try {
+      setIsMovingToRecycleBin(true);
+
+      const rootPath = getRootProductPath(productToMoveToRecycleBin.path);
+
+      if (!rootPath) {
+        toast.error("לא נמצא מיקום שורש מדויק של המוצר למחיקה");
+        return;
+      }
+
+      await recycleBinService.moveProductToRecycleBin(
+        productToMoveToRecycleBin.id,
+        rootPath,
+      );
+
+      toast.success(`המוצר "${productToMoveToRecycleBin.name}" הוסר מהשורש בלבד!`);
+    } catch (error) {
+      toast.error("שגיאה בהסרה מהשורש");
+    } finally {
+      setIsMovingToRecycleBin(false);
+      setShowSmartDeleteModal(false);
+      setProductToMoveToRecycleBin(null);
+    }
+  };
+
+  const handleMoveRootProductAllToRecycleBin = async () => {
+    if (!productToMoveToRecycleBin) return;
+
+    try {
+      setIsMovingToRecycleBin(true);
+
+      await recycleBinService.moveProductToRecycleBin(
+        productToMoveToRecycleBin.id,
+      );
+
+      toast.success(`המוצר "${productToMoveToRecycleBin.name}" הועבר לסל המיחזור!`);
+    } catch (error) {
+      toast.error("שגיאה בהעברה לסל המיחזור");
+    } finally {
+      setIsMovingToRecycleBin(false);
+      setShowSmartDeleteModal(false);
+      setProductToMoveToRecycleBin(null);
+    }
   };
 
   const confirmMoveToRecycleBin = async (strategy: "cascade" | "move_up") => {
@@ -440,6 +611,7 @@ export const Categories: FC<CategoriesProps> = () => {
   const closeAllModals = () => {
     setShowAddCatModal(false);
     setShowMoveToRecycleBinModal(false);
+    setShowSmartDeleteModal(false);
     setHasDescendantsForMove(null);
     setShowEditModal(false);
     setCategoryToMoveToRecycleBin(null);
@@ -999,6 +1171,39 @@ export const Categories: FC<CategoriesProps> = () => {
             onClose={() => setShowAddCatModal(false)}
             onSave={handleAddCategory}
           />
+
+          {showSmartDeleteModal && productToMoveToRecycleBin && (
+            <SmartDeleteModal
+              isOpen={showSmartDeleteModal}
+              itemName={productToMoveToRecycleBin.name}
+              currentPaths={productToMoveToRecycleBin.path}
+              currentCategoryPath="/categories"
+              onClose={closeAllModals}
+              onDeleteFromCurrent={handleRemoveRootProductFromCurrent}
+              onDeleteFromAll={handleMoveRootProductAllToRecycleBin}
+              onDeleteSelected={async (paths: string[]) => {
+                try {
+                  setIsMovingToRecycleBin(true);
+
+                  await ProductsService.deleteFromSpecificPaths(
+                    productToMoveToRecycleBin.id,
+                    paths,
+                  );
+
+                  toast.success(
+                    `המוצר "${productToMoveToRecycleBin.name}" הוסר מ-${paths.length} מיקום${paths.length > 1 ? "ים" : ""}!`,
+                  );
+                } catch (error) {
+                  toast.error("שגיאה בהסרה מהמיקומים הנבחרים");
+                } finally {
+                  setIsMovingToRecycleBin(false);
+                  setShowSmartDeleteModal(false);
+                  setProductToMoveToRecycleBin(null);
+                }
+              }}
+              isDeleting={isMovingToRecycleBin}
+            />
+          )}
 
           {showMoveToRecycleBinModal &&
             (categoryToMoveToRecycleBin || productToMoveToRecycleBin) && (
