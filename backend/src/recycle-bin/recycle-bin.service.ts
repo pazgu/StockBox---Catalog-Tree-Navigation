@@ -28,7 +28,7 @@ export class RecycleBinService {
     @InjectModel(NameLock.name) private nameLockModel: Model<NameLock>,
     private permissionsService: PermissionsService,
     private socketService: SocketService,
-  ) {}
+  ) { }
 
   async getRecycleBinItems(): Promise<RecycleBin[]> {
     return this.recycleBinModel.find().sort({ deletedAt: -1 }).lean().exec();
@@ -272,6 +272,15 @@ export class RecycleBinService {
       );
 
       if (updatedPaths.length > 0) {
+        this.socketService.emitToAll('product_deleted', {
+          productId,
+          deletedPaths: specificPathDeleted ? [specificPathDeleted] : [],
+          remainingPaths: updatedPaths,
+          deletedCompletely: false,
+          movedToRecycleBin: false,
+          productName: product.productName,
+        });
+
         return {
           success: true,
           message: `Product "${product.productName}" removed from this category`,
@@ -316,6 +325,15 @@ export class RecycleBinService {
         productId,
         EntityType.PRODUCT,
       );
+
+      this.socketService.emitToAll('product_deleted', {
+        productId,
+        deletedPaths: specificPathDeleted ? [specificPathDeleted] : product.productPath,
+        remainingPaths: [],
+        deletedCompletely: true,
+        movedToRecycleBin: true,
+        productName: product.productName,
+      });
 
       return {
         success: true,

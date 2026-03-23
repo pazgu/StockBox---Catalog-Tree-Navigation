@@ -60,6 +60,29 @@ const NoImageCard: React.FC<{ label?: string }> = ({ label = "אין תמונה"
   );
 };
 
+type ProductDeletedPayload = {
+  productId: string;
+  deletedPaths: string[];
+  remainingPaths: string[];
+  deletedCompletely: boolean;
+  movedToRecycleBin: boolean;
+  productName: string;
+};
+
+const isDirectChildOfPath = (parentPath: string, fullPath: string) => {
+  if (!parentPath || parentPath === "/categories") {
+    const parts = fullPath.replace("/categories/", "").split("/");
+    return parts.length === 1;
+  }
+
+  if (!fullPath.startsWith(parentPath + "/")) return false;
+
+  const remaining = fullPath.substring(parentPath.length);
+  const slashCount = (remaining.match(/\//g) || []).length;
+
+  return slashCount === 1;
+};
+
 const SingleCat: FC = () => {
   const [items, setItems] = useState<DisplayItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -291,7 +314,6 @@ const SingleCat: FC = () => {
           },
         ];
       });
-      toast.info(`המוצר "${newProduct.productName}" נוסף!`);
     };
     const handleProductUpdated = (updatedProduct: any) => {
       setItems((prev) =>
@@ -307,6 +329,41 @@ const SingleCat: FC = () => {
             name: updatedProduct.productName,
             images,
           };
+        }),
+      );
+    };
+
+    const handleProductDeleted = (data: ProductDeletedPayload) => {
+      const currentPath = categoryPathRef.current;
+
+      setItems((prev) =>
+        prev.flatMap((item) => {
+          if (item.type !== "product" || item.id !== data.productId) {
+            return [item];
+          }
+
+          if (data.deletedCompletely) {
+            return [];
+          }
+
+          const nextPaths = item.path.filter(
+            (path) => !data.deletedPaths.includes(path),
+          );
+
+          const stillBelongsHere = nextPaths.some((path) =>
+            isDirectChildOfPath(currentPath, path),
+          );
+
+          if (!stillBelongsHere) {
+            return [];
+          }
+
+          return [
+            {
+              ...item,
+              path: nextPaths,
+            },
+          ];
         }),
       );
     };
@@ -366,6 +423,7 @@ const SingleCat: FC = () => {
     onEvent("category_updated", handleCategoryUpdated);
     onEvent("product_added", handleNewProduct);
     onEvent("product_updated", handleProductUpdated);
+    onEvent("product_deleted", handleProductDeleted);
     onEvent("recycle_bin_updated", handleRecycleBinUpdated);
     onEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
 
@@ -377,6 +435,7 @@ const SingleCat: FC = () => {
       offEvent("product_moved", handleMovedProduct);
       offEvent("product_added", handleNewProduct);
       offEvent("product_updated", handleProductUpdated);
+      offEvent("product_deleted", handleProductDeleted);
       offEvent("recycle_bin_updated", handleRecycleBinUpdated);
       offEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
 
@@ -578,7 +637,7 @@ const SingleCat: FC = () => {
       );
 
       toast.success(`המוצר "${itemToDelete.name}" הוסר מקטגוריה זו!`);
-      setItems(items.filter((item) => item.id !== itemToDelete.id));
+      setItems((prev) => prev.filter((item) => item.id !== itemToDelete.id));
     } catch (error) {
       toast.error("שגיאה בהסרה מקטגוריה זו");
     } finally {
@@ -596,7 +655,7 @@ const SingleCat: FC = () => {
       await recycleBinService.moveProductToRecycleBin(itemToDelete.id);
 
       toast.success(`המוצר "${itemToDelete.name}" הועבר לסל המיחזור!`);
-      setItems(items.filter((item) => item.id !== itemToDelete.id));
+      setItems((prev) => prev.filter((item) => item.id !== itemToDelete.id));
     } catch (error) {
       toast.error("שגיאה בהעברה לסל המיחזור");
     } finally {
@@ -612,12 +671,12 @@ const SingleCat: FC = () => {
       setIsMovingToRecycleBin(true);
       await ProductsService.deleteFromSpecificPaths(itemToDelete.id, paths);
 
-      const stillInCurrentCategory = paths.every(
-        (path) => !path.startsWith(categoryPath),
+      const removedFromCurrent = paths.some((path) =>
+        isDirectChildOfPath(categoryPath, path),
       );
 
-      if (!stillInCurrentCategory) {
-        setItems(items.filter((item) => item.id !== itemToDelete.id));
+      if (removedFromCurrent) {
+        setItems((prev) => prev.filter((item) => item.id !== itemToDelete.id));
       }
 
       toast.success(
@@ -701,17 +760,6 @@ const SingleCat: FC = () => {
         allowAll: data.allowAll,
       });
 
-      const newItem: DisplayItem = {
-        id: createdProduct._id!,
-        name: createdProduct.productName,
-        images: createdProduct.productImages || [],
-        type: "product",
-        path: createdProduct.productPath,
-        favorite: false,
-        description: createdProduct.productDescription,
-      };
-
-      setItems((prev) => [...prev, newItem]);
       toast.success(`המוצר "${data.name}" נוצר בהצלחה!`);
       setShowAddProductModal(false);
     } catch (error: any) {

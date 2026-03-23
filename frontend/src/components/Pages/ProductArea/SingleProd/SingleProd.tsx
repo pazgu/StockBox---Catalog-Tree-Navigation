@@ -256,15 +256,36 @@ const SingleProd: FC<SingleProdProps> = () => {
       }
     };
 
+    const handleProductDeleted = (data: {
+      productId: string;
+      deletedPaths: string[];
+      remainingPaths: string[];
+      deletedCompletely: boolean;
+      movedToRecycleBin?: boolean;
+      productName?: string;
+    }) => {
+      if (data.productId !== productId) return;
+
+      setPreviousPath("/categories");
+      toast.info(
+        data.movedToRecycleBin
+          ? `המוצר "${title || data.productName || ""}" הועבר לסל המיחזור`
+          : `המוצר "${title || data.productName || ""}" נמחק`,
+      );
+      navigate("/categories", { replace: true });
+    };
+
     onEvent('product_updated', handleProductUpdated);
     onEvent('product_moved', handleMovedProduct);
     onEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
 
+    onEvent('product_deleted', handleProductDeleted);
     return () => {
       offEvent('product_updated', handleProductUpdated);
       offEvent('product_moved', handleMovedProduct);
       offEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
 
+      offEvent('product_deleted', handleProductDeleted);
     };
   }, [productId, isEditing, onEvent, offEvent]);
   const location = useLocation();
