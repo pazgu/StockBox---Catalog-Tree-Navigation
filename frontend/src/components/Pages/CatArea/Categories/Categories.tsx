@@ -35,7 +35,7 @@ import MoveCategoryModal from "./MoveCategoryModal/MoveCategoryModal";
 import MoveProductModal from "../../ProductArea/MoveProductModal/MoveProductModal";
 import { useSocket } from "../../../../hooks/useSocket";
 import SmartDeleteModal from "../../ProductArea/SmartDeleteModal/SmartDeleteModal";
-interface CategoriesProps {}
+interface CategoriesProps { }
 
 export interface Category {
   _id: string;
@@ -247,11 +247,11 @@ export const Categories: FC<CategoriesProps> = () => {
         prev.map((item) =>
           item.id === data.updatedCategory._id
             ? {
-                ...item,
-                name: data.updatedCategory.categoryName,
-                images: data.updatedCategory.categoryImage,
-                path: [data.updatedCategory.categoryPath],
-              }
+              ...item,
+              name: data.updatedCategory.categoryName,
+              images: data.updatedCategory.categoryImage,
+              path: [data.updatedCategory.categoryPath],
+            }
             : item,
         ),
       );
@@ -748,33 +748,30 @@ export const Categories: FC<CategoriesProps> = () => {
         <div className="flex justify-center gap-3 mb-8 flex-wrap mt-8">
           <button
             onClick={() => setActiveFilter("all")}
-            className={`px-6 py-2 rounded-full font-medium transition-all ${
-              activeFilter === "all"
-                ? "bg-blue-950 text-white shadow-md"
-                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-            }`}
+            className={`px-6 py-2 rounded-full font-medium transition-all ${activeFilter === "all"
+              ? "bg-blue-950 text-white shadow-md"
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              }`}
           >
             הכל
           </button>
 
           <button
             onClick={() => setActiveFilter("categories")}
-            className={`px-6 py-2 rounded-full font-medium transition-all ${
-              activeFilter === "categories"
-                ? "bg-blue-950 text-white shadow-md"
-                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-            }`}
+            className={`px-6 py-2 rounded-full font-medium transition-all ${activeFilter === "categories"
+              ? "bg-blue-950 text-white shadow-md"
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              }`}
           >
             קטגוריות
           </button>
 
           <button
             onClick={() => setActiveFilter("products")}
-            className={`px-6 py-2 rounded-full font-medium transition-all ${
-              activeFilter === "products"
-                ? "bg-blue-950 text-white shadow-md"
-                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-            }`}
+            className={`px-6 py-2 rounded-full font-medium transition-all ${activeFilter === "products"
+              ? "bg-blue-950 text-white shadow-md"
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              }`}
           >
             מוצרים
           </button>
@@ -1281,7 +1278,7 @@ export const Categories: FC<CategoriesProps> = () => {
 ${isMovingToRecycleBin ? "bg-orange-400 cursor-not-allowed text-white" : "bg-orange-600 text-white hover:bg-orange-700 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"}`}
                         >
                           {isMovingToRecycleBin &&
-                          moveStrategyLoading === "cascade" ? (
+                            moveStrategyLoading === "cascade" ? (
                             <span className="flex items-center justify-center gap-2">
                               <Spinner className="size-4 text-white" />
                               מעביר לסל...
@@ -1304,7 +1301,7 @@ ${isMovingToRecycleBin ? "bg-orange-400 cursor-not-allowed text-white" : "bg-ora
 ${isMovingToRecycleBin ? "bg-blue-200 cursor-not-allowed text-blue-900" : "bg-blue-100 text-blue-900 hover:bg-blue-200 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"}`}
                         >
                           {isMovingToRecycleBin &&
-                          moveStrategyLoading === "move_up" ? (
+                            moveStrategyLoading === "move_up" ? (
                             <span className="flex items-center justify-center gap-2">
                               <Spinner className="size-4 text-blue-900" />
                               מעביר לסל...
