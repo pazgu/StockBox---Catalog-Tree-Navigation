@@ -133,7 +133,6 @@ const SingleCat: FC = () => {
 
   useEffect(() => {
     loadAllContent();
-
   }, [categoryPath, id]);
 
   const categoryPathRef = useRef(categoryPath);
@@ -141,13 +140,21 @@ const SingleCat: FC = () => {
     categoryPathRef.current = categoryPath;
   }, [categoryPath]);
 
+  const categoryInfoRef = useRef<CategoryDTO | null>(null);
+  useEffect(() => {
+    categoryInfoRef.current = categoryInfo;
+  }, [categoryInfo]);
+
   useEffect(() => {
     joinRoleRoom("editor");
     if (id) joinRoleRoom(id);
 
     const handleNewSubCategory = (newCategory: CategoryDTO) => {
-      const newParentPath = newCategory.categoryPath.split("/").slice(0, -1).join("/");
-      const socketPreviousPath = localStorage.getItem("previousPath")
+      const newParentPath = newCategory.categoryPath
+        .split("/")
+        .slice(0, -1)
+        .join("/");
+      const socketPreviousPath = localStorage.getItem("previousPath");
 
       if (socketPreviousPath === newParentPath) {
         loadAllContent();
@@ -155,44 +162,53 @@ const SingleCat: FC = () => {
       }
     };
 
-    const handleMovedCategory = (data: { category: Category; oldPath: string; newPath: string }) => {
+    const handleMovedCategory = (data: {
+      category: Category;
+      oldPath: string;
+      newPath: string;
+    }) => {
       const { oldPath, newPath } = data;
 
       const newParentPath = newPath.split("/").slice(0, -1).join("/");
       const oldParentPath = oldPath.split("/").slice(0, -1).join("/");
-      const socketPreviousPath = localStorage.getItem("previousPath")
+      const socketPreviousPath = localStorage.getItem("previousPath");
 
       if (socketPreviousPath === oldPath) {
         navigate(newPath);
         return;
       }
 
-      if (socketPreviousPath === oldParentPath || socketPreviousPath === newParentPath) {
+      if (
+        socketPreviousPath === oldParentPath ||
+        socketPreviousPath === newParentPath
+      ) {
         loadAllContent();
       }
     };
 
-    const handleCategoryUpdated = (data: { updatedCategory: Category; oldPath: string; }) => {
-      setItems(prev =>
-        prev.map(item =>
+    const handleCategoryUpdated = (data: {
+      updatedCategory: Category;
+      oldPath: string;
+    }) => {
+      setItems((prev) =>
+        prev.map((item) =>
           item.id === data.updatedCategory._id
             ? {
-              ...item,
-              name: data.updatedCategory.categoryName,
-              images: data.updatedCategory.categoryImage,
-              path: [data.updatedCategory.categoryPath],
-            }
-            : item
-        )
+                ...item,
+                name: data.updatedCategory.categoryName,
+                images: data.updatedCategory.categoryImage,
+                path: [data.updatedCategory.categoryPath],
+              }
+            : item,
+        ),
       );
-
 
       const isCurrentCategory = categoryPathRef.current === data.oldPath;
       if (isCurrentCategory) {
         navigate(data.updatedCategory.categoryPath);
       }
 
-      setCategoryInfo(prev => {
+      setCategoryInfo((prev) => {
         if (!prev) return prev;
 
         if (prev._id === data.updatedCategory._id) {
@@ -206,20 +222,69 @@ const SingleCat: FC = () => {
         return prev;
       });
     };
+    const handleRecycleBinUpdated = ({
+      action,
+      itemType,
+      itemPath,
+      strategy,
+      itemName,
+    }: {
+      action: string;
+      itemType: string;
+      itemPath: string;
+      strategy: string;
+      itemName: string;
+    }) => {
+      if (action !== "added" || itemType !== "category") {
+        const parentPath = itemPath?.substring(0, itemPath.lastIndexOf("/"));
+        if (categoryPathRef.current === parentPath) {
+          loadAllContent(categoryPathRef.current);
+        }
+        return;
+      }
+
+      const currentPath = categoryPathRef.current;
+      const parentPath = itemPath.substring(0, itemPath.lastIndexOf("/"));
+
+      if (currentPath === itemPath) {
+        navigate("/categories");
+        toast.info(
+          `הקטגוריה "${categoryInfoRef.current?.categoryName ?? itemName}" ${role === "editor" ? "הועברה לסל המיחזור" : "נמחקה"}`,
+        );
+        return;
+      }
+
+      if (currentPath?.startsWith(itemPath + "/")) {
+        if (strategy === "cascade") {
+          navigate("/categories");
+          toast.info(
+            `הקטגוריה "${categoryInfoRef.current?.categoryName ?? itemName}" ${role === "editor" ? "הועברה לסל המיחזור" : "נמחקה"}`,
+          );
+        } else {
+          const newPath = currentPath.replace(itemPath, parentPath);
+          console.log("navigating to:", newPath);
+          navigate(newPath);
+        }
+        return;
+      }
+
+      if (categoryPathRef.current === parentPath) {
+        loadAllContent(categoryPathRef.current);
+      }
+    };
 
     onEvent("sub_category_added", handleNewSubCategory);
     onEvent("category_moved", handleMovedCategory);
     onEvent("category_updated", handleCategoryUpdated);
+    onEvent("recycle_bin_updated", handleRecycleBinUpdated);
 
     return () => {
       offEvent("sub_category_added", handleNewSubCategory);
       offEvent("category_moved", handleMovedCategory);
       offEvent("category_updated", handleCategoryUpdated);
-
+      offEvent("recycle_bin_updated", handleRecycleBinUpdated);
     };
   }, [id, joinRoleRoom, onEvent, offEvent]);
-
-
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -240,13 +305,15 @@ const SingleCat: FC = () => {
     setSelectedItems([]);
   }, [categoryPath]);
 
-  const loadAllContent = async () => {
+  const loadAllContent = async (pathOverride?: string) => {
+    console.log("loadAllContent called");
+    const currentCategoryPath = pathOverride ?? categoryPath;
     try {
       setLoading(true);
 
       try {
         const currentCategory =
-          await categoriesService.getCategoryByPath(categoryPath);
+          await categoriesService.getCategoryByPath(currentCategoryPath);
         setCategoryInfo(currentCategory);
       } catch (err) {
         console.error("Error fetching category info:", err);
@@ -255,7 +322,8 @@ const SingleCat: FC = () => {
 
       let subCategories: CategoryDTO[] = [];
       try {
-        subCategories = await categoriesService.getDirectChildren(categoryPath);
+        subCategories =
+          await categoriesService.getDirectChildren(currentCategoryPath);
       } catch (err) {
         if (handleEntityRouteError(err, navigate)) return;
         console.error(err);
@@ -265,7 +333,7 @@ const SingleCat: FC = () => {
 
       let products: ProductDto[] = [];
       try {
-        products = await ProductsService.getProductsByPath(categoryPath);
+        products = await ProductsService.getProductsByPath(currentCategoryPath);
       } catch (err) {
         if (handleEntityRouteError(err, navigate)) {
           setLoading(false);
@@ -282,7 +350,7 @@ const SingleCat: FC = () => {
         try {
           const favorites = await userService.getFavorites();
           userFavorites = favorites.map((fav: any) => fav.id.toString());
-        } catch (err) { }
+        } catch (err) {}
       }
 
       const categoryItems: DisplayItem[] = subCategories.map(
@@ -701,8 +769,9 @@ const SingleCat: FC = () => {
             alt={categoryInfo.categoryName}
             className="w-32 h-32 rounded-full object-cover mt-0 border-0 ring-0 outline-none bg-transparent focus:outline-none focus:ring-0 focus:ring-offset-0"
             onError={(e) => {
-              (e.currentTarget as HTMLImageElement).src =
-                getSafeCategoryImage(categoryInfo.categoryImage);
+              (e.currentTarget as HTMLImageElement).src = getSafeCategoryImage(
+                categoryInfo.categoryImage,
+              );
             }}
           />
         )}
@@ -714,7 +783,7 @@ const SingleCat: FC = () => {
             {categoryInfo
               ? categoryInfo.categoryName
               : breadcrumbPathParts[breadcrumbPathParts.length - 1] ||
-              "קטגוריה"}
+                "קטגוריה"}
           </h1>
           <div className="flex items-center gap-4">
             <span className="text-base">סך הכל פריטים: {items.length}</span>
@@ -804,14 +873,18 @@ const SingleCat: FC = () => {
           {items.map((item) => (
             <div
               key={item.id}
-              className={`flex flex-col items-center p-4 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 w-80 ${selectedItems.includes(item.id)
-                ? "bg-[#0D305B]/10"
-                : "border-gray-200"
-                } ${!isSelectionMode ? "cursor-pointer" : ""}`}
+              className={`flex flex-col items-center p-4 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 w-80 ${
+                selectedItems.includes(item.id)
+                  ? "bg-[#0D305B]/10"
+                  : "border-gray-200"
+              } ${!isSelectionMode ? "cursor-pointer" : ""}`}
             >
               <div
-                className={`absolute top-2 left-2 px-3 py-1 text-xs font-medium ${item.type === "category" ? " text-blue-700" : " text-green-700"
-                  }`}
+                className={`absolute top-2 left-2 px-3 py-1 text-xs font-medium ${
+                  item.type === "category"
+                    ? " text-blue-700"
+                    : " text-green-700"
+                }`}
               >
                 {item.type === "category" ? (
                   <>
@@ -946,9 +1019,10 @@ const SingleCat: FC = () => {
                     alt={item.name}
                     className="max-h-full max-w-full object-contain"
                     onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = getSafeCategoryImage(
-                        typeof item.images === "string" ? item.images : null,
-                      );
+                      (e.currentTarget as HTMLImageElement).src =
+                        getSafeCategoryImage(
+                          typeof item.images === "string" ? item.images : null,
+                        );
                     }}
                   />
                 ) : hasImage(item.images) ? (
@@ -967,9 +1041,10 @@ const SingleCat: FC = () => {
                     alt={item.name}
                     className="max-h-full max-w-full object-contain"
                     onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = getSafeProductImage(
-                        Array.isArray(item.images) ? item.images : [],
-                      );
+                      (e.currentTarget as HTMLImageElement).src =
+                        getSafeProductImage(
+                          Array.isArray(item.images) ? item.images : [],
+                        );
                     }}
                   />
                 )}
@@ -1159,7 +1234,7 @@ const SingleCat: FC = () => {
             ${isMovingToRecycleBin ? "opacity-70 cursor-not-allowed" : "hover:bg-orange-700"}`}
               >
                 {isMovingToRecycleBin &&
-                  categoryMoveStrategyLoading === "cascade" ? (
+                categoryMoveStrategyLoading === "cascade" ? (
                   <span className="flex items-center justify-center gap-2">
                     <Spinner className="size-4 text-white" />
                     מעביר לסל...
@@ -1176,7 +1251,7 @@ const SingleCat: FC = () => {
     ${isMovingToRecycleBin ? "opacity-70 cursor-not-allowed" : "hover:bg-blue-200"}`}
               >
                 {isMovingToRecycleBin &&
-                  categoryMoveStrategyLoading === "move_up" ? (
+                categoryMoveStrategyLoading === "move_up" ? (
                   <span className="flex items-center justify-center gap-2">
                     <Spinner className="size-4 text-blue-900" />
                     מעביר לסל...

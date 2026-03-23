@@ -221,10 +221,12 @@ export class RecycleBinService {
       EntityType.CATEGORY,
     );
 
-    this.socketService.emitToRole('editor', 'recycle_bin_updated', {
+    this.socketService.emitToAll('recycle_bin_updated', {
       action: 'added',
       itemType: 'category',
       itemName: category.categoryName,
+      itemPath: category.categoryPath,
+      strategy,
     });
 
     return {
@@ -474,10 +476,11 @@ export class RecycleBinService {
 
     await this.recycleBinModel.findByIdAndDelete(recycleBinItem._id);
 
-    this.socketService.emitToRole('editor', 'recycle_bin_updated', {
+    this.socketService.emitToAll('recycle_bin_updated', {
       action: 'restored',
       itemType: 'category',
       itemName: recycleBinItem.itemName,
+      itemPath: recycleBinItem.categoryPath,
     });
 
     return {

@@ -209,15 +209,20 @@ export const Categories: FC<CategoriesProps> = () => {
         )
       );
     };
+    const handleRecycleBinUpdated = () => {
+      loadCategoriesAndFavorites();
+    };
 
     onEvent("category_added", handleNewCategory);
     onEvent("category_moved", handleMovedCategory);
     onEvent("category_updated", handleCategoryUpdated);
+    onEvent("recycle_bin_updated", handleRecycleBinUpdated);
 
     return () => {
       offEvent("category_added", handleNewCategory);
       offEvent("category_moved", handleMovedCategory);
       offEvent("category_updated", handleCategoryUpdated);
+      offEvent("recycle_bin_updated", handleRecycleBinUpdated); 
     };
   }, [joinRoleRoom, onEvent, offEvent, id]);
 
