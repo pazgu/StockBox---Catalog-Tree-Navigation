@@ -306,13 +306,13 @@ export class ProductsService {
     return updatedProduct;
   }
 
-  async moveProduct(id: string, moveProductDto: MoveProductDto) {
+  async moveProduct(id: string, moveProductDto: MoveProductDto & { sourceCategoryPath: string }) {
     const product = await this.productModel.findById(id);
     if (!product) {
       throw new NotFoundException('Product not found');
     }
 
-    const { newCategoryPath } = moveProductDto;
+    const { newCategoryPath, sourceCategoryPath } = moveProductDto;
 
     for (const path of newCategoryPath) {
       if (path === '/categories') continue;
@@ -343,14 +343,17 @@ export class ProductsService {
     }
 
     product.productPath = newPaths;
-    await product.save();
+    const savedProduct=await product.save();
     if (newCategoryPath.length > 0) {
-      await this.permissionsService.updatePermissionsOnMove(
+      const allowedUsers = await this.permissionsService.updatePermissionsOnMove(
         id,
         EntityType.PRODUCT,
         newCategoryPath[0],
       );
+      this.socketService.emitToUsers(allowedUsers, "product_moved", { newCategoryPath, sourceCategoryPath, savedProduct })
+      this.socketService.emitToRole(UserRole.EDITOR, "product_moved", { newCategoryPath, sourceCategoryPath, savedProduct })
     }
+
 
     return {
       success: true,

@@ -5,4 +5,6 @@ export class MoveProductDto {
   @IsString({ each: true })
   @ArrayMinSize(1)
   newCategoryPath: string[];
+  @IsString()
+  sourceCategoryPath: string;
 }

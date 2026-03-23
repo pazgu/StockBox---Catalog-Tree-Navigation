@@ -206,7 +206,37 @@ const SingleCat: FC = () => {
         return prev;
       });
     };
+    const handleMovedProduct = (data: { savedProduct: ProductDto; sourceCategoryPath: string; newCategoryPath: string[]; }) => {
+      const { savedProduct: product, sourceCategoryPath, newCategoryPath } = data;
+      const socketPreviousPath = localStorage.getItem("previousPath") || "";
 
+      setItems(prev => {
+        let updated = [...prev];
+
+        if (socketPreviousPath === sourceCategoryPath) {
+          updated = updated.filter(item => item.id !== product._id);
+        }
+
+        if (newCategoryPath.includes(socketPreviousPath)) {
+          if (!updated.some(item => item.id === product._id)) {
+            updated = [
+              {
+                id: product._id || "",
+                name: product.productName,
+                images: product.productImages || [],
+                type: "product",
+                path: product.productPath,
+                favorite: false,
+              },
+              ...updated,
+            ];
+          }
+        }
+
+        return updated;
+      });
+    };
+    onEvent("product_moved", handleMovedProduct);
     const handleNewProduct = (newProduct: any) => {
       const currentPath = categoryPathRef.current;
 
@@ -236,23 +266,23 @@ const SingleCat: FC = () => {
       });
       toast.info(`המוצר "${newProduct.productName}" נוסף!`);
     };
-const handleProductUpdated = (updatedProduct: any) => {
-  setItems((prev) =>
-    prev.map((item) => {
-      if (item.type !== 'product' || item.id !== updatedProduct._id) return item;
+    const handleProductUpdated = (updatedProduct: any) => {
+      setItems((prev) =>
+        prev.map((item) => {
+          if (item.type !== 'product' || item.id !== updatedProduct._id) return item;
 
-const images = (updatedProduct.productImages || []).filter(
-  (url: string) => typeof url === 'string' && url.trim(),
-);
+          const images = (updatedProduct.productImages || []).filter(
+            (url: string) => typeof url === 'string' && url.trim(),
+          );
 
-return {
-  ...item,
-  name: updatedProduct.productName,
-  images,
-};
-    }),
-  );
-};
+          return {
+            ...item,
+            name: updatedProduct.productName,
+            images,
+          };
+        }),
+      );
+    };
 
     onEvent("sub_category_added", handleNewSubCategory);
     onEvent("category_moved", handleMovedCategory);
@@ -264,7 +294,7 @@ return {
       offEvent("sub_category_added", handleNewSubCategory);
       offEvent("category_moved", handleMovedCategory);
       offEvent("category_updated", handleCategoryUpdated);
-      offEvent("product_added", handleNewProduct);
+      offEvent("product_moved", handleMovedProduct); offEvent("product_added", handleNewProduct);
       offEvent("product_updated", handleProductUpdated);
     };
   }, [id, joinRoleRoom, onEvent, offEvent]);
