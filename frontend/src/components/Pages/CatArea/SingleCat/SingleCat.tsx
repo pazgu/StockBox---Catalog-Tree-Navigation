@@ -222,6 +222,83 @@ const SingleCat: FC = () => {
         return prev;
       });
     };
+    const handleMovedProduct = (data: { savedProduct: ProductDto; sourceCategoryPath: string; newCategoryPath: string[]; }) => {
+      const { savedProduct: product, sourceCategoryPath, newCategoryPath } = data;
+      const socketPreviousPath = localStorage.getItem("previousPath") || "";
+
+      setItems(prev => {
+        let updated = [...prev];
+
+        if (socketPreviousPath === sourceCategoryPath) {
+          updated = updated.filter(item => item.id !== product._id);
+        }
+
+        if (newCategoryPath.includes(socketPreviousPath)) {
+          if (!updated.some(item => item.id === product._id)) {
+            updated = [
+              {
+                id: product._id || "",
+                name: product.productName,
+                images: product.productImages || [],
+                type: "product",
+                path: product.productPath,
+                favorite: false,
+              },
+              ...updated,
+            ];
+          }
+        }
+
+        return updated;
+      });
+    };
+    onEvent("product_moved", handleMovedProduct);
+    const handleNewProduct = (newProduct: any) => {
+      const currentPath = categoryPathRef.current;
+
+      const belongsHere = Array.isArray(newProduct.productPath)
+        ? newProduct.productPath.some((p: string) => p.startsWith(currentPath + "/"))
+        : newProduct.productPath?.startsWith(currentPath + "/");
+
+      if (!belongsHere) return;
+
+      setItems(prev => {
+        if (prev.some(item => item.id === newProduct._id)) return prev;
+        return [
+          ...prev,
+          {
+            id: newProduct._id,
+            name: newProduct.productName,
+            images: newProduct.productImages || [],
+            type: "product",
+            path: Array.isArray(newProduct.productPath)
+              ? newProduct.productPath
+              : [newProduct.productPath],
+            description: newProduct.productDescription,
+            customFields: newProduct.customFields,
+            favorite: false,
+          },
+        ];
+      });
+      toast.info(`המוצר "${newProduct.productName}" נוסף!`);
+    };
+    const handleProductUpdated = (updatedProduct: any) => {
+      setItems((prev) =>
+        prev.map((item) => {
+          if (item.type !== 'product' || item.id !== updatedProduct._id) return item;
+
+          const images = (updatedProduct.productImages || []).filter(
+            (url: string) => typeof url === 'string' && url.trim(),
+          );
+
+          return {
+            ...item,
+            name: updatedProduct.productName,
+            images,
+          };
+        }),
+      );
+    };
     const handleRecycleBinUpdated = ({
       action,
       itemType,
@@ -276,12 +353,16 @@ const SingleCat: FC = () => {
     onEvent("sub_category_added", handleNewSubCategory);
     onEvent("category_moved", handleMovedCategory);
     onEvent("category_updated", handleCategoryUpdated);
+    onEvent("product_added", handleNewProduct);
+    onEvent("product_updated", handleProductUpdated);
     onEvent("recycle_bin_updated", handleRecycleBinUpdated);
 
     return () => {
       offEvent("sub_category_added", handleNewSubCategory);
       offEvent("category_moved", handleMovedCategory);
       offEvent("category_updated", handleCategoryUpdated);
+      offEvent("product_moved", handleMovedProduct); offEvent("product_added", handleNewProduct);
+      offEvent("product_updated", handleProductUpdated);
       offEvent("recycle_bin_updated", handleRecycleBinUpdated);
     };
   }, [id, joinRoleRoom, onEvent, offEvent]);

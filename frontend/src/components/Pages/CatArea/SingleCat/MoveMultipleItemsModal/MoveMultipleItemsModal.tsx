@@ -6,6 +6,7 @@ import { MoveRight, Search, X, FolderOpen, Check, Package, Folder, ChevronDown }
 import { CategoryDTO } from "./../../../../../components/models/category.models";
 import { DisplayItem } from "./../../../../../components/models/item.models";
 import { PathDisplay } from "../../../../../components/Pages/SharedComponents/PathDisplay/PathDisplay";
+import { usePath } from "../../../../../context/PathContext";
 
 interface MoveMultipleItemsModalProps {
   isOpen: boolean;
@@ -30,7 +31,7 @@ const MoveMultipleItemsModal: React.FC<MoveMultipleItemsModalProps> = ({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [searching, setSearching] = useState(false);
   const [moving, setMoving] = useState(false);
-
+  const {previousPath}=usePath()
   const products = selectedItems.filter((item) => item.type === "product");
   const categories = selectedItems.filter((item) => item.type === "category");
 
@@ -144,8 +145,11 @@ const MoveMultipleItemsModal: React.FC<MoveMultipleItemsModalProps> = ({
 
       for (const product of products) {
         try {
-          await ProductsService.moveProduct(product.id, [destinationCategoryPath]);
-          successCount++;
+          const sourceCategoryPath=previousPath?previousPath:"";
+          await ProductsService.moveProduct(product.id, {
+            sourceCategoryPath,
+            newCategoryPath: [destinationCategoryPath],
+          }); successCount++;
         } catch (error: any) {
           failCount++;
           errors.push(`${product.name}: ${error.message || "שגיאה לא ידועה"}`);

@@ -112,7 +112,10 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
       }
       try {
         setMoving(true);
-        await ProductsService.moveProduct(productId, [destinationCategoryPath]);
+        await ProductsService.moveProduct(productId, {
+          sourceCategoryPath,       
+          newCategoryPath: [destinationCategoryPath],  
+        }); 
         toast.success(`${productName} הועבר בהצלחה!`);
         onSuccess();
         onClose();
@@ -139,8 +142,10 @@ const MoveProductModal: React.FC<MoveProductModalProps> = ({
         const newPaths = currentCategoryPaths
           .filter((path) => path !== sourceCategoryPath)
           .concat(destinationCategoryPath);
-        await ProductsService.moveProduct(productId, newPaths);
-        toast.success(
+        await ProductsService.moveProduct(productId, {
+          sourceCategoryPath,
+          newCategoryPath: newPaths,
+        }); toast.success(
           `${productName} הועבר מ-${sourceCategoryPath.split("/").pop()} ל-${destinationCategoryPath.split("/").pop()}!`
         );
         onSuccess();

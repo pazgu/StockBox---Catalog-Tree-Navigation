@@ -209,6 +209,34 @@ export const Categories: FC<CategoriesProps> = () => {
         )
       );
     };
+    const handleMovedProduct = (data: { savedProduct: ProductDto; sourceCategoryPath: string; newCategoryPath: string[] }) => {
+      const { savedProduct: product, sourceCategoryPath, newCategoryPath } = data;
+      const socketPreviousPath = localStorage.getItem("previousPath");
+
+      if (socketPreviousPath === sourceCategoryPath) {
+        setItems(prev => prev.filter(item => item.id !== product._id));
+      }
+
+    };
+
+    const handleProductUpdated = (updatedProduct: any) => {
+      setItems((prev) =>
+        prev.map((item) => {
+          if (item.type !== 'product' || item.id !== updatedProduct._id) return item;
+
+          const defaultUrl = environment.DEFAULT_PRODUCT_IMAGE_URL;
+          const images = (updatedProduct.productImages || []).filter(
+            (url: string) => typeof url === 'string' && url.trim(),
+          );
+
+          return {
+            ...item,
+            name: updatedProduct.productName,
+            images,
+          };
+        }),
+      );
+    };
     const handleRecycleBinUpdated = () => {
       loadCategoriesAndFavorites();
     };
@@ -216,12 +244,15 @@ export const Categories: FC<CategoriesProps> = () => {
     onEvent("category_added", handleNewCategory);
     onEvent("category_moved", handleMovedCategory);
     onEvent("category_updated", handleCategoryUpdated);
+    onEvent("product_moved", handleMovedProduct); onEvent("product_updated", handleProductUpdated);
     onEvent("recycle_bin_updated", handleRecycleBinUpdated);
 
     return () => {
       offEvent("category_added", handleNewCategory);
       offEvent("category_moved", handleMovedCategory);
       offEvent("category_updated", handleCategoryUpdated);
+      offEvent("product_moved", handleMovedProduct);
+      offEvent("product_updated", handleProductUpdated);
       offEvent("recycle_bin_updated", handleRecycleBinUpdated); 
     };
   }, [joinRoleRoom, onEvent, offEvent, id]);
