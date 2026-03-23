@@ -27,7 +27,7 @@ export class GroupsService {
     @Inject(forwardRef(() => PermissionsService))
     private permissionsService: PermissionsService,
     private readonly socketService: SocketService,
-  ) {}
+  ) { }
 
   async findAll(): Promise<GroupDocument[]> {
     return this.groupModel
@@ -190,5 +190,10 @@ export class GroupsService {
     );
 
     return Array.from(new Set(allUserIds));
+  }
+  async getGroupByUserId(userId: string) {
+    return this.groupModel.findOne({
+      members: userId,
+    });
   }
 }
