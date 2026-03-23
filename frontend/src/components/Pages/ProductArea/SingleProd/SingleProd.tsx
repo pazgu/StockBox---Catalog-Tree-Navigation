@@ -194,6 +194,7 @@ const SingleProd: FC<SingleProdProps> = () => {
 
       setTitle(updatedProduct.productName);
       setDescription(updatedProduct.productDescription || '');
+      setProduct(updatedProduct);
 
       const defaultUrl = environment.DEFAULT_PRODUCT_IMAGE_URL;
       const cleaned = normalizeImages(updatedProduct.productImages || []).filter(
@@ -299,6 +300,8 @@ const SingleProd: FC<SingleProdProps> = () => {
     setCurrentImageIndex(0);
     setIsEditing(false);
     setEditSnapshot(null);
+    setNewFolderName("");
+    setShowNewFolderInput(false);
   };
 
   const hasUnsavedChanges = useMemo(() => {
@@ -531,6 +534,11 @@ const SingleProd: FC<SingleProdProps> = () => {
       toast.error("לא ניתן לשמור שדות ריקים");
       return;
     }
+    if (newFolderName.trim()) {
+  toast.error("חובה ליצור או למחוק את התיקייה לפני השמירה");
+  return;
+}
+
     const hasEmptyFolder = folders.some((folder) => folder.files.length === 0);
     if (hasEmptyFolder) {
       toast.error("לא ניתן לשמור תיקייה ריקה ללא קבצים");
@@ -596,10 +604,12 @@ const SingleProd: FC<SingleProdProps> = () => {
         JSON.stringify(folders) !== JSON.stringify(editSnapshot.folders)
       );
 
-    if (!hasChanges) {
-      setIsEditing(false);
-      return;
-    }
+      if (!hasChanges) {
+        setIsEditing(false);
+        setNewFolderName("");
+        setShowNewFolderInput(false);
+        return;
+      } 
 
     try {
       setIsSaving(true);
@@ -607,6 +617,7 @@ const SingleProd: FC<SingleProdProps> = () => {
       toast.success("שינויים נשמרו בהצלחה");
       setEditSnapshot(null);
       setIsEditing(false);
+      setProduct((prev) => prev ? { ...prev, productName: title } : prev);
     } catch (err: any) {
       const msg = err?.message || "";
       if (msg.includes("שם זה כבר קיים")) {
