@@ -248,7 +248,6 @@ export const Categories: FC<CategoriesProps> = () => {
       offEvent("category_moved", handleMovedCategory);
       offEvent("category_updated", handleCategoryUpdated);
       offEvent("product_moved", handleMovedProduct);
-
       offEvent("product_updated", handleProductUpdated);
     };
   }, [joinRoleRoom, onEvent, offEvent, id]);
