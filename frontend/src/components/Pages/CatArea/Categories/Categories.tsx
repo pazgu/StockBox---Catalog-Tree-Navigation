@@ -237,11 +237,15 @@ export const Categories: FC<CategoriesProps> = () => {
         }),
       );
     };
+    const handleRecycleBinUpdated = () => {
+      loadCategoriesAndFavorites();
+    };
 
     onEvent("category_added", handleNewCategory);
     onEvent("category_moved", handleMovedCategory);
     onEvent("category_updated", handleCategoryUpdated);
     onEvent("product_moved", handleMovedProduct); onEvent("product_updated", handleProductUpdated);
+    onEvent("recycle_bin_updated", handleRecycleBinUpdated);
 
     return () => {
       offEvent("category_added", handleNewCategory);
@@ -249,6 +253,7 @@ export const Categories: FC<CategoriesProps> = () => {
       offEvent("category_updated", handleCategoryUpdated);
       offEvent("product_moved", handleMovedProduct);
       offEvent("product_updated", handleProductUpdated);
+      offEvent("recycle_bin_updated", handleRecycleBinUpdated); 
     };
   }, [joinRoleRoom, onEvent, offEvent, id]);
 
