@@ -236,17 +236,36 @@ const SingleCat: FC = () => {
       });
       toast.info(`המוצר "${newProduct.productName}" נוסף!`);
     };
+const handleProductUpdated = (updatedProduct: any) => {
+  setItems((prev) =>
+    prev.map((item) => {
+      if (item.type !== 'product' || item.id !== updatedProduct._id) return item;
+
+const images = (updatedProduct.productImages || []).filter(
+  (url: string) => typeof url === 'string' && url.trim(),
+);
+
+return {
+  ...item,
+  name: updatedProduct.productName,
+  images,
+};
+    }),
+  );
+};
 
     onEvent("sub_category_added", handleNewSubCategory);
     onEvent("category_moved", handleMovedCategory);
     onEvent("category_updated", handleCategoryUpdated);
     onEvent("product_added", handleNewProduct);
+    onEvent("product_updated", handleProductUpdated);
 
     return () => {
       offEvent("sub_category_added", handleNewSubCategory);
       offEvent("category_moved", handleMovedCategory);
       offEvent("category_updated", handleCategoryUpdated);
       offEvent("product_added", handleNewProduct);
+      offEvent("product_updated", handleProductUpdated);
     };
   }, [id, joinRoleRoom, onEvent, offEvent]);
 
