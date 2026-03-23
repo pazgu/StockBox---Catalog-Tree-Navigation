@@ -29,7 +29,7 @@ export class AuthService {
         email: dto.email,
         userName: dto.userName,
       })
-      .select('_id role approved requestSent');
+      .select('_id role approved requestSent userName');
 
     if (!user) {
       const emailExists = await this.userModel.findOne({ email: dto.email });
@@ -103,6 +103,7 @@ export class AuthService {
       user: {
         id: user._id,
         role: user.role,
+        userName: user.userName,
       },
     };
   }
