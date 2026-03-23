@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, use } from "react";
+import React, { useEffect, useState, useMemo, use, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronUp, ArrowRight, RefreshCcw } from "lucide-react";
 import { Switch } from "../../../ui/switch";
@@ -12,6 +12,7 @@ import { permissionsService } from "../../../../services/permissions.service";
 import InheritanceModal from "../../SharedComponents/DialogModal/DialogModal";
 import { usePath } from "../../../../context/PathContext";
 import { Spinner } from "../../../ui/spinner";
+import { useSocket } from "../../../../hooks/useSocket";
 
 interface Group {
   _id: string;
@@ -33,7 +34,7 @@ interface Permission {
 
 const Permissions: React.FC = () => {
   const navigate = useNavigate();
-  const { role } = useUser();
+  const { role, id: userId } = useUser();
   const { type, id } = useParams<{
     type: "product" | "category";
     id: string;
@@ -45,7 +46,9 @@ const Permissions: React.FC = () => {
   const [isExpandedGroups, setIsExpandedGroups] = useState(false);
   const [users, setUsers] = useState<ViewerUser[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
-  const [existingPermissions, setExistingPermissions] = useState<Permission[]>([]);
+  const [existingPermissions, setExistingPermissions] = useState<Permission[]>(
+    [],
+  );
   const [initialUsers, setInitialUsers] = useState<ViewerUser[]>([]);
   const [initialGroups, setInitialGroups] = useState<Group[]>([]);
   const [inheritanceApplied, setInheritanceApplied] = useState(false);
@@ -59,67 +62,88 @@ const Permissions: React.FC = () => {
   } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
+  const loadData = useCallback(async () => {
+    try {
+      if (!cleanId) return;
+
+      const [permsRaw, viewersData, entity] = await Promise.all([
+        permissionsService.getPermissionsByEntity(cleanId),
+        permissionsService.getPotentialViewers(),
+        permissionsService.getEntityDetails(entityType, cleanId),
+      ]);
+
+      const perms: Permission[] = permsRaw;
+      setEntityData(entity);
+      setExistingPermissions(perms);
+      const { users: rawUsers, groups: rawGroups } = viewersData;
+      const userToGroupsMap = new Map<string, string[]>();
+      rawGroups.forEach((group: any) => {
+        const groupId = group.id || group._id;
+        (group.members || []).forEach((member: any) => {
+          const userId = member._id || member.id;
+          if (!userId) return;
+          if (!userToGroupsMap.has(userId)) userToGroupsMap.set(userId, []);
+          userToGroupsMap.get(userId)!.push(groupId);
+        });
+      });
+
+      const mappedUsers: ViewerUser[] = rawUsers.map((u: any) => {
+        const userId = u._id || u.id;
+        return {
+          _id: userId,
+          userName: u.userName,
+          groupIds: userToGroupsMap.get(userId) || [],
+          enabled: perms.some((p) => p.allowed === userId),
+        };
+      });
+
+      const mappedGroups: Group[] = rawGroups.map((g: any) => ({
+        _id: g.id || g._id,
+        groupName: g.groupName,
+        members: perms.some((p) => p.allowed === (g.id || g._id)),
+      }));
+
+      setUsers(mappedUsers);
+      setGroups(mappedGroups);
+      setInitialUsers(mappedUsers);
+      setInitialGroups(mappedGroups);
+    } catch (err) {
+      console.error("Load Error:", err);
+      toast.error("שגיאה בטעינת הנתונים");
+    }
+  }, [cleanId, entityType]);
+
   useEffect(() => {
     if (!role) return;
-
     if (role !== "editor") {
       navigate("/");
       return;
     }
+    loadData();
+  }, [cleanId, entityType, role, navigate, loadData]);
 
-    const loadData = async () => {
-      try {
-        if (!cleanId) return;
+  const token = localStorage.getItem("token") ?? "";
+  const { onEvent, offEvent } = useSocket({ token });
 
-        const [permsRaw, viewersData, entity] = await Promise.all([
-          permissionsService.getPermissionsByEntity(cleanId),
-          permissionsService.getPotentialViewers(),
-          permissionsService.getEntityDetails(entityType, cleanId),
-        ]);
+  useEffect(() => {
+    if (!cleanId) return;
 
-        const perms: Permission[] = permsRaw;
-        setEntityData(entity);
-        setExistingPermissions(perms);
-        const { users: rawUsers, groups: rawGroups } = viewersData;
-        const userToGroupsMap = new Map<string, string[]>();
-        rawGroups.forEach((group: any) => {
-          const groupId = group.id || group._id;
-          (group.members || []).forEach((member: any) => {
-            const userId = member._id || member.id;
-            if (!userId) return;
-            if (!userToGroupsMap.has(userId)) userToGroupsMap.set(userId, []);
-            userToGroupsMap.get(userId)!.push(groupId);
-          });
-        });
-
-        const mappedUsers: ViewerUser[] = rawUsers.map((u: any) => {
-          const userId = u._id || u.id;
-          return {
-            _id: userId,
-            userName: u.userName,
-            groupIds: userToGroupsMap.get(userId) || [],
-            enabled: perms.some((p) => p.allowed === userId),
-          };
-        });
-
-        const mappedGroups: Group[] = rawGroups.map((g: any) => ({
-          _id: g.id || g._id,
-          groupName: g.groupName,
-          members: perms.some((p) => p.allowed === (g.id || g._id)),
-        }));
-
-        setUsers(mappedUsers);
-        setGroups(mappedGroups);
-        setInitialUsers(mappedUsers);
-        setInitialGroups(mappedGroups);
-      } catch (err) {
-        console.error("Load Error:", err);
-        toast.error("שגיאה בטעינת הנתונים");
+    const handler = (data: {
+      entityId: string;
+      updatedBy: string;
+      updatedByName: string;
+    }) => {
+      if (data.entityId === cleanId) {
+        loadData();
+        if (data.updatedBy && data.updatedBy !== userId) {
+          toast.info(`ההרשאות עודכנו על ידי ${data.updatedByName}`);
+        }
       }
     };
 
-    loadData();
-  }, [cleanId, entityType, role, navigate, previousPath]);
+    onEvent("permissions_page_updated", handler);
+    return () => offEvent("permissions_page_updated", handler);
+  }, [onEvent, offEvent, cleanId, loadData, userId]);
 
   const enabledGroupIds = useMemo(() => {
     return new Set(groups.filter((g) => g.members).map((g) => g._id));
@@ -220,13 +244,13 @@ const Permissions: React.FC = () => {
   }, [users, groups, initialUsers, initialGroups]);
 
   const savePermissions = async (inheritToChildren: boolean) => {
-  if (!hasLocalChanges) {
-    toast.info("לא בוצעו שינויים");
-    return;
-  }
+    if (!hasLocalChanges) {
+      toast.info("לא בוצעו שינויים");
+      return;
+    }
 
-  setIsSaving(true);
-  try {
+    setIsSaving(true);
+    try {
       if (!cleanId) return;
 
       const usersToAllow = users.filter((u) => u.enabled).map((u) => u._id);
@@ -285,32 +309,32 @@ const Permissions: React.FC = () => {
     }
   };
   const handleSave = async () => {
-  if (!cleanId) return;
+    if (!cleanId) return;
 
-  if (!hasLocalChanges) {
-    toast.info("לא בוצעו שינויים");
-    return;
-  }
+    if (!hasLocalChanges) {
+      toast.info("לא בוצעו שינויים");
+      return;
+    }
 
-  const usersToAllow = users.filter((u) => u.enabled).map((u) => u._id);
-  const groupsToAllow = groups.filter((g) => g.members).map((g) => g._id);
-  const finalAllowedIds = [...usersToAllow, ...groupsToAllow];
+    const usersToAllow = users.filter((u) => u.enabled).map((u) => u._id);
+    const groupsToAllow = groups.filter((g) => g.members).map((g) => g._id);
+    const finalAllowedIds = [...usersToAllow, ...groupsToAllow];
 
-  const currentDbIds = existingPermissions.map((p) => p.allowed);
-  const toCreate = finalAllowedIds.filter((id) => !currentDbIds.includes(id));
-  const toDelete = existingPermissions.filter(
-    (p) => !finalAllowedIds.includes(p.allowed),
-  );
+    const currentDbIds = existingPermissions.map((p) => p.allowed);
+    const toCreate = finalAllowedIds.filter((id) => !currentDbIds.includes(id));
+    const toDelete = existingPermissions.filter(
+      (p) => !finalAllowedIds.includes(p.allowed),
+    );
 
-  if (toCreate.length === 0 && toDelete.length > 0) {
-    setIsSaving(true);
-    await savePermissions(false);
-    setIsSaving(false);
-    return;
-  }
+    if (toCreate.length === 0 && toDelete.length > 0) {
+      setIsSaving(true);
+      await savePermissions(false);
+      setIsSaving(false);
+      return;
+    }
 
-  setShowInheritanceModal(true);
-};
+    setShowInheritanceModal(true);
+  };
 
   const showManualInheritButton =
     entityData?.permissionsInheritedToChildren === false &&
@@ -365,24 +389,24 @@ const Permissions: React.FC = () => {
                 users.every((u) =>
                   u.groupIds.length === 0
                     ? u.enabled === true
-                    : u.enabled === false
+                    : u.enabled === false,
                 )
               }
-             onCheckedChange={(checked) => {
-              setUsers((prev) =>
-                prev.map((u) => ({
-                  ...u,
-                  enabled: u.groupIds.length === 0 ? checked : false,
-                })),
-              );
+              onCheckedChange={(checked) => {
+                setUsers((prev) =>
+                  prev.map((u) => ({
+                    ...u,
+                    enabled: u.groupIds.length === 0 ? checked : false,
+                  })),
+                );
 
-              setGroups((prev) =>
-                prev.map((g) => ({
-                  ...g,
-                  members: checked,
-                })),
-              );
-            }}
+                setGroups((prev) =>
+                  prev.map((g) => ({
+                    ...g,
+                    members: checked,
+                  })),
+                );
+              }}
             />
           </div>
           <div className="mb-4">
