@@ -34,7 +34,7 @@ export class PermissionsService {
     private socketService: SocketService,
     private usersService: UsersService,
     private groupsService: GroupsService,
-  ) {}
+  ) { }
 
   async getPermissionsForUser(userId: string, userGroupIds?: string[]) {
     const allowedIds = [
@@ -81,6 +81,7 @@ export class PermissionsService {
       entityId,
       allowed,
     });
+    const category = await this.categoryModel.findById(entityId);
 
     const emitPermissionChanged = () => {
       this.socketService.emitToUser(
@@ -90,6 +91,7 @@ export class PermissionsService {
           userId: allowed.toString(),
           categoryId: entityId.toString(),
           action: 'created',
+          categoryPath: category?.categoryPath
         },
       );
     };
@@ -346,6 +348,7 @@ export class PermissionsService {
           .exec();
       }
     }
+    const category = await this.categoryModel.findById(permission.entityId);
     this.socketService.emitToUser(
       permission.allowed.toString(),
       'category_permissions_changed',
@@ -353,6 +356,7 @@ export class PermissionsService {
         userId: permission.allowed.toString(),
         categoryId: permission.entityId.toString(),
         action: 'deleted',
+        categoryPath: category?.categoryPath,
       },
     );
     return this.permissionModel.findByIdAndDelete(id).exec();
