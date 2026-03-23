@@ -171,13 +171,25 @@ const SingleCat: FC = () => {
   useEffect(() => {
     joinRoleRoom("editor");
     if (id) joinRoleRoom(id);
+    const groupId = localStorage.getItem("groupControl:selectedGroupId");
+    if (groupId && role === "viewer") {
+      joinRoleRoom(groupId);
+    }
+    const socketPreviousPath = localStorage.getItem("previousPath");
+    const handleBannedPermissionsUpdated = async () => {
+      try {
+        await loadAllContent(socketPreviousPath || location.pathname);
+        toast.info("הרשאות עודכנו, טוען...");
+      } catch (err: any) {
+        console.error("Reload failed", err);
+      }
+    };
 
     const handleNewSubCategory = (newCategory: CategoryDTO) => {
       const newParentPath = newCategory.categoryPath
         .split("/")
         .slice(0, -1)
         .join("/");
-      const socketPreviousPath = localStorage.getItem("previousPath");
 
       if (socketPreviousPath === newParentPath) {
         loadAllContent();
@@ -275,7 +287,6 @@ const SingleCat: FC = () => {
         return updated;
       });
     };
-    onEvent("product_moved", handleMovedProduct);
     const handleNewProduct = (newProduct: any) => {
       const currentPath = categoryPathRef.current;
 
@@ -406,7 +417,7 @@ const SingleCat: FC = () => {
         loadAllContent(categoryPathRef.current);
       }
     };
-
+    onEvent("product_moved", handleMovedProduct);
     onEvent("sub_category_added", handleNewSubCategory);
     onEvent("category_moved", handleMovedCategory);
     onEvent("category_updated", handleCategoryUpdated);
@@ -414,6 +425,8 @@ const SingleCat: FC = () => {
     onEvent("product_updated", handleProductUpdated);
     onEvent("product_deleted", handleProductDeleted);
     onEvent("recycle_bin_updated", handleRecycleBinUpdated);
+    onEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
+
 
     return () => {
       offEvent("sub_category_added", handleNewSubCategory);
@@ -424,6 +437,8 @@ const SingleCat: FC = () => {
       offEvent("product_updated", handleProductUpdated);
       offEvent("product_deleted", handleProductDeleted);
       offEvent("recycle_bin_updated", handleRecycleBinUpdated);
+      offEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
+
     };
   }, [id, joinRoleRoom, onEvent, offEvent]);
 

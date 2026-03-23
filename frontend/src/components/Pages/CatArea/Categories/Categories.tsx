@@ -158,6 +158,10 @@ export const Categories: FC<CategoriesProps> = () => {
     if (id) {
       joinRoleRoom(id);
     }
+    const groupId = localStorage.getItem("groupControl:selectedGroupId");
+    if (groupId && role === "viewer") {
+      joinRoleRoom(groupId);
+    }
 
     const handleNewCategory = (newCategory: Category) => {
       setCategories(prev => {
@@ -311,16 +315,11 @@ export const Categories: FC<CategoriesProps> = () => {
     const handleRecycleBinUpdated = () => {
       loadCategoriesAndFavorites();
     };
+    const handleBannedPermissionsUpdated = () => {
+      loadCategoriesAndFavorites();
+      toast.info("הרשאות עודכנו, טוען...");
+    };
 
-    // 🚨 CLEAN OLD LISTENERS FIRST (THIS FIXES DUPLICATION)
-    offEvent("product_added");
-    offEvent("category_added");
-    offEvent("category_moved");
-    offEvent("category_updated");
-    offEvent("product_moved");
-    offEvent("product_updated");
-    offEvent("product_deleted");
-    offEvent("recycle_bin_updated");
 
     const handleNewProduct = (product: ProductDto) => {
       const productPaths = Array.isArray(product.productPath)
@@ -360,6 +359,7 @@ export const Categories: FC<CategoriesProps> = () => {
     onEvent("product_updated", handleProductUpdated);
     onEvent("product_deleted", handleProductDeleted);
     onEvent("recycle_bin_updated", handleRecycleBinUpdated);
+    onEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
 
     return () => {
       offEvent("product_added", handleNewProduct);
@@ -368,8 +368,10 @@ export const Categories: FC<CategoriesProps> = () => {
       offEvent("category_updated", handleCategoryUpdated);
       offEvent("product_moved", handleMovedProduct);
       offEvent("product_updated", handleProductUpdated);
-      offEvent("product_deleted", handleProductDeleted);
       offEvent("recycle_bin_updated", handleRecycleBinUpdated);
+      offEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
+      offEvent("product_deleted", handleProductDeleted);
+
     };
   }, [id]);
   useEffect(() => {
