@@ -20,6 +20,7 @@ import { UsersService } from 'src/users/users.service';
 import { Group } from 'src/schemas/Groups.schema';
 import { GroupsService } from 'src/groups/groups.service';
 import { User } from 'src/schemas/Users.schema';
+import { SocketService } from 'src/socket/socket.service';
 
 @Injectable()
 export class PermissionsService {
@@ -30,9 +31,10 @@ export class PermissionsService {
     @InjectModel(Group.name) private groupModel: Model<Group>,
     @InjectModel(User.name) private userModel: Model<User>,
 
+    private socketService: SocketService,
     private usersService: UsersService,
     private groupsService: GroupsService,
-  ) { }
+  ) {}
 
   async getPermissionsForUser(userId: string, userGroupIds?: string[]) {
     const allowedIds = [
@@ -115,7 +117,15 @@ export class PermissionsService {
     );
 
     await this.permissionModel.bulkWrite(bulkOps);
-
+    this.socketService.emitToUser(
+      allowed.toString(),
+      'category_permissions_changed',
+      {
+        userId: allowed.toString(),
+        categoryId: entityId.toString(),
+        action: 'created',
+      },
+    );
     return created;
   }
 
@@ -449,9 +459,9 @@ export class PermissionsService {
         await this.permissionModel.insertMany(permissions, { ordered: false });
 
         const userIds: string[] = parentPermissions
-          .map(p => p.allowed)
-          .filter(id => id != null)
-          .map(id => id.toString());
+          .map((p) => p.allowed)
+          .filter((id) => id != null)
+          .map((id) => id.toString());
         return userIds;
       }
 
@@ -503,7 +513,7 @@ export class PermissionsService {
 
     if (!parentCategory) {
       console.warn(`Parent category not found for path: ${newParentPath}`);
-      return[];
+      return [];
     }
     const parentAllowedUsers = await this.getAllowedUsersForEntity(
       parentCategory._id.toString(),
