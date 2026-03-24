@@ -2,32 +2,34 @@ import {
   IsArray,
   ArrayNotEmpty,
   IsString,
-  IsIn,
   IsOptional,
+  IsIn,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-class MoveMultipleRecycleBinItemDto {
+class MoveMultipleProductToRecycleBinItemDto {
   @IsString()
   id: string;
-
-  @IsIn(['category', 'product'])
-  type: 'category' | 'product';
 
   @IsOptional()
   @IsString()
   categoryPath?: string;
-
-  @IsOptional()
-  @IsIn(['cascade', 'move_up'])
-  strategy?: 'cascade' | 'move_up';
 }
 
 export class MoveMultipleItemsToRecycleBinDto {
   @IsArray()
-  @ArrayNotEmpty()
+  @IsOptional()
+  @IsString({ each: true })
+  categoryIds?: string[];
+
+  @IsOptional()
+  @IsIn(['cascade', 'move_up'])
+  categoryStrategy?: 'cascade' | 'move_up';
+
+  @IsArray()
+  @IsOptional()
   @ValidateNested({ each: true })
-  @Type(() => MoveMultipleRecycleBinItemDto)
-  items: MoveMultipleRecycleBinItemDto[];
+  @Type(() => MoveMultipleProductToRecycleBinItemDto)
+  products?: MoveMultipleProductToRecycleBinItemDto[];
 }
