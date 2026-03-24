@@ -164,6 +164,8 @@ const SingleCat: FC = () => {
   }, [categoryPath]);
 
   const categoryInfoRef = useRef<CategoryDTO | null>(null);
+  const reloadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isMoveMultipleInProgressRef = useRef(false);
   useEffect(() => {
     categoryInfoRef.current = categoryInfo;
   }, [categoryInfo]);
@@ -207,6 +209,7 @@ const SingleCat: FC = () => {
       oldPath: string;
       newPath: string;
     }) => {
+      if (!data.oldPath || !data.newPath) return;
       const { oldPath, newPath } = data;
 
       const newParentPath = newPath.split("/").slice(0, -1).join("/");
@@ -222,9 +225,14 @@ const SingleCat: FC = () => {
         socketPreviousPath === oldParentPath ||
         socketPreviousPath === newParentPath
       ) {
-        loadAllContent();
+        if (isMoveMultipleInProgressRef.current) return;
+        if (reloadTimeoutRef.current) clearTimeout(reloadTimeoutRef.current);
+        reloadTimeoutRef.current = setTimeout(() => {
+          loadAllContent();
+        }, 500);
       }
     };
+    
 
     const handleCategoryUpdated = (data: {
       updatedCategory: Category;
@@ -964,11 +972,13 @@ const SingleCat: FC = () => {
       toast.error("נא לבחור לפחות פריט אחד להעברה");
       return;
     }
+    isMoveMultipleInProgressRef.current = true;
     setShowMoveMultipleModal(true);
   };
 
   const handleMoveMultipleSuccess = async () => {
     await loadAllContent();
+    isMoveMultipleInProgressRef.current = false; 
     setSelectedItems([]);
     setIsSelectionMode(false);
     setShowMoveMultipleModal(false);
