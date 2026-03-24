@@ -626,7 +626,7 @@ export class PermissionsService {
   async assignPermissionsOnDuplicate(
     productId: string,
     additionalCategoryPaths: string[],
-  ): Promise<void> {
+  ): Promise<string[]> {
     for (const categoryPath of additionalCategoryPaths) {
       const parentCategory = await this.categoryModel
         .findOne({ categoryPath })
@@ -660,6 +660,15 @@ export class PermissionsService {
         await this.permissionModel.insertMany(newPermissions);
       }
     }
+
+    const finalPermissions = await this.permissionModel
+      .find({
+        entityType: EntityType.PRODUCT,
+        entityId: new mongoose.Types.ObjectId(productId),
+      })
+      .lean();
+
+    return [...new Set(finalPermissions.map((p) => p.allowed.toString()))];
   }
 
   async getDirectChildrenToDelete(categoryId: string) {
