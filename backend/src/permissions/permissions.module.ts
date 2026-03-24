@@ -10,6 +10,7 @@ import { UsersModule } from 'src/users/users.module';
 import { Product, ProductSchema } from 'src/schemas/Products.schema';
 import { Group, GroupSchema } from 'src/schemas/Groups.schema';
 import { User, UserSchema } from 'src/schemas/Users.schema';
+import { SocketModule } from 'src/socket/socket.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { User, UserSchema } from 'src/schemas/Users.schema';
     ]),
     forwardRef(() => UsersModule),
     forwardRef(() => GroupsModule),
+    forwardRef(() => SocketModule),
   ],
   providers: [PermissionsService, PermissionGuard],
   controllers: [PermissionsController],

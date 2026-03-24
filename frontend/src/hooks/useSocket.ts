@@ -8,6 +8,7 @@ interface UseSocketProps {
   onRoleChanged?: () => void;
   onUserDeleted?: () => void;
   onPermissionsUpdated?: () => void;
+  onPermissionsSync?: (data: { basePath: string }) => void;
 }
 
 interface UseSocketReturn {
@@ -27,6 +28,7 @@ export const useSocket = ({
   onRoleChanged,
   onUserDeleted,
   onPermissionsUpdated,
+  onPermissionsSync,
 }: UseSocketProps): UseSocketReturn => {
 const socketRef = useRef<Socket | null>(null);
 const [isReady, setIsReady] = useState(false);
@@ -59,12 +61,15 @@ const [isReady, setIsReady] = useState(false);
     socket.on('permissions_updated', () => {
       onPermissionsUpdated?.();
     });
+    socket.on('permissions_sync', (data: { basePath: string }) => {
+      onPermissionsSync?.(data);
+    });
 
     return () => {
       setIsReady(false);
       socket.disconnect();
     };
-  }, [token, onConnect, onDisconnect, onRoleChanged]);
+  }, [token, onConnect, onDisconnect, onRoleChanged, onUserDeleted, onPermissionsUpdated, onPermissionsSync]);
 
   const joinRoleRoom = useCallback((role: string) => {
     socketRef.current?.emit('join_role_room', role);

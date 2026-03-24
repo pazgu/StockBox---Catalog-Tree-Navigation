@@ -20,6 +20,7 @@ import { UsersService } from 'src/users/users.service';
 import { Group } from 'src/schemas/Groups.schema';
 import { GroupsService } from 'src/groups/groups.service';
 import { User } from 'src/schemas/Users.schema';
+import { SocketService } from 'src/socket/socket.service';
 
 @Injectable()
 export class PermissionsService {
@@ -32,6 +33,7 @@ export class PermissionsService {
 
     private usersService: UsersService,
     private groupsService: GroupsService,
+    private readonly socketService: SocketService,
   ) { }
 
   async getPermissionsForUser(userId: string, userGroupIds?: string[]) {
@@ -1120,6 +1122,17 @@ export class PermissionsService {
         { _id: { $in: descendantCategoryIds } },
         { $set: { permissionsInheritedToChildren: true } },
       );
+    }
+
+    const parentCategory = await this.categoryModel
+      .findById(categoryId)
+      .select('categoryPath')
+      .lean();
+
+    if (parentCategory?.categoryPath) {
+      this.socketService.emitToAll('permissions_sync', {
+        basePath: parentCategory.categoryPath,
+      });
     }
 
     return {
