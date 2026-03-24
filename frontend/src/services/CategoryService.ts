@@ -169,6 +169,23 @@ class CategoriesService {
     return res.data.hasDescendants;
   }
 
+  async moveMultipleCategories(dto: {
+  categoryIds: string[];
+  newParentPath: string;
+}): Promise<{
+  successCount: number;
+  failCount: number;
+  results: { id: string; success: boolean; error?: string }[];
+}> {
+  try {
+    const response = await api.patch(`${this.baseUrl}/move-multiple`, dto);
+    return response.data;
+  } catch (error) {
+    console.error("Error moving multiple categories:", error);
+    throw error;
+  }
+}
+
 }
 
 export const categoriesService = new CategoriesService();

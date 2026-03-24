@@ -28,6 +28,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { categoryUploadsOptions } from './categoryUploads';
 import { PermissionGuard } from 'src/gaurds/permission.guard';
 import { AuthGuard } from '@nestjs/passport';
+import { MoveMultipleCategoriesDto } from './dtos/MoveMultipleCategories.dto';
 
 @Controller('categories')
 @UseGuards(AuthGuard('jwt'), PermissionGuard)
@@ -69,7 +70,11 @@ export class CategoriesController {
       request.user,
     );
   }
-
+  @Patch('move-multiple')
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async moveMultipleCategories(@Body() dto: MoveMultipleCategoriesDto) {
+    return await this.categoriesService.moveMultipleCategories(dto);
+  }
   @Patch(':id/move')
   @UsePipes(new ValidationPipe({ transform: true }))
   async moveCategory(
