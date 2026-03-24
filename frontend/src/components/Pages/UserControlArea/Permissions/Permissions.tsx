@@ -340,7 +340,8 @@ const Permissions: React.FC = () => {
   const showManualInheritButton =
     entityData?.permissionsInheritedToChildren === false &&
     existingPermissions.length > 0 &&
-    !hasLocalChanges;
+    !hasLocalChanges &&
+    !inheritanceApplied;
 
   return (
     <div
