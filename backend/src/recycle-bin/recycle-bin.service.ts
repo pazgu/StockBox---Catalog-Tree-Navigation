@@ -729,12 +729,16 @@ export class RecycleBinService {
       .map((item) => item.id);
 
     if (movedCategoryIds.length > 0 || movedProductIds.length > 0) {
-      this.socketService.emitToAll('multiple_items_moved_to_recycle_bin', {
-        categoryIds: movedCategoryIds,
-        productIds: movedProductIds,
-        successCount,
-        failCount,
-      });
+      this.socketService.emitToRole(
+        'editor',
+        'multiple_items_moved_to_recycle_bin',
+        {
+          categoryIds: movedCategoryIds,
+          productIds: movedProductIds,
+          successCount,
+          failCount,
+        },
+      );
     }
 
     return {
