@@ -440,6 +440,19 @@ const SingleCat: FC = () => {
         loadAllContent(categoryPathRef.current);
       }
     };
+    const handleMultipleItemsMovedToRecycleBin = ({
+      categoryIds,
+      productIds,
+    }: {
+      categoryIds: string[];
+      productIds: string[];
+    }) => {
+      const hasChanges = categoryIds.length > 0 || productIds.length > 0;
+
+      if (!hasChanges) return;
+
+      loadAllContent(categoryPathRef.current);
+    };
     const handleCategoryPermissionsChanged = (data: {
       categoryPath: string;
     }) => {
@@ -513,6 +526,10 @@ const SingleCat: FC = () => {
     onEvent("product_updated", handleProductUpdated);
     onEvent("product_deleted", handleProductDeleted);
     onEvent("recycle_bin_updated", handleRecycleBinUpdated);
+    onEvent(
+      "multiple_items_moved_to_recycle_bin",
+      handleMultipleItemsMovedToRecycleBin,
+    );
     onEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
     onEvent("category_permissions_changed", handleCategoryPermissionsChanged);
 
@@ -527,6 +544,10 @@ const SingleCat: FC = () => {
       offEvent("product_updated", handleProductUpdated);
       offEvent("product_deleted", handleProductDeleted);
       offEvent("recycle_bin_updated", handleRecycleBinUpdated);
+      offEvent(
+        "multiple_items_moved_to_recycle_bin",
+        handleMultipleItemsMovedToRecycleBin,
+      );
       offEvent(
         "banned_items_permissions_updated",
         handleBannedPermissionsUpdated,
@@ -986,10 +1007,20 @@ const SingleCat: FC = () => {
         await recycleBinService.moveMultipleItemsToRecycleBin(payload);
 
       if (result.successCount > 0 && result.failCount === 0) {
+        setShowDeleteAllModal(false);
+        setSelectedItems([]);
+        setIsSelectionMode(false);
+
         toast.success(
           `${result.successCount} פריטים הועברו לסל המיחזור בהצלחה!`,
         );
+
+        await loadAllContent();
       } else if (result.successCount > 0 && result.failCount > 0) {
+        setShowDeleteAllModal(false);
+        setSelectedItems([]);
+        setIsSelectionMode(false);
+
         toast.warning(
           `${result.successCount} פריטים הועברו בהצלחה, ${result.failCount} נכשלו`,
         );
@@ -997,16 +1028,13 @@ const SingleCat: FC = () => {
           "Bulk recycle bin errors:",
           result.results.filter((r) => !r.success),
         );
+
+        await loadAllContent();
       } else {
         toast.error("כל הפריטים נכשלו בהעברה לסל המיחזור");
         console.error("Bulk recycle bin errors:", result.results);
         return;
       }
-
-      await loadAllContent();
-      setSelectedItems([]);
-      setIsSelectionMode(false);
-      setShowDeleteAllModal(false);
     } catch (error) {
       console.error(error);
       toast.error("שגיאה בהעברת הפריטים לסל המיחזור");
