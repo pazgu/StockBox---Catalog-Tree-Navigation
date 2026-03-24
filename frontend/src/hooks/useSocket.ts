@@ -26,7 +26,7 @@ export const useSocket = ({
   onDisconnect,
   onRoleChanged,
   onUserDeleted,
-  onPermissionsUpdated,
+  onPermissionsUpdated
 }: UseSocketProps): UseSocketReturn => {
 const socketRef = useRef<Socket | null>(null);
 const [isReady, setIsReady] = useState(false);
@@ -64,7 +64,7 @@ const [isReady, setIsReady] = useState(false);
       setIsReady(false);
       socket.disconnect();
     };
-  }, [token, onConnect, onDisconnect, onRoleChanged]);
+  }, [token, onConnect, onDisconnect, onRoleChanged, onUserDeleted, onPermissionsUpdated]);
 
   const joinRoleRoom = useCallback((role: string) => {
     socketRef.current?.emit('join_role_room', role);
