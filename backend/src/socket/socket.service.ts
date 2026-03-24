@@ -17,6 +17,10 @@ export class SocketService {
     this.gateway.server.to(role).emit(event, data);
   }
 
+  emitToGroup(groupId: string, event: string, data?: any) {
+    this.gateway.server.to(groupId).emit(event, data);
+  }
+
   emitToUsers(userIds: string[], event: string, data?: any) {
     const uniqueUserIds = [...new Set(userIds)];
 

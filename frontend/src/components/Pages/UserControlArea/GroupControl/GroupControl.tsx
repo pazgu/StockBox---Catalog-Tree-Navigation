@@ -375,7 +375,7 @@ const GroupControl: React.FC = () => {
         </div>
 
         {/* Lists */}
-        <div className="grid grid-cols-12 items-stretch h-[800px]">
+        <div className="grid grid-cols-1 lg:grid-cols-12 items-stretch min-h-[600px]">
           <GroupList
             groups={groups}
             users={users}

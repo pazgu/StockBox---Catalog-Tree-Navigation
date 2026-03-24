@@ -7,10 +7,16 @@ import {
 import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
-import { User } from 'src/schemas/Users.schema';
+import { User, UserRole } from 'src/schemas/Users.schema';
 import { Model } from 'mongoose';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  NotFoundException,
+  ForbiddenException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { GroupsService } from 'src/groups/groups.service';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -21,6 +27,8 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly jwtService: JwtService,
     @InjectModel(User.name) private readonly userModel: Model<User>,
     private readonly configService: ConfigService,
+    @Inject(forwardRef(() => GroupsService))
+    private readonly groupsService: GroupsService,
   ) {}
 
   async handleConnection(client: Socket) {
@@ -42,6 +50,9 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       if (!user) throw new NotFoundException('User not found');
       if (user.isBlocked) throw new ForbiddenException('User is blocked');
       if (!user.approved) throw new ForbiddenException('User not approved');
+      const group = await this.groupsService.getGroupByUserId(
+        user._id.toString(),
+      );
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       client.data.user = {
@@ -51,6 +62,8 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       client.join(user._id.toString());
       client.join(user.role);
+      if (group && user.role === UserRole.VIEWER)
+        client.join(group?.id.toString());
 
       console.log('Socket connected:', user._id);
     } catch (err) {

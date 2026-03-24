@@ -31,6 +31,7 @@ export class PermissionsService {
     @InjectModel(Group.name) private groupModel: Model<Group>,
     @InjectModel(User.name) private userModel: Model<User>,
 
+    private socketService: SocketService,
     private usersService: UsersService,
     private groupsService: GroupsService,
     private readonly socketService: SocketService,
@@ -48,10 +49,15 @@ export class PermissionsService {
       .exec();
   }
 
-  async createPermission(dto: CreatePermissionDto) {
+  async createPermission(dto: CreatePermissionDto, editorId?: string) {
     const { entityType, entityId, allowed, inheritToChildren, contextPath } =
       dto;
 
+    const editor = await this.userModel
+      .findById(editorId)
+      .select('userName')
+      .lean();
+    const editorName = editor?.userName || 'עורך לא ידוע';
     const existingPermission = await this.permissionModel.findOne({
       entityType,
       entityId,
@@ -81,6 +87,20 @@ export class PermissionsService {
       entityId,
       allowed,
     });
+    const category = await this.categoryModel.findById(entityId);
+
+    const emitPermissionChanged = () => {
+      this.socketService.emitToUser(
+        allowed.toString(),
+        'category_permissions_changed',
+        {
+          userId: allowed.toString(),
+          categoryId: entityId.toString(),
+          action: 'created',
+          categoryPath: category?.categoryPath,
+        },
+      );
+    };
 
     if (entityType === EntityType.CATEGORY) {
       await this.categoryModel.updateOne(
@@ -90,11 +110,27 @@ export class PermissionsService {
     }
 
     if (entityType !== EntityType.CATEGORY || !inheritToChildren) {
+      const product = await this.productModel.findById(entityId);
+      this.socketService.emitToUser(dto.allowed, "product_permission_added", { product: product })
+      this.socketService.emitToRole('editor', 'permissions_page_updated', {
+        entityId: entityId.toString(),
+        updatedBy: editorId,
+        updatedByName: editorName,
+      });
       return created;
     }
 
     const descendants = await this.getAllCategoryDescendants(entityId);
-    if (!descendants.length) return created;
+
+    if (!descendants.length) {
+      emitPermissionChanged();
+      this.socketService.emitToRole('editor', 'permissions_page_updated', {
+        entityId: entityId.toString(),
+        updatedBy: editorId,
+        updatedByName: editorName,
+      });
+      return created;
+    }
 
     const bulkOps: AnyBulkWriteOperation<Permission>[] = descendants.map(
       (child) => ({
@@ -118,6 +154,12 @@ export class PermissionsService {
 
     await this.permissionModel.bulkWrite(bulkOps);
 
+    emitPermissionChanged();
+    this.socketService.emitToRole('editor', 'permissions_page_updated', {
+      entityId: entityId.toString(),
+      updatedBy: editorId,
+      updatedByName: editorName,
+    });
     return created;
   }
 
@@ -196,6 +238,14 @@ export class PermissionsService {
           );
         }
       }
+      const groupId = validDtos[0].allowed.toString();
+      this.socketService.emitToGroup(
+        groupId,
+        'banned_items_permissions_updated',
+        {
+          createdPermissions,
+        },
+      );
     }
 
     const result = {
@@ -230,6 +280,9 @@ export class PermissionsService {
         _id: { $in: ids.map((id) => new mongoose.Types.ObjectId(id)) },
       })
       .exec();
+
+    const groupId = permissions[0].allowed.toString();
+
     const foundIds = new Set(permissions.map((p) => p._id.toString()));
     const notFoundIds = ids.filter((id) => !foundIds.has(id));
     const categoryPermissions = permissions.filter(
@@ -271,6 +324,14 @@ export class PermissionsService {
         },
       })
       .exec();
+
+    this.socketService.emitToGroup(
+      groupId,
+      'banned_items_permissions_updated',
+      {
+        groupId,
+      },
+    );
     return {
       success: true,
       total: ids.length,
@@ -285,7 +346,12 @@ export class PermissionsService {
     };
   }
 
-  async deletePermission(id: string) {
+  async deletePermission(id: string, editorId?: string) {
+    const editor = await this.userModel
+      .findById(editorId)
+      .select('userName')
+      .lean();
+    const editorName = editor?.userName || 'עורך לא ידוע';
     const permission = await this.permissionModel.findById(id).exec();
 
     if (!permission) {
@@ -308,8 +374,30 @@ export class PermissionsService {
           })
           .exec();
       }
+      const category = await this.categoryModel.findById(permission.entityId);
+      this.socketService.emitToUser(
+        permission.allowed.toString(),
+        'category_permissions_changed',
+        {
+          userId: permission.allowed.toString(),
+          categoryId: permission.entityId.toString(),
+          action: 'deleted',
+          categoryPath: category?.categoryPath,
+        },
+      );
+    }
+    else {
+      const product = await this.productModel.findById(permission.entityId);
+      console.log("prod:", product)
+      this.socketService.emitToUser(permission.allowed.toString(), "product_permission_deleted", { product: product })
+
     }
 
+    this.socketService.emitToRole('editor', 'permissions_page_updated', {
+      entityId: permission.entityId.toString(),
+      updatedBy: editorId,
+      updatedByName: editorName,
+    });
     return this.permissionModel.findByIdAndDelete(id).exec();
   }
 
@@ -451,9 +539,9 @@ export class PermissionsService {
         await this.permissionModel.insertMany(permissions, { ordered: false });
 
         const userIds: string[] = parentPermissions
-          .map(p => p.allowed)
-          .filter(id => id != null)
-          .map(id => id.toString());
+          .map((p) => p.allowed)
+          .filter((id) => id != null)
+          .map((id) => id.toString());
         return userIds;
       }
 
@@ -505,7 +593,7 @@ export class PermissionsService {
 
     if (!parentCategory) {
       console.warn(`Parent category not found for path: ${newParentPath}`);
-      return[];
+      return [];
     }
     const parentAllowedUsers = await this.getAllowedUsersForEntity(
       parentCategory._id.toString(),
@@ -547,7 +635,7 @@ export class PermissionsService {
   async assignPermissionsOnDuplicate(
     productId: string,
     additionalCategoryPaths: string[],
-  ): Promise<void> {
+  ): Promise<string[]> {
     for (const categoryPath of additionalCategoryPaths) {
       const parentCategory = await this.categoryModel
         .findOne({ categoryPath })
@@ -581,6 +669,15 @@ export class PermissionsService {
         await this.permissionModel.insertMany(newPermissions);
       }
     }
+
+    const finalPermissions = await this.permissionModel
+      .find({
+        entityType: EntityType.PRODUCT,
+        entityId: new mongoose.Types.ObjectId(productId),
+      })
+      .lean();
+
+    return [...new Set(finalPermissions.map((p) => p.allowed.toString()))];
   }
 
   async getDirectChildrenToDelete(categoryId: string) {

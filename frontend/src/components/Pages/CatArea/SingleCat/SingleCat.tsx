@@ -171,13 +171,30 @@ const SingleCat: FC = () => {
   useEffect(() => {
     joinRoleRoom("editor");
     if (id) joinRoleRoom(id);
+    const groupId = localStorage.getItem("groupControl:selectedGroupId");
+    if (groupId && role === "viewer") {
+      joinRoleRoom(groupId);
+    }
+    const socketPreviousPath = localStorage.getItem("previousPath");
+    const handleBannedPermissionsUpdated = async () => {
+      try {
+        const currentPath =
+          categoryPathRef.current ||
+          localStorage.getItem("previousPath") ||
+          location.pathname;
+
+        await loadAllContent(currentPath);
+        toast.info("הרשאות עודכנו, טוען...");
+      } catch (err: any) {
+        console.error("Reload failed", err);
+      }
+    };
 
     const handleNewSubCategory = (newCategory: CategoryDTO) => {
       const newParentPath = newCategory.categoryPath
         .split("/")
         .slice(0, -1)
         .join("/");
-      const socketPreviousPath = localStorage.getItem("previousPath");
 
       if (socketPreviousPath === newParentPath) {
         loadAllContent();
@@ -245,19 +262,27 @@ const SingleCat: FC = () => {
         return prev;
       });
     };
-    const handleMovedProduct = (data: { savedProduct: ProductDto; sourceCategoryPath: string; newCategoryPath: string[]; }) => {
-      const { savedProduct: product, sourceCategoryPath, newCategoryPath } = data;
+    const handleMovedProduct = (data: {
+      savedProduct: ProductDto;
+      sourceCategoryPath: string;
+      newCategoryPath: string[];
+    }) => {
+      const {
+        savedProduct: product,
+        sourceCategoryPath,
+        newCategoryPath,
+      } = data;
       const socketPreviousPath = localStorage.getItem("previousPath") || "";
 
-      setItems(prev => {
+      setItems((prev) => {
         let updated = [...prev];
 
         if (socketPreviousPath === sourceCategoryPath) {
-          updated = updated.filter(item => item.id !== product._id);
+          updated = updated.filter((item) => item.id !== product._id);
         }
 
         if (newCategoryPath.includes(socketPreviousPath)) {
-          if (!updated.some(item => item.id === product._id)) {
+          if (!updated.some((item) => item.id === product._id)) {
             updated = [
               {
                 id: product._id || "",
@@ -275,18 +300,19 @@ const SingleCat: FC = () => {
         return updated;
       });
     };
-    onEvent("product_moved", handleMovedProduct);
     const handleNewProduct = (newProduct: any) => {
       const currentPath = categoryPathRef.current;
 
       const belongsHere = Array.isArray(newProduct.productPath)
-        ? newProduct.productPath.some((p: string) => p.startsWith(currentPath + "/"))
+        ? newProduct.productPath.some((p: string) =>
+          p.startsWith(currentPath + "/"),
+        )
         : newProduct.productPath?.startsWith(currentPath + "/");
 
       if (!belongsHere) return;
 
-      setItems(prev => {
-        if (prev.some(item => item.id === newProduct._id)) return prev;
+      setItems((prev) => {
+        if (prev.some((item) => item.id === newProduct._id)) return prev;
         return [
           ...prev,
           {
@@ -307,10 +333,11 @@ const SingleCat: FC = () => {
     const handleProductUpdated = (updatedProduct: any) => {
       setItems((prev) =>
         prev.map((item) => {
-          if (item.type !== 'product' || item.id !== updatedProduct._id) return item;
+          if (item.type !== "product" || item.id !== updatedProduct._id)
+            return item;
 
           const images = (updatedProduct.productImages || []).filter(
-            (url: string) => typeof url === 'string' && url.trim(),
+            (url: string) => typeof url === "string" && url.trim(),
           );
 
           return {
@@ -396,7 +423,6 @@ const SingleCat: FC = () => {
           );
         } else {
           const newPath = currentPath.replace(itemPath, parentPath);
-          console.log("navigating to:", newPath);
           navigate(newPath);
         }
         return;
@@ -406,7 +432,72 @@ const SingleCat: FC = () => {
         loadAllContent(categoryPathRef.current);
       }
     };
+    const handleCategoryPermissionsChanged = (data: {
+      categoryPath: string;
+    }) => {
+      const previousPath = localStorage.getItem("previousPath") || "";
 
+      if (!previousPath.startsWith(data.categoryPath)) return;
+
+      loadAllContent();
+    };
+    const handleProductPermissionDeleted = (data: {
+      product: ProductDto;
+    }) => {
+      const { product } = data;
+      const previousPath = localStorage.getItem("previousPath") || "";
+
+      const productPaths = Array.isArray(product.productPath)
+        ? product.productPath
+        : [product.productPath];
+
+      const parentPaths = productPaths.map((path) =>
+        path.split("/").slice(0, -1).join("/")
+      );
+
+      if (!parentPaths.includes(previousPath)) return;
+
+      setItems((prev) =>
+        prev.filter((item) => item.id !== product._id)
+      );
+    };
+    const handleProductPermissionAdded = (data: {
+      product: ProductDto;
+    }) => {
+      const { product } = data;
+      const previousPath = localStorage.getItem("previousPath") || "";
+
+      const productPaths = Array.isArray(product.productPath)
+        ? product.productPath
+        : [product.productPath];
+
+      const parentPaths = productPaths.map((path) =>
+        path.split("/").slice(0, -1).join("/")
+      );
+
+      if (!parentPaths.includes(previousPath)) return;
+
+      setItems((prev) => {
+        if (prev.some((item) => item.id === product._id)) return prev;
+
+        return [
+          {
+            id: product._id!,
+            name: product.productName,
+            images: product.productImages || [],
+            type: "product",
+            path: productPaths,
+            description: product.productDescription,
+            customFields: product.customFields,
+            favorite: false,
+          },
+          ...prev,
+        ];
+      });
+    };
+    onEvent("product_permission_deleted", handleProductPermissionDeleted);
+    onEvent("product_permission_added", handleProductPermissionAdded);
+    onEvent("product_moved", handleMovedProduct);
     onEvent("sub_category_added", handleNewSubCategory);
     onEvent("category_moved", handleMovedCategory);
     onEvent("category_updated", handleCategoryUpdated);
@@ -414,16 +505,25 @@ const SingleCat: FC = () => {
     onEvent("product_updated", handleProductUpdated);
     onEvent("product_deleted", handleProductDeleted);
     onEvent("recycle_bin_updated", handleRecycleBinUpdated);
+    onEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
+    onEvent("category_permissions_changed", handleCategoryPermissionsChanged);
 
     return () => {
       offEvent("sub_category_added", handleNewSubCategory);
+      offEvent("product_permission_added", handleProductPermissionAdded);
       offEvent("category_moved", handleMovedCategory);
+      offEvent("product_permission_deleted", handleProductPermissionDeleted);
       offEvent("category_updated", handleCategoryUpdated);
       offEvent("product_moved", handleMovedProduct);
       offEvent("product_added", handleNewProduct);
       offEvent("product_updated", handleProductUpdated);
       offEvent("product_deleted", handleProductDeleted);
       offEvent("recycle_bin_updated", handleRecycleBinUpdated);
+      offEvent(
+        "banned_items_permissions_updated",
+        handleBannedPermissionsUpdated,
+      );
+      offEvent("category_permissions_changed", handleCategoryPermissionsChanged);
     };
   }, [id, joinRoleRoom, onEvent, offEvent]);
 
@@ -447,7 +547,6 @@ const SingleCat: FC = () => {
   }, [categoryPath]);
 
   const loadAllContent = async (pathOverride?: string) => {
-    console.log("loadAllContent called");
     const currentCategoryPath = pathOverride ?? categoryPath;
     try {
       setLoading(true);
@@ -550,7 +649,6 @@ const SingleCat: FC = () => {
       toast.error("שגיאה בעדכון הקטגוריה");
     }
   };
-
 
   const toggleFavorite = useDebouncedFavorite(items, setItems, 500);
 

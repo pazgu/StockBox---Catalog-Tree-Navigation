@@ -98,20 +98,9 @@ const SingleProd: FC<SingleProdProps> = () => {
       setErrorMessage("");
     }
   };
-  useEffect(() => {
-    if (!productId) {
-      setIsLoading(false);
-      return;
-    }
-    const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(productId);
-    if (!isValidObjectId) {
-      navigate("/404", { replace: true });
-      return;
-    }
-
-
-    const loadProduct = async () => {
-      setIsLoading(true);
+  const loadProduct = async () => {
+    setIsLoading(true);
+    if (productId)
       try {
         const product = await ProductsService.getById(productId);
 
@@ -176,7 +165,16 @@ const SingleProd: FC<SingleProdProps> = () => {
       } finally {
         setIsLoading(false);
       }
-    };
+  };
+
+
+  useEffect(() => {
+    if (!productId) return;
+    const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(productId);
+    if (!isValidObjectId) {
+      navigate("/404", { replace: true });
+      return;
+    }
 
     loadProduct();
   }, [productId, navigate, id]);
@@ -188,12 +186,27 @@ const SingleProd: FC<SingleProdProps> = () => {
     if (id) {
       joinRoleRoom(id);
     }
+    const groupId = localStorage.getItem("groupControl:selectedGroupId");
+    if (groupId && role === "viewer") {
+      joinRoleRoom(groupId);
+    }
+    const handleCategoryPermissionsChanged = (data: {
+      categoryPath: string;
+    }) => {
+      const previousPath = localStorage.getItem("previousPath") || "";
+
+      if (!previousPath.startsWith(data.categoryPath)) return;
+
+      loadProduct();
+    };
+
     const handleProductUpdated = (updatedProduct: ProductDto) => {
       if (updatedProduct._id !== productId) return;
       if (isEditing) return;
 
       setTitle(updatedProduct.productName);
       setDescription(updatedProduct.productDescription || '');
+      setProduct(updatedProduct);
 
       const defaultUrl = environment.DEFAULT_PRODUCT_IMAGE_URL;
       const cleaned = normalizeImages(updatedProduct.productImages || []).filter(
@@ -245,6 +258,14 @@ const SingleProd: FC<SingleProdProps> = () => {
       setPreviousPath(newCategoryPath[0]);
       navigate(`/products/${product._id}`, { replace: true });
     };
+    const handleBannedPermissionsUpdated = async () => {
+      try {
+        await loadProduct();
+        toast.info("הרשאות עודכנו, טוען...");
+      } catch (err: any) {
+        console.error("Reload failed", err);
+      }
+    };
 
     const handleProductDeleted = (data: {
       productId: string;
@@ -264,14 +285,29 @@ const SingleProd: FC<SingleProdProps> = () => {
       );
       navigate("/categories", { replace: true });
     };
+    const handleProductPermissionDeleted = (data: { product: ProductDto }) => {
+      const { product } = data;
+
+      if (product._id !== productId) return;
+
+      if (isEditing) return;
+      toast.info("הרשאות עודכנו, טוען...")
+      loadProduct();
+    };
 
     onEvent('product_updated', handleProductUpdated);
     onEvent('product_moved', handleMovedProduct);
+    onEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
+    onEvent("category_permissions_changed", handleCategoryPermissionsChanged);
     onEvent('product_deleted', handleProductDeleted);
+    onEvent("product_permission_deleted", handleProductPermissionDeleted);
     return () => {
       offEvent('product_updated', handleProductUpdated);
       offEvent('product_moved', handleMovedProduct);
+      offEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
+      offEvent("category_permissions_changed", handleCategoryPermissionsChanged);
       offEvent('product_deleted', handleProductDeleted);
+      offEvent("product_permission_deleted", handleProductPermissionDeleted);
     };
   }, [productId, isEditing, onEvent, offEvent]);
   const location = useLocation();
@@ -320,6 +356,8 @@ const SingleProd: FC<SingleProdProps> = () => {
     setCurrentImageIndex(0);
     setIsEditing(false);
     setEditSnapshot(null);
+    setNewFolderName("");
+    setShowNewFolderInput(false);
   };
 
   const hasUnsavedChanges = useMemo(() => {
@@ -552,6 +590,11 @@ const SingleProd: FC<SingleProdProps> = () => {
       toast.error("לא ניתן לשמור שדות ריקים");
       return;
     }
+    if (newFolderName.trim()) {
+      toast.error("חובה ליצור או למחוק את התיקייה לפני השמירה");
+      return;
+    }
+
     const hasEmptyFolder = folders.some((folder) => folder.files.length === 0);
     if (hasEmptyFolder) {
       toast.error("לא ניתן לשמור תיקייה ריקה ללא קבצים");
@@ -619,6 +662,8 @@ const SingleProd: FC<SingleProdProps> = () => {
 
     if (!hasChanges) {
       setIsEditing(false);
+      setNewFolderName("");
+      setShowNewFolderInput(false);
       return;
     }
 
@@ -628,6 +673,7 @@ const SingleProd: FC<SingleProdProps> = () => {
       toast.success("שינויים נשמרו בהצלחה");
       setEditSnapshot(null);
       setIsEditing(false);
+      setProduct((prev) => prev ? { ...prev, productName: title } : prev);
     } catch (err: any) {
       const msg = err?.message || "";
       if (msg.includes("שם זה כבר קיים")) {
