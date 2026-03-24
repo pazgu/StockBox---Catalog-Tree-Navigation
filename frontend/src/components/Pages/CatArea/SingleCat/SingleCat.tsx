@@ -232,7 +232,7 @@ const SingleCat: FC = () => {
         }, 500);
       }
     };
-    
+
 
     const handleCategoryUpdated = (data: {
       updatedCategory: Category;
@@ -440,6 +440,19 @@ const SingleCat: FC = () => {
         loadAllContent(categoryPathRef.current);
       }
     };
+    const handleMultipleItemsMovedToRecycleBin = ({
+      categoryIds,
+      productIds,
+    }: {
+      categoryIds: string[];
+      productIds: string[];
+    }) => {
+      const hasChanges = categoryIds.length > 0 || productIds.length > 0;
+
+      if (!hasChanges) return;
+
+      loadAllContent(categoryPathRef.current);
+    };
     const handleCategoryPermissionsChanged = (data: {
       categoryPath: string;
     }) => {
@@ -522,6 +535,10 @@ const SingleCat: FC = () => {
     onEvent("product_updated", handleProductUpdated);
     onEvent("product_deleted", handleProductDeleted);
     onEvent("recycle_bin_updated", handleRecycleBinUpdated);
+    onEvent(
+      "multiple_items_moved_to_recycle_bin",
+      handleMultipleItemsMovedToRecycleBin,
+    );
     onEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
     onEvent("category_permissions_changed", handleCategoryPermissionsChanged);
     onEvent('permissions_sync', handlePermissionsSync);
@@ -537,6 +554,10 @@ const SingleCat: FC = () => {
       offEvent("product_updated", handleProductUpdated);
       offEvent("product_deleted", handleProductDeleted);
       offEvent("recycle_bin_updated", handleRecycleBinUpdated);
+      offEvent(
+        "multiple_items_moved_to_recycle_bin",
+        handleMultipleItemsMovedToRecycleBin,
+      );
       offEvent(
         "banned_items_permissions_updated",
         handleBannedPermissionsUpdated,
@@ -970,12 +991,67 @@ const SingleCat: FC = () => {
     setShowDeleteAllModal(true);
   };
 
-  const confirmMoveSelectedToRecycleBin = () => {
-    setItems((prev) => prev.filter((item) => !selectedItems.includes(item.id)));
-    toast.success(`${selectedItems.length} פריטים הועברו לסל המיחזור בהצלחה!`);
-    setSelectedItems([]);
-    setIsSelectionMode(false);
-    setShowDeleteAllModal(false);
+  const confirmMoveSelectedToRecycleBin = async () => {
+    if (selectedItems.length === 0) return;
+
+    try {
+      setIsMovingToRecycleBin(true);
+
+      const selectedItemsData = items.filter((item) =>
+        selectedItems.includes(item.id),
+      );
+
+      const payload = {
+        categoryIds: selectedItemsData
+          .filter((item) => item.type === "category")
+          .map((item) => item.id),
+        categoryStrategy: "cascade" as const,
+        products: selectedItemsData
+          .filter((item) => item.type === "product")
+          .map((item) => ({
+            id: item.id,
+            categoryPath,
+          })),
+      };
+
+      const result =
+        await recycleBinService.moveMultipleItemsToRecycleBin(payload);
+
+      if (result.successCount > 0 && result.failCount === 0) {
+        setShowDeleteAllModal(false);
+        setSelectedItems([]);
+        setIsSelectionMode(false);
+
+        toast.success(
+          `${result.successCount} פריטים הועברו לסל המיחזור בהצלחה!`,
+        );
+
+        await loadAllContent();
+      } else if (result.successCount > 0 && result.failCount > 0) {
+        setShowDeleteAllModal(false);
+        setSelectedItems([]);
+        setIsSelectionMode(false);
+
+        toast.warning(
+          `${result.successCount} פריטים הועברו בהצלחה, ${result.failCount} נכשלו`,
+        );
+        console.error(
+          "Bulk recycle bin errors:",
+          result.results.filter((r) => !r.success),
+        );
+
+        await loadAllContent();
+      } else {
+        toast.error("כל הפריטים נכשלו בהעברה לסל המיחזור");
+        console.error("Bulk recycle bin errors:", result.results);
+        return;
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("שגיאה בהעברת הפריטים לסל המיחזור");
+    } finally {
+      setIsMovingToRecycleBin(false);
+    }
   };
 
   const handleMoveSelected = () => {
@@ -989,7 +1065,7 @@ const SingleCat: FC = () => {
 
   const handleMoveMultipleSuccess = async () => {
     await loadAllContent();
-    isMoveMultipleInProgressRef.current = false; 
+    isMoveMultipleInProgressRef.current = false;
     setSelectedItems([]);
     setIsSelectionMode(false);
     setShowMoveMultipleModal(false);
@@ -1556,13 +1632,28 @@ const SingleCat: FC = () => {
             <div className="flex justify-end gap-3 mt-4">
               <button
                 onClick={confirmMoveSelectedToRecycleBin}
-                className="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 transition-colors"
+                disabled={isMovingToRecycleBin}
+                className={`bg-orange-600 text-white px-4 py-2 rounded transition-colors ${isMovingToRecycleBin
+                  ? "opacity-70 cursor-not-allowed"
+                  : "hover:bg-orange-700"
+                  }`}
               >
-                העברה לסל מיחזור
+                {isMovingToRecycleBin ? (
+                  <span className="flex items-center gap-2">
+                    <Spinner className="size-4 text-white" />
+                    מעביר לסל...
+                  </span>
+                ) : (
+                  "העברה לסל מיחזור"
+                )}
               </button>
               <button
                 onClick={closeAllModals}
-                className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400 transition-colors"
+                disabled={isMovingToRecycleBin}
+                className={`bg-gray-300 px-4 py-2 rounded transition-colors ${isMovingToRecycleBin
+                  ? "opacity-70 cursor-not-allowed"
+                  : "hover:bg-gray-400"
+                  }`}
               >
                 ביטול
               </button>
