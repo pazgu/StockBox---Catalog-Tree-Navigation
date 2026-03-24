@@ -23,8 +23,14 @@ export class PermissionsController {
   constructor(private permissionsService: PermissionsService) {}
   @Post()
   @UseGuards(AuthGuard('jwt'))
-  createPermission(@Body() createPermissionDto: CreatePermissionDto) {
-    return this.permissionsService.createPermission(createPermissionDto);
+  createPermission(
+    @Body() createPermissionDto: CreatePermissionDto,
+    @Req() req,
+  ) {
+    return this.permissionsService.createPermission(
+      createPermissionDto,
+      req.user.userId,
+    );
   }
   @Post('batch')
   @UseGuards(AuthGuard('jwt'))
@@ -80,8 +86,11 @@ export class PermissionsController {
   }
   @Delete(':id')
   @UseGuards(AuthGuard('jwt'))
-  async deletePermission(@Param('id') id: string) {
-    const deleted = await this.permissionsService.deletePermission(id);
+  async deletePermission(@Param('id') id: string, @Req() req) {
+    const deleted = await this.permissionsService.deletePermission(
+      id,
+      req.user.userId,
+    );
     if (!deleted) {
       return { status: 'fail', message: 'Permission not found' };
     }

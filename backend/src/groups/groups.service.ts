@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
@@ -27,7 +28,7 @@ export class GroupsService {
     @Inject(forwardRef(() => PermissionsService))
     private permissionsService: PermissionsService,
     private readonly socketService: SocketService,
-  ) { }
+  ) {}
 
   async findAll(): Promise<GroupDocument[]> {
     return this.groupModel
@@ -96,8 +97,11 @@ export class GroupsService {
     const oldMemberIds: Set<string> = new Set();
     if (Array.isArray(updateGroupDto.members)) {
       const groupBefore = await this.groupModel.findById(id).lean().exec();
-      if (!groupBefore) throw new NotFoundException(`Group with ID ${id} not found`);
-      (groupBefore.members ?? []).forEach((m: any) => oldMemberIds.add(m.toString()));
+      if (!groupBefore)
+        throw new NotFoundException(`Group with ID ${id} not found`);
+      (groupBefore.members ?? []).forEach((m: any) =>
+        oldMemberIds.add(m.toString()),
+      );
     }
 
     const updatedGroup = await this.groupModel
@@ -156,8 +160,8 @@ export class GroupsService {
       name: updatedGroup.groupName,
       members:
         updatedGroup.members?.map((m: any) =>
-        typeof m === 'string' ? m : m._id.toString(),
-      ) ?? [],
+          typeof m === 'string' ? m : m._id.toString(),
+        ) ?? [],
     });
     return updatedGroup;
   }

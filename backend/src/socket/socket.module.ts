@@ -8,20 +8,20 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { GroupsModule } from 'src/groups/groups.module';
 
 @Module({
-    imports: [
-        forwardRef(() => GroupsModule),
-        MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
-        ConfigModule.forRoot({ isGlobal: true }),
-        JwtModule.registerAsync({
-            imports: [ConfigModule],
-            inject: [ConfigService],
-            useFactory: (config: ConfigService) => ({
-                secret: config.get<string>('JWT_SECRET'),
-                signOptions: { expiresIn: '1d' },
-            }),
-        }),
-    ],
-    providers: [SocketGateway, SocketService],
-    exports: [SocketService],
+  imports: [
+    forwardRef(() => GroupsModule),
+    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    ConfigModule.forRoot({ isGlobal: true }),
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        secret: config.get<string>('JWT_SECRET'),
+        signOptions: { expiresIn: '1d' },
+      }),
+    }),
+  ],
+  providers: [SocketGateway, SocketService],
+  exports: [SocketService],
 })
-export class SocketModule { }
+export class SocketModule {}
