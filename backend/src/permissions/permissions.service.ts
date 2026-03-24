@@ -93,8 +93,6 @@ export class PermissionsService {
         allowed.toString(),
         'category_permissions_changed',
         {
-          userId: allowed.toString(),
-          categoryId: entityId.toString(),
           action: 'created',
           categoryPath: category?.categoryPath,
         },
@@ -109,8 +107,13 @@ export class PermissionsService {
     }
 
     if (entityType !== EntityType.CATEGORY || !inheritToChildren) {
-      const product = await this.productModel.findById(entityId);
-      this.socketService.emitToUser(dto.allowed, "product_permission_added", { product: product })
+      if (entityType === EntityType.PRODUCT) {
+        const product = await this.productModel.findById(entityId);
+        this.socketService.emitToUser(dto.allowed, "product_permission_added", { product: product })
+        return created;
+
+      }
+      emitPermissionChanged();
       this.socketService.emitToRole('editor', 'permissions_page_updated', {
         entityId: entityId.toString(),
         updatedBy: editorId,
@@ -378,8 +381,7 @@ export class PermissionsService {
         permission.allowed.toString(),
         'category_permissions_changed',
         {
-          userId: permission.allowed.toString(),
-          categoryId: permission.entityId.toString(),
+          inheritToChildren: true,
           action: 'deleted',
           categoryPath: category?.categoryPath,
         },

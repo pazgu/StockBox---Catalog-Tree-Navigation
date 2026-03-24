@@ -454,13 +454,30 @@ const SingleCat: FC = () => {
       loadAllContent(categoryPathRef.current);
     };
     const handleCategoryPermissionsChanged = (data: {
-      categoryPath: string;
+      categoryPath: string; action: string;
     }) => {
       const previousPath = localStorage.getItem("previousPath") || "";
-
-      if (!previousPath.startsWith(data.categoryPath)) return;
-
-      loadAllContent();
+      const categoryParentPath = data.categoryPath.split("/").slice(0, -1).join("/");
+      if (previousPath === categoryParentPath) {
+        loadAllContent();
+        return;
+      }
+      if (previousPath === data.categoryPath) {
+        if (data.action === 'deleted') {
+          toast.info("הרשאות עודכנו, טוען...")
+          navigate('/categories')
+          return;
+        }
+        return;
+      }
+      if (previousPath.startsWith(data.categoryPath)) {
+        if (data.action === 'deleted') {
+          toast.info("הרשאות עודכנו, טוען...")
+          navigate('/categories')
+          return;
+        }
+        return;
+      }
     };
     const handleProductPermissionDeleted = (data: {
       product: ProductDto;
