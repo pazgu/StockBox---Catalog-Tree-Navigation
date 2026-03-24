@@ -34,7 +34,7 @@ export class PermissionsService {
     private socketService: SocketService,
     private usersService: UsersService,
     private groupsService: GroupsService,
-  ) {}
+  ) { }
 
   async getPermissionsForUser(userId: string, userGroupIds?: string[]) {
     const allowedIds = [
@@ -109,7 +109,8 @@ export class PermissionsService {
     }
 
     if (entityType !== EntityType.CATEGORY || !inheritToChildren) {
-      this.socketService.emitToUser(dto.allowed, "product_permission_added", { path: dto.contextPath })
+      const product = await this.productModel.findById(entityId);
+      this.socketService.emitToUser(dto.allowed, "product_permission_added", { product: product })
       this.socketService.emitToRole('editor', 'permissions_page_updated', {
         entityId: entityId.toString(),
         updatedBy: editorId,
@@ -385,8 +386,8 @@ export class PermissionsService {
       );
     }
     else {
-      const product = await this.productModel.findById(permission.allowed);
-
+      const product = await this.productModel.findById(permission.entityId);
+      console.log("prod:", product)
       this.socketService.emitToUser(permission.allowed.toString(), "product_permission_deleted", { product: product })
 
     }

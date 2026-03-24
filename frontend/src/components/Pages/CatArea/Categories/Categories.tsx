@@ -365,7 +365,63 @@ export const Categories: FC<CategoriesProps> = () => {
         ];
       });
     };
+    const handleProductPermissionDeleted = (data: {
+      product: ProductDto;
+    }) => {
+      const { product } = data;
 
+      const previousPath =
+        localStorage.getItem("previousPath") || "/categories";
+
+      const productPaths = Array.isArray(product.productPath)
+        ? product.productPath
+        : [product.productPath];
+
+      const parentPaths = productPaths.map((path) =>
+        path.split("/").slice(0, -1).join("/")
+      );
+
+      if (!parentPaths.includes(previousPath)) return;
+
+      setItems((prev) =>
+        prev.filter((item) => item.id !== product._id)
+      );
+    };
+    const handleProductPermissionAdded = (data: { product: ProductDto }) => {
+      const { product } = data;
+
+      const previousPath = localStorage.getItem("previousPath") || "/categories";
+
+      const productPaths = Array.isArray(product.productPath)
+        ? product.productPath
+        : [product.productPath];
+
+      const parentPaths = productPaths.map((path) =>
+        path.split("/").slice(0, -1).join("/")
+      );
+
+      if (!parentPaths.includes(previousPath)) return;
+
+      setItems((prev) => {
+        if (prev.some((item) => item.id === product._id)) return prev;
+
+        return [
+          {
+            id: product._id!,
+            name: product.productName,
+            images: product.productImages || [],
+            type: "product",
+            path: productPaths,
+            description: product.productDescription,
+            customFields: product.customFields,
+            favorite: false,
+          },
+          ...prev,
+        ];
+      });
+    };
+    onEvent("product_permission_deleted", handleProductPermissionDeleted);
+    onEvent("product_permission_added", handleProductPermissionAdded);
     onEvent("product_added", handleNewProduct);
     onEvent("category_added", handleNewCategory);
     onEvent("category_moved", handleMovedCategory);
@@ -378,6 +434,7 @@ export const Categories: FC<CategoriesProps> = () => {
     onEvent("category_permissions_changed", handleCategoryPermissionsChanged);
     return () => {
       offEvent("product_added", handleNewProduct);
+      offEvent("product_permission_added", handleProductPermissionAdded);
       offEvent("category_added", handleNewCategory);
       offEvent("category_moved", handleMovedCategory);
       offEvent("category_updated", handleCategoryUpdated);
@@ -388,6 +445,7 @@ export const Categories: FC<CategoriesProps> = () => {
         "banned_items_permissions_updated",
         handleBannedPermissionsUpdated,
       );
+      offEvent("product_permission_deleted", handleProductPermissionDeleted);
       offEvent("product_deleted", handleProductDeleted);
       offEvent("category_permissions_changed", handleCategoryPermissionsChanged);
     };
