@@ -28,7 +28,7 @@ export class RecycleBinService {
     @InjectModel(NameLock.name) private nameLockModel: Model<NameLock>,
     private permissionsService: PermissionsService,
     private socketService: SocketService,
-  ) {}
+  ) { }
 
   async getRecycleBinItems(): Promise<RecycleBin[]> {
     return this.recycleBinModel.find().sort({ deletedAt: -1 }).lean().exec();
@@ -627,66 +627,93 @@ export class RecycleBinService {
   }
 
   async moveMultipleItemsToRecycleBin(
-  items: {
-    id: string;
-    type: 'category' | 'product';
-    categoryPath?: string;
-    strategy?: 'cascade' | 'move_up';
-  }[],
-  userId?: string,
-) {
-  const results: {
-    id: string;
-    type: 'category' | 'product';
-    success: boolean;
-    message?: string;
-    error?: string;
-  }[] = [];
+    payload: {
+      categoryIds: string[];
+      categoryStrategy?: 'cascade' | 'move_up';
+      products: {
+        id: string;
+        categoryPath?: string;
+      }[];
+    },
+    userId?: string,
+  ) {
+    const categoryResults: {
+      id: string;
+      type: 'category';
+      success: boolean;
+      message?: string;
+      error?: string;
+    }[] = [];
 
-  for (const item of items) {
-    try {
-      let result:
-        | { success: boolean; message: string }
-        | undefined;
+    const productResults: {
+      id: string;
+      type: 'product';
+      success: boolean;
+      message?: string;
+      error?: string;
+    }[] = [];
 
-      if (item.type === 'category') {
-        result = await this.moveCategoryToRecycleBin(
-          item.id,
-          item.strategy || 'cascade',
-          userId,
-        );
-      } else {
-        result = await this.moveProductToRecycleBin(
-          item.id,
-          item.categoryPath,
-          userId,
-        );
+    if (payload.categoryIds.length > 0) {
+      for (const categoryId of payload.categoryIds) {
+        try {
+          const result = await this.moveCategoryToRecycleBin(
+            categoryId,
+            payload.categoryStrategy || 'cascade',
+            userId,
+          );
+
+          categoryResults.push({
+            id: categoryId,
+            type: 'category',
+            success: true,
+            message: result.message,
+          });
+        } catch (error: any) {
+          categoryResults.push({
+            id: categoryId,
+            type: 'category',
+            success: false,
+            error: error?.message || 'Unknown error',
+          });
+        }
       }
-
-      results.push({
-        id: item.id,
-        type: item.type,
-        success: true,
-        message: result?.message,
-      });
-    } catch (error: any) {
-      results.push({
-        id: item.id,
-        type: item.type,
-        success: false,
-        error: error?.message || 'Unknown error',
-      });
     }
+
+    if (payload.products.length > 0) {
+      for (const product of payload.products) {
+        try {
+          const result = await this.moveProductToRecycleBin(
+            product.id,
+            product.categoryPath,
+            userId,
+          );
+
+          productResults.push({
+            id: product.id,
+            type: 'product',
+            success: true,
+            message: result?.message,
+          });
+        } catch (error: any) {
+          productResults.push({
+            id: product.id,
+            type: 'product',
+            success: false,
+            error: error?.message || 'Unknown error',
+          });
+        }
+      }
+    }
+
+    const results = [...categoryResults, ...productResults];
+    const successCount = results.filter((item) => item.success).length;
+    const failCount = results.filter((item) => !item.success).length;
+
+    return {
+      success: failCount === 0,
+      successCount,
+      failCount,
+      results,
+    };
   }
-
-  const successCount = results.filter((item) => item.success).length;
-  const failCount = results.filter((item) => !item.success).length;
-
-  return {
-    success: failCount === 0,
-    successCount,
-    failCount,
-    results,
-  };
-}
 }

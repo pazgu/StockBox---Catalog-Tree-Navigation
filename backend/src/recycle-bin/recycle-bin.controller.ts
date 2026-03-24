@@ -92,7 +92,11 @@ export class RecycleBinController {
     @Req() req: any,
   ) {
     return this.recycleBinService.moveMultipleItemsToRecycleBin(
-      dto.items,
+      {
+        categoryIds: dto.categoryIds || [],
+        categoryStrategy: dto.categoryStrategy || 'cascade',
+        products: dto.products || [],
+      },
       req.user?.userId,
     );
   }

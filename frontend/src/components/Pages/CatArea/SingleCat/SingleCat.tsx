@@ -969,21 +969,18 @@ const SingleCat: FC = () => {
         selectedItems.includes(item.id),
       );
 
-      const payload = selectedItemsData.map((item) => {
-        if (item.type === "category") {
-          return {
+      const payload = {
+        categoryIds: selectedItemsData
+          .filter((item) => item.type === "category")
+          .map((item) => item.id),
+        categoryStrategy: "cascade" as const,
+        products: selectedItemsData
+          .filter((item) => item.type === "product")
+          .map((item) => ({
             id: item.id,
-            type: "category" as const,
-            strategy: "cascade" as const,
-          };
-        }
-
-        return {
-          id: item.id,
-          type: "product" as const,
-          categoryPath,
-        };
-      });
+            categoryPath,
+          })),
+      };
 
       const result =
         await recycleBinService.moveMultipleItemsToRecycleBin(payload);
@@ -1598,8 +1595,8 @@ const SingleCat: FC = () => {
                 onClick={confirmMoveSelectedToRecycleBin}
                 disabled={isMovingToRecycleBin}
                 className={`bg-orange-600 text-white px-4 py-2 rounded transition-colors ${isMovingToRecycleBin
-                    ? "opacity-70 cursor-not-allowed"
-                    : "hover:bg-orange-700"
+                  ? "opacity-70 cursor-not-allowed"
+                  : "hover:bg-orange-700"
                   }`}
               >
                 {isMovingToRecycleBin ? (
@@ -1615,8 +1612,8 @@ const SingleCat: FC = () => {
                 onClick={closeAllModals}
                 disabled={isMovingToRecycleBin}
                 className={`bg-gray-300 px-4 py-2 rounded transition-colors ${isMovingToRecycleBin
-                    ? "opacity-70 cursor-not-allowed"
-                    : "hover:bg-gray-400"
+                  ? "opacity-70 cursor-not-allowed"
+                  : "hover:bg-gray-400"
                   }`}
               >
                 ביטול

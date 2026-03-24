@@ -126,36 +126,36 @@ class RecycleBinService {
     }
   }
 
-  async moveMultipleItemsToRecycleBin(
-  items: {
-    id: string;
-    type: "category" | "product";
-    categoryPath?: string;
-    strategy?: "cascade" | "move_up";
-  }[]
-): Promise<{
-  success: boolean;
-  successCount: number;
-  failCount: number;
-  results: {
-    id: string;
-    type: "category" | "product";
+  async moveMultipleItemsToRecycleBin(payload: {
+    categoryIds: string[];
+    categoryStrategy?: "cascade" | "move_up";
+    products: {
+      id: string;
+      categoryPath?: string;
+    }[];
+  }): Promise<{
     success: boolean;
-    message?: string;
-    error?: string;
-  }[];
-}> {
-  try {
-    const response = await api.post(
-      `${this.baseUrl}/multiple`,
-      { items },
-      this.getAuthHeaders()
-    );
-    return response.data;
-  } catch (error) {
-    console.error("Error moving multiple items to recycle bin:", error);
-    throw error;
+    successCount: number;
+    failCount: number;
+    results: {
+      id: string;
+      type: "category" | "product";
+      success: boolean;
+      message?: string;
+      error?: string;
+    }[];
+  }> {
+    try {
+      const response = await api.post(
+        `${this.baseUrl}/multiple`,
+        payload,
+        this.getAuthHeaders()
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error moving multiple items to recycle bin:", error);
+      throw error;
+    }
   }
-}
 }
 export const recycleBinService = new RecycleBinService();
