@@ -12,8 +12,6 @@ import { getSafeProductImage } from "../lib/imageFallback";
 export class ProductsService {
   private static readonly baseUrl = `${environment.API_URL}/products`;
 
-
-
   static getAuthHeaders() {
     const token = localStorage.getItem("token");
     return {
@@ -39,7 +37,6 @@ export class ProductsService {
       throw e;
     }
   }
-
 
   static async createProduct(
     payload: CreateProductPayload,
@@ -73,15 +70,13 @@ export class ProductsService {
       const status = err.response?.status;
 
       if (status === 401) throw new Error("Unauthorized - please login");
-      if (status === 403)
-        throw new Error("Only editors can create products");
+      if (status === 403) throw new Error("Only editors can create products");
 
       throw new Error(
         err.response?.data?.message || "Failed to create product",
       );
     }
   }
-
 
   static async getById(id: string): Promise<ProductDataDto> {
     const { data } = await api.get(`${environment.API_URL}/products/${id}`);
@@ -94,7 +89,6 @@ export class ProductsService {
           : [getSafeProductImage(data.productImages, data.image)],
     };
   }
-
 
   static async moveProduct(
     productId: string,
@@ -168,7 +162,10 @@ export class ProductsService {
               folder.folderName,
             );
             if (folder._id)
-              fd.append(`uploadFolders[${gi}][folders][${fi}][_id]`, folder._id);
+              fd.append(
+                `uploadFolders[${gi}][folders][${fi}][_id]`,
+                folder._id,
+              );
 
             folder.files.forEach((file, fli) => {
               if (file.file instanceof File) {
@@ -205,12 +202,12 @@ export class ProductsService {
       const status = err.response?.status;
 
       if (status === 401) throw new Error("Unauthorized - please login");
-      if (status === 403)
-        throw new Error("Only editors can update products");
+      if (status === 403) throw new Error("Only editors can update products");
       if (status === 404) throw new Error("Product not found");
 
-      throw new Error((err.response?.data as any)?.message || "Failed to update product");
-
+      throw new Error(
+        (err.response?.data as any)?.message || "Failed to update product",
+      );
     }
   }
 
@@ -222,19 +219,15 @@ export class ProductsService {
     return data;
   }
 
-
   static async deleteFromSpecificPaths(
     id: string,
     paths: string[],
   ): Promise<{ success: boolean; message: string }> {
     try {
-      const { data } = await api.delete(
-        `${this.baseUrl}/${id}/paths`,
-        {
-          ...this.getAuthHeaders(),
-          data: { paths },
-        },
-      );
+      const { data } = await api.delete(`${this.baseUrl}/${id}/paths`, {
+        ...this.getAuthHeaders(),
+        data: { paths },
+      });
       return data;
     } catch (error) {
       const err = error as AxiosError;
@@ -248,7 +241,14 @@ export class ProductsService {
     }
   }
 
-  static async setEditLock(productId: string, isBlocked: boolean): Promise<{ isBlocked: boolean; blockedAt: string | null }> {
+  static async setEditLock(
+    productId: string,
+    isBlocked: boolean,
+  ): Promise<{
+    isBlocked: boolean;
+    blockedAt: string | null;
+    blockedBy: { userId: string; userName: string } | null;
+  }> {
     const { data } = await api.patch(
       `${this.baseUrl}/${productId}/edit-lock`,
       { isBlocked },

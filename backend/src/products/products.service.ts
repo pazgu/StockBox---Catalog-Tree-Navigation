@@ -536,7 +536,10 @@ export class ProductsService {
       }
     }
 
-    return product;
+    return {
+      ...product,
+      blockedBy: product.blockedBy ?? null,
+    };
   }
 
   async deleteFromSpecificPaths(
@@ -617,13 +620,35 @@ export class ProductsService {
   async setEditLock(
     id: string,
     isBlocked: boolean,
+    editor?: { userId: string; userName: string },
   ): Promise<{ isBlocked: boolean; blockedAt: Date | null }> {
     const product = await this.productModel.findById(id);
     if (!product) throw new NotFoundException('Product not found');
     const blockedAt = isBlocked ? new Date() : null;
-    await this.productModel.findByIdAndUpdate(id, {
-      $set: { isBlocked, blockedAt },
-    });
+    const user =
+      isBlocked && editor
+        ? await this.usersService.findById(editor.userId)
+        : null;
+    const blockedBy =
+      isBlocked && editor
+        ? {
+            userId: new Types.ObjectId(editor.userId),
+            userName: user?.userName ?? 'עורך',
+          }
+        : null;
+    if (isBlocked) {
+      const result = await this.productModel.findOneAndUpdate(
+        { _id: id, isBlocked: false },
+        { $set: { isBlocked: true, blockedAt, blockedBy } },
+        { new: true },
+      );
+      if (!result)
+        throw new ConflictException('המוצר נעול לעריכה על ידי עורך אחר');
+    } else {
+      await this.productModel.findByIdAndUpdate(id, {
+        $set: { isBlocked: false, blockedAt: null, blockedBy: null },
+      });
+    }
     this.socketService.emitToRole(
       UserRole.EDITOR,
       'product_edit_lock_changed',
@@ -631,6 +656,7 @@ export class ProductsService {
         productId: id,
         isBlocked,
         blockedAt,
+        blockedBy: isBlocked ? blockedBy : null,
       },
     );
     const existing = this.editLockTimers.get(id);
@@ -648,7 +674,7 @@ export class ProductsService {
               .lean();
             if (current?.isBlocked) {
               await this.productModel.findByIdAndUpdate(id, {
-                $set: { isBlocked: false, blockedAt: null },
+                $set: { isBlocked: false, blockedAt: null, blockedBy: null },
               });
               this.socketService.emitToRole(
                 UserRole.EDITOR,
@@ -657,6 +683,7 @@ export class ProductsService {
                   productId: id,
                   isBlocked: false,
                   blockedAt: null,
+                  blockedBy: null,
                 },
               );
             }

@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { CustomField } from './CustomFields.schema';
 import { UploadGroup } from './UploadGroup.schema';
-import { HydratedDocument } from 'mongoose';
+import { HydratedDocument, Types } from 'mongoose';
 
 @Schema({ timestamps: true })
 export class Product {
@@ -28,6 +28,16 @@ export class Product {
 
   @Prop({ type: Date, default: null })
   blockedAt: Date | null;
+
+  @Prop({
+    type: {
+      _id: false,
+      userId: { type: Types.ObjectId, ref: 'User' },
+      userName: String,
+    },
+    default: null,
+  })
+  blockedBy: { userId: Types.ObjectId; userName: string } | null;
 }
 export const ProductSchema = SchemaFactory.createForClass(Product);
 ProductSchema.index({ productName: 'text' }, { name: 'product_text_search' });

@@ -254,9 +254,13 @@ const SingleProd: FC<SingleProdProps> = () => {
     const handleEditLockChanged = (data: {
       productId: string;
       isBlocked: boolean;
+      blockedBy: { userId: string; userName: string } | null;
     }) => {
       if (data.productId !== productId) return;
       setIsProductBlocked(data.isBlocked);
+      setProduct((prev) =>
+        prev ? { ...prev, blockedBy: data.blockedBy } : prev,
+      );
     };
     const handleMovedProduct = (data: {
       savedProduct: ProductDto;
@@ -903,7 +907,9 @@ const SingleProd: FC<SingleProdProps> = () => {
                     ? "שומר..."
                     : isEditing
                       ? "שמור שינויים"
-                      : "עריכת דף"}
+                      : isProductBlocked && product?.blockedBy
+                        ? `נעול על ידי ${product.blockedBy.userName}`
+                        : "עריכת דף"}
                 </span>
               </div>
             </div>

@@ -290,4 +290,7 @@ export class UsersService {
 
     return users.map((u) => u._id.toString());
   }
+  async findById(id: string): Promise<User | null> {
+    return this.userModel.findById(id).lean();
+  }
 }

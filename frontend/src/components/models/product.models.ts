@@ -35,6 +35,7 @@ export interface ProductDataDto {
   updatedAt: string;
   isBlocked: boolean;
   blockedAt: string | null;
+  blockedBy?: { userId: string; userName: string } | null;
 }
 
 export interface ProductDto {
@@ -49,6 +50,7 @@ export interface ProductDto {
   updatedAt?: string;
   isBlocked?: boolean;
   blockedAt?: string | null;
+  blockedBy?: { userId: string; userName: string } | null;
 }
 
 export type CreateProductPayload = {
