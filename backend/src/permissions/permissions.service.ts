@@ -34,7 +34,7 @@ export class PermissionsService {
     private socketService: SocketService,
     private usersService: UsersService,
     private groupsService: GroupsService,
-  ) {}
+  ) { }
 
   async getPermissionsForUser(userId: string, userGroupIds?: string[]) {
     const allowedIds = [
@@ -109,7 +109,8 @@ export class PermissionsService {
     }
 
     if (entityType !== EntityType.CATEGORY || !inheritToChildren) {
-      emitPermissionChanged();
+      const product = await this.productModel.findById(entityId);
+      this.socketService.emitToUser(dto.allowed, "product_permission_added", { product: product })
       this.socketService.emitToRole('editor', 'permissions_page_updated', {
         entityId: entityId.toString(),
         updatedBy: editorId,
@@ -372,18 +373,25 @@ export class PermissionsService {
           })
           .exec();
       }
+      const category = await this.categoryModel.findById(permission.entityId);
+      this.socketService.emitToUser(
+        permission.allowed.toString(),
+        'category_permissions_changed',
+        {
+          userId: permission.allowed.toString(),
+          categoryId: permission.entityId.toString(),
+          action: 'deleted',
+          categoryPath: category?.categoryPath,
+        },
+      );
     }
-    const category = await this.categoryModel.findById(permission.entityId);
-    this.socketService.emitToUser(
-      permission.allowed.toString(),
-      'category_permissions_changed',
-      {
-        userId: permission.allowed.toString(),
-        categoryId: permission.entityId.toString(),
-        action: 'deleted',
-        categoryPath: category?.categoryPath,
-      },
-    );
+    else {
+      const product = await this.productModel.findById(permission.entityId);
+      console.log("prod:", product)
+      this.socketService.emitToUser(permission.allowed.toString(), "product_permission_deleted", { product: product })
+
+    }
+
     this.socketService.emitToRole('editor', 'permissions_page_updated', {
       entityId: permission.entityId.toString(),
       updatedBy: editorId,

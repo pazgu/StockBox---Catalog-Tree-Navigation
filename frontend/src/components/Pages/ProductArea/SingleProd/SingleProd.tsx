@@ -178,6 +178,7 @@ const SingleProd: FC<SingleProdProps> = () => {
 
     loadProduct();
   }, [productId, navigate, id]);
+
   useEffect(() => {
 
     if (!productId) return;
@@ -194,7 +195,7 @@ const SingleProd: FC<SingleProdProps> = () => {
     }) => {
       const previousPath = localStorage.getItem("previousPath") || "";
 
-      if (!data.categoryPath.startsWith(previousPath)) return;
+      if (!previousPath.startsWith(data.categoryPath)) return;
 
       loadProduct();
     };
@@ -284,18 +285,29 @@ const SingleProd: FC<SingleProdProps> = () => {
       );
       navigate("/categories", { replace: true });
     };
+    const handleProductPermissionDeleted = (data: { product: ProductDto }) => {
+      const { product } = data;
+
+      if (product._id !== productId) return;
+
+      if (isEditing) return;
+      toast.info("הרשאות עודכנו, טוען...")
+      loadProduct();
+    };
 
     onEvent('product_updated', handleProductUpdated);
     onEvent('product_moved', handleMovedProduct);
     onEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
     onEvent("category_permissions_changed", handleCategoryPermissionsChanged);
     onEvent('product_deleted', handleProductDeleted);
+    onEvent("product_permission_deleted", handleProductPermissionDeleted);
     return () => {
       offEvent('product_updated', handleProductUpdated);
       offEvent('product_moved', handleMovedProduct);
       offEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
       offEvent("category_permissions_changed", handleCategoryPermissionsChanged);
       offEvent('product_deleted', handleProductDeleted);
+      offEvent("product_permission_deleted", handleProductPermissionDeleted);
     };
   }, [productId, isEditing, onEvent, offEvent]);
   const location = useLocation();
