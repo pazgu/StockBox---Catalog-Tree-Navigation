@@ -247,4 +247,13 @@ export class ProductsService {
       throw new Error("Failed to delete product from specific paths");
     }
   }
+
+  static async setEditLock(productId: string, isBlocked: boolean): Promise<{ isBlocked: boolean; blockedAt: string | null }> {
+    const { data } = await api.patch(
+      `${this.baseUrl}/${productId}/edit-lock`,
+      { isBlocked },
+      this.getAuthHeaders(),
+    );
+    return data;
+  }
 }

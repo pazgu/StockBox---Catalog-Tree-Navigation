@@ -22,6 +22,12 @@ export class Product {
 
   @Prop({ type: [UploadGroup], default: [] })
   uploadFolders: UploadGroup[];
+
+  @Prop({ type: Boolean, default: false })
+  isBlocked: boolean;
+
+  @Prop({ type: Date, default: null })
+  blockedAt: Date | null;
 }
 export const ProductSchema = SchemaFactory.createForClass(Product);
 ProductSchema.index({ productName: 'text' }, { name: 'product_text_search' });
