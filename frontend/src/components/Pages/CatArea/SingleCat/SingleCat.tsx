@@ -461,6 +461,15 @@ const SingleCat: FC = () => {
         prev.filter((item) => item.id !== product._id)
       );
     };
+
+    const handlePermissionsSync = ({ basePath }: { basePath: string }) => {
+      const isAffected =
+      categoryPathRef.current === basePath ||
+      categoryPathRef.current.startsWith(basePath + '/');
+      if (!isAffected) return;
+      loadAllContent(categoryPathRef.current);
+    };
+
     const handleProductPermissionAdded = (data: {
       product: ProductDto;
     }) => {
@@ -507,6 +516,7 @@ const SingleCat: FC = () => {
     onEvent("recycle_bin_updated", handleRecycleBinUpdated);
     onEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
     onEvent("category_permissions_changed", handleCategoryPermissionsChanged);
+    onEvent('permissions_sync', handlePermissionsSync);
 
     return () => {
       offEvent("sub_category_added", handleNewSubCategory);
@@ -524,6 +534,7 @@ const SingleCat: FC = () => {
         handleBannedPermissionsUpdated,
       );
       offEvent("category_permissions_changed", handleCategoryPermissionsChanged);
+      offEvent('permissions_sync', handlePermissionsSync);
     };
   }, [id, joinRoleRoom, onEvent, offEvent]);
 

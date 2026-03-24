@@ -99,24 +99,12 @@ const handlePermissionsUpdated = useCallback(() => {
   }, 1000);
 }, []);
 
-const handlePermissionsSync = useCallback(({ basePath }: { basePath: string }) => {
-  const currentPath = window.location.pathname;
-
-  const isAffected =
-    currentPath === basePath ||
-    currentPath.startsWith(basePath + '/');
-
-  if (!isAffected) return;
-
-  window.location.reload();
-}, []);
 
 useSocket({
   token,
   onRoleChanged: handleRoleChanged,
   onUserDeleted: handleUserDeleted,
   onPermissionsUpdated: handlePermissionsUpdated,
-  onPermissionsSync: handlePermissionsSync,
 });
 
   const refreshUsers = async () => {

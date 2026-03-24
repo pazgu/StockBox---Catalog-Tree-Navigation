@@ -31,7 +31,6 @@ export class PermissionsService {
     @InjectModel(Group.name) private groupModel: Model<Group>,
     @InjectModel(User.name) private userModel: Model<User>,
 
-    private socketService: SocketService,
     private usersService: UsersService,
     private groupsService: GroupsService,
     private readonly socketService: SocketService,

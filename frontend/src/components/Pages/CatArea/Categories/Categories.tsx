@@ -186,6 +186,10 @@ export const Categories: FC<CategoriesProps> = () => {
       });
     };
 
+    const handlePermissionsSync = () => {
+      loadCategoriesAndFavorites();
+    };
+
     const handleMovedCategory = (data: {
       category: Category;
       oldPath: string;
@@ -432,6 +436,7 @@ export const Categories: FC<CategoriesProps> = () => {
     onEvent("recycle_bin_updated", handleRecycleBinUpdated);
     onEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
     onEvent("category_permissions_changed", handleCategoryPermissionsChanged);
+    onEvent('permissions_sync', handlePermissionsSync);
     return () => {
       offEvent("product_added", handleNewProduct);
       offEvent("product_permission_added", handleProductPermissionAdded);
@@ -448,6 +453,7 @@ export const Categories: FC<CategoriesProps> = () => {
       offEvent("product_permission_deleted", handleProductPermissionDeleted);
       offEvent("product_deleted", handleProductDeleted);
       offEvent("category_permissions_changed", handleCategoryPermissionsChanged);
+      offEvent('permissions_sync', handlePermissionsSync);
     };
   }, [id]);
   useEffect(() => {
