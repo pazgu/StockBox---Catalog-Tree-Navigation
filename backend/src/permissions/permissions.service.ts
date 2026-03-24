@@ -34,7 +34,7 @@ export class PermissionsService {
     private socketService: SocketService,
     private usersService: UsersService,
     private groupsService: GroupsService,
-  ) { }
+  ) {}
 
   async getPermissionsForUser(userId: string, userGroupIds?: string[]) {
     const allowedIds = [
@@ -48,10 +48,15 @@ export class PermissionsService {
       .exec();
   }
 
-  async createPermission(dto: CreatePermissionDto) {
+  async createPermission(dto: CreatePermissionDto, editorId?: string) {
     const { entityType, entityId, allowed, inheritToChildren, contextPath } =
       dto;
 
+    const editor = await this.userModel
+      .findById(editorId)
+      .select('userName')
+      .lean();
+    const editorName = editor?.userName || 'עורך לא ידוע';
     const existingPermission = await this.permissionModel.findOne({
       entityType,
       entityId,
@@ -91,7 +96,7 @@ export class PermissionsService {
           userId: allowed.toString(),
           categoryId: entityId.toString(),
           action: 'created',
-          categoryPath: category?.categoryPath
+          categoryPath: category?.categoryPath,
         },
       );
     };
@@ -105,6 +110,11 @@ export class PermissionsService {
 
     if (entityType !== EntityType.CATEGORY || !inheritToChildren) {
       this.socketService.emitToUser(dto.allowed, "product_permission_added", { path: dto.contextPath })
+      this.socketService.emitToRole('editor', 'permissions_page_updated', {
+        entityId: entityId.toString(),
+        updatedBy: editorId,
+        updatedByName: editorName,
+      });
       return created;
     }
 
@@ -112,6 +122,11 @@ export class PermissionsService {
 
     if (!descendants.length) {
       emitPermissionChanged();
+      this.socketService.emitToRole('editor', 'permissions_page_updated', {
+        entityId: entityId.toString(),
+        updatedBy: editorId,
+        updatedByName: editorName,
+      });
       return created;
     }
 
@@ -138,6 +153,11 @@ export class PermissionsService {
     await this.permissionModel.bulkWrite(bulkOps);
 
     emitPermissionChanged();
+    this.socketService.emitToRole('editor', 'permissions_page_updated', {
+      entityId: entityId.toString(),
+      updatedBy: editorId,
+      updatedByName: editorName,
+    });
     return created;
   }
 
@@ -324,7 +344,12 @@ export class PermissionsService {
     };
   }
 
-  async deletePermission(id: string) {
+  async deletePermission(id: string, editorId?: string) {
+    const editor = await this.userModel
+      .findById(editorId)
+      .select('userName')
+      .lean();
+    const editorName = editor?.userName || 'עורך לא ידוע';
     const permission = await this.permissionModel.findById(id).exec();
 
     if (!permission) {
@@ -366,6 +391,11 @@ export class PermissionsService {
 
     }
 
+    this.socketService.emitToRole('editor', 'permissions_page_updated', {
+      entityId: permission.entityId.toString(),
+      updatedBy: editorId,
+      updatedByName: editorName,
+    });
     return this.permissionModel.findByIdAndDelete(id).exec();
   }
 
