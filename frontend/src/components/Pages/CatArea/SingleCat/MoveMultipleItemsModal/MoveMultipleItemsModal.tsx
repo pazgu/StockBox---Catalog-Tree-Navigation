@@ -157,14 +157,23 @@ const MoveMultipleItemsModal: React.FC<MoveMultipleItemsModalProps> = ({
         }
       }
 
-      for (const category of categories) {
+if (categories.length > 0) {
         try {
-          await categoriesService.moveCategory(category.id, destinationCategoryPath);
-          successCount++;
+          const result = await categoriesService.moveMultipleCategories({
+            categoryIds: categories.map((c) => c.id),
+            newParentPath: destinationCategoryPath,
+          });
+          successCount += result.successCount;
+          failCount += result.failCount;
+          result.results
+            .filter((r) => !r.success)
+            .forEach((r) => {
+              const cat = categories.find((c) => c.id === r.id);
+              errors.push(`${cat?.name ?? r.id}: ${r.error}`);
+            });
         } catch (error: any) {
-          failCount++;
-          errors.push(`${category.name}: ${error.message || "שגיאה לא ידועה"}`);
-          console.error(`Error moving category ${category.name}:`, error);
+          failCount += categories.length;
+          errors.push(`קטגוריות: ${error.message || "שגיאה לא ידועה"}`);
         }
       }
 

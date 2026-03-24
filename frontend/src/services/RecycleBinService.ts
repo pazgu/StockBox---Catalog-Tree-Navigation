@@ -125,6 +125,37 @@ class RecycleBinService {
       throw error;
     }
   }
-}
 
+  async moveMultipleItemsToRecycleBin(payload: {
+    categoryIds: string[];
+    categoryStrategy?: "cascade" | "move_up";
+    products: {
+      id: string;
+      categoryPath?: string;
+    }[];
+  }): Promise<{
+    success: boolean;
+    successCount: number;
+    failCount: number;
+    results: {
+      id: string;
+      type: "category" | "product";
+      success: boolean;
+      message?: string;
+      error?: string;
+    }[];
+  }> {
+    try {
+      const response = await api.post(
+        `${this.baseUrl}/multiple`,
+        payload,
+        this.getAuthHeaders()
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error moving multiple items to recycle bin:", error);
+      throw error;
+    }
+  }
+}
 export const recycleBinService = new RecycleBinService();

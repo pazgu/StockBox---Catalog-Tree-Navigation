@@ -99,6 +99,7 @@ const handlePermissionsUpdated = useCallback(() => {
   }, 1000);
 }, []);
 
+
 useSocket({
   token,
   onRoleChanged: handleRoleChanged,

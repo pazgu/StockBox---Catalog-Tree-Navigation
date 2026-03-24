@@ -31,9 +31,9 @@ export class PermissionsService {
     @InjectModel(Group.name) private groupModel: Model<Group>,
     @InjectModel(User.name) private userModel: Model<User>,
 
-    private socketService: SocketService,
     private usersService: UsersService,
     private groupsService: GroupsService,
+    private readonly socketService: SocketService,
   ) { }
 
   async getPermissionsForUser(userId: string, userGroupIds?: string[]) {
@@ -1220,6 +1220,17 @@ export class PermissionsService {
         { _id: { $in: descendantCategoryIds } },
         { $set: { permissionsInheritedToChildren: true } },
       );
+    }
+
+    const parentCategory = await this.categoryModel
+      .findById(categoryId)
+      .select('categoryPath')
+      .lean();
+
+    if (parentCategory?.categoryPath) {
+      this.socketService.emitToAll('permissions_sync', {
+        basePath: parentCategory.categoryPath,
+      });
     }
 
     return {
