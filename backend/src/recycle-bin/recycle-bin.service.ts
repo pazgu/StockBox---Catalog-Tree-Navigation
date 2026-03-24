@@ -625,4 +625,68 @@ export class RecycleBinService {
     const idx = fullPath.lastIndexOf('/');
     return idx === -1 ? '' : fullPath.substring(0, idx);
   }
+
+  async moveMultipleItemsToRecycleBin(
+  items: {
+    id: string;
+    type: 'category' | 'product';
+    categoryPath?: string;
+    strategy?: 'cascade' | 'move_up';
+  }[],
+  userId?: string,
+) {
+  const results: {
+    id: string;
+    type: 'category' | 'product';
+    success: boolean;
+    message?: string;
+    error?: string;
+  }[] = [];
+
+  for (const item of items) {
+    try {
+      let result:
+        | { success: boolean; message: string }
+        | undefined;
+
+      if (item.type === 'category') {
+        result = await this.moveCategoryToRecycleBin(
+          item.id,
+          item.strategy || 'cascade',
+          userId,
+        );
+      } else {
+        result = await this.moveProductToRecycleBin(
+          item.id,
+          item.categoryPath,
+          userId,
+        );
+      }
+
+      results.push({
+        id: item.id,
+        type: item.type,
+        success: true,
+        message: result?.message,
+      });
+    } catch (error: any) {
+      results.push({
+        id: item.id,
+        type: item.type,
+        success: false,
+        error: error?.message || 'Unknown error',
+      });
+    }
+  }
+
+  const successCount = results.filter((item) => item.success).length;
+  const failCount = results.filter((item) => !item.success).length;
+
+  return {
+    success: failCount === 0,
+    successCount,
+    failCount,
+    results,
+  };
+}
 }
