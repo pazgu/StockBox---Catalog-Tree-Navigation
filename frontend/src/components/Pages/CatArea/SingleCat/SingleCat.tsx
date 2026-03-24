@@ -445,10 +445,66 @@ const SingleCat: FC = () => {
     }) => {
       const previousPath = localStorage.getItem("previousPath") || "";
 
-      if (!data.categoryPath.startsWith(previousPath)) return;
+      if (!previousPath.startsWith(data.categoryPath)) return;
 
       loadAllContent();
     };
+    const handleProductPermissionDeleted = (data: {
+      product: ProductDto;
+    }) => {
+      const { product } = data;
+      const previousPath = localStorage.getItem("previousPath") || "";
+
+      const productPaths = Array.isArray(product.productPath)
+        ? product.productPath
+        : [product.productPath];
+
+      const parentPaths = productPaths.map((path) =>
+        path.split("/").slice(0, -1).join("/")
+      );
+
+      if (!parentPaths.includes(previousPath)) return;
+
+      setItems((prev) =>
+        prev.filter((item) => item.id !== product._id)
+      );
+    };
+    const handleProductPermissionAdded = (data: {
+      product: ProductDto;
+    }) => {
+      const { product } = data;
+      const previousPath = localStorage.getItem("previousPath") || "";
+
+      const productPaths = Array.isArray(product.productPath)
+        ? product.productPath
+        : [product.productPath];
+
+      const parentPaths = productPaths.map((path) =>
+        path.split("/").slice(0, -1).join("/")
+      );
+
+      if (!parentPaths.includes(previousPath)) return;
+
+      setItems((prev) => {
+        if (prev.some((item) => item.id === product._id)) return prev;
+
+        return [
+          {
+            id: product._id!,
+            name: product.productName,
+            images: product.productImages || [],
+            type: "product",
+            path: productPaths,
+            description: product.productDescription,
+            customFields: product.customFields,
+            favorite: false,
+          },
+          ...prev,
+        ];
+      });
+    };
+    onEvent("product_permission_deleted", handleProductPermissionDeleted);
+    onEvent("product_permission_added", handleProductPermissionAdded);
     onEvent("product_moved", handleMovedProduct);
     onEvent("sub_category_added", handleNewSubCategory);
     onEvent("category_moved", handleMovedCategory);
@@ -462,7 +518,9 @@ const SingleCat: FC = () => {
 
     return () => {
       offEvent("sub_category_added", handleNewSubCategory);
+      offEvent("product_permission_added", handleProductPermissionAdded);
       offEvent("category_moved", handleMovedCategory);
+      offEvent("product_permission_deleted", handleProductPermissionDeleted);
       offEvent("category_updated", handleCategoryUpdated);
       offEvent("product_moved", handleMovedProduct);
       offEvent("product_added", handleNewProduct);

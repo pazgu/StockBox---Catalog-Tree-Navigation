@@ -28,7 +28,7 @@ export class RecycleBinService {
     @InjectModel(NameLock.name) private nameLockModel: Model<NameLock>,
     private permissionsService: PermissionsService,
     private socketService: SocketService,
-  ) { }
+  ) {}
 
   async getRecycleBinItems(): Promise<RecycleBin[]> {
     return this.recycleBinModel.find().sort({ deletedAt: -1 }).lean().exec();
@@ -328,7 +328,9 @@ export class RecycleBinService {
 
       this.socketService.emitToAll('product_deleted', {
         productId,
-        deletedPaths: specificPathDeleted ? [specificPathDeleted] : product.productPath,
+        deletedPaths: specificPathDeleted
+          ? [specificPathDeleted]
+          : product.productPath,
         remainingPaths: [],
         deletedCompletely: true,
         movedToRecycleBin: true,
