@@ -104,7 +104,7 @@ export class PermissionsService {
     }
 
     if (entityType !== EntityType.CATEGORY || !inheritToChildren) {
-      emitPermissionChanged();
+      this.socketService.emitToUser(dto.allowed, "product_permission_added", { path: dto.contextPath })
       return created;
     }
 
@@ -347,18 +347,25 @@ export class PermissionsService {
           })
           .exec();
       }
+      const category = await this.categoryModel.findById(permission.entityId);
+      this.socketService.emitToUser(
+        permission.allowed.toString(),
+        'category_permissions_changed',
+        {
+          userId: permission.allowed.toString(),
+          categoryId: permission.entityId.toString(),
+          action: 'deleted',
+          categoryPath: category?.categoryPath,
+        },
+      );
     }
-    const category = await this.categoryModel.findById(permission.entityId);
-    this.socketService.emitToUser(
-      permission.allowed.toString(),
-      'category_permissions_changed',
-      {
-        userId: permission.allowed.toString(),
-        categoryId: permission.entityId.toString(),
-        action: 'deleted',
-        categoryPath: category?.categoryPath,
-      },
-    );
+    else {
+      const product = await this.productModel.findById(permission.allowed);
+
+      this.socketService.emitToUser(permission.allowed.toString(), "product_permission_deleted", { product: product })
+
+    }
+
     return this.permissionModel.findByIdAndDelete(id).exec();
   }
 
