@@ -7,7 +7,7 @@ import { usePath } from "../../../context/PathContext";
 import SearchBar from "../SearchBar/SearchBar/SearchBar";
 import bin_open from "../../../assets/bin-open.png";
 import bin_closed from "../../../assets/bin_closed.png";
-
+import { stringToColor } from "../../../components/Pages/UserControlArea/AllUsers/AllUsers"
 interface HeaderProps {
   logoSrc?: string;
   cartItemCount?: number;
@@ -48,8 +48,10 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `relative text-white text-base hover:text-[#BA9F71] transition-all duration-300 ${isActive ? "text-[#BA9F71] font-semibold" : ""
-    } after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-[#BA9F71] after:transition-all after:duration-300 hover:after:w-full ${isActive ? "after:w-full" : ""
+    `relative text-white text-base hover:text-[#BA9F71] transition-all duration-300 ${
+      isActive ? "text-[#BA9F71] font-semibold" : ""
+    } after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-[#BA9F71] after:transition-all after:duration-300 hover:after:w-full ${
+      isActive ? "after:w-full" : ""
     }`;
 
   useEffect(() => {
@@ -84,15 +86,37 @@ const Header: React.FC<HeaderProps> = ({
   return (
     <>
       <header
-        className={`fixed top-0 w-full transition-all duration-300 z-50 flex items-center justify-between px-6 ${isScrolled
-          ? "bg-[#0D305B]/95 backdrop-blur-md shadow-xl h-32"
-          : "bg-[#0D305B] shadow-lg h-40"
-          }`}
+        className={`fixed top-0 w-full transition-all duration-300 z-50 flex items-center justify-between px-6 ${
+          isScrolled
+            ? "bg-[#0D305B]/95 backdrop-blur-md shadow-xl h-32"
+            : "bg-[#0D305B] shadow-lg h-40"
+        }`}
       >
+        {role && (
+          <button
+            aria-label="Logout"
+            className="relative p-2 rounded-full text-white transition-all duration-300 group"
+            onClick={handleLogout}
+          >
+            <LogOut
+              size={21}
+              className="transition-all duration-300 group-hover:scale-110 group-hover:text-[#BA9F71]"
+            />
+            <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-3 py-2 rounded opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+              התנתקות
+            </span>
+          </button>
+        )}
+
         <div className="flex items-center gap-2">
           {role && user && (
-            <div className="hidden lg:flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-[#BA9F71] flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+            <div className="hidden lg:flex items-center gap-2 mr-4">
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center text-gray-800 text-sm font-bold flex-shrink-0"
+                style={{
+                  backgroundColor: stringToColor(user.userName),
+                }}
+              >
                 {user.userName?.[0]?.toUpperCase()}
               </div>
               <span className="text-white text-sm font-medium">
@@ -100,26 +124,10 @@ const Header: React.FC<HeaderProps> = ({
               </span>
             </div>
           )}
-
-          {role && (
-            <button
-              aria-label="Logout"
-              className="relative p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 group"
-              onClick={handleLogout}
-            >
-              <LogOut
-                size={21}
-                className="transition-all duration-300 group-hover:scale-110 group-hover:text-[#BA9F71]"
-              />
-              <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-3 py-2 rounded opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                התנתקות
-              </span>
-            </button>
-          )}
         </div>
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-20 overflow-visible">
-            <div className="hidden sm:block flex-shrink-0 transform transition-transform duration-300 hover:scale-105 cursor-pointer">
+            <div className="hidden sm:block flex-shrink-0 transform transition-transform duration-300 hover:scale-105 cursor-pointer mr-28">
               <img
                 src={logoSrc}
                 alt="StockBox Logo"
@@ -237,10 +245,11 @@ const Header: React.FC<HeaderProps> = ({
 
         {/* Mobile Menu */}
         <div
-          className={`lg:hidden absolute top-0 left-0 w-full transition-all duration-500 ease-in-out mt-3 ${isMobileMenuOpen
-            ? "max-h-[600px] opacity-100"
-            : "max-h-0 opacity-0 overflow-hidden"
-            }`}
+          className={`lg:hidden absolute top-0 left-0 w-full transition-all duration-500 ease-in-out mt-3 ${
+            isMobileMenuOpen
+              ? "max-h-[600px] opacity-100"
+              : "max-h-0 opacity-0 overflow-hidden"
+          }`}
         >
           <div className="container mx-auto px-4 py-4 bg-gradient-to-b from-[#0a2644] to-[#0D305B]">
             <div className="flex justify-end mb-4">
@@ -259,9 +268,7 @@ const Header: React.FC<HeaderProps> = ({
                   <span className="text-white font-medium">
                     {user.userName}
                   </span>
-                  <span className="text-white/60 text-xs">
-                    {role}
-                  </span>
+                  <span className="text-white/60 text-xs">{role}</span>
                 </div>
               </div>
             )}
