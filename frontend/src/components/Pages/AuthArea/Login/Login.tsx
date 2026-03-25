@@ -161,7 +161,7 @@ const Login: FC<LoginProps> = () => {
       } else if (error?.response?.status === 400) {
         toast.info("המשתמש לא נמצא במערכת, נא להזין נתוני משתמש חדש");
         setIsReturningUser(false);
-      } else {
+      } else if (error.response?.status !== 403) {
         toast.error("שגיאה לא צפויה, נא לנסות שוב");
       }
     }

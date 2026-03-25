@@ -21,7 +21,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly usersService: UsersService,
     private readonly socketService: SocketService
-  ) {}
+  ) { }
 
   async login(dto: LoginDto) {
     const user = await this.userModel
@@ -29,8 +29,7 @@ export class AuthService {
         email: dto.email,
         userName: dto.userName,
       })
-      .select('_id role approved requestSent userName');
-
+      .select('_id role approved requestSent userName isBlocked');
     if (!user) {
       const emailExists = await this.userModel.findOne({ email: dto.email });
       const userNameExists = await this.userModel.findOne({
@@ -94,6 +93,11 @@ export class AuthService {
       sub: user._id,
       role: user.role,
     };
+    if (user.isBlocked) {
+      throw new ForbiddenException({
+        code: 'USER_IS_BLOCKED',
+      });
+    }
 
     const accessToken = this.jwtService.sign(payload, {
       expiresIn: '30d',
