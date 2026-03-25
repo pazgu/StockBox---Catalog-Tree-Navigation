@@ -26,7 +26,7 @@ export class UsersService {
     private socketService: SocketService,
     @Inject(forwardRef(() => PermissionsService))
     private permissionsService: PermissionsService,
-  ) {}
+  ) { }
 
   async getAllUsers(role?: string, approved?: string) {
     const filter: any = {};
@@ -144,10 +144,13 @@ export class UsersService {
     return updatedUser;
   }
 
-  toggleBlockUser(id: string, isBlocked: boolean) {
-    return this.userModel
+  async toggleBlockUser(id: string, isBlocked: boolean) {
+    const blockedUser = await this.userModel
       .findByIdAndUpdate(id, { isBlocked }, { new: true })
       .exec();
+    this.socketService.emitToUser(id, "user_blocked_self", isBlocked);
+    this.socketService.emitToRole(UserRole.EDITOR, "user_blocked", { userId: id, isBlocked: isBlocked, userName: blockedUser?.userName })
+    return blockedUser;
   }
   async addFavorite(userId: string, itemId: string, type: FavoriteType) {
     try {
