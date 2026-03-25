@@ -42,6 +42,29 @@ import UnsavedChangesDialog from "../../SharedComponents/UnsavedChangesDialog/Un
 import { useSocket } from '../../../../hooks/useSocket';
 interface SingleProdProps { }
 
+type BulkMovedCategorySocketItem = {
+  id: string;
+  name: string;
+  path: string;
+};
+
+type BulkMovedProductSocketItem = {
+  id: string;
+  name: string;
+  deletedPaths: string[];
+  remainingPaths: string[];
+  deletedCompletely: boolean;
+  movedToRecycleBin: boolean;
+};
+
+type CatalogItemsRemovedPayload = {
+  categoryStrategy: "cascade" | "move_up";
+  movedCategories: BulkMovedCategorySocketItem[];
+  movedProducts: BulkMovedProductSocketItem[];
+  successCount: number;
+  failCount: number;
+};
+
 function normalizeImages(images: string[]) {
   return (images || [])
     .filter((u) => typeof u === "string" && u.trim().length > 0);
@@ -85,6 +108,11 @@ const SingleProd: FC<SingleProdProps> = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isReplacingImage, setIsReplacingImage] = useState(false);
   const MAX_EDIT_NAME_LEN = 30;
+  const getRemovedProductToastText = (name: string) => {
+    return role === "editor"
+      ? `המוצר "${name}" הועבר לסל המיחזור`
+      : `המוצר "${name}" נמחק`;
+  };
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.slice(0, MAX_EDIT_NAME_LEN);
 
@@ -285,6 +313,22 @@ const SingleProd: FC<SingleProdProps> = () => {
       );
       navigate("/categories", { replace: true });
     };
+
+    const handleCatalogItemsRemoved = (data: CatalogItemsRemovedPayload) => {
+      const movedCurrentProduct = data.movedProducts.find(
+        (product) => product.id === productId,
+      );
+
+      if (!movedCurrentProduct) return;
+
+      setPreviousPath("/categories");
+      toast.info(
+        getRemovedProductToastText(
+          title || movedCurrentProduct.name || "",
+        ),
+      );
+      navigate("/categories", { replace: true });
+    };
     const handleProductPermissionDeleted = (data: { product: ProductDto }) => {
       const { product } = data;
 
@@ -300,6 +344,7 @@ const SingleProd: FC<SingleProdProps> = () => {
     onEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
     onEvent("category_permissions_changed", handleCategoryPermissionsChanged);
     onEvent('product_deleted', handleProductDeleted);
+    onEvent("catalog_items_removed", handleCatalogItemsRemoved);
     onEvent("product_permission_deleted", handleProductPermissionDeleted);
     return () => {
       offEvent('product_updated', handleProductUpdated);
@@ -307,9 +352,10 @@ const SingleProd: FC<SingleProdProps> = () => {
       offEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
       offEvent("category_permissions_changed", handleCategoryPermissionsChanged);
       offEvent('product_deleted', handleProductDeleted);
+      offEvent("catalog_items_removed", handleCatalogItemsRemoved);
       offEvent("product_permission_deleted", handleProductPermissionDeleted);
     };
-  }, [productId, isEditing, onEvent, offEvent]);
+  }, [productId, isEditing, onEvent, offEvent, title, role, setPreviousPath, navigate]);
   const location = useLocation();
   const breadcrumbPath = useMemo<string[]>(
     () => [
