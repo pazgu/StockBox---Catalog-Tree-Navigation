@@ -438,14 +438,23 @@ export class ProductsService implements OnModuleInit {
     product.productPath = [...product.productPath, ...newPaths];
     const savedProduct = await product.save();
 
-    const allowedUserIds = await this.permissionsService.assignPermissionsOnDuplicate(
-      id,
-      additionalCategoryPaths,
-    );
+    const allowedUserIds =
+      await this.permissionsService.assignPermissionsOnDuplicate(
+        id,
+        additionalCategoryPaths,
+      );
 
     if (allowedUserIds.length > 0) {
-      this.socketService.emitToUsers(allowedUserIds, 'product_added', savedProduct);
-      this.socketService.emitToRole(UserRole.EDITOR, 'product_added', savedProduct);
+      this.socketService.emitToUsers(
+        allowedUserIds,
+        'product_added',
+        savedProduct,
+      );
+      this.socketService.emitToRole(
+        UserRole.EDITOR,
+        'product_added',
+        savedProduct,
+      );
     } else {
       this.socketService.emitToAll('product_added', savedProduct);
     }
