@@ -367,6 +367,13 @@ export class RecycleBinService {
           movedToRecycleBin: true,
           productName: product.productName,
         });
+
+        this.socketService.emitToRole('editor', 'recycle_bin_updated', {
+          action: 'added',
+          itemType: 'product',
+          itemName: product.productName,
+          itemPath: specificPathDeleted || product.productPath[0],
+        });
       }
 
       return {
@@ -577,6 +584,26 @@ export class RecycleBinService {
     }
 
     await this.recycleBinModel.findByIdAndDelete(recycleBinItem._id);
+
+    this.socketService.emitToAll('product_restored', {
+      product: {
+        _id: restoredProduct._id,
+        productName: restoredProduct.productName,
+        productDescription: restoredProduct.productDescription,
+        productImages: restoredProduct.productImages,
+        productPath: restoredProduct.productPath,
+        customFields: restoredProduct.customFields,
+        uploadFolders: restoredProduct.uploadFolders,
+      },
+      restoredPaths: validPaths,
+    });
+
+    this.socketService.emitToRole('editor', 'recycle_bin_updated', {
+      action: 'restored',
+      itemType: 'product',
+      itemName: recycleBinItem.itemName,
+      itemPath: recycleBinItem.originalPath,
+    });
 
     return {
       success: true,
