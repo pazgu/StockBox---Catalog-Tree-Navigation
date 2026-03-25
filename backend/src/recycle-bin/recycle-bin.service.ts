@@ -19,6 +19,29 @@ import { EntityType } from 'src/schemas/Permissions.schema';
 import { NameLock } from 'src/schemas/NameLock.schema';
 import { SocketService } from 'src/socket/socket.service';
 
+type BulkMovedCategorySocketItem = {
+  id: string;
+  name: string;
+  path: string;
+};
+
+type BulkMovedProductSocketItem = {
+  id: string;
+  name: string;
+  deletedPaths: string[];
+  remainingPaths: string[];
+  deletedCompletely: boolean;
+  movedToRecycleBin: boolean;
+};
+
+type BulkCatalogItemsRemovedPayload = {
+  categoryStrategy: 'cascade' | 'move_up';
+  movedCategories: BulkMovedCategorySocketItem[];
+  movedProducts: BulkMovedProductSocketItem[];
+  successCount: number;
+  failCount: number;
+};
+
 @Injectable()
 export class RecycleBinService {
   constructor(
@@ -661,10 +684,16 @@ export class RecycleBinService {
       message?: string;
       error?: string;
     }[] = [];
+    const movedCategoriesPayload: BulkMovedCategorySocketItem[] = [];
+    const movedProductsPayload: BulkMovedProductSocketItem[] = [];
 
     if (payload.categoryIds.length > 0) {
       for (const categoryId of payload.categoryIds) {
         try {
+          const categoryBeforeDelete = await this.categoryModel
+            .findById(categoryId)
+            .lean();
+
           const result = await this.moveCategoryToRecycleBin(
             categoryId,
             payload.categoryStrategy || 'cascade',
@@ -678,6 +707,14 @@ export class RecycleBinService {
             success: true,
             message: result.message,
           });
+
+          if (categoryBeforeDelete) {
+            movedCategoriesPayload.push({
+              id: categoryId,
+              name: categoryBeforeDelete.categoryName,
+              path: categoryBeforeDelete.categoryPath,
+            });
+          }
         } catch (error: any) {
           categoryResults.push({
             id: categoryId,
@@ -692,6 +729,17 @@ export class RecycleBinService {
     if (payload.products.length > 0) {
       for (const product of payload.products) {
         try {
+          const productBeforeDelete = await this.productModel
+            .findById(product.id)
+            .lean();
+
+          const matchedDeletedPaths =
+            product.categoryPath && productBeforeDelete
+              ? productBeforeDelete.productPath.filter((path) =>
+                path.startsWith(product.categoryPath!),
+              )
+              : productBeforeDelete?.productPath || [];
+
           const result = await this.moveProductToRecycleBin(
             product.id,
             product.categoryPath,
@@ -705,6 +753,24 @@ export class RecycleBinService {
             success: true,
             message: result?.message,
           });
+
+          if (productBeforeDelete) {
+            const remainingPaths =
+              product.categoryPath && productBeforeDelete.productPath.length > 1
+                ? productBeforeDelete.productPath.filter(
+                  (path) => !matchedDeletedPaths.includes(path),
+                )
+                : [];
+
+            movedProductsPayload.push({
+              id: product.id,
+              name: productBeforeDelete.productName,
+              deletedPaths: matchedDeletedPaths,
+              remainingPaths,
+              deletedCompletely: remainingPaths.length === 0,
+              movedToRecycleBin: remainingPaths.length === 0,
+            });
+          }
         } catch (error: any) {
           productResults.push({
             id: product.id,
@@ -720,13 +786,16 @@ export class RecycleBinService {
     const successCount = results.filter((item) => item.success).length;
     const failCount = results.filter((item) => !item.success).length;
 
-    const movedCategoryIds = categoryResults
-      .filter((item) => item.success)
-      .map((item) => item.id);
+    const movedCategoryIds = movedCategoriesPayload.map((item) => item.id);
+    const movedProductIds = movedProductsPayload.map((item) => item.id);
 
-    const movedProductIds = productResults
-      .filter((item) => item.success)
-      .map((item) => item.id);
+    const bulkCatalogPayload: BulkCatalogItemsRemovedPayload = {
+      categoryStrategy: payload.categoryStrategy || 'cascade',
+      movedCategories: movedCategoriesPayload,
+      movedProducts: movedProductsPayload,
+      successCount,
+      failCount,
+    };
 
     if (movedCategoryIds.length > 0 || movedProductIds.length > 0) {
       this.socketService.emitToRole(
@@ -737,7 +806,15 @@ export class RecycleBinService {
           productIds: movedProductIds,
           successCount,
           failCount,
+          categoryStrategy: bulkCatalogPayload.categoryStrategy,
+          movedCategories: bulkCatalogPayload.movedCategories,
+          movedProducts: bulkCatalogPayload.movedProducts,
         },
+      );
+
+      this.socketService.emitToAll(
+        'catalog_items_removed',
+        bulkCatalogPayload,
       );
     }
 
