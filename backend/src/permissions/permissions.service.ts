@@ -31,10 +31,10 @@ export class PermissionsService {
     @InjectModel(Group.name) private groupModel: Model<Group>,
     @InjectModel(User.name) private userModel: Model<User>,
 
-    private socketService: SocketService,
     private usersService: UsersService,
     private groupsService: GroupsService,
-  ) {}
+    private readonly socketService: SocketService,
+  ) { }
 
   async getPermissionsForUser(userId: string, userGroupIds?: string[]) {
     const allowedIds = [
@@ -93,8 +93,6 @@ export class PermissionsService {
         allowed.toString(),
         'category_permissions_changed',
         {
-          userId: allowed.toString(),
-          categoryId: entityId.toString(),
           action: 'created',
           categoryPath: category?.categoryPath,
         },
@@ -109,6 +107,12 @@ export class PermissionsService {
     }
 
     if (entityType !== EntityType.CATEGORY || !inheritToChildren) {
+      if (entityType === EntityType.PRODUCT) {
+        const product = await this.productModel.findById(entityId);
+        this.socketService.emitToUser(dto.allowed, "product_permission_added", { product: product })
+        return created;
+
+      }
       emitPermissionChanged();
       this.socketService.emitToRole('editor', 'permissions_page_updated', {
         entityId: entityId.toString(),
@@ -372,18 +376,24 @@ export class PermissionsService {
           })
           .exec();
       }
+      const category = await this.categoryModel.findById(permission.entityId);
+      this.socketService.emitToUser(
+        permission.allowed.toString(),
+        'category_permissions_changed',
+        {
+          inheritToChildren: true,
+          action: 'deleted',
+          categoryPath: category?.categoryPath,
+        },
+      );
     }
-    const category = await this.categoryModel.findById(permission.entityId);
-    this.socketService.emitToUser(
-      permission.allowed.toString(),
-      'category_permissions_changed',
-      {
-        userId: permission.allowed.toString(),
-        categoryId: permission.entityId.toString(),
-        action: 'deleted',
-        categoryPath: category?.categoryPath,
-      },
-    );
+    else {
+      const product = await this.productModel.findById(permission.entityId);
+      console.log("prod:", product)
+      this.socketService.emitToUser(permission.allowed.toString(), "product_permission_deleted", { product: product })
+
+    }
+
     this.socketService.emitToRole('editor', 'permissions_page_updated', {
       entityId: permission.entityId.toString(),
       updatedBy: editorId,
@@ -626,7 +636,7 @@ export class PermissionsService {
   async assignPermissionsOnDuplicate(
     productId: string,
     additionalCategoryPaths: string[],
-  ): Promise<void> {
+  ): Promise<string[]> {
     for (const categoryPath of additionalCategoryPaths) {
       const parentCategory = await this.categoryModel
         .findOne({ categoryPath })
@@ -660,6 +670,15 @@ export class PermissionsService {
         await this.permissionModel.insertMany(newPermissions);
       }
     }
+
+    const finalPermissions = await this.permissionModel
+      .find({
+        entityType: EntityType.PRODUCT,
+        entityId: new mongoose.Types.ObjectId(productId),
+      })
+      .lean();
+
+    return [...new Set(finalPermissions.map((p) => p.allowed.toString()))];
   }
 
   async getDirectChildrenToDelete(categoryId: string) {
@@ -1201,6 +1220,17 @@ export class PermissionsService {
         { _id: { $in: descendantCategoryIds } },
         { $set: { permissionsInheritedToChildren: true } },
       );
+    }
+
+    const parentCategory = await this.categoryModel
+      .findById(categoryId)
+      .select('categoryPath')
+      .lean();
+
+    if (parentCategory?.categoryPath) {
+      this.socketService.emitToAll('permissions_sync', {
+        basePath: parentCategory.categoryPath,
+      });
     }
 
     return {

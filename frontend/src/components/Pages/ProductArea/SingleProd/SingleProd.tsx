@@ -40,8 +40,14 @@ import { useDebouncedFavoriteSingle } from "../../../../hooks/useDebouncedFavori
 import { isLength } from "validator";
 import { environment } from "../../../../environments/environment.development";
 import UnsavedChangesDialog from "../../SharedComponents/UnsavedChangesDialog/UnsavedChangesDialog";
-import { useSocket } from "../../../../hooks/useSocket";
-interface SingleProdProps {}
+import { useSocket } from '../../../../hooks/useSocket';
+import {
+  CatalogItemsRemovedPayload,
+  ProductRestoredPayload,
+  ProductDeletedPayload,
+} from "../../../models/socket.models";
+
+interface SingleProdProps { }
 
 function normalizeImages(images: string[]) {
   return (images || []).filter(
@@ -88,6 +94,11 @@ const SingleProd: FC<SingleProdProps> = () => {
   const [isReplacingImage, setIsReplacingImage] = useState(false);
   const [isProductBlocked, setIsProductBlocked] = useState(false);
   const MAX_EDIT_NAME_LEN = 30;
+  const getRemovedProductToastText = (name: string) => {
+    return role === "editor"
+      ? `המוצר "${name}" הועבר לסל המיחזור`
+      : `המוצר "${name}" נמחק`;
+  };
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.slice(0, MAX_EDIT_NAME_LEN);
 
@@ -191,7 +202,12 @@ const SingleProd: FC<SingleProdProps> = () => {
 
     loadProduct();
   }, [productId, navigate, id]);
+  
+
+
+
   useEffect(() => {
+
     if (!productId) return;
     joinRoleRoom("editor");
     if (id) {
@@ -206,7 +222,7 @@ const SingleProd: FC<SingleProdProps> = () => {
     }) => {
       const previousPath = localStorage.getItem("previousPath") || "";
 
-      if (!data.categoryPath.startsWith(previousPath)) return;
+      if (!previousPath.startsWith(data.categoryPath)) return;
 
       loadProduct();
     };
@@ -294,7 +310,7 @@ const SingleProd: FC<SingleProdProps> = () => {
         console.error("Reload failed", err);
       }
     };
-    const handleEditLockExpired = (
+        const handleEditLockExpired = (
       data: { productId: string }[] | { productId: string },
     ) => {
       const items = Array.isArray(data) ? data : [data];
@@ -318,14 +334,8 @@ const SingleProd: FC<SingleProdProps> = () => {
         duration: 6000,
       });
     };
-    const handleProductDeleted = (data: {
-      productId: string;
-      deletedPaths: string[];
-      remainingPaths: string[];
-      deletedCompletely: boolean;
-      movedToRecycleBin?: boolean;
-      productName?: string;
-    }) => {
+
+    const handleProductDeleted = (data: ProductDeletedPayload) => {
       if (data.productId !== productId) return;
 
       setPreviousPath("/categories");
@@ -337,11 +347,82 @@ const SingleProd: FC<SingleProdProps> = () => {
       navigate("/categories", { replace: true });
     };
 
-    onEvent("product_updated", handleProductUpdated);
-    onEvent("product_moved", handleMovedProduct);
+    const handleCatalogItemsRemoved = (data: CatalogItemsRemovedPayload) => {
+      const movedCurrentProduct = data.movedProducts.find(
+        (product) => product.id === productId,
+      );
+
+      if (!movedCurrentProduct) return;
+
+      setPreviousPath("/categories");
+      toast.info(
+        getRemovedProductToastText(
+          title || movedCurrentProduct.name || "",
+        ),
+      );
+      navigate("/categories", { replace: true });
+    };
+
+    const handleProductRestored = (data: ProductRestoredPayload) => {
+      if (data.product._id !== productId) return;
+
+      if (isEditing) return;
+
+      toast.success(`המוצר "${data.product.productName}" שוחזר`);
+      loadProduct();
+    };
+    const handleProductPermissionDeleted = (data: { product: ProductDto }) => {
+      const { product } = data;
+
+      if (product._id !== productId) return;
+
+      if (isEditing) return;
+      toast.info("הרשאות עודכנו, טוען...")
+      loadProduct();
+    };
+
+    const handleCatalogItemsRemoved = (data: CatalogItemsRemovedPayload) => {
+      const movedCurrentProduct = data.movedProducts.find(
+        (product) => product.id === productId,
+      );
+
+      if (!movedCurrentProduct) return;
+
+      setPreviousPath("/categories");
+      toast.info(
+        getRemovedProductToastText(
+          title || movedCurrentProduct.name || "",
+        ),
+      );
+      navigate("/categories", { replace: true });
+    };
+
+    const handleProductRestored = (data: ProductRestoredPayload) => {
+      if (data.product._id !== productId) return;
+
+      if (isEditing) return;
+
+      toast.success(`המוצר "${data.product.productName}" שוחזר`);
+      loadProduct();
+    };
+    const handleProductPermissionDeleted = (data: { product: ProductDto }) => {
+      const { product } = data;
+
+      if (product._id !== productId) return;
+
+      if (isEditing) return;
+      toast.info("הרשאות עודכנו, טוען...")
+      loadProduct();
+    };
+
+    onEvent('product_updated', handleProductUpdated);
+    onEvent('product_moved', handleMovedProduct);
     onEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
     onEvent("category_permissions_changed", handleCategoryPermissionsChanged);
     onEvent("product_deleted", handleProductDeleted);
+    onEvent("catalog_items_removed", handleCatalogItemsRemoved);
+    onEvent("product_restored", handleProductRestored);
+    onEvent("product_permission_deleted", handleProductPermissionDeleted);
     onEvent("product_edit_lock_changed", handleEditLockChanged);
     onEvent("product_edit_lock_expired", handleEditLockExpired);
     return () => {
@@ -356,10 +437,13 @@ const SingleProd: FC<SingleProdProps> = () => {
         handleCategoryPermissionsChanged,
       );
       offEvent("product_deleted", handleProductDeleted);
+      offEvent("catalog_items_removed", handleCatalogItemsRemoved);
+      offEvent("product_restored", handleProductRestored);
+      offEvent("product_permission_deleted", handleProductPermissionDeleted);
       offEvent("product_edit_lock_changed", handleEditLockChanged);
       offEvent("product_edit_lock_expired", handleEditLockExpired);
     };
-  }, [productId, isEditing, onEvent, offEvent]);
+  }, [productId, isEditing, onEvent, offEvent, title, role, setPreviousPath, navigate, loadProduct]);
   const location = useLocation();
   const breadcrumbPath = useMemo<string[]>(
     () => [

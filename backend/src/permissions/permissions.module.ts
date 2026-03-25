@@ -14,7 +14,6 @@ import { SocketModule } from 'src/socket/socket.module';
 
 @Module({
   imports: [
-    SocketModule,
     MongooseModule.forFeature([
       { name: Permission.name, schema: PermissionSchema },
       { name: Category.name, schema: CategorySchema },
@@ -24,6 +23,7 @@ import { SocketModule } from 'src/socket/socket.module';
     ]),
     forwardRef(() => UsersModule),
     forwardRef(() => GroupsModule),
+    forwardRef(() => SocketModule),
   ],
   providers: [PermissionsService, PermissionGuard],
   controllers: [PermissionsController],

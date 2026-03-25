@@ -123,10 +123,11 @@ const Permissions: React.FC = () => {
   }, [cleanId, entityType, role, navigate, loadData]);
 
   const token = localStorage.getItem("token") ?? "";
-  const { onEvent, offEvent } = useSocket({ token });
+  const { onEvent, offEvent, joinRoleRoom } = useSocket({ token });
 
   useEffect(() => {
     if (!cleanId) return;
+    joinRoleRoom("editor")
 
     const handler = (data: {
       entityId: string;
@@ -339,7 +340,8 @@ const Permissions: React.FC = () => {
   const showManualInheritButton =
     entityData?.permissionsInheritedToChildren === false &&
     existingPermissions.length > 0 &&
-    !hasLocalChanges;
+    !hasLocalChanges &&
+    !inheritanceApplied;
 
   return (
     <div
@@ -474,7 +476,7 @@ const Permissions: React.FC = () => {
                             }
                             className={
                               (user.allGroupsEnabled && !user.enabled) ||
-                              user.hasBlockedGroups
+                                user.hasBlockedGroups
                                 ? "cursor-not-allowed"
                                 : ""
                             }

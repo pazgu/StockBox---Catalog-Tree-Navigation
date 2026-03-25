@@ -19,11 +19,12 @@ import { RestoreItemDto } from './dtos/RestoreItem.dto';
 import { DeletePermanentlyDto } from './dtos/DeletePermanently.dto';
 import { MoveCategoryToRecycleBinDto } from './dtos/MoveCategoryToRecycleBin.dto';
 import { MoveProductToRecycleBinDto } from './dtos/MoveProductToRecycleBin.dto';
+import { MoveMultipleItemsToRecycleBinDto } from './dtos/MoveMultipleItemsToRecycleBin.dto';
 
 @Controller('recycle-bin')
 @UseGuards(AuthGuard('jwt'), EditorGuard)
 export class RecycleBinController {
-  constructor(private readonly recycleBinService: RecycleBinService) {}
+  constructor(private readonly recycleBinService: RecycleBinService) { }
 
   @Get()
   async getRecycleBinItems() {
@@ -82,5 +83,21 @@ export class RecycleBinController {
   @HttpCode(HttpStatus.OK)
   async emptyRecycleBin() {
     return this.recycleBinService.emptyRecycleBin();
+  }
+
+  @Post('multiple')
+  @HttpCode(HttpStatus.OK)
+  async moveMultipleItemsToRecycleBin(
+    @Body() dto: MoveMultipleItemsToRecycleBinDto,
+    @Req() req: any,
+  ) {
+    return this.recycleBinService.moveMultipleItemsToRecycleBin(
+      {
+        categoryIds: dto.categoryIds || [],
+        categoryStrategy: dto.categoryStrategy || 'cascade',
+        products: dto.products || [],
+      },
+      req.user?.userId,
+    );
   }
 }

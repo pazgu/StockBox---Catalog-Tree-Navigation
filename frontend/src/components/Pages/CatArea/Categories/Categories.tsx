@@ -35,7 +35,10 @@ import MoveCategoryModal from "./MoveCategoryModal/MoveCategoryModal";
 import MoveProductModal from "../../ProductArea/MoveProductModal/MoveProductModal";
 import { useSocket } from "../../../../hooks/useSocket";
 import SmartDeleteModal from "../../ProductArea/SmartDeleteModal/SmartDeleteModal";
-interface CategoriesProps { }
+import {
+  ProductDeletedPayload,
+  ProductRestoredPayload,
+} from "../../../models/socket.models"; interface CategoriesProps { }
 
 export interface Category {
   _id: string;
@@ -61,15 +64,6 @@ const NoImageCard: React.FC<{ label?: string }> = ({ label = "אין תמונה"
 
 type CategoryEditPayload = Category & { imageFile?: File };
 type FilterType = "all" | "categories" | "products";
-
-type ProductDeletedPayload = {
-  productId: string;
-  deletedPaths: string[];
-  remainingPaths: string[];
-  deletedCompletely: boolean;
-  movedToRecycleBin: boolean;
-  productName: string;
-};
 
 const isDirectChildOfPath = (parentPath: string, fullPath: string) => {
   if (!parentPath || parentPath === "/categories") {
@@ -184,6 +178,10 @@ export const Categories: FC<CategoriesProps> = () => {
           ...prev,
         ];
       });
+    };
+
+    const handlePermissionsSync = () => {
+      loadCategoriesAndFavorites();
     };
 
     const handleMovedCategory = (data: {
@@ -332,8 +330,16 @@ export const Categories: FC<CategoriesProps> = () => {
       loadCategoriesAndFavorites();
       toast.info("הרשאות עודכנו, טוען...");
     };
-    const handleCategoryPermissionsChanged = () => {
-      loadCategoriesAndFavorites();
+    const handleCategoryPermissionsChanged = (data: {
+      categoryPath: string; action: string;
+    }) => {
+      const previousPath = localStorage.getItem("previousPath") || "/categories";
+      const categoryParentPath = data.categoryPath.split("/").slice(0, -1).join("/");
+      if (previousPath === categoryParentPath) {
+        loadCategoriesAndFavorites();
+        return;
+      }
+
     };
 
     const handleNewProduct = (product: ProductDto) => {
@@ -366,7 +372,110 @@ export const Categories: FC<CategoriesProps> = () => {
       });
     };
 
+    const handleProductRestored = (data: ProductRestoredPayload) => {
+      const product = data.product;
+      const productPaths = Array.isArray(product.productPath)
+        ? product.productPath
+        : [product.productPath];
+
+      const belongsToRoot = productPaths.some((path) =>
+        isDirectChildOfPath("/categories", path),
+      );
+
+      if (!belongsToRoot) return;
+
+      setItems((prev) => {
+        const existingItem = prev.find((item) => item.id === product._id);
+
+        if (existingItem) {
+          return prev.map((item) =>
+            item.id === product._id
+              ? {
+                ...item,
+                name: product.productName,
+                images: product.productImages || [],
+                path: productPaths,
+                description: product.productDescription,
+                customFields: product.customFields,
+              }
+              : item,
+          );
+        }
+
+        return [
+          {
+            id: product._id!,
+            name: product.productName,
+            images: product.productImages || [],
+            type: "product",
+            path: productPaths,
+            description: product.productDescription,
+            customFields: product.customFields,
+            favorite: false,
+          },
+          ...prev,
+        ];
+      });
+    };
+    const handleProductPermissionDeleted = (data: {
+      product: ProductDto;
+    }) => {
+      const { product } = data;
+
+      const previousPath =
+        localStorage.getItem("previousPath") || "/categories";
+
+      const productPaths = Array.isArray(product.productPath)
+        ? product.productPath
+        : [product.productPath];
+
+      const parentPaths = productPaths.map((path) =>
+        path.split("/").slice(0, -1).join("/")
+      );
+
+      if (!parentPaths.includes(previousPath)) return;
+
+      setItems((prev) =>
+        prev.filter((item) => item.id !== product._id)
+      );
+    };
+    const handleProductPermissionAdded = (data: { product: ProductDto }) => {
+      const { product } = data;
+
+      const previousPath = localStorage.getItem("previousPath") || "/categories";
+
+      const productPaths = Array.isArray(product.productPath)
+        ? product.productPath
+        : [product.productPath];
+
+      const parentPaths = productPaths.map((path) =>
+        path.split("/").slice(0, -1).join("/")
+      );
+
+      if (!parentPaths.includes(previousPath)) return;
+
+      setItems((prev) => {
+        if (prev.some((item) => item.id === product._id)) return prev;
+
+        return [
+          {
+            id: product._id!,
+            name: product.productName,
+            images: product.productImages || [],
+            type: "product",
+            path: productPaths,
+            description: product.productDescription,
+            customFields: product.customFields,
+            favorite: false,
+          },
+          ...prev,
+        ];
+      });
+    };
+    onEvent("product_permission_deleted", handleProductPermissionDeleted);
+    onEvent("product_permission_added", handleProductPermissionAdded);
     onEvent("product_added", handleNewProduct);
+    onEvent("product_restored", handleProductRestored);
     onEvent("category_added", handleNewCategory);
     onEvent("category_moved", handleMovedCategory);
     onEvent("category_updated", handleCategoryUpdated);
@@ -376,8 +485,11 @@ export const Categories: FC<CategoriesProps> = () => {
     onEvent("recycle_bin_updated", handleRecycleBinUpdated);
     onEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
     onEvent("category_permissions_changed", handleCategoryPermissionsChanged);
+    onEvent('permissions_sync', handlePermissionsSync);
     return () => {
       offEvent("product_added", handleNewProduct);
+      offEvent("product_restored", handleProductRestored);
+      offEvent("product_permission_added", handleProductPermissionAdded);
       offEvent("category_added", handleNewCategory);
       offEvent("category_moved", handleMovedCategory);
       offEvent("category_updated", handleCategoryUpdated);
@@ -388,8 +500,10 @@ export const Categories: FC<CategoriesProps> = () => {
         "banned_items_permissions_updated",
         handleBannedPermissionsUpdated,
       );
+      offEvent("product_permission_deleted", handleProductPermissionDeleted);
       offEvent("product_deleted", handleProductDeleted);
       offEvent("category_permissions_changed", handleCategoryPermissionsChanged);
+      offEvent('permissions_sync', handlePermissionsSync);
     };
   }, [id]);
   useEffect(() => {

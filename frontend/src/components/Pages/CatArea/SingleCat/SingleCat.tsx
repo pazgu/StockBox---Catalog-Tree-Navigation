@@ -43,6 +43,11 @@ import {
 } from "../../../../lib/imageFallback";
 import { useSocket } from "../../../../hooks/useSocket";
 import { Category } from "../Categories/Categories";
+import {
+  CatalogItemsRemovedPayload,
+  ProductDeletedPayload,
+  ProductRestoredPayload,
+} from "../../../models/socket.models";
 
 const hasImage = (images: any): boolean => {
   if (!images) return false;
@@ -58,15 +63,6 @@ const NoImageCard: React.FC<{ label?: string }> = ({ label = "אין תמונה"
       <div className="text-gray-400 text-sm">{label}</div>
     </div>
   );
-};
-
-type ProductDeletedPayload = {
-  productId: string;
-  deletedPaths: string[];
-  remainingPaths: string[];
-  deletedCompletely: boolean;
-  movedToRecycleBin: boolean;
-  productName: string;
 };
 
 const isDirectChildOfPath = (parentPath: string, fullPath: string) => {
@@ -164,9 +160,26 @@ const SingleCat: FC = () => {
   }, [categoryPath]);
 
   const categoryInfoRef = useRef<CategoryDTO | null>(null);
+  const reloadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isMoveMultipleInProgressRef = useRef(false);
   useEffect(() => {
     categoryInfoRef.current = categoryInfo;
   }, [categoryInfo]);
+
+  const getRemovedEntityToastText = (
+    name: string,
+    type: "category" | "product",
+  ) => {
+    if (role === "editor") {
+      return type === "category"
+        ? `הקטגוריה "${name}" הועברה לסל המיחזור`
+        : `המוצר "${name}" הועבר לסל המיחזור`;
+    }
+
+    return type === "category"
+      ? `הקטגוריה "${name}" נמחקה`
+      : `המוצר "${name}" נמחק`;
+  };
 
   useEffect(() => {
     joinRoleRoom("editor");
@@ -207,6 +220,7 @@ const SingleCat: FC = () => {
       oldPath: string;
       newPath: string;
     }) => {
+      if (!data.oldPath || !data.newPath) return;
       const { oldPath, newPath } = data;
 
       const newParentPath = newPath.split("/").slice(0, -1).join("/");
@@ -222,9 +236,14 @@ const SingleCat: FC = () => {
         socketPreviousPath === oldParentPath ||
         socketPreviousPath === newParentPath
       ) {
-        loadAllContent();
+        if (isMoveMultipleInProgressRef.current) return;
+        if (reloadTimeoutRef.current) clearTimeout(reloadTimeoutRef.current);
+        reloadTimeoutRef.current = setTimeout(() => {
+          loadAllContent();
+        }, 500);
       }
     };
+
 
     const handleCategoryUpdated = (data: {
       updatedCategory: Category;
@@ -330,6 +349,53 @@ const SingleCat: FC = () => {
         ];
       });
     };
+    const handleProductRestored = (data: ProductRestoredPayload) => {
+      const restoredProduct = data.product;
+      const currentPath = categoryPathRef.current;
+
+      const productPaths = Array.isArray(restoredProduct.productPath)
+        ? restoredProduct.productPath
+        : [restoredProduct.productPath];
+
+      const belongsHere = productPaths.some((path) =>
+        isDirectChildOfPath(currentPath, path),
+      );
+
+      if (!belongsHere) return;
+
+      setItems((prev) => {
+        const existingItem = prev.find((item) => item.id === restoredProduct._id);
+
+        if (existingItem) {
+          return prev.map((item) =>
+            item.id === restoredProduct._id
+              ? {
+                ...item,
+                name: restoredProduct.productName,
+                images: restoredProduct.productImages || [],
+                path: productPaths,
+                description: restoredProduct.productDescription,
+                customFields: restoredProduct.customFields,
+              }
+              : item,
+          );
+        }
+
+        return [
+          {
+            id: restoredProduct._id!,
+            name: restoredProduct.productName,
+            images: restoredProduct.productImages || [],
+            type: "product",
+            path: productPaths,
+            description: restoredProduct.productDescription,
+            customFields: restoredProduct.customFields,
+            favorite: false,
+          },
+          ...prev,
+        ];
+      });
+    };
     const handleProductUpdated = (updatedProduct: any) => {
       setItems((prev) =>
         prev.map((item) => {
@@ -432,40 +498,203 @@ const SingleCat: FC = () => {
         loadAllContent(categoryPathRef.current);
       }
     };
+
+    const handleCatalogItemsRemoved = (data: CatalogItemsRemovedPayload) => {
+      const currentPath = categoryPathRef.current;
+
+      if (!currentPath) return;
+
+      const movedCategory = data.movedCategories.find(
+        (category) => category.path === currentPath,
+      );
+
+      if (movedCategory) {
+        setPreviousPath("/categories");
+        toast.info(getRemovedEntityToastText(movedCategory.name, "category"));
+        navigate("/categories", { replace: true });
+        return;
+      }
+
+      const ancestorCategory = data.movedCategories.find((category) =>
+        currentPath.startsWith(category.path + "/"),
+      );
+
+      if (ancestorCategory) {
+        if (data.categoryStrategy === "cascade") {
+          setPreviousPath("/categories");
+          toast.info(
+            getRemovedEntityToastText(ancestorCategory.name, "category"),
+          );
+          navigate("/categories", { replace: true });
+          return;
+        }
+
+        const parentPath = ancestorCategory.path.split("/").slice(0, -1).join("/");
+        const updatedPath = currentPath.replace(ancestorCategory.path, parentPath);
+        const normalizedUpdatedPath =
+          updatedPath.startsWith("/categories") ? updatedPath : `/categories${updatedPath}`;
+
+        setPreviousPath(parentPath || "/categories");
+        navigate(normalizedUpdatedPath, { replace: true });
+        return;
+      }
+
+      const movedCategoryPaths = new Set(
+        data.movedCategories.map((category) => category.path),
+      );
+
+      const movedProductDeletedPaths = new Set(
+        data.movedProducts.flatMap((product) => product.deletedPaths),
+      );
+
+      setItems((prev) =>
+        prev.filter((item) => {
+          if (item.type === "category") {
+            const itemPath = item.path?.[0];
+            if (!itemPath) return true;
+
+            return !movedCategoryPaths.has(itemPath);
+          }
+
+          if (item.type === "product") {
+            const productPaths = Array.isArray(item.path) ? item.path : [];
+
+            const wasRemovedFromCurrentCategory = productPaths.some((path) =>
+              movedProductDeletedPaths.has(path),
+            );
+
+            return !wasRemovedFromCurrentCategory;
+          }
+
+          return true;
+        }),
+      );
+    };
+
     const handleCategoryPermissionsChanged = (data: {
-      categoryPath: string;
+      categoryPath: string; action: string;
     }) => {
       const previousPath = localStorage.getItem("previousPath") || "";
-
-      if (!data.categoryPath.startsWith(previousPath)) return;
-
-      loadAllContent();
+      const categoryParentPath = data.categoryPath.split("/").slice(0, -1).join("/");
+      if (previousPath === categoryParentPath) {
+        loadAllContent();
+        return;
+      }
+      if (previousPath === data.categoryPath) {
+        if (data.action === 'deleted') {
+          toast.info("הרשאות עודכנו, טוען...")
+          navigate('/categories')
+          return;
+        }
+        return;
+      }
+      if (previousPath.startsWith(data.categoryPath)) {
+        if (data.action === 'deleted') {
+          toast.info("הרשאות עודכנו, טוען...")
+          navigate('/categories')
+          return;
+        }
+        return;
+      }
     };
+    const handleProductPermissionDeleted = (data: {
+      product: ProductDto;
+    }) => {
+      const { product } = data;
+      const previousPath = localStorage.getItem("previousPath") || "";
+
+      const productPaths = Array.isArray(product.productPath)
+        ? product.productPath
+        : [product.productPath];
+
+      const parentPaths = productPaths.map((path) =>
+        path.split("/").slice(0, -1).join("/")
+      );
+
+      if (!parentPaths.includes(previousPath)) return;
+
+      setItems((prev) =>
+        prev.filter((item) => item.id !== product._id)
+      );
+    };
+
+    const handlePermissionsSync = ({ basePath }: { basePath: string }) => {
+      const isAffected =
+        categoryPathRef.current === basePath ||
+        categoryPathRef.current.startsWith(basePath + '/');
+      if (!isAffected) return;
+      loadAllContent(categoryPathRef.current);
+    };
+
+    const handleProductPermissionAdded = (data: {
+      product: ProductDto;
+    }) => {
+      const { product } = data;
+      const previousPath = localStorage.getItem("previousPath") || "";
+
+      const productPaths = Array.isArray(product.productPath)
+        ? product.productPath
+        : [product.productPath];
+
+      const parentPaths = productPaths.map((path) =>
+        path.split("/").slice(0, -1).join("/")
+      );
+
+      if (!parentPaths.includes(previousPath)) return;
+
+      setItems((prev) => {
+        if (prev.some((item) => item.id === product._id)) return prev;
+
+        return [
+          {
+            id: product._id!,
+            name: product.productName,
+            images: product.productImages || [],
+            type: "product",
+            path: productPaths,
+            description: product.productDescription,
+            customFields: product.customFields,
+            favorite: false,
+          },
+          ...prev,
+        ];
+      });
+    };
+    onEvent("product_permission_deleted", handleProductPermissionDeleted);
+    onEvent("product_permission_added", handleProductPermissionAdded);
     onEvent("product_moved", handleMovedProduct);
     onEvent("sub_category_added", handleNewSubCategory);
     onEvent("category_moved", handleMovedCategory);
     onEvent("category_updated", handleCategoryUpdated);
     onEvent("product_added", handleNewProduct);
+    onEvent("product_restored", handleProductRestored);
     onEvent("product_updated", handleProductUpdated);
     onEvent("product_deleted", handleProductDeleted);
     onEvent("recycle_bin_updated", handleRecycleBinUpdated);
+    onEvent("catalog_items_removed", handleCatalogItemsRemoved);
     onEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
     onEvent("category_permissions_changed", handleCategoryPermissionsChanged);
+    onEvent('permissions_sync', handlePermissionsSync);
 
     return () => {
       offEvent("sub_category_added", handleNewSubCategory);
+      offEvent("product_permission_added", handleProductPermissionAdded);
       offEvent("category_moved", handleMovedCategory);
+      offEvent("product_permission_deleted", handleProductPermissionDeleted);
       offEvent("category_updated", handleCategoryUpdated);
       offEvent("product_moved", handleMovedProduct);
       offEvent("product_added", handleNewProduct);
+      offEvent("product_restored", handleProductRestored);
       offEvent("product_updated", handleProductUpdated);
       offEvent("product_deleted", handleProductDeleted);
       offEvent("recycle_bin_updated", handleRecycleBinUpdated);
+      offEvent("catalog_items_removed", handleCatalogItemsRemoved);
       offEvent(
         "banned_items_permissions_updated",
         handleBannedPermissionsUpdated,
       );
       offEvent("category_permissions_changed", handleCategoryPermissionsChanged);
+      offEvent('permissions_sync', handlePermissionsSync);
     };
   }, [id, joinRoleRoom, onEvent, offEvent]);
 
@@ -893,12 +1122,67 @@ const SingleCat: FC = () => {
     setShowDeleteAllModal(true);
   };
 
-  const confirmMoveSelectedToRecycleBin = () => {
-    setItems((prev) => prev.filter((item) => !selectedItems.includes(item.id)));
-    toast.success(`${selectedItems.length} פריטים הועברו לסל המיחזור בהצלחה!`);
-    setSelectedItems([]);
-    setIsSelectionMode(false);
-    setShowDeleteAllModal(false);
+  const confirmMoveSelectedToRecycleBin = async () => {
+    if (selectedItems.length === 0) return;
+
+    try {
+      setIsMovingToRecycleBin(true);
+
+      const selectedItemsData = items.filter((item) =>
+        selectedItems.includes(item.id),
+      );
+
+      const payload = {
+        categoryIds: selectedItemsData
+          .filter((item) => item.type === "category")
+          .map((item) => item.id),
+        categoryStrategy: "cascade" as const,
+        products: selectedItemsData
+          .filter((item) => item.type === "product")
+          .map((item) => ({
+            id: item.id,
+            categoryPath,
+          })),
+      };
+
+      const result =
+        await recycleBinService.moveMultipleItemsToRecycleBin(payload);
+
+      if (result.successCount > 0 && result.failCount === 0) {
+        setShowDeleteAllModal(false);
+        setSelectedItems([]);
+        setIsSelectionMode(false);
+
+        toast.success(
+          `${result.successCount} פריטים הועברו לסל המיחזור בהצלחה!`,
+        );
+
+        await loadAllContent();
+      } else if (result.successCount > 0 && result.failCount > 0) {
+        setShowDeleteAllModal(false);
+        setSelectedItems([]);
+        setIsSelectionMode(false);
+
+        toast.warning(
+          `${result.successCount} פריטים הועברו בהצלחה, ${result.failCount} נכשלו`,
+        );
+        console.error(
+          "Bulk recycle bin errors:",
+          result.results.filter((r) => !r.success),
+        );
+
+        await loadAllContent();
+      } else {
+        toast.error("כל הפריטים נכשלו בהעברה לסל המיחזור");
+        console.error("Bulk recycle bin errors:", result.results);
+        return;
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("שגיאה בהעברת הפריטים לסל המיחזור");
+    } finally {
+      setIsMovingToRecycleBin(false);
+    }
   };
 
   const handleMoveSelected = () => {
@@ -906,11 +1190,13 @@ const SingleCat: FC = () => {
       toast.error("נא לבחור לפחות פריט אחד להעברה");
       return;
     }
+    isMoveMultipleInProgressRef.current = true;
     setShowMoveMultipleModal(true);
   };
 
   const handleMoveMultipleSuccess = async () => {
     await loadAllContent();
+    isMoveMultipleInProgressRef.current = false;
     setSelectedItems([]);
     setIsSelectionMode(false);
     setShowMoveMultipleModal(false);
@@ -1477,13 +1763,28 @@ const SingleCat: FC = () => {
             <div className="flex justify-end gap-3 mt-4">
               <button
                 onClick={confirmMoveSelectedToRecycleBin}
-                className="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 transition-colors"
+                disabled={isMovingToRecycleBin}
+                className={`bg-orange-600 text-white px-4 py-2 rounded transition-colors ${isMovingToRecycleBin
+                  ? "opacity-70 cursor-not-allowed"
+                  : "hover:bg-orange-700"
+                  }`}
               >
-                העברה לסל מיחזור
+                {isMovingToRecycleBin ? (
+                  <span className="flex items-center gap-2">
+                    <Spinner className="size-4 text-white" />
+                    מעביר לסל...
+                  </span>
+                ) : (
+                  "העברה לסל מיחזור"
+                )}
               </button>
               <button
                 onClick={closeAllModals}
-                className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400 transition-colors"
+                disabled={isMovingToRecycleBin}
+                className={`bg-gray-300 px-4 py-2 rounded transition-colors ${isMovingToRecycleBin
+                  ? "opacity-70 cursor-not-allowed"
+                  : "hover:bg-gray-400"
+                  }`}
               >
                 ביטול
               </button>
