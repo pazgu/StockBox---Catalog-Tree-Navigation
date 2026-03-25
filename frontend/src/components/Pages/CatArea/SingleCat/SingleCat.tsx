@@ -69,6 +69,31 @@ type ProductDeletedPayload = {
   productName: string;
 };
 
+type BulkMovedCategorySocketItem = {
+  id: string;
+  name: string;
+  path: string;
+};
+
+type BulkMovedProductSocketItem = {
+  id: string;
+  name: string;
+  deletedPaths: string[];
+  remainingPaths: string[];
+  deletedCompletely: boolean;
+  movedToRecycleBin: boolean;
+};
+
+type CatalogItemsRemovedPayload = {
+  categoryStrategy: "cascade" | "move_up";
+  movedCategories: BulkMovedCategorySocketItem[];
+  movedProducts: BulkMovedProductSocketItem[];
+  successCount: number;
+  failCount: number;
+};
+
+
+
 const isDirectChildOfPath = (parentPath: string, fullPath: string) => {
   if (!parentPath || parentPath === "/categories") {
     const parts = fullPath.replace("/categories/", "").split("/");
@@ -169,6 +194,21 @@ const SingleCat: FC = () => {
   useEffect(() => {
     categoryInfoRef.current = categoryInfo;
   }, [categoryInfo]);
+
+  const getRemovedEntityToastText = (
+    name: string,
+    type: "category" | "product",
+  ) => {
+    if (role === "editor") {
+      return type === "category"
+        ? `הקטגוריה "${name}" הועברה לסל המיחזור`
+        : `המוצר "${name}" הועבר לסל המיחזור`;
+    }
+
+    return type === "category"
+      ? `הקטגוריה "${name}" נמחקה`
+      : `המוצר "${name}" נמחק`;
+  };
 
   useEffect(() => {
     joinRoleRoom("editor");
@@ -440,19 +480,79 @@ const SingleCat: FC = () => {
         loadAllContent(categoryPathRef.current);
       }
     };
-    const handleMultipleItemsMovedToRecycleBin = ({
-      categoryIds,
-      productIds,
-    }: {
-      categoryIds: string[];
-      productIds: string[];
-    }) => {
-      const hasChanges = categoryIds.length > 0 || productIds.length > 0;
 
-      if (!hasChanges) return;
+    const handleCatalogItemsRemoved = (data: CatalogItemsRemovedPayload) => {
+      const currentPath = categoryPathRef.current;
 
-      loadAllContent(categoryPathRef.current);
+      if (!currentPath) return;
+
+      const movedCategory = data.movedCategories.find(
+        (category) => category.path === currentPath,
+      );
+
+      if (movedCategory) {
+        setPreviousPath("/categories");
+        toast.info(getRemovedEntityToastText(movedCategory.name, "category"));
+        navigate("/categories", { replace: true });
+        return;
+      }
+
+      const ancestorCategory = data.movedCategories.find((category) =>
+        currentPath.startsWith(category.path + "/"),
+      );
+
+      if (ancestorCategory) {
+        if (data.categoryStrategy === "cascade") {
+          setPreviousPath("/categories");
+          toast.info(
+            getRemovedEntityToastText(ancestorCategory.name, "category"),
+          );
+          navigate("/categories", { replace: true });
+          return;
+        }
+
+        const parentPath = ancestorCategory.path.split("/").slice(0, -1).join("/");
+        const updatedPath = currentPath.replace(ancestorCategory.path, parentPath);
+        const normalizedUpdatedPath =
+          updatedPath.startsWith("/categories") ? updatedPath : `/categories${updatedPath}`;
+
+        setPreviousPath(parentPath || "/categories");
+        navigate(normalizedUpdatedPath, { replace: true });
+        return;
+      }
+
+      const movedCategoryPaths = new Set(
+        data.movedCategories.map((category) => category.path),
+      );
+
+      const movedProductDeletedPaths = new Set(
+        data.movedProducts.flatMap((product) => product.deletedPaths),
+      );
+
+      setItems((prev) =>
+        prev.filter((item) => {
+          if (item.type === "category") {
+            const itemPath = item.path?.[0];
+            if (!itemPath) return true;
+
+            return !movedCategoryPaths.has(itemPath);
+          }
+
+          if (item.type === "product") {
+            const productPaths = Array.isArray(item.path) ? item.path : [];
+
+            const wasRemovedFromCurrentCategory = productPaths.some((path) =>
+              movedProductDeletedPaths.has(path),
+            );
+
+            return !wasRemovedFromCurrentCategory;
+          }
+
+          return true;
+        }),
+      );
     };
+
     const handleCategoryPermissionsChanged = (data: {
       categoryPath: string;
     }) => {
@@ -485,8 +585,8 @@ const SingleCat: FC = () => {
 
     const handlePermissionsSync = ({ basePath }: { basePath: string }) => {
       const isAffected =
-      categoryPathRef.current === basePath ||
-      categoryPathRef.current.startsWith(basePath + '/');
+        categoryPathRef.current === basePath ||
+        categoryPathRef.current.startsWith(basePath + '/');
       if (!isAffected) return;
       loadAllContent(categoryPathRef.current);
     };
@@ -535,10 +635,7 @@ const SingleCat: FC = () => {
     onEvent("product_updated", handleProductUpdated);
     onEvent("product_deleted", handleProductDeleted);
     onEvent("recycle_bin_updated", handleRecycleBinUpdated);
-    onEvent(
-      "multiple_items_moved_to_recycle_bin",
-      handleMultipleItemsMovedToRecycleBin,
-    );
+    onEvent("catalog_items_removed", handleCatalogItemsRemoved);
     onEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
     onEvent("category_permissions_changed", handleCategoryPermissionsChanged);
     onEvent('permissions_sync', handlePermissionsSync);
@@ -554,10 +651,7 @@ const SingleCat: FC = () => {
       offEvent("product_updated", handleProductUpdated);
       offEvent("product_deleted", handleProductDeleted);
       offEvent("recycle_bin_updated", handleRecycleBinUpdated);
-      offEvent(
-        "multiple_items_moved_to_recycle_bin",
-        handleMultipleItemsMovedToRecycleBin,
-      );
+      offEvent("catalog_items_removed", handleCatalogItemsRemoved);
       offEvent(
         "banned_items_permissions_updated",
         handleBannedPermissionsUpdated,
