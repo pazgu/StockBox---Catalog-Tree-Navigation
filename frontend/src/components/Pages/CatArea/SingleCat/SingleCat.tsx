@@ -43,6 +43,11 @@ import {
 } from "../../../../lib/imageFallback";
 import { useSocket } from "../../../../hooks/useSocket";
 import { Category } from "../Categories/Categories";
+import {
+  CatalogItemsRemovedPayload,
+  ProductDeletedPayload,
+  ProductRestoredPayload,
+} from "../../../models/socket.models";
 
 const hasImage = (images: any): boolean => {
   if (!images) return false;
@@ -59,40 +64,6 @@ const NoImageCard: React.FC<{ label?: string }> = ({ label = "אין תמונה"
     </div>
   );
 };
-
-type ProductDeletedPayload = {
-  productId: string;
-  deletedPaths: string[];
-  remainingPaths: string[];
-  deletedCompletely: boolean;
-  movedToRecycleBin: boolean;
-  productName: string;
-};
-
-type BulkMovedCategorySocketItem = {
-  id: string;
-  name: string;
-  path: string;
-};
-
-type BulkMovedProductSocketItem = {
-  id: string;
-  name: string;
-  deletedPaths: string[];
-  remainingPaths: string[];
-  deletedCompletely: boolean;
-  movedToRecycleBin: boolean;
-};
-
-type CatalogItemsRemovedPayload = {
-  categoryStrategy: "cascade" | "move_up";
-  movedCategories: BulkMovedCategorySocketItem[];
-  movedProducts: BulkMovedProductSocketItem[];
-  successCount: number;
-  failCount: number;
-};
-
-
 
 const isDirectChildOfPath = (parentPath: string, fullPath: string) => {
   if (!parentPath || parentPath === "/categories") {
@@ -378,6 +349,53 @@ const SingleCat: FC = () => {
         ];
       });
     };
+    const handleProductRestored = (data: ProductRestoredPayload) => {
+      const restoredProduct = data.product;
+      const currentPath = categoryPathRef.current;
+
+      const productPaths = Array.isArray(restoredProduct.productPath)
+        ? restoredProduct.productPath
+        : [restoredProduct.productPath];
+
+      const belongsHere = productPaths.some((path) =>
+        isDirectChildOfPath(currentPath, path),
+      );
+
+      if (!belongsHere) return;
+
+      setItems((prev) => {
+        const existingItem = prev.find((item) => item.id === restoredProduct._id);
+
+        if (existingItem) {
+          return prev.map((item) =>
+            item.id === restoredProduct._id
+              ? {
+                ...item,
+                name: restoredProduct.productName,
+                images: restoredProduct.productImages || [],
+                path: productPaths,
+                description: restoredProduct.productDescription,
+                customFields: restoredProduct.customFields,
+              }
+              : item,
+          );
+        }
+
+        return [
+          {
+            id: restoredProduct._id!,
+            name: restoredProduct.productName,
+            images: restoredProduct.productImages || [],
+            type: "product",
+            path: productPaths,
+            description: restoredProduct.productDescription,
+            customFields: restoredProduct.customFields,
+            favorite: false,
+          },
+          ...prev,
+        ];
+      });
+    };
     const handleProductUpdated = (updatedProduct: any) => {
       setItems((prev) =>
         prev.map((item) => {
@@ -649,6 +667,7 @@ const SingleCat: FC = () => {
     onEvent("category_moved", handleMovedCategory);
     onEvent("category_updated", handleCategoryUpdated);
     onEvent("product_added", handleNewProduct);
+    onEvent("product_restored", handleProductRestored);
     onEvent("product_updated", handleProductUpdated);
     onEvent("product_deleted", handleProductDeleted);
     onEvent("recycle_bin_updated", handleRecycleBinUpdated);
@@ -665,6 +684,7 @@ const SingleCat: FC = () => {
       offEvent("category_updated", handleCategoryUpdated);
       offEvent("product_moved", handleMovedProduct);
       offEvent("product_added", handleNewProduct);
+      offEvent("product_restored", handleProductRestored);
       offEvent("product_updated", handleProductUpdated);
       offEvent("product_deleted", handleProductDeleted);
       offEvent("recycle_bin_updated", handleRecycleBinUpdated);
