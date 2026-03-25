@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-misused-promises */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
@@ -11,6 +12,7 @@ import {
   ForbiddenException,
   ConflictException,
   ServiceUnavailableException,
+  OnModuleInit,
 } from '@nestjs/common';
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { InjectModel } from '@nestjs/mongoose';
@@ -31,8 +33,9 @@ import { UsersService } from 'src/users/users.service';
 import { normalizeName } from 'src/utils/nameLock';
 import { SocketService } from 'src/socket/socket.service';
 import { UserRole } from 'src/schemas/Users.schema';
+import { Cron, CronExpression } from '@nestjs/schedule';
 @Injectable()
-export class ProductsService {
+export class ProductsService implements OnModuleInit {
   constructor(
     @InjectModel(Product.name) private productModel: Model<Product>,
     @InjectModel(Category.name) private categoryModel: Model<Category>,
@@ -42,7 +45,7 @@ export class ProductsService {
 
     private permissionsService: PermissionsService,
     private socketService: SocketService,
-  ) { }
+  ) {}
 
   async findAll(): Promise<Product[]> {
     return this.productModel.find().exec();
@@ -192,15 +195,30 @@ export class ProductsService {
         { $set: { refId: savedProduct._id.toString() } },
       );
       if (createProductDto.allowAll) {
-        const userIds = await this.permissionsService.assignPermissionsForNewEntity(savedProduct);
+        const userIds =
+          await this.permissionsService.assignPermissionsForNewEntity(
+            savedProduct,
+          );
         if (userIds?.length) {
-          this.socketService.emitToUsers(userIds, 'product_added', savedProduct);
-          this.socketService.emitToRole(UserRole.EDITOR, 'product_added', savedProduct);
+          this.socketService.emitToUsers(
+            userIds,
+            'product_added',
+            savedProduct,
+          );
+          this.socketService.emitToRole(
+            UserRole.EDITOR,
+            'product_added',
+            savedProduct,
+          );
         } else {
           this.socketService.emitToAll('product_added', savedProduct);
         }
       } else {
-        this.socketService.emitToRole(UserRole.EDITOR, 'product_added', savedProduct);
+        this.socketService.emitToRole(
+          UserRole.EDITOR,
+          'product_added',
+          savedProduct,
+        );
       }
 
       this.socketService.emitToAll('product_created', savedProduct);
@@ -275,7 +293,9 @@ export class ProductsService {
       }
       updatedProduct = await this.productModel.findByIdAndUpdate(
         id,
-        { $set: dto },
+        {
+          $set: { ...dto, isBlocked: false, expiresAt: null, blockedBy: null },
+        },
         { new: true },
       );
     } catch (e) {
@@ -306,7 +326,10 @@ export class ProductsService {
     return updatedProduct;
   }
 
-  async moveProduct(id: string, moveProductDto: MoveProductDto & { sourceCategoryPath: string }) {
+  async moveProduct(
+    id: string,
+    moveProductDto: MoveProductDto & { sourceCategoryPath: string },
+  ) {
     const product = await this.productModel.findById(id);
     if (!product) {
       throw new NotFoundException('Product not found');
@@ -345,15 +368,23 @@ export class ProductsService {
     product.productPath = newPaths;
     const savedProduct = await product.save();
     if (newCategoryPath.length > 0) {
-      const allowedUsers = await this.permissionsService.updatePermissionsOnMove(
-        id,
-        EntityType.PRODUCT,
-        newCategoryPath[0],
-      );
-      this.socketService.emitToUsers(allowedUsers, "product_moved", { newCategoryPath, sourceCategoryPath, savedProduct })
-      this.socketService.emitToRole(UserRole.EDITOR, "product_moved", { newCategoryPath, sourceCategoryPath, savedProduct })
+      const allowedUsers =
+        await this.permissionsService.updatePermissionsOnMove(
+          id,
+          EntityType.PRODUCT,
+          newCategoryPath[0],
+        );
+      this.socketService.emitToUsers(allowedUsers, 'product_moved', {
+        newCategoryPath,
+        sourceCategoryPath,
+        savedProduct,
+      });
+      this.socketService.emitToRole(UserRole.EDITOR, 'product_moved', {
+        newCategoryPath,
+        sourceCategoryPath,
+        savedProduct,
+      });
     }
-
 
     return {
       success: true,
@@ -407,14 +438,23 @@ export class ProductsService {
     product.productPath = [...product.productPath, ...newPaths];
     const savedProduct = await product.save();
 
-    const allowedUserIds = await this.permissionsService.assignPermissionsOnDuplicate(
-      id,
-      additionalCategoryPaths,
-    );
+    const allowedUserIds =
+      await this.permissionsService.assignPermissionsOnDuplicate(
+        id,
+        additionalCategoryPaths,
+      );
 
     if (allowedUserIds.length > 0) {
-      this.socketService.emitToUsers(allowedUserIds, 'product_added', savedProduct);
-      this.socketService.emitToRole(UserRole.EDITOR, 'product_added', savedProduct);
+      this.socketService.emitToUsers(
+        allowedUserIds,
+        'product_added',
+        savedProduct,
+      );
+      this.socketService.emitToRole(
+        UserRole.EDITOR,
+        'product_added',
+        savedProduct,
+      );
     } else {
       this.socketService.emitToAll('product_added', savedProduct);
     }
@@ -517,7 +557,10 @@ export class ProductsService {
       }
     }
 
-    return product;
+    return {
+      ...product,
+      blockedBy: product.blockedBy ?? null,
+    };
   }
 
   async deleteFromSpecificPaths(
@@ -593,5 +636,146 @@ export class ProductsService {
         `Failed to delete product from specific paths: ${(error as Error).message}`,
       );
     }
+  }
+  private editLockTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  private pendingSocketUpdates = new Map<string, string | null>();
+  private socketFlushScheduled = false;
+
+  async onModuleInit() {
+    await this.releaseExpiredLocks();
+  }
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async releaseExpiredLocks() {
+    const now = new Date();
+    const expiredProducts = await this.productModel
+      .find(
+        { isBlocked: true, expiresAt: { $lt: now } },
+        { _id: 1, 'blockedBy.userId': 1 },
+      )
+      .lean();
+    if (!expiredProducts.length) return;
+    const productIds = expiredProducts.map((p) => p._id);
+    await this.productModel.updateMany(
+      { _id: { $in: productIds } },
+      { $set: { isBlocked: false, blockedBy: null, expiresAt: null } },
+    );
+    expiredProducts.forEach((p) => {
+      const blockedUserId = p.blockedBy?.userId?.toString() || null;
+      this.pendingSocketUpdates.set(p._id.toString(), blockedUserId);
+      const existing = this.editLockTimers.get(p._id.toString());
+      if (existing) {
+        clearTimeout(existing);
+        this.editLockTimers.delete(p._id.toString());
+      }
+    });
+    this.flushPendingSocketUpdates();
+  }
+  private async releaseLock(productId: string, blockedUserId?: string | null) {
+    await this.productModel.findOneAndUpdate(
+      { _id: productId, isBlocked: true },
+      { $set: { isBlocked: false, blockedBy: null, expiresAt: null } },
+      { new: true },
+    );
+    this.pendingSocketUpdates.set(productId, blockedUserId || null);
+    this.flushPendingSocketUpdates();
+  }
+  private flushPendingSocketUpdates() {
+    if (this.socketFlushScheduled) return;
+    this.socketFlushScheduled = true;
+    setTimeout(() => {
+      const updatesForRole: any[] = [];
+      const userMessages = new Map<string, any[]>();
+      this.pendingSocketUpdates.forEach((blockedUserId, productId) => {
+        updatesForRole.push({
+          productId,
+          isBlocked: false,
+          blockedBy: null,
+          expiresAt: null,
+        });
+        if (blockedUserId) {
+          if (!userMessages.has(blockedUserId))
+            userMessages.set(blockedUserId, []);
+          userMessages.get(blockedUserId)!.push({ productId });
+        }
+      });
+      if (updatesForRole.length > 0) {
+        this.socketService.emitToRole(
+          UserRole.EDITOR,
+          'products_edit_lock_changed',
+          updatesForRole,
+        );
+      }
+      userMessages.forEach((msgs, userId) => {
+        this.socketService.emitToUser(
+          userId,
+          'product_edit_lock_expired',
+          msgs,
+        );
+      });
+      this.pendingSocketUpdates.clear();
+      this.socketFlushScheduled = false;
+    }, 50);
+  }
+  async setEditLock(
+    id: string,
+    isBlocked: boolean,
+    editor?: { userId: string; userName: string },
+  ): Promise<{ isBlocked: boolean; expiresAt: Date | null }> {
+    const product = await this.productModel.findById(id);
+    if (!product) throw new NotFoundException('Product not found');
+    const expiresAt = isBlocked ? new Date(Date.now() + 20 * 60 * 1000) : null;
+    let resolvedUserName = 'עורך';
+    if (isBlocked && editor?.userId) {
+      const user = await this.usersService.findById(editor.userId);
+      resolvedUserName = user?.userName ?? 'עורך';
+    }
+    const blockedBy =
+      isBlocked && editor
+        ? {
+            userId: new Types.ObjectId(editor.userId),
+            userName: resolvedUserName,
+          }
+        : null;
+    if (isBlocked) {
+      const result = await this.productModel.findOneAndUpdate(
+        { _id: id, isBlocked: false },
+        { $set: { isBlocked: true, expiresAt, blockedBy } },
+        { new: true },
+      );
+      if (!result)
+        throw new ConflictException('המוצר נעול לעריכה על ידי עורך אחר');
+      const timer = setTimeout(
+        async () => {
+          try {
+            await this.releaseLock(id, blockedBy?.userId?.toString());
+          } catch (err) {
+            console.error(`Auto-release failed for product ${id}`, err);
+          } finally {
+            this.editLockTimers.delete(id);
+          }
+        },
+        20 * 60 * 1000,
+      );
+      this.editLockTimers.set(id, timer);
+    } else {
+      await this.releaseLock(id, blockedBy?.userId?.toString());
+
+      const existing = this.editLockTimers.get(id);
+      if (existing) {
+        clearTimeout(existing);
+        this.editLockTimers.delete(id);
+      }
+    }
+    this.socketService.emitToRole(
+      UserRole.EDITOR,
+      'product_edit_lock_changed',
+      {
+        productId: id,
+        isBlocked,
+        expiresAt,
+        blockedBy: isBlocked ? blockedBy : null,
+      },
+    );
+    return { isBlocked, expiresAt };
   }
 }

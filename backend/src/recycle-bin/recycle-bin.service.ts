@@ -51,7 +51,7 @@ export class RecycleBinService {
     @InjectModel(NameLock.name) private nameLockModel: Model<NameLock>,
     private permissionsService: PermissionsService,
     private socketService: SocketService,
-  ) { }
+  ) {}
 
   async getRecycleBinItems(): Promise<RecycleBin[]> {
     return this.recycleBinModel.find().sort({ deletedAt: -1 }).lean().exec();
@@ -83,7 +83,6 @@ export class RecycleBinService {
     strategy: 'cascade' | 'move_up' = 'cascade',
     userId?: string,
     emitSocket = true,
-
   ) {
     const category = await this.categoryModel.findById(categoryId).lean();
     if (!category) {
@@ -763,8 +762,8 @@ export class RecycleBinService {
           const matchedDeletedPaths =
             product.categoryPath && productBeforeDelete
               ? productBeforeDelete.productPath.filter((path) =>
-                path.startsWith(product.categoryPath!),
-              )
+                  path.startsWith(product.categoryPath!),
+                )
               : productBeforeDelete?.productPath || [];
 
           const result = await this.moveProductToRecycleBin(
@@ -785,8 +784,8 @@ export class RecycleBinService {
             const remainingPaths =
               product.categoryPath && productBeforeDelete.productPath.length > 1
                 ? productBeforeDelete.productPath.filter(
-                  (path) => !matchedDeletedPaths.includes(path),
-                )
+                    (path) => !matchedDeletedPaths.includes(path),
+                  )
                 : [];
 
             movedProductsPayload.push({
@@ -839,10 +838,7 @@ export class RecycleBinService {
         },
       );
 
-      this.socketService.emitToAll(
-        'catalog_items_removed',
-        bulkCatalogPayload,
-      );
+      this.socketService.emitToAll('catalog_items_removed', bulkCatalogPayload);
     }
 
     return {
