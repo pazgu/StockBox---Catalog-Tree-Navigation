@@ -389,7 +389,6 @@ export class PermissionsService {
       );
     } else {
       const product = await this.productModel.findById(permission.entityId);
-      console.log('prod:', product);
       this.socketService.emitToUser(
         permission.allowed.toString(),
         'product_permission_deleted',
