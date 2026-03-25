@@ -48,10 +48,8 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `relative text-white text-base hover:text-[#BA9F71] transition-all duration-300 ${
-      isActive ? "text-[#BA9F71] font-semibold" : ""
-    } after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-[#BA9F71] after:transition-all after:duration-300 hover:after:w-full ${
-      isActive ? "after:w-full" : ""
+    `relative text-white text-base hover:text-[#BA9F71] transition-all duration-300 ${isActive ? "text-[#BA9F71] font-semibold" : ""
+    } after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-[#BA9F71] after:transition-all after:duration-300 hover:after:w-full ${isActive ? "after:w-full" : ""
     }`;
 
   useEffect(() => {
@@ -86,42 +84,41 @@ const Header: React.FC<HeaderProps> = ({
   return (
     <>
       <header
-        className={`fixed top-0 w-full transition-all duration-300 z-50 flex items-center justify-between px-6 ${
-          isScrolled
-            ? "bg-[#0D305B]/95 backdrop-blur-md shadow-xl h-32"
-            : "bg-[#0D305B] shadow-lg h-40"
-        }`}
+        className={`fixed top-0 w-full transition-all duration-300 z-50 flex items-center justify-between px-6 ${isScrolled
+          ? "bg-[#0D305B]/95 backdrop-blur-md shadow-xl h-32"
+          : "bg-[#0D305B] shadow-lg h-40"
+          }`}
       >
-     <div className="flex items-center gap-2">
-        {role && user && (
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-[#BA9F71] flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-              {user.userName?.[0]?.toUpperCase()}
+        <div className="flex items-center gap-2">
+          {role && user && (
+            <div className="hidden lg:flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-[#BA9F71] flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                {user.userName?.[0]?.toUpperCase()}
+              </div>
+              <span className="text-white text-sm font-medium">
+                {user.userName}
+              </span>
             </div>
-            <span className="text-white text-sm font-medium">
-              {user.userName}
-            </span>
-          </div>
-        )}
+          )}
 
-        {role && (
-          <button
-            aria-label="Logout"
-            className="relative p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 group"
-            onClick={handleLogout}
-          >
-            <LogOut
-             size={21} 
-            className="transition-all duration-300 group-hover:scale-110 group-hover:text-[#BA9F71]"
-             />
-            <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-3 py-2 rounded opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-              התנתקות
-            </span>
-          </button>
-        )}
-      </div>
+          {role && (
+            <button
+              aria-label="Logout"
+              className="relative p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 group"
+              onClick={handleLogout}
+            >
+              <LogOut
+                size={21}
+                className="transition-all duration-300 group-hover:scale-110 group-hover:text-[#BA9F71]"
+              />
+              <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-3 py-2 rounded opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                התנתקות
+              </span>
+            </button>
+          )}
+        </div>
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-20">
+          <div className="flex items-center justify-between h-20 overflow-visible">
             <div className="hidden sm:block flex-shrink-0 transform transition-transform duration-300 hover:scale-105 cursor-pointer">
               <img
                 src={logoSrc}
@@ -152,9 +149,7 @@ const Header: React.FC<HeaderProps> = ({
               </nav>
             </div>
 
-            <div
-              className={`relative flex-1 max-w-md mx-4 ${isMobileMenuOpen ? "hidden" : ""}`}
-            >
+            <div className="hidden md:block relative flex-1 max-w-md mx-4">
               <SearchBar onSelectResult={handleSearchSelect} />
             </div>
 
@@ -230,7 +225,7 @@ const Header: React.FC<HeaderProps> = ({
 
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 active:scale-95 ml-auto"
+              className="lg:hidden flex-shrink-0 ml-2 p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 active:scale-95 ml-auto"
             >
               <Menu
                 size={24}
@@ -242,11 +237,10 @@ const Header: React.FC<HeaderProps> = ({
 
         {/* Mobile Menu */}
         <div
-          className={`lg:hidden absolute top-0 left-0 w-full transition-all duration-500 ease-in-out mt-3 ${
-            isMobileMenuOpen
-              ? "max-h-[600px] opacity-100"
-              : "max-h-0 opacity-0 overflow-hidden"
-          }`}
+          className={`lg:hidden absolute top-0 left-0 w-full transition-all duration-500 ease-in-out mt-3 ${isMobileMenuOpen
+            ? "max-h-[600px] opacity-100"
+            : "max-h-0 opacity-0 overflow-hidden"
+            }`}
         >
           <div className="container mx-auto px-4 py-4 bg-gradient-to-b from-[#0a2644] to-[#0D305B]">
             <div className="flex justify-end mb-4">
@@ -256,6 +250,21 @@ const Header: React.FC<HeaderProps> = ({
                 onClick={() => setIsMobileMenuOpen(false)}
               />
             </div>
+            {role && user && (
+              <div className="flex items-center gap-3 mb-4 pb-4 border-b border-white/20">
+                <div className="w-10 h-10 rounded-full bg-[#BA9F71] flex items-center justify-center text-white text-base font-bold">
+                  {user.userName?.[0]?.toUpperCase()}
+                </div>
+                <div className="flex flex-col text-right">
+                  <span className="text-white font-medium">
+                    {user.userName}
+                  </span>
+                  <span className="text-white/60 text-xs">
+                    {role}
+                  </span>
+                </div>
+              </div>
+            )}
 
             <nav className="flex flex-col gap-4" dir="rtl">
               <div className="relative z-[999]">
