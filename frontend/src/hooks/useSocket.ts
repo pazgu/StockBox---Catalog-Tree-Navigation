@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback,useState } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 
 interface UseSocketProps {
@@ -7,6 +7,7 @@ interface UseSocketProps {
   onDisconnect?: () => void;
   onRoleChanged?: () => void;
   onUserDeleted?: () => void;
+  onUserBlocked?: () => void;
   onPermissionsUpdated?: () => void;
 }
 
@@ -26,10 +27,11 @@ export const useSocket = ({
   onDisconnect,
   onRoleChanged,
   onUserDeleted,
+  onUserBlocked,
   onPermissionsUpdated
 }: UseSocketProps): UseSocketReturn => {
-const socketRef = useRef<Socket | null>(null);
-const [isReady, setIsReady] = useState(false);
+  const socketRef = useRef<Socket | null>(null);
+  const [isReady, setIsReady] = useState(false);
   useEffect(() => {
     if (!token) return;
 
@@ -42,7 +44,7 @@ const [isReady, setIsReady] = useState(false);
 
     socket.on('connect', () => {
       console.log('Socket connected:', socket.id);
-      setIsReady(true); 
+      setIsReady(true);
       onConnect?.();
     });
 
@@ -56,6 +58,12 @@ const [isReady, setIsReady] = useState(false);
     socket.on('user_deleted_self', () => {
       onUserDeleted?.();
     });
+    socket.on('user_blocked_self', (
+      data: { isBlocked: boolean }
+    ) => {
+      if (!data.isBlocked)
+        onUserBlocked?.();
+    });
     socket.on('permissions_updated', () => {
       onPermissionsUpdated?.();
     });
@@ -64,7 +72,7 @@ const [isReady, setIsReady] = useState(false);
       setIsReady(false);
       socket.disconnect();
     };
-  }, [token, onConnect, onDisconnect, onRoleChanged, onUserDeleted, onPermissionsUpdated]);
+  }, [token, onConnect, onDisconnect, onRoleChanged, onUserDeleted, onUserBlocked, onPermissionsUpdated]);
 
   const joinRoleRoom = useCallback((role: string) => {
     socketRef.current?.emit('join_role_room', role);

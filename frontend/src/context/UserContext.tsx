@@ -52,16 +52,16 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   useEffect(() => {
-  if (user) {
-    localStorage.setItem("user", JSON.stringify(user));
-    setId((user as any).id ?? (user as any)._id ?? null);
-    setToken(localStorage.getItem("token") || "");
-  } else {
-    localStorage.removeItem("user");
-    setId(null);
-    setToken("");
-  }
-}, [user]);
+    if (user) {
+      localStorage.setItem("user", JSON.stringify(user));
+      setId((user as any).id ?? (user as any)._id ?? null);
+      setToken(localStorage.getItem("token") || "");
+    } else {
+      localStorage.removeItem("user");
+      setId(null);
+      setToken("");
+    }
+  }, [user]);
 
   const handleRoleChanged = useCallback(() => {
     toast.warning("התפקיד שלך עודכן על ידי חבר צוות. יש להתחבר מחדש.", {
@@ -83,29 +83,39 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     }, 1500);
   }, []);
 
-const handlePermissionsUpdated = useCallback(() => {
-  const currentPath = window.location.pathname;
+  const handleUserBlocked = useCallback(() => {
+    toast.warning("המשתמש שלך נחסם על ידי חבר צוות.", { duration: 8000 });
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setTimeout(() => {
+      window.location.href = "/login";
+    }, 1500);
+  }, []);
 
-  if (currentPath === '/') return;
+  const handlePermissionsUpdated = useCallback(() => {
+    const currentPath = window.location.pathname;
 
-  if (currentPath === '/categories') {
-    window.location.reload();
-    return;
-  }
+    if (currentPath === '/') return;
 
-  toast.info('ההרשאות שלך עודכנו. מעביר לדף הראשי...', { duration: 4000 });
-  setTimeout(() => {
-    window.location.href = '/categories';
-  }, 1000);
-}, []);
+    if (currentPath === '/categories') {
+      window.location.reload();
+      return;
+    }
+
+    toast.info('ההרשאות שלך עודכנו. מעביר לדף הראשי...', { duration: 4000 });
+    setTimeout(() => {
+      window.location.href = '/categories';
+    }, 1000);
+  }, []);
 
 
-useSocket({
-  token,
-  onRoleChanged: handleRoleChanged,
-  onUserDeleted: handleUserDeleted,
-  onPermissionsUpdated: handlePermissionsUpdated,
-});
+  useSocket({
+    token,
+    onRoleChanged: handleRoleChanged,
+    onUserDeleted: handleUserDeleted,
+    onUserBlocked: handleUserBlocked,
+    onPermissionsUpdated: handlePermissionsUpdated,
+  });
 
   const refreshUsers = async () => {
     try {
@@ -118,9 +128,9 @@ useSocket({
 
   const blockUser = async (id: string, isBlocked: boolean) => {
     try {
-      const response = await api.patch<User>(`${API_URL}/${id}/block`, { 
+      const response = await api.patch<User>(`${API_URL}/${id}/block`, {
         isBlocked,
-       });
+      });
       setUsers((prev) => prev.map((u) => (u._id === id ? response.data : u)));
     } catch (err) {
       console.error("Error blocking user:", err);
