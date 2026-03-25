@@ -627,7 +627,7 @@ export class ProductsService implements OnModuleInit {
   async onModuleInit() {
     await this.releaseExpiredLocks();
   }
-  @Cron(CronExpression.EVERY_MINUTE)
+  @Cron(CronExpression.EVERY_5_MINUTES)
   async releaseExpiredLocks() {
     const now = new Date();
     const expiredProducts = await this.productModel
@@ -707,11 +707,16 @@ export class ProductsService implements OnModuleInit {
     const product = await this.productModel.findById(id);
     if (!product) throw new NotFoundException('Product not found');
     const expiresAt = isBlocked ? new Date(Date.now() + 20 * 60 * 1000) : null;
+    let resolvedUserName = 'עורך';
+    if (isBlocked && editor?.userId) {
+      const user = await this.usersService.findById(editor.userId);
+      resolvedUserName = user?.userName ?? 'עורך';
+    }
     const blockedBy =
       isBlocked && editor
         ? {
             userId: new Types.ObjectId(editor.userId),
-            userName: editor.userName || 'עורך',
+            userName: resolvedUserName,
           }
         : null;
     if (isBlocked) {
