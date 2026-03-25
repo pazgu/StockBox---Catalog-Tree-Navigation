@@ -1,6 +1,7 @@
 import { tokenRenewInterceptor } from "../interceptors/tokenRenewal.interceptor";
 import { environment } from "../environments/environment.development";
 import axios, { AxiosError, AxiosResponse } from "axios";
+import { toast } from "sonner";
 
 const api = axios.create({
   baseURL: environment.API_URL,
@@ -23,6 +24,9 @@ api.interceptors.response.use(
         );
 
         window.location.href = `mailto:${emailTo}?subject=${subject}&body=${body}`;
+      }
+      if(code === "USER_IS_BLOCKED"){
+        toast.error("המשתמש שלך חסום, אין אפשרות להתחבר")
       }
     }
 

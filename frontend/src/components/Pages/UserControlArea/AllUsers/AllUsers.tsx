@@ -105,6 +105,31 @@ const AllUsers: FC<AllUsersProps> = () => {
       setUsers(prev => prev.filter(u => u._id !== id));
       toast.info(`המשתמש ${name} נמחק מהמערכת`);
     };
+    const handleUserBlocked = ({
+      userId,
+      isBlocked,
+      userName,
+    }: {
+      userId: string;
+      isBlocked: boolean;
+      userName: string;
+    }) => {
+
+      setUsers((prev) =>
+        prev.map((u) => {
+          if (u._id === userId) {
+            return { ...u, isBlocked };
+          }
+          return u;
+        })
+      );
+
+      if (isBlocked) {
+        toast.error(`המשתמש ${userName} נחסם`);
+      } else {
+        toast.success(`המשתמש ${userName} שוחרר מחסימה`);
+      }
+    };
 
     const handleUserApproved = (user: User) => {
       setUsers(prev => prev.map(u => u._id === user._id ? user : u));
@@ -114,11 +139,13 @@ const AllUsers: FC<AllUsersProps> = () => {
     onEvent("new_user_created", handleNewUser);
     onEvent("user_updated", handleUserUpdated);
     onEvent("user_deleted", handleUserDeleted);
+    onEvent("user_blocked", handleUserBlocked);
     onEvent("user_approved", handleUserApproved);
 
     return () => {
       offEvent("new_user_created", handleNewUser);
       offEvent("user_updated", handleUserUpdated);
+      offEvent("user_blocked", handleUserBlocked);
       offEvent("user_deleted", handleUserDeleted);
       offEvent("user_approved", handleUserApproved);
     };
@@ -187,9 +214,6 @@ const AllUsers: FC<AllUsersProps> = () => {
           prev.map((u) => (u._id === userId ? updatedUser : u)),
         );
 
-        toast.success(
-          currentBlockStatus ? "המשתמש שוחרר מהחסימה" : "המשתמש נחסם בהצלחה",
-        );
       } catch (error) {
         toast.error("אירעה שגיאה בעדכון סטטוס החסימה");
         console.error("Block error:", error);
