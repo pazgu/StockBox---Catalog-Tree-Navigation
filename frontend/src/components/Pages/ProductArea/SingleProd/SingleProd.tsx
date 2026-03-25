@@ -104,6 +104,11 @@ const SingleProd: FC<SingleProdProps> = () => {
     if (productId)
       try {
         const product = await ProductsService.getById(productId);
+        if (product.isBlocked && product.blockedBy?.userId === id) {
+          await ProductsService.setEditLock(productId, false);
+          product.isBlocked = false;
+          product.blockedBy = null;
+        }
 
         setTitle(product.productName);
         setDescription(product.productDescription || "");
@@ -251,15 +256,20 @@ const SingleProd: FC<SingleProdProps> = () => {
 
       setFolders(folders);
     };
-    const handleEditLockChanged = (data: {
+    type EditLockChangedPayload = {
       productId: string;
       isBlocked: boolean;
       blockedBy: { userId: string; userName: string } | null;
-    }) => {
-      if (data.productId !== productId) return;
-      setIsProductBlocked(data.isBlocked);
+    };
+    const handleEditLockChanged = (
+      data: EditLockChangedPayload | EditLockChangedPayload[],
+    ) => {
+      const items = Array.isArray(data) ? data : [data];
+      const match = items.find((item) => item.productId === productId);
+      if (!match) return;
+      setIsProductBlocked(match.isBlocked);
       setProduct((prev) =>
-        prev ? { ...prev, blockedBy: data.blockedBy } : prev,
+        prev ? { ...prev, blockedBy: match.blockedBy } : prev,
       );
     };
     const handleMovedProduct = (data: {
@@ -284,7 +294,22 @@ const SingleProd: FC<SingleProdProps> = () => {
         console.error("Reload failed", err);
       }
     };
+    const handleEditLockExpired = (
+      data: { productId: string }[] | { productId: string },
+    ) => {
+      const items = Array.isArray(data) ? data : [data];
+      const match = items.find((item) => item.productId === productId);
+      if (!match) return;
 
+      setIsEditing(false);
+      setEditSnapshot(null);
+      setNewFolderName("");
+      setShowNewFolderInput(false);
+
+      toast.warning("פג תוקף נעילת העריכה – השינויים לא נשמרו", {
+        duration: 6000,
+      });
+    };
     const handleProductDeleted = (data: {
       productId: string;
       deletedPaths: string[];
@@ -310,6 +335,7 @@ const SingleProd: FC<SingleProdProps> = () => {
     onEvent("category_permissions_changed", handleCategoryPermissionsChanged);
     onEvent("product_deleted", handleProductDeleted);
     onEvent("product_edit_lock_changed", handleEditLockChanged);
+    onEvent("product_edit_lock_expired", handleEditLockExpired);
     return () => {
       offEvent("product_updated", handleProductUpdated);
       offEvent("product_moved", handleMovedProduct);
@@ -323,6 +349,7 @@ const SingleProd: FC<SingleProdProps> = () => {
       );
       offEvent("product_deleted", handleProductDeleted);
       offEvent("product_edit_lock_changed", handleEditLockChanged);
+      offEvent("product_edit_lock_expired", handleEditLockExpired);
     };
   }, [productId, isEditing, onEvent, offEvent]);
   const location = useLocation();

@@ -34,7 +34,7 @@ export interface ProductDataDto {
   createdAt: string;
   updatedAt: string;
   isBlocked: boolean;
-  blockedAt: string | null;
+  expiresAt: string | null;
   blockedBy?: { userId: string; userName: string } | null;
 }
 
@@ -49,7 +49,7 @@ export interface ProductDto {
   createdAt?: string;
   updatedAt?: string;
   isBlocked?: boolean;
-  blockedAt?: string | null;
+  expiresAt?: string | null;
   blockedBy?: { userId: string; userName: string } | null;
 }
 

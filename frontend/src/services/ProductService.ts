@@ -246,7 +246,7 @@ export class ProductsService {
     isBlocked: boolean,
   ): Promise<{
     isBlocked: boolean;
-    blockedAt: string | null;
+    expiresAt: string | null;
     blockedBy: { userId: string; userName: string } | null;
   }> {
     const { data } = await api.patch(

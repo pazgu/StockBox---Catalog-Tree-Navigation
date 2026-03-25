@@ -27,7 +27,7 @@ export class Product {
   isBlocked: boolean;
 
   @Prop({ type: Date, default: null })
-  blockedAt: Date | null;
+  expiresAt: Date | null;
 
   @Prop({
     type: {
@@ -44,3 +44,7 @@ ProductSchema.index({ productName: 'text' }, { name: 'product_text_search' });
 export type ProductDocument = HydratedDocument<Product>;
 
 ProductSchema.index({ productPath: 1 });
+ProductSchema.index(
+  { expiresAt: 1 },
+  { partialFilterExpression: { isBlocked: true } },
+);
