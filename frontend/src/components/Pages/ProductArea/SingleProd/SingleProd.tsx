@@ -300,6 +300,14 @@ const SingleProd: FC<SingleProdProps> = () => {
       const items = Array.isArray(data) ? data : [data];
       const match = items.find((item) => item.productId === productId);
       if (!match) return;
+      if (editSnapshot) {
+        setTitle(editSnapshot.title);
+        setDescription(editSnapshot.description);
+        setProductImages(editSnapshot.productImages);
+        setAccordionData(editSnapshot.accordionData);
+        setFolders(editSnapshot.folders);
+        setCurrentImageIndex(0);
+      }
 
       setIsEditing(false);
       setEditSnapshot(null);
