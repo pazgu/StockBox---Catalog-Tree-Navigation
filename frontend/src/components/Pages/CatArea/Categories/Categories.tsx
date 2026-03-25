@@ -336,8 +336,16 @@ export const Categories: FC<CategoriesProps> = () => {
       loadCategoriesAndFavorites();
       toast.info("הרשאות עודכנו, טוען...");
     };
-    const handleCategoryPermissionsChanged = () => {
-      loadCategoriesAndFavorites();
+    const handleCategoryPermissionsChanged = (data: {
+      categoryPath: string; action: string;
+    }) => {
+      const previousPath = localStorage.getItem("previousPath") || "/categories";
+      const categoryParentPath = data.categoryPath.split("/").slice(0, -1).join("/");
+      if (previousPath === categoryParentPath) {
+        loadCategoriesAndFavorites();
+        return;
+      }
+
     };
 
     const handleNewProduct = (product: ProductDto) => {
