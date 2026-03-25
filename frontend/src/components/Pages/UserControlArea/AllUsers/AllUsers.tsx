@@ -484,6 +484,7 @@ const AllUsers: FC<AllUsersProps> = () => {
                 )}
 
                 <div className="absolute top-2 right-2 flex gap-2">
+                <div className="relative group">
                   <button
                     className="p-1 w-6 h-6 rounded hover:bg-gray-100 opacity-60 hover:opacity-100 transition"
                     onClick={() => handleEditClick(user)}
@@ -504,7 +505,10 @@ const AllUsers: FC<AllUsersProps> = () => {
                       />
                     </svg>
                   </button>
+                  <span className="absolute top-full mt-1 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-50">עריכת משתמש</span>
+                </div>
                   {user._id != id && (
+                  <div className="relative group">
                     <button
                       className="w-6 h-6 rounded flex items-center justify-center
              hover:text-red-500
@@ -527,9 +531,12 @@ const AllUsers: FC<AllUsersProps> = () => {
                         />
                       </svg>
                     </button>
+                    <span className="absolute top-full mt-1 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-50">מחיקת משתמש</span>
+                  </div>
                   )}
 
                   {user.approved && user.role !== "editor" && (
+                  <div className="relative group">
                     <button
                       className={`p-1 rounded transition ${
                         user.isBlocked
@@ -540,6 +547,8 @@ const AllUsers: FC<AllUsersProps> = () => {
                     >
                       <Ban size={14} />
                     </button>
+                    <span className="absolute top-full mt-1 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-50">{user.isBlocked ? "ביטול חסימה" : "חסימת משתמש"}</span>
+                  </div>
                   )}
                 </div>
 
