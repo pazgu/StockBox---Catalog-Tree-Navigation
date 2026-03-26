@@ -54,11 +54,11 @@ export class UsersController {
   }
 
   @Patch(':id/block')
-  toggleBlockUser(
+  async toggleBlockUser(
     @Param('id') id: string,
     @Body('isBlocked') isBlocked: boolean,
   ) {
-    return this.usersService.toggleBlockUser(id, isBlocked);
+    return await this.usersService.toggleBlockUser(id, isBlocked);
   }
 
   @Get('me/favorites')

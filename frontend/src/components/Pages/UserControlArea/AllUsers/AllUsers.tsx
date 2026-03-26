@@ -40,7 +40,22 @@ const BTN_DANGER =
 const BTN_SUCCESS =
   "px-8 h-12 rounded-xl font-bold text-white transition-colors shadow-lg bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 hover:shadow-xl";
 
-interface AllUsersProps { }
+export function stringToColor(str: string) {
+  let hash = 0;
+
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+
+  const hue = ((hash % 360) + 360) % 360;
+
+  const saturation = 45 + (hash % 20);
+  const lightness = 75 + (hash % 10);
+
+  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+}
+
+interface AllUsersProps {}
 
 const AllUsers: FC<AllUsersProps> = () => {
   const navigate = useNavigate();
@@ -88,37 +103,63 @@ const AllUsers: FC<AllUsersProps> = () => {
     }
   }, [searchParams]);
 
-
   useEffect(() => {
     joinRoleRoom("editor");
 
     const handleNewUser = (user: User) => {
-      setUsers(prev => [user, ...prev]);
+      setUsers((prev) => [user, ...prev]);
       toast.info(`משתמש חדש נוסף: ${user.firstName}`);
     };
 
     const handleUserUpdated = (user: User) => {
-      setUsers(prev => prev.map(u => u._id === user._id ? user : u));
+      setUsers((prev) => prev.map((u) => (u._id === user._id ? user : u)));
     };
 
     const handleUserDeleted = ({ id, name }: { id: string; name: string }) => {
-      setUsers(prev => prev.filter(u => u._id !== id));
+      setUsers((prev) => prev.filter((u) => u._id !== id));
       toast.info(`המשתמש ${name} נמחק מהמערכת`);
+    };
+    const handleUserBlocked = ({
+      userId,
+      isBlocked,
+      userName,
+    }: {
+      userId: string;
+      isBlocked: boolean;
+      userName: string;
+    }) => {
+
+      setUsers((prev) =>
+        prev.map((u) => {
+          if (u._id === userId) {
+            return { ...u, isBlocked };
+          }
+          return u;
+        })
+      );
+
+      if (isBlocked) {
+        toast.error(`המשתמש ${userName} נחסם`);
+      } else {
+        toast.success(`המשתמש ${userName} שוחרר מחסימה`);
+      }
     };
 
     const handleUserApproved = (user: User) => {
-      setUsers(prev => prev.map(u => u._id === user._id ? user : u));
+      setUsers((prev) => prev.map((u) => (u._id === user._id ? user : u)));
       toast.info(`המשתמש ${user.firstName} ${user.lastName} אושר למערכת`);
     };
 
     onEvent("new_user_created", handleNewUser);
     onEvent("user_updated", handleUserUpdated);
     onEvent("user_deleted", handleUserDeleted);
+    onEvent("user_blocked", handleUserBlocked);
     onEvent("user_approved", handleUserApproved);
 
     return () => {
       offEvent("new_user_created", handleNewUser);
       offEvent("user_updated", handleUserUpdated);
+      offEvent("user_blocked", handleUserBlocked);
       offEvent("user_deleted", handleUserDeleted);
       offEvent("user_approved", handleUserApproved);
     };
@@ -158,7 +199,6 @@ const AllUsers: FC<AllUsersProps> = () => {
 
       await userService.remove(userIdToDelete);
 
-
       if (
         currentPage > Math.ceil((users.length - 1) / usersPerPage) &&
         currentPage > 1
@@ -187,9 +227,6 @@ const AllUsers: FC<AllUsersProps> = () => {
           prev.map((u) => (u._id === userId ? updatedUser : u)),
         );
 
-        toast.success(
-          currentBlockStatus ? "המשתמש שוחרר מהחסימה" : "המשתמש נחסם בהצלחה",
-        );
       } catch (error) {
         toast.error("אירעה שגיאה בעדכון סטטוס החסימה");
         console.error("Block error:", error);
@@ -371,7 +408,9 @@ const AllUsers: FC<AllUsersProps> = () => {
       <main className="px-7 md:px-5  relative pb-4">
         <div className="flex justify-between items-center mb-8">
           <div className="text-right flex-1">
-            <h1 className="text-5xl font-light text-slate-700 mb-2 tracking-tight">כל המשתמשים</h1>
+            <h1 className="text-5xl font-light text-slate-700 mb-2 tracking-tight">
+              כל המשתמשים
+            </h1>
 
             {users.length > 0 && (
               <div className="relative max-w-xs">
@@ -431,8 +470,9 @@ const AllUsers: FC<AllUsersProps> = () => {
             {currentUsers.map((user, index) => (
               <div
                 key={user._id ?? user.email}
-                className={`rounded-xl p-4 text-center shadow-sm relative min-h-[110px] transition-transform hover:-translate-y-1 hover:shadow-md border-gray-100 ${user.approved ? "bg-[#fffdf8]" : "bg-gray-100"
-                  }`}
+                className={`rounded-xl p-4 text-center shadow-sm relative min-h-[110px] transition-transform hover:-translate-y-1 hover:shadow-md border-gray-100 ${
+                  user.approved ? "bg-[#fffdf8]" : "bg-gray-100"
+                }`}
               >
                 {!user.approved && (
                   <div
@@ -444,6 +484,7 @@ const AllUsers: FC<AllUsersProps> = () => {
                 )}
 
                 <div className="absolute top-2 right-2 flex gap-2">
+                <div className="relative group">
                   <button
                     className="p-1 w-6 h-6 rounded hover:bg-gray-100 opacity-60 hover:opacity-100 transition"
                     onClick={() => handleEditClick(user)}
@@ -464,7 +505,10 @@ const AllUsers: FC<AllUsersProps> = () => {
                       />
                     </svg>
                   </button>
+                  <span className="absolute top-full mt-1 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-50">עריכת משתמש</span>
+                </div>
                   {user._id != id && (
+                  <div className="relative group">
                     <button
                       className="w-6 h-6 rounded flex items-center justify-center
              hover:text-red-500
@@ -487,47 +531,36 @@ const AllUsers: FC<AllUsersProps> = () => {
                         />
                       </svg>
                     </button>
+                    <span className="absolute top-full mt-1 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-50">מחיקת משתמש</span>
+                  </div>
                   )}
 
-
                   {user.approved && user.role !== "editor" && (
+                  <div className="relative group">
                     <button
-                      className={`p-1 rounded transition ${user.isBlocked
-                        ? "bg-red-600 text-white hover:bg-red-700"
-                        : "hover:bg-gray-100 opacity-60 hover:opacity-100"
-                        }`}
+                      className={`p-1 rounded transition ${
+                        user.isBlocked
+                          ? "bg-red-600 text-white hover:bg-red-700"
+                          : "hover:bg-gray-100 opacity-60 hover:opacity-100"
+                      }`}
                       onClick={() => setBlockUserIndex(index)}
                     >
                       <Ban size={14} />
                     </button>
+                    <span className="absolute top-full mt-1 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-50">{user.isBlocked ? "ביטול חסימה" : "חסימת משתמש"}</span>
+                  </div>
                   )}
                 </div>
 
-                {/* Avatar */}
-                <div className="w-10 h-10 rounded-full bg-gray-100 border border-gray-200 mx-auto flex items-center justify-center mb-2">
-                  <svg
-                    className="w-5 h-5 text-gray-400"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
+                <div className="mx-auto flex items-center justify-center mb-2">
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-gray-800 text-sm font-bold flex-shrink-0"
+                    style={{
+                      backgroundColor: stringToColor(user.userName),
+                    }}
                   >
-                    <path
-                      d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <circle
-                      cx="12"
-                      cy="7"
-                      r="4"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
+                    {user.userName?.[0]?.toUpperCase()}
+                  </div>
                 </div>
 
                 <div>
@@ -541,17 +574,17 @@ const AllUsers: FC<AllUsersProps> = () => {
                   <div className="text-sm text-gray-600">{user.email}</div>
 
                   <div
-                    className={`inline-block mt-2 text-xs px-2 py-1 rounded-full font-semibold ${user.isBlocked
-                      ? "bg-red-200 text-red-700"
-                      : isMe(user._id)
-                        ? "bg-blue-100 text-blue-700"
-                        : "bg-[#0D305B]/10 text-[#0D305B]"
-                      }`}
+                    className={`inline-block mt-2 text-xs px-2 py-1 rounded-full font-semibold ${
+                      user.isBlocked
+                        ? "bg-red-200 text-red-700"
+                        : isMe(user._id)
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-[#0D305B]/10 text-[#0D305B]"
+                    }`}
                   >
                     {user.isBlocked
                       ? "משתמש חסום"
                       : `${roleLabel(user.role)}${isMe(user._id) ? " (אני)" : ""}`}
-
                   </div>
                 </div>
               </div>
@@ -605,10 +638,11 @@ const AllUsers: FC<AllUsersProps> = () => {
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
             <button
               key={page}
-              className={`px-3 py-1 border rounded ${page === currentPage
-                ? "bg-[#0D305B] text-[#F0E4D0]"
-                : "text-gray-600 hover:bg-[#0D305B] hover:text-[#F0E4D0]"
-                }`}
+              className={`px-3 py-1 border rounded ${
+                page === currentPage
+                  ? "bg-[#0D305B] text-[#F0E4D0]"
+                  : "text-gray-600 hover:bg-[#0D305B] hover:text-[#F0E4D0]"
+              }`}
               onClick={() => goToPage(page)}
             >
               {page}
@@ -858,10 +892,11 @@ const AllUsers: FC<AllUsersProps> = () => {
 
                   return (
                     <button
-                      className={`px-8 py-3 rounded-xl bg-gradient-to-r from-[#0D305B] to-[#15457a] text-white font-bold shadow-lg transition-all ${isUnchanged
-                        ? "opacity-50 cursor-not-allowed"
-                        : "hover:from-[#15457a] hover:to-[#1e5a9e] hover:shadow-xl"
-                        }`}
+                      className={`px-8 py-3 rounded-xl bg-gradient-to-r from-[#0D305B] to-[#15457a] text-white font-bold shadow-lg transition-all ${
+                        isUnchanged
+                          ? "opacity-50 cursor-not-allowed"
+                          : "hover:from-[#15457a] hover:to-[#1e5a9e] hover:shadow-xl"
+                      }`}
                       onClick={handleSaveEdit}
                       disabled={!!isUnchanged}
                     >

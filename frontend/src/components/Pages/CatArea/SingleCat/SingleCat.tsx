@@ -43,6 +43,11 @@ import {
 } from "../../../../lib/imageFallback";
 import { useSocket } from "../../../../hooks/useSocket";
 import { Category } from "../Categories/Categories";
+import {
+  CatalogItemsRemovedPayload,
+  ProductDeletedPayload,
+  ProductRestoredPayload,
+} from "../../../models/socket.models";
 
 const hasImage = (images: any): boolean => {
   if (!images) return false;
@@ -58,15 +63,6 @@ const NoImageCard: React.FC<{ label?: string }> = ({ label = "אין תמונה"
       <div className="text-gray-400 text-sm">{label}</div>
     </div>
   );
-};
-
-type ProductDeletedPayload = {
-  productId: string;
-  deletedPaths: string[];
-  remainingPaths: string[];
-  deletedCompletely: boolean;
-  movedToRecycleBin: boolean;
-  productName: string;
 };
 
 const isDirectChildOfPath = (parentPath: string, fullPath: string) => {
@@ -164,11 +160,25 @@ const SingleCat: FC = () => {
   }, [categoryPath]);
 
   const categoryInfoRef = useRef<CategoryDTO | null>(null);
-  const reloadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isMoveMultipleInProgressRef = useRef(false);
   useEffect(() => {
     categoryInfoRef.current = categoryInfo;
   }, [categoryInfo]);
+
+  const getRemovedEntityToastText = (
+    name: string,
+    type: "category" | "product",
+  ) => {
+    if (role === "editor") {
+      return type === "category"
+        ? `הקטגוריה "${name}" הועברה לסל המיחזור`
+        : `המוצר "${name}" הועבר לסל המיחזור`;
+    }
+
+    return type === "category"
+      ? `הקטגוריה "${name}" נמחקה`
+      : `המוצר "${name}" נמחק`;
+  };
 
   useEffect(() => {
     joinRoleRoom("editor");
@@ -210,14 +220,24 @@ const SingleCat: FC = () => {
       newPath: string;
     }) => {
       if (!data.oldPath || !data.newPath) return;
+
       const { oldPath, newPath } = data;
 
       const newParentPath = newPath.split("/").slice(0, -1).join("/");
       const oldParentPath = oldPath.split("/").slice(0, -1).join("/");
+
       const socketPreviousPath = localStorage.getItem("previousPath");
+
+      if (!socketPreviousPath) return;
 
       if (socketPreviousPath === oldPath) {
         navigate(newPath);
+        return;
+      }
+
+      if (socketPreviousPath.startsWith(oldPath + "/")) {
+        const updatedPath = socketPreviousPath.replace(oldPath, newPath);
+        navigate(updatedPath);
         return;
       }
 
@@ -225,14 +245,47 @@ const SingleCat: FC = () => {
         socketPreviousPath === oldParentPath ||
         socketPreviousPath === newParentPath
       ) {
-        if (isMoveMultipleInProgressRef.current) return;
-        if (reloadTimeoutRef.current) clearTimeout(reloadTimeoutRef.current);
-        reloadTimeoutRef.current = setTimeout(() => {
-          loadAllContent();
-        }, 500);
+        loadAllContent();
       }
     };
+    const handleBatchMoved = (data: {
+      results: { oldPath: string; newPath: string }[];
+      newParentPath: string;
+    }) => {
+      const socketPreviousPath = localStorage.getItem("previousPath");
+      if (!socketPreviousPath) return;
 
+      const { results } = data;
+
+      for (const { oldPath, newPath } of results) {
+        if (!oldPath || !newPath) continue;
+
+        if (socketPreviousPath === oldPath) {
+          navigate(newPath);
+          return;
+        }
+
+        if (socketPreviousPath.startsWith(oldPath + "/")) {
+          const updatedPath = socketPreviousPath.replace(oldPath, newPath);
+          navigate(updatedPath);
+          return;
+        }
+      }
+
+      const oldParentPath = results[0]?.oldPath
+        ?.split("/")
+        .slice(0, -1)
+        .join("/");
+
+      const newParentPath = data.newParentPath;
+
+      if (
+        socketPreviousPath === oldParentPath ||
+        socketPreviousPath === newParentPath
+      ) {
+        loadAllContent();
+      }
+    };
 
     const handleCategoryUpdated = (data: {
       updatedCategory: Category;
@@ -338,6 +391,53 @@ const SingleCat: FC = () => {
         ];
       });
     };
+    const handleProductRestored = (data: ProductRestoredPayload) => {
+      const restoredProduct = data.product;
+      const currentPath = categoryPathRef.current;
+
+      const productPaths = Array.isArray(restoredProduct.productPath)
+        ? restoredProduct.productPath
+        : [restoredProduct.productPath];
+
+      const belongsHere = productPaths.some((path) =>
+        isDirectChildOfPath(currentPath, path),
+      );
+
+      if (!belongsHere) return;
+
+      setItems((prev) => {
+        const existingItem = prev.find((item) => item.id === restoredProduct._id);
+
+        if (existingItem) {
+          return prev.map((item) =>
+            item.id === restoredProduct._id
+              ? {
+                ...item,
+                name: restoredProduct.productName,
+                images: restoredProduct.productImages || [],
+                path: productPaths,
+                description: restoredProduct.productDescription,
+                customFields: restoredProduct.customFields,
+              }
+              : item,
+          );
+        }
+
+        return [
+          {
+            id: restoredProduct._id!,
+            name: restoredProduct.productName,
+            images: restoredProduct.productImages || [],
+            type: "product",
+            path: productPaths,
+            description: restoredProduct.productDescription,
+            customFields: restoredProduct.customFields,
+            favorite: false,
+          },
+          ...prev,
+        ];
+      });
+    };
     const handleProductUpdated = (updatedProduct: any) => {
       setItems((prev) =>
         prev.map((item) => {
@@ -440,27 +540,104 @@ const SingleCat: FC = () => {
         loadAllContent(categoryPathRef.current);
       }
     };
-    const handleMultipleItemsMovedToRecycleBin = ({
-      categoryIds,
-      productIds,
-    }: {
-      categoryIds: string[];
-      productIds: string[];
-    }) => {
-      const hasChanges = categoryIds.length > 0 || productIds.length > 0;
 
-      if (!hasChanges) return;
+    const handleCatalogItemsRemoved = (data: CatalogItemsRemovedPayload) => {
+      const currentPath = categoryPathRef.current;
 
-      loadAllContent(categoryPathRef.current);
+      if (!currentPath) return;
+
+      const movedCategory = data.movedCategories.find(
+        (category) => category.path === currentPath,
+      );
+
+      if (movedCategory) {
+        setPreviousPath("/categories");
+        toast.info(getRemovedEntityToastText(movedCategory.name, "category"));
+        navigate("/categories", { replace: true });
+        return;
+      }
+
+      const ancestorCategory = data.movedCategories.find((category) =>
+        currentPath.startsWith(category.path + "/"),
+      );
+
+      if (ancestorCategory) {
+        if (data.categoryStrategy === "cascade") {
+          setPreviousPath("/categories");
+          toast.info(
+            getRemovedEntityToastText(ancestorCategory.name, "category"),
+          );
+          navigate("/categories", { replace: true });
+          return;
+        }
+
+        const parentPath = ancestorCategory.path.split("/").slice(0, -1).join("/");
+        const updatedPath = currentPath.replace(ancestorCategory.path, parentPath);
+        const normalizedUpdatedPath =
+          updatedPath.startsWith("/categories") ? updatedPath : `/categories${updatedPath}`;
+
+        setPreviousPath(parentPath || "/categories");
+        navigate(normalizedUpdatedPath, { replace: true });
+        return;
+      }
+
+      const movedCategoryPaths = new Set(
+        data.movedCategories.map((category) => category.path),
+      );
+
+      const movedProductDeletedPaths = new Set(
+        data.movedProducts.flatMap((product) => product.deletedPaths),
+      );
+
+      setItems((prev) =>
+        prev.filter((item) => {
+          if (item.type === "category") {
+            const itemPath = item.path?.[0];
+            if (!itemPath) return true;
+
+            return !movedCategoryPaths.has(itemPath);
+          }
+
+          if (item.type === "product") {
+            const productPaths = Array.isArray(item.path) ? item.path : [];
+
+            const wasRemovedFromCurrentCategory = productPaths.some((path) =>
+              movedProductDeletedPaths.has(path),
+            );
+
+            return !wasRemovedFromCurrentCategory;
+          }
+
+          return true;
+        }),
+      );
     };
+
     const handleCategoryPermissionsChanged = (data: {
-      categoryPath: string;
+      categoryPath: string; action: string;
     }) => {
       const previousPath = localStorage.getItem("previousPath") || "";
-
-      if (!previousPath.startsWith(data.categoryPath)) return;
-
-      loadAllContent();
+      const categoryParentPath = data.categoryPath.split("/").slice(0, -1).join("/");
+      if (previousPath === categoryParentPath) {
+        loadAllContent();
+        return;
+      }
+      if (previousPath === data.categoryPath) {
+        if (data.action === 'deleted') {
+          toast.info("הרשאות עודכנו, טוען...")
+          navigate('/categories')
+          return;
+        }
+        return;
+      }
+      if (previousPath.startsWith(data.categoryPath)) {
+        if (data.action === 'deleted') {
+          toast.info("הרשאות עודכנו, טוען...")
+          navigate('/categories')
+          return;
+        }
+        return;
+      }
     };
     const handleProductPermissionDeleted = (data: {
       product: ProductDto;
@@ -485,8 +662,8 @@ const SingleCat: FC = () => {
 
     const handlePermissionsSync = ({ basePath }: { basePath: string }) => {
       const isAffected =
-      categoryPathRef.current === basePath ||
-      categoryPathRef.current.startsWith(basePath + '/');
+        categoryPathRef.current === basePath ||
+        categoryPathRef.current.startsWith(basePath + '/');
       if (!isAffected) return;
       loadAllContent(categoryPathRef.current);
     };
@@ -525,6 +702,7 @@ const SingleCat: FC = () => {
         ];
       });
     };
+    onEvent("categories_batch_moved", handleBatchMoved);
     onEvent("product_permission_deleted", handleProductPermissionDeleted);
     onEvent("product_permission_added", handleProductPermissionAdded);
     onEvent("product_moved", handleMovedProduct);
@@ -532,18 +710,17 @@ const SingleCat: FC = () => {
     onEvent("category_moved", handleMovedCategory);
     onEvent("category_updated", handleCategoryUpdated);
     onEvent("product_added", handleNewProduct);
+    onEvent("product_restored", handleProductRestored);
     onEvent("product_updated", handleProductUpdated);
     onEvent("product_deleted", handleProductDeleted);
     onEvent("recycle_bin_updated", handleRecycleBinUpdated);
-    onEvent(
-      "multiple_items_moved_to_recycle_bin",
-      handleMultipleItemsMovedToRecycleBin,
-    );
+    onEvent("catalog_items_removed", handleCatalogItemsRemoved);
     onEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
     onEvent("category_permissions_changed", handleCategoryPermissionsChanged);
     onEvent('permissions_sync', handlePermissionsSync);
 
     return () => {
+      offEvent("categories_batch_moved", handleBatchMoved);
       offEvent("sub_category_added", handleNewSubCategory);
       offEvent("product_permission_added", handleProductPermissionAdded);
       offEvent("category_moved", handleMovedCategory);
@@ -551,13 +728,11 @@ const SingleCat: FC = () => {
       offEvent("category_updated", handleCategoryUpdated);
       offEvent("product_moved", handleMovedProduct);
       offEvent("product_added", handleNewProduct);
+      offEvent("product_restored", handleProductRestored);
       offEvent("product_updated", handleProductUpdated);
       offEvent("product_deleted", handleProductDeleted);
       offEvent("recycle_bin_updated", handleRecycleBinUpdated);
-      offEvent(
-        "multiple_items_moved_to_recycle_bin",
-        handleMultipleItemsMovedToRecycleBin,
-      );
+      offEvent("catalog_items_removed", handleCatalogItemsRemoved);
       offEvent(
         "banned_items_permissions_updated",
         handleBannedPermissionsUpdated,

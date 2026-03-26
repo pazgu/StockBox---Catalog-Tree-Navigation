@@ -144,10 +144,17 @@ export class UsersService {
     return updatedUser;
   }
 
-  toggleBlockUser(id: string, isBlocked: boolean) {
-    return this.userModel
+  async toggleBlockUser(id: string, isBlocked: boolean) {
+    const blockedUser = await this.userModel
       .findByIdAndUpdate(id, { isBlocked }, { new: true })
       .exec();
+    this.socketService.emitToUser(id, 'user_blocked_self', isBlocked);
+    this.socketService.emitToRole(UserRole.EDITOR, 'user_blocked', {
+      userId: id,
+      isBlocked: isBlocked,
+      userName: blockedUser?.userName,
+    });
+    return blockedUser;
   }
   async addFavorite(userId: string, itemId: string, type: FavoriteType) {
     try {
@@ -289,5 +296,8 @@ export class UsersService {
       .lean();
 
     return users.map((u) => u._id.toString());
+  }
+  async findById(id: string): Promise<User | null> {
+    return this.userModel.findById(id).lean();
   }
 }
