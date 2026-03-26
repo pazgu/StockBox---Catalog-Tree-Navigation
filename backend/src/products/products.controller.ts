@@ -163,4 +163,25 @@ export class ProductsController {
   ) {
     return this.productsService.deleteFromSpecificPaths(id, body.paths);
   }
+
+  @ProductPatch(':id/edit-lock')
+  @ProductUseGuards(JwtAuthGuard, EditorGuard)
+  @HttpCode(HttpStatus.OK)
+  async setEditLock(
+    @ProductParam('id', ParseObjectIdPipe) id: string,
+    @ProductBody('isBlocked') isBlocked: boolean,
+    @Req()
+    req: express.Request & { user?: { userId: string; userName: string } },
+  ) {
+    return this.productsService.setEditLock(
+      id,
+      isBlocked,
+      req.user
+        ? {
+            userId: req.user.userId,
+            userName: req.user.userName,
+          }
+        : undefined,
+    );
+  }
 }
