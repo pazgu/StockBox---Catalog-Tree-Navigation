@@ -47,7 +47,13 @@ import {
   ProductDeletedPayload,
 } from "../../../models/socket.models";
 
-interface SingleProdProps {}
+type EditLockChangedPayload = {
+  productId: string;
+  isBlocked: boolean;
+  blockedBy: { userId: string; userName: string } | null;
+};
+
+interface SingleProdProps { }
 
 function normalizeImages(images: string[]) {
   return (images || []).filter(
@@ -268,11 +274,7 @@ const SingleProd: FC<SingleProdProps> = () => {
 
       setFolders(folders);
     };
-    type EditLockChangedPayload = {
-      productId: string;
-      isBlocked: boolean;
-      blockedBy: { userId: string; userName: string } | null;
-    };
+
     const handleEditLockChanged = (
       data: EditLockChangedPayload | EditLockChangedPayload[],
     ) => {
@@ -375,7 +377,58 @@ const SingleProd: FC<SingleProdProps> = () => {
       toast.info("הרשאות עודכנו, טוען...");
       loadProduct();
     };
+    const handleCategoryMoved = (data: {
+      oldPath: string;
+      newPath: string;
+    }) => {
+      const { oldPath, newPath } = data;
 
+      if (!product) return;
+
+      const affectedPath = product.productPath.find(p =>
+        p.startsWith(oldPath)
+      );
+
+      if (!affectedPath) return;
+
+      const updatedPath = affectedPath.replace(oldPath, newPath);
+
+      if (isEditing) {
+        setPreviousPath(updatedPath.split("/").slice(0, -1).join("/"));
+        return;
+      }
+
+      setPreviousPath(updatedPath.split("/").slice(0, -1).join("/"));
+      navigate(`/products/${product._id}`, { replace: true });
+    };
+    const handleCategoriesBatchMoved = (data: {
+      results: { oldPath: string; newPath: string }[];
+    }) => {
+      if (!product) return;
+
+      for (const { oldPath, newPath } of data.results) {
+        const affectedPath = product.productPath.find(p =>
+          p.startsWith(oldPath)
+        );
+
+        if (!affectedPath) continue;
+
+        const updatedPath = affectedPath.replace(oldPath, newPath);
+
+        const newParent = updatedPath.split("/").slice(0, -1).join("/");
+
+        if (isEditing) {
+          setPreviousPath(newParent);
+          return;
+        }
+
+        setPreviousPath(newParent);
+        navigate(`/products/${product._id}`, { replace: true });
+        return;
+      }
+    };
+    onEvent("categories_batch_moved", handleCategoriesBatchMoved);
+    onEvent("category_moved", handleCategoryMoved);
     onEvent("product_updated", handleProductUpdated);
     onEvent("product_moved", handleMovedProduct);
     onEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
@@ -387,6 +440,7 @@ const SingleProd: FC<SingleProdProps> = () => {
     onEvent("product_edit_lock_changed", handleEditLockChanged);
     onEvent("product_edit_lock_expired", handleEditLockExpired);
     return () => {
+      offEvent("categories_batch_moved", handleCategoriesBatchMoved);
       offEvent("product_updated", handleProductUpdated);
       offEvent("product_moved", handleMovedProduct);
       offEvent(
@@ -397,6 +451,7 @@ const SingleProd: FC<SingleProdProps> = () => {
         "category_permissions_changed",
         handleCategoryPermissionsChanged,
       );
+      offEvent("category_moved", handleCategoryMoved);
       offEvent("product_deleted", handleProductDeleted);
       offEvent("catalog_items_removed", handleCatalogItemsRemoved);
       offEvent("product_restored", handleProductRestored);
@@ -474,9 +529,9 @@ const SingleProd: FC<SingleProdProps> = () => {
       title !== editSnapshot.title ||
       description !== editSnapshot.description ||
       JSON.stringify(productImages) !==
-        JSON.stringify(editSnapshot.productImages) ||
+      JSON.stringify(editSnapshot.productImages) ||
       JSON.stringify(accordionData) !==
-        JSON.stringify(editSnapshot.accordionData) ||
+      JSON.stringify(editSnapshot.accordionData) ||
       JSON.stringify(folders) !== JSON.stringify(editSnapshot.folders)
     );
   }, [
@@ -733,20 +788,20 @@ const SingleProd: FC<SingleProdProps> = () => {
     }));
     const uploadFolders = folders.length
       ? [
-          {
-            title: "Default Group",
-            folders: folders.map((folder) => ({
-              ...(folder._id ? { _id: folder._id } : {}),
-              folderName: folder.name,
-              files: folder.files.map((file) => ({
-                ...(file._id ? { _id: file._id } : {}),
-                link: file.url,
-                name: file.name,
-                size: file.size,
-              })),
+        {
+          title: "Default Group",
+          folders: folders.map((folder) => ({
+            ...(folder._id ? { _id: folder._id } : {}),
+            folderName: folder.name,
+            files: folder.files.map((file) => ({
+              ...(file._id ? { _id: file._id } : {}),
+              link: file.url,
+              name: file.name,
+              size: file.size,
             })),
-          },
-        ]
+          })),
+        },
+      ]
       : [];
 
     const normalizedProductImages = normalizeImages(productImages);
@@ -763,9 +818,9 @@ const SingleProd: FC<SingleProdProps> = () => {
       (title !== editSnapshot.title ||
         description !== editSnapshot.description ||
         JSON.stringify(productImages) !==
-          JSON.stringify(editSnapshot.productImages) ||
+        JSON.stringify(editSnapshot.productImages) ||
         JSON.stringify(accordionData) !==
-          JSON.stringify(editSnapshot.accordionData) ||
+        JSON.stringify(editSnapshot.accordionData) ||
         JSON.stringify(folders) !== JSON.stringify(editSnapshot.folders));
 
     if (!hasChanges) {
@@ -855,9 +910,9 @@ const SingleProd: FC<SingleProdProps> = () => {
       prev.map((folder) =>
         folder.uiId === folderUiId
           ? {
-              ...folder,
-              files: folder.files.filter((f) => f.uiId !== fileUiId),
-            }
+            ...folder,
+            files: folder.files.filter((f) => f.uiId !== fileUiId),
+          }
           : folder,
       ),
     );
@@ -976,11 +1031,10 @@ const SingleProd: FC<SingleProdProps> = () => {
                         : "עריכת דף"
                   }
                   className={`peer flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white shadow-lg ring-2 transition-all duration-300
-    ${
-      isSaving || (isProductBlocked && !isEditing)
-        ? "bg-gray-400 ring-gray-300 cursor-not-allowed opacity-70"
-        : "bg-stockblue ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90"
-    }`}
+    ${isSaving || (isProductBlocked && !isEditing)
+                      ? "bg-gray-400 ring-gray-300 cursor-not-allowed opacity-70"
+                      : "bg-stockblue ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90"
+                    }`}
                 >
                   {isSaving ? (
                     <Spinner className="size-6 text-white" />
