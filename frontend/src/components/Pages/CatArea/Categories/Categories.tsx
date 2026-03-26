@@ -194,29 +194,36 @@ export const Categories: FC<CategoriesProps> = () => {
       const newParentPath = newPath.split("/").slice(0, -1).join("/");
       const oldParentPath = oldPath.split("/").slice(0, -1).join("/");
       const socketPreviousPath = localStorage.getItem("previousPath");
-
+      if (!socketPreviousPath) return;
       if (socketPreviousPath === oldPath) {
         navigate(newPath);
         return;
       }
 
+      if (socketPreviousPath.startsWith(oldPath + "/")) {
+        const updatedPath = socketPreviousPath.replace(oldPath, newPath);
+        navigate(updatedPath);
+        return;
+      }
+
       if (socketPreviousPath === oldParentPath) {
-        setCategories((prev) =>
-          prev.filter((cat) => cat.categoryPath !== oldPath),
+        setCategories(prev =>
+          prev.filter(cat => cat.categoryPath !== oldPath)
         );
 
-        setItems((prev) => prev.filter((item) => item.path[0] !== oldPath));
+        setItems(prev =>
+          prev.filter(item => item.path[0] !== oldPath)
+        );
       }
 
       if (socketPreviousPath === newParentPath) {
-        setCategories((prev) => {
-          if (prev.some((cat) => cat._id === category._id)) return prev;
-
+        setCategories(prev => {
+          if (prev.some(cat => cat._id === category._id)) return prev;
           return [{ ...category, categoryPath: newPath }, ...prev];
         });
 
-        setItems((prev) => {
-          if (prev.some((item) => item.id === category._id)) return prev;
+        setItems(prev => {
+          if (prev.some(item => item.id === category._id)) return prev;
 
           return [
             {
