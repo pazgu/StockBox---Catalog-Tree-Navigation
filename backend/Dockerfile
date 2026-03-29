@@ -7,4 +7,8 @@ RUN npm install
 
 COPY . .
 
-CMD ["npm", "run", "start:dev"]
+RUN npm run build
+
+EXPOSE 4000
+
+CMD ["node", "dist/main.js"]
