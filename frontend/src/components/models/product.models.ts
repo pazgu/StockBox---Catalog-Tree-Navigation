@@ -33,6 +33,9 @@ export interface ProductDataDto {
   uploadFolders: UploadGroupDto[];
   createdAt: string;
   updatedAt: string;
+  isBlocked: boolean;
+  expiresAt: string | null;
+  blockedBy?: { userId: string; userName: string } | null;
 }
 
 export interface ProductDto {
@@ -45,6 +48,9 @@ export interface ProductDto {
   uploadFolders?: UploadGroupDto[];
   createdAt?: string;
   updatedAt?: string;
+  isBlocked?: boolean;
+  expiresAt?: string | null;
+  blockedBy?: { userId: string; userName: string } | null;
 }
 
 export type CreateProductPayload = {

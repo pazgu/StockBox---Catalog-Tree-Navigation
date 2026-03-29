@@ -19,6 +19,7 @@ const userSchema = z.object({
     .string()
     .trim()
     .min(1, "שם משתמש הוא שדה חובה")
+    .max(20, "מקסימום 20 תווים")
     .regex(/^[א-תa-zA-Z\u0600-\u06FF0-9]+$/, "רק אותיות ומספרים")
     .regex(/^[א-ת0-9]+$|^[a-zA-Z0-9]+$|^[\u0600-\u06FF0-9]+$/, "לא ניתן לערבב שפות")
     .refine((val) => (val.match(/[א-תa-zA-Z\u0600-\u06FF]/g) || []).length >= 2, "חייב להכיל לפחות 2 אותיות"),
@@ -26,6 +27,7 @@ const userSchema = z.object({
     .string()
     .trim()
     .min(1, "שם פרטי הוא שדה חובה")
+    .max(20, "מקסימום 20 תווים")
     .regex(/^[א-תa-zA-Z\u0600-\u06FF\s]+$/, "רק אותיות")
     .regex(/^[א-ת\s]+$|^[a-zA-Z\s]+$|^[\u0600-\u06FF\s]+$/, "לא ניתן לערבב שפות")
     .min(2, "שם פרטי חייב להכיל לפחות 2 אותיות"),
@@ -33,6 +35,7 @@ const userSchema = z.object({
     .string()
     .trim()
     .min(1, "שם משפחה הוא שדה חובה")
+    .max(20, "מקסימום 20 תווים")
     .regex(/^[א-תa-zA-Z\u0600-\u06FF\s]+$/, "רק אותיות")
     .regex(/^[א-ת\s]+$|^[a-zA-Z\s]+$|^[\u0600-\u06FF\s]+$/, "לא ניתן לערבב שפות")
     .min(2, "שם משפחה חייב להכיל לפחות 2 אותיות"),
@@ -42,11 +45,11 @@ const userSchema = z.object({
     .min(1, "כתובת מייל היא שדה חובה")
     .refine((val) => val.length === 0 || isEmail(val), "כתובת מייל לא תקינה"),
   companyName: z.string().optional(),
-role: z
-  .string({ message: "חובה לבחור סוג משתמש" })
-  .refine((val) => val !== "" && USER_ROLES.includes(val as any), {
-    message: "חובה לבחור סוג משתמש",
-  }),
+  role: z
+    .string({ message: "חובה לבחור סוג משתמש" })
+    .refine((val) => val !== "" && USER_ROLES.includes(val as any), {
+      message: "חובה לבחור סוג משתמש",
+    }),
 });
 
 type UserFormData = z.infer<typeof userSchema>;
@@ -56,7 +59,11 @@ const NewUser: React.FC = () => {
   const navigate = useNavigate();
   const [groups, setGroups] = useState<Group[]>([]);
   const [isLoadingGroups, setIsLoadingGroups] = useState(false);
-
+  const limitTo20 = (e: any) => {
+    if (e.target.value.length > 20) {
+      e.target.value = e.target.value.slice(0, 20);
+    }
+  };
   const goToAllUsers = () => {
     navigate("/AllUsers");
   };
@@ -138,7 +145,7 @@ const NewUser: React.FC = () => {
       reset();
       toast.success("משתמש נוסף בהצלחה!");
       navigate("/AllUsers");
-} catch (error: any) {
+    } catch (error: any) {
       console.error("שגיאה בשליחת הנתונים:", error);
       console.log("status:", error?.response?.status);
       console.log("data:", error?.response?.data);
@@ -207,14 +214,13 @@ const NewUser: React.FC = () => {
                 שם משתמש
               </label>
               <input
-                {...register("userName")}
+                {...register("userName",{ onChange: limitTo20 })}
                 type="text"
                 id="userName"
-                className={`py-3 px-4 border rounded-lg text-base outline-none transition-all duration-200 rtl text-right bg-white min-h-6 leading-6 ${
-                  errors.userName
-                    ? "border-red-500 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]"
-                    : "border-gray-300 focus:border-[#0D305B] focus:shadow-[0_0_0_3px_rgba(13,48,91,0.1)]"
-                }`}
+                className={`py-3 px-4 border rounded-lg text-base outline-none transition-all duration-200 rtl text-right bg-white min-h-6 leading-6 ${errors.userName
+                  ? "border-red-500 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]"
+                  : "border-gray-300 focus:border-[#0D305B] focus:shadow-[0_0_0_3px_rgba(13,48,91,0.1)]"
+                  }`}
               />
               {errors.userName && (
                 <motion.span
@@ -235,14 +241,13 @@ const NewUser: React.FC = () => {
                 שם פרטי
               </label>
               <input
-                {...register("firstName")}
+                {...register("firstName",{ onChange: limitTo20 })}
                 type="text"
                 id="firstName"
-                className={`py-3 px-4 border rounded-lg text-base outline-none transition-all duration-200 rtl text-right bg-white min-h-6 leading-6 ${
-                  errors.firstName
-                    ? "border-red-500 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]"
-                    : "border-gray-300 focus:border-[#0D305B] focus:shadow-[0_0_0_3px_rgba(13,48,91,0.1)]"
-                }`}
+                className={`py-3 px-4 border rounded-lg text-base outline-none transition-all duration-200 rtl text-right bg-white min-h-6 leading-6 ${errors.firstName
+                  ? "border-red-500 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]"
+                  : "border-gray-300 focus:border-[#0D305B] focus:shadow-[0_0_0_3px_rgba(13,48,91,0.1)]"
+                  }`}
               />
               {errors.firstName && (
                 <motion.span
@@ -263,14 +268,13 @@ const NewUser: React.FC = () => {
                 שם משפחה
               </label>
               <input
-                {...register("lastName")}
+                {...register("lastName",{ onChange: limitTo20 })}
                 type="text"
                 id="lastName"
-                className={`py-3 px-4 border rounded-lg text-base outline-none transition-all duration-200 rtl text-right bg-white min-h-6 leading-6 ${
-                  errors.lastName
-                    ? "border-red-500 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]"
-                    : "border-gray-300 focus:border-[#0D305B] focus:shadow-[0_0_0_3px_rgba(13,48,91,0.1)]"
-                }`}
+                className={`py-3 px-4 border rounded-lg text-base outline-none transition-all duration-200 rtl text-right bg-white min-h-6 leading-6 ${errors.lastName
+                  ? "border-red-500 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]"
+                  : "border-gray-300 focus:border-[#0D305B] focus:shadow-[0_0_0_3px_rgba(13,48,91,0.1)]"
+                  }`}
               />
               {errors.lastName && (
                 <motion.span
@@ -297,11 +301,10 @@ const NewUser: React.FC = () => {
                   id="role"
                   {...register("role")}
                   defaultValue=""
-                  className={`cursor-pointer py-3 px-4 pl-10 border rounded-lg text-base outline-none transition-all duration-200 rtl text-right bg-white min-h-6 leading-6 appearance-none w-full ${
-                    errors.role
-                      ? "border-red-500 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]"
-                      : "border-gray-300 focus:border-[#0D305B] focus:shadow-[0_0_0_3px_rgba(13,48,91,0.1)]"
-                  }`}
+                  className={`cursor-pointer py-3 px-4 pl-10 border rounded-lg text-base outline-none transition-all duration-200 rtl text-right bg-white min-h-6 leading-6 appearance-none w-full ${errors.role
+                    ? "border-red-500 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]"
+                    : "border-gray-300 focus:border-[#0D305B] focus:shadow-[0_0_0_3px_rgba(13,48,91,0.1)]"
+                    }`}
                   style={{
                     backgroundImage: `url('data:image/svg+xml;utf8,<svg fill="%23374151" height="20" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>')`,
                     backgroundRepeat: "no-repeat",
@@ -346,11 +349,10 @@ const NewUser: React.FC = () => {
                 type="email"
                 id="email"
                 placeholder="yourname@gmail.com"
-                className={`py-3 px-4 border rounded-lg text-base outline-none transition-all duration-200 rtl text-right bg-white min-h-6 leading-6 placeholder:text-gray-400 placeholder:rtl placeholder:text-right placeholder:text-base ${
-                  errors.email
-                    ? "border-red-500 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]"
-                    : "border-gray-300 focus:border-[#0D305B] focus:shadow-[0_0_0_3px_rgba(13,48,91,0.1)]"
-                }`}
+                className={`py-3 px-4 border rounded-lg text-base outline-none transition-all duration-200 rtl text-right bg-white min-h-6 leading-6 placeholder:text-gray-400 placeholder:rtl placeholder:text-right placeholder:text-base ${errors.email
+                  ? "border-red-500 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]"
+                  : "border-gray-300 focus:border-[#0D305B] focus:shadow-[0_0_0_3px_rgba(13,48,91,0.1)]"
+                  }`}
               />
 
               {errors.email && (

@@ -160,7 +160,6 @@ const SingleCat: FC = () => {
   }, [categoryPath]);
 
   const categoryInfoRef = useRef<CategoryDTO | null>(null);
-  const reloadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isMoveMultipleInProgressRef = useRef(false);
   useEffect(() => {
     categoryInfoRef.current = categoryInfo;
@@ -221,14 +220,24 @@ const SingleCat: FC = () => {
       newPath: string;
     }) => {
       if (!data.oldPath || !data.newPath) return;
+
       const { oldPath, newPath } = data;
 
       const newParentPath = newPath.split("/").slice(0, -1).join("/");
       const oldParentPath = oldPath.split("/").slice(0, -1).join("/");
+
       const socketPreviousPath = localStorage.getItem("previousPath");
+
+      if (!socketPreviousPath) return;
 
       if (socketPreviousPath === oldPath) {
         navigate(newPath);
+        return;
+      }
+
+      if (socketPreviousPath.startsWith(oldPath + "/")) {
+        const updatedPath = socketPreviousPath.replace(oldPath, newPath);
+        navigate(updatedPath);
         return;
       }
 
@@ -236,14 +245,47 @@ const SingleCat: FC = () => {
         socketPreviousPath === oldParentPath ||
         socketPreviousPath === newParentPath
       ) {
-        if (isMoveMultipleInProgressRef.current) return;
-        if (reloadTimeoutRef.current) clearTimeout(reloadTimeoutRef.current);
-        reloadTimeoutRef.current = setTimeout(() => {
-          loadAllContent();
-        }, 500);
+        loadAllContent();
       }
     };
+    const handleBatchMoved = (data: {
+      results: { oldPath: string; newPath: string }[];
+      newParentPath: string;
+    }) => {
+      const socketPreviousPath = localStorage.getItem("previousPath");
+      if (!socketPreviousPath) return;
 
+      const { results } = data;
+
+      for (const { oldPath, newPath } of results) {
+        if (!oldPath || !newPath) continue;
+
+        if (socketPreviousPath === oldPath) {
+          navigate(newPath);
+          return;
+        }
+
+        if (socketPreviousPath.startsWith(oldPath + "/")) {
+          const updatedPath = socketPreviousPath.replace(oldPath, newPath);
+          navigate(updatedPath);
+          return;
+        }
+      }
+
+      const oldParentPath = results[0]?.oldPath
+        ?.split("/")
+        .slice(0, -1)
+        .join("/");
+
+      const newParentPath = data.newParentPath;
+
+      if (
+        socketPreviousPath === oldParentPath ||
+        socketPreviousPath === newParentPath
+      ) {
+        loadAllContent();
+      }
+    };
 
     const handleCategoryUpdated = (data: {
       updatedCategory: Category;
@@ -660,6 +702,7 @@ const SingleCat: FC = () => {
         ];
       });
     };
+    onEvent("categories_batch_moved", handleBatchMoved);
     onEvent("product_permission_deleted", handleProductPermissionDeleted);
     onEvent("product_permission_added", handleProductPermissionAdded);
     onEvent("product_moved", handleMovedProduct);
@@ -677,6 +720,7 @@ const SingleCat: FC = () => {
     onEvent('permissions_sync', handlePermissionsSync);
 
     return () => {
+      offEvent("categories_batch_moved", handleBatchMoved);
       offEvent("sub_category_added", handleNewSubCategory);
       offEvent("product_permission_added", handleProductPermissionAdded);
       offEvent("category_moved", handleMovedCategory);

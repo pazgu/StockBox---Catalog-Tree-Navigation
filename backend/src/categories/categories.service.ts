@@ -42,7 +42,7 @@ export class CategoriesService {
     private readonly permissionsService: PermissionsService,
     private readonly usersService: UsersService,
     private readonly socketService: SocketService,
-  ) {}
+  ) { }
   nameKey = normalizeName(CreateCategoryDto.prototype.categoryName);
 
   async createCategory(
@@ -741,6 +741,7 @@ export class CategoriesService {
       oldPath?: string;
       newPath?: string;
     }[] = [];
+    let affectedUsersArray: string[] = [];
 
     for (const id of categoryIds) {
       try {
@@ -823,7 +824,7 @@ export class CategoriesService {
           );
         }
 
-        await this.permissionsService.updatePermissionsOnMove(
+        affectedUsersArray = await this.permissionsService.updatePermissionsOnMove(
           id,
           EntityType.CATEGORY,
           newParentPath,
@@ -848,6 +849,11 @@ export class CategoriesService {
         results: successResults,
         newParentPath,
       });
+      if (affectedUsersArray.length)
+        this.socketService.emitToUsers(affectedUsersArray, 'categories_batch_moved', {
+          results: successResults,
+          newParentPath,
+        });
     }
 
     return { successCount, failCount, results };

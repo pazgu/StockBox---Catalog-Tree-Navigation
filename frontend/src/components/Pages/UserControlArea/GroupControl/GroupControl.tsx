@@ -237,10 +237,15 @@ const GroupControl: React.FC = () => {
 
       await groupService.updateGroupMembers(selectedGroup, newMembers);
 
+      setGroups((prev) =>
+        prev.map((g) =>
+          g.id === selectedGroup ? { ...g, members: newMembers } : g,
+        ),
+      );
+
       toast.info(`${selectedUsers.size} משתמשים הוסרו מהקבוצה`);
       setSelectedUsers(new Set());
     } catch (error) {
-      console.error("Error removing users:", error);
       toast.error("שגיאה בהסרת משתמשים");
     }
   };
@@ -251,14 +256,15 @@ const GroupControl: React.FC = () => {
       if (!group) return;
 
       const newMembers = Array.from(new Set([...group.members, ...userIds]));
-      const updatedMembers = await groupService.updateGroupMembers(
-        groupId,
-        newMembers,
+      await groupService.updateGroupMembers(groupId, newMembers);
+      setGroups((prev) =>
+        prev.map((g) =>
+          g.id === groupId ? { ...g, members: newMembers } : g,
+        ),
       );
 
       toast.success(`${userIds.length} משתמשים נוספו בהצלחה לקבוצה`);
     } catch (error) {
-      console.error("Error adding users:", error);
       toast.error("שגיאה בהוספת משתמשים");
     }
   };

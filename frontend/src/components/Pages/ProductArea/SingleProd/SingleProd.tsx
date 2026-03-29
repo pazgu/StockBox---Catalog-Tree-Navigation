@@ -10,6 +10,7 @@ import {
   Video,
   Music,
   FileText,
+  Lock,
 } from "lucide-react";
 
 import { useUser } from "../../../../context/UserContext";
@@ -39,23 +40,30 @@ import { useDebouncedFavoriteSingle } from "../../../../hooks/useDebouncedFavori
 import { isLength } from "validator";
 import { environment } from "../../../../environments/environment.development";
 import UnsavedChangesDialog from "../../SharedComponents/UnsavedChangesDialog/UnsavedChangesDialog";
-import { useSocket } from '../../../../hooks/useSocket';
+import { useSocket } from "../../../../hooks/useSocket";
 import {
   CatalogItemsRemovedPayload,
   ProductRestoredPayload,
   ProductDeletedPayload,
 } from "../../../models/socket.models";
 
+type EditLockChangedPayload = {
+  productId: string;
+  isBlocked: boolean;
+  blockedBy: { userId: string; userName: string } | null;
+};
+
 interface SingleProdProps { }
 
 function normalizeImages(images: string[]) {
-  return (images || [])
-    .filter((u) => typeof u === "string" && u.trim().length > 0);
+  return (images || []).filter(
+    (u) => typeof u === "string" && u.trim().length > 0,
+  );
 }
 
 const SingleProd: FC<SingleProdProps> = () => {
   const { role, id } = useUser();
-  const token = localStorage.getItem('token') || '';
+  const token = localStorage.getItem("token") || "";
   const { onEvent, offEvent, joinRoleRoom } = useSocket({ token });
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState("");
@@ -90,6 +98,7 @@ const SingleProd: FC<SingleProdProps> = () => {
   const { previousPath, setPreviousPath } = usePath();
   const [isLoading, setIsLoading] = useState(true);
   const [isReplacingImage, setIsReplacingImage] = useState(false);
+  const [isProductBlocked, setIsProductBlocked] = useState(false);
   const MAX_EDIT_NAME_LEN = 30;
   const getRemovedProductToastText = (name: string) => {
     return role === "editor"
@@ -102,9 +111,7 @@ const SingleProd: FC<SingleProdProps> = () => {
     setTitle(value);
 
     if (!ALLOWED_CHARS.test(value)) {
-      setErrorMessage(
-        "ניתן להשתמש רק באותיות, מספרים, רווחים והתווים . _"
-      );
+      setErrorMessage("ניתן להשתמש רק באותיות, מספרים, רווחים והתווים . _");
     } else {
       setErrorMessage("");
     }
@@ -114,6 +121,11 @@ const SingleProd: FC<SingleProdProps> = () => {
     if (productId)
       try {
         const product = await ProductsService.getById(productId);
+        if (product.isBlocked && product.blockedBy?.userId === id) {
+          await ProductsService.setEditLock(productId, false);
+          product.isBlocked = false;
+          product.blockedBy = null;
+        }
 
         setTitle(product.productName);
         setDescription(product.productDescription || "");
@@ -127,6 +139,7 @@ const SingleProd: FC<SingleProdProps> = () => {
         setCurrentImageIndex(0);
         setProduct(product);
         setOriginalProduct(product);
+        setIsProductBlocked(product.isBlocked ?? false);
 
         if (Array.isArray(product.customFields)) {
           const accordion = product.customFields.map((field: any) => ({
@@ -177,7 +190,13 @@ const SingleProd: FC<SingleProdProps> = () => {
         setIsLoading(false);
       }
   };
-
+  useEffect(() => {
+    return () => {
+      if (isEditing && productId) {
+        ProductsService.setEditLock(productId, false);
+      }
+    };
+  }, [isEditing, productId]);
 
   useEffect(() => {
     if (!productId) return;
@@ -191,9 +210,8 @@ const SingleProd: FC<SingleProdProps> = () => {
   }, [productId, navigate, id]);
 
   useEffect(() => {
-
     if (!productId) return;
-    joinRoleRoom("editor")
+    joinRoleRoom("editor");
     if (id) {
       joinRoleRoom(id);
     }
@@ -213,16 +231,17 @@ const SingleProd: FC<SingleProdProps> = () => {
 
     const handleProductUpdated = (updatedProduct: ProductDto) => {
       if (updatedProduct._id !== productId) return;
+      setIsProductBlocked(updatedProduct.isBlocked ?? false);
       if (isEditing) return;
 
       setTitle(updatedProduct.productName);
-      setDescription(updatedProduct.productDescription || '');
+      setDescription(updatedProduct.productDescription || "");
       setProduct(updatedProduct);
-
+      setIsProductBlocked(updatedProduct.isBlocked ?? false);
       const defaultUrl = environment.DEFAULT_PRODUCT_IMAGE_URL;
-      const cleaned = normalizeImages(updatedProduct.productImages || []).filter(
-        (url) => url !== defaultUrl,
-      );
+      const cleaned = normalizeImages(
+        updatedProduct.productImages || [],
+      ).filter((url) => url !== defaultUrl);
       setProductImages(cleaned);
       setCurrentImageIndex(0);
 
@@ -233,7 +252,7 @@ const SingleProd: FC<SingleProdProps> = () => {
           title: field.title,
           type: field.type,
           content:
-            field.type === 'bullets'
+            field.type === "bullets"
               ? JSON.stringify(field.bullets)
               : field.content,
         }));
@@ -246,14 +265,26 @@ const SingleProd: FC<SingleProdProps> = () => {
           name: folder.folderName,
           files: folder.files.map((file: any) => ({
             uiId: file._id,
-            name: file.link.split('/').pop(),
-            type: '',
+            name: file.link.split("/").pop(),
+            type: "",
             url: file.link,
             size: 0,
           })),
         })) || [];
 
       setFolders(folders);
+    };
+
+    const handleEditLockChanged = (
+      data: EditLockChangedPayload | EditLockChangedPayload[],
+    ) => {
+      const items = Array.isArray(data) ? data : [data];
+      const match = items.find((item) => item.productId === productId);
+      if (!match) return;
+      setIsProductBlocked(match.isBlocked);
+      setProduct((prev) =>
+        prev ? { ...prev, blockedBy: match.blockedBy } : prev,
+      );
     };
     const handleMovedProduct = (data: {
       savedProduct: ProductDto;
@@ -265,7 +296,7 @@ const SingleProd: FC<SingleProdProps> = () => {
       if (product._id !== productId) return;
 
       if (isEditing) return;
-      console.log("nav")
+      console.log("nav");
       setPreviousPath(newCategoryPath[0]);
       navigate(`/products/${product._id}`, { replace: true });
     };
@@ -276,6 +307,30 @@ const SingleProd: FC<SingleProdProps> = () => {
       } catch (err: any) {
         console.error("Reload failed", err);
       }
+    };
+    const handleEditLockExpired = (
+      data: { productId: string }[] | { productId: string },
+    ) => {
+      const items = Array.isArray(data) ? data : [data];
+      const match = items.find((item) => item.productId === productId);
+      if (!match) return;
+      if (editSnapshot) {
+        setTitle(editSnapshot.title);
+        setDescription(editSnapshot.description);
+        setProductImages(editSnapshot.productImages);
+        setAccordionData(editSnapshot.accordionData);
+        setFolders(editSnapshot.folders);
+        setCurrentImageIndex(0);
+      }
+
+      setIsEditing(false);
+      setEditSnapshot(null);
+      setNewFolderName("");
+      setShowNewFolderInput(false);
+
+      toast.warning("פג תוקף נעילת העריכה – השינויים לא נשמרו", {
+        duration: 6000,
+      });
     };
 
     const handleProductDeleted = (data: ProductDeletedPayload) => {
@@ -290,6 +345,15 @@ const SingleProd: FC<SingleProdProps> = () => {
       navigate("/categories", { replace: true });
     };
 
+    const handleProductRestored = (data: ProductRestoredPayload) => {
+      if (data.product._id !== productId) return;
+
+      if (isEditing) return;
+
+      toast.success(`המוצר "${data.product.productName}" שוחזר`);
+      loadProduct();
+    };
+
     const handleCatalogItemsRemoved = (data: CatalogItemsRemovedPayload) => {
       const movedCurrentProduct = data.movedProducts.find(
         (product) => product.id === productId,
@@ -299,50 +363,113 @@ const SingleProd: FC<SingleProdProps> = () => {
 
       setPreviousPath("/categories");
       toast.info(
-        getRemovedProductToastText(
-          title || movedCurrentProduct.name || "",
-        ),
+        getRemovedProductToastText(title || movedCurrentProduct.name || ""),
       );
       navigate("/categories", { replace: true });
     };
 
-    const handleProductRestored = (data: ProductRestoredPayload) => {
-      if (data.product._id !== productId) return;
-
-      if (isEditing) return;
-
-      toast.success(`המוצר "${data.product.productName}" שוחזר`);
-      loadProduct();
-    };
     const handleProductPermissionDeleted = (data: { product: ProductDto }) => {
       const { product } = data;
 
       if (product._id !== productId) return;
 
       if (isEditing) return;
-      toast.info("הרשאות עודכנו, טוען...")
+      toast.info("הרשאות עודכנו, טוען...");
       loadProduct();
     };
+    const handleCategoryMoved = (data: {
+      oldPath: string;
+      newPath: string;
+    }) => {
+      const { oldPath, newPath } = data;
 
-    onEvent('product_updated', handleProductUpdated);
-    onEvent('product_moved', handleMovedProduct);
+      if (!product) return;
+
+      const affectedPath = product.productPath.find(p =>
+        p.startsWith(oldPath)
+      );
+
+      if (!affectedPath) return;
+
+      const updatedPath = affectedPath.replace(oldPath, newPath);
+
+      if (isEditing) {
+        setPreviousPath(updatedPath.split("/").slice(0, -1).join("/"));
+        return;
+      }
+
+      setPreviousPath(updatedPath.split("/").slice(0, -1).join("/"));
+      navigate(`/products/${product._id}`, { replace: true });
+    };
+    const handleCategoriesBatchMoved = (data: {
+      results: { oldPath: string; newPath: string }[];
+    }) => {
+      if (!product) return;
+
+      for (const { oldPath, newPath } of data.results) {
+        const affectedPath = product.productPath.find(p =>
+          p.startsWith(oldPath)
+        );
+
+        if (!affectedPath) continue;
+
+        const updatedPath = affectedPath.replace(oldPath, newPath);
+
+        const newParent = updatedPath.split("/").slice(0, -1).join("/");
+
+        if (isEditing) {
+          setPreviousPath(newParent);
+          return;
+        }
+
+        setPreviousPath(newParent);
+        navigate(`/products/${product._id}`, { replace: true });
+        return;
+      }
+    };
+    onEvent("categories_batch_moved", handleCategoriesBatchMoved);
+    onEvent("category_moved", handleCategoryMoved);
+    onEvent("product_updated", handleProductUpdated);
+    onEvent("product_moved", handleMovedProduct);
     onEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
     onEvent("category_permissions_changed", handleCategoryPermissionsChanged);
-    onEvent('product_deleted', handleProductDeleted);
+    onEvent("product_deleted", handleProductDeleted);
     onEvent("catalog_items_removed", handleCatalogItemsRemoved);
     onEvent("product_restored", handleProductRestored);
     onEvent("product_permission_deleted", handleProductPermissionDeleted);
+    onEvent("product_edit_lock_changed", handleEditLockChanged);
+    onEvent("product_edit_lock_expired", handleEditLockExpired);
     return () => {
-      offEvent('product_updated', handleProductUpdated);
-      offEvent('product_moved', handleMovedProduct);
-      offEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
-      offEvent("category_permissions_changed", handleCategoryPermissionsChanged);
-      offEvent('product_deleted', handleProductDeleted);
+      offEvent("categories_batch_moved", handleCategoriesBatchMoved);
+      offEvent("product_updated", handleProductUpdated);
+      offEvent("product_moved", handleMovedProduct);
+      offEvent(
+        "banned_items_permissions_updated",
+        handleBannedPermissionsUpdated,
+      );
+      offEvent(
+        "category_permissions_changed",
+        handleCategoryPermissionsChanged,
+      );
+      offEvent("category_moved", handleCategoryMoved);
+      offEvent("product_deleted", handleProductDeleted);
       offEvent("catalog_items_removed", handleCatalogItemsRemoved);
       offEvent("product_restored", handleProductRestored);
       offEvent("product_permission_deleted", handleProductPermissionDeleted);
+      offEvent("product_edit_lock_changed", handleEditLockChanged);
+      offEvent("product_edit_lock_expired", handleEditLockExpired);
     };
-  }, [productId, isEditing, onEvent, offEvent, title, role, setPreviousPath, navigate, loadProduct]);
+  }, [
+    productId,
+    isEditing,
+    onEvent,
+    offEvent,
+    title,
+    role,
+    setPreviousPath,
+    navigate,
+    loadProduct,
+  ]);
   const location = useLocation();
   const breadcrumbPath = useMemo<string[]>(
     () => [
@@ -364,7 +491,7 @@ const SingleProd: FC<SingleProdProps> = () => {
   };
 
   const [editSnapshot, setEditSnapshot] = useState<EditSnapshot | null>(null);
-  const enterEditMode = () => {
+  const enterEditMode = async () => {
     setEditSnapshot({
       title,
       description,
@@ -373,8 +500,9 @@ const SingleProd: FC<SingleProdProps> = () => {
       folders: JSON.parse(JSON.stringify(folders)),
     });
     setIsEditing(true);
+    await ProductsService.setEditLock(productId!, true);
   };
-  const cancelEdit = () => {
+  const cancelEdit = async () => {
     if (!editSnapshot) {
       setIsEditing(false);
       return;
@@ -391,6 +519,7 @@ const SingleProd: FC<SingleProdProps> = () => {
     setEditSnapshot(null);
     setNewFolderName("");
     setShowNewFolderInput(false);
+    await ProductsService.setEditLock(productId!, false);
   };
 
   const hasUnsavedChanges = useMemo(() => {
@@ -399,8 +528,10 @@ const SingleProd: FC<SingleProdProps> = () => {
     return (
       title !== editSnapshot.title ||
       description !== editSnapshot.description ||
-      JSON.stringify(productImages) !== JSON.stringify(editSnapshot.productImages) ||
-      JSON.stringify(accordionData) !== JSON.stringify(editSnapshot.accordionData) ||
+      JSON.stringify(productImages) !==
+      JSON.stringify(editSnapshot.productImages) ||
+      JSON.stringify(accordionData) !==
+      JSON.stringify(editSnapshot.accordionData) ||
       JSON.stringify(folders) !== JSON.stringify(editSnapshot.folders)
     );
   }, [
@@ -486,8 +617,6 @@ const SingleProd: FC<SingleProdProps> = () => {
     setIsReplacingImage(false);
   };
 
-
-
   const handleDeleteImage = () => {
     const currentUrl = realImages[currentImageIndex];
     if (!currentUrl) return;
@@ -509,15 +638,13 @@ const SingleProd: FC<SingleProdProps> = () => {
     );
   };
 
-
-
   const handleAccordionTitleChange = (uiId: string, newTitle: string) => {
     const value = newTitle.slice(0, MAX_EDIT_NAME_LEN);
 
     setAccordionData((prevData) =>
       prevData.map((item) =>
-        item.uiId === uiId ? { ...item, title: value } : item
-      )
+        item.uiId === uiId ? { ...item, title: value } : item,
+      ),
     );
   };
 
@@ -607,10 +734,14 @@ const SingleProd: FC<SingleProdProps> = () => {
 
   const handleSaveClick = async () => {
     if (!isEditing) {
-      enterEditMode();
-      setIsEditing(true);
+      if (isProductBlocked) {
+        toast.error("מוצר זה נעול לעריכה על ידי עורך אחר");
+        return;
+      }
+      await enterEditMode();
       return;
     }
+
     const hasEmptyFields = accordionData.some((item) =>
       item.type === "content"
         ? !item.content?.trim()
@@ -659,17 +790,16 @@ const SingleProd: FC<SingleProdProps> = () => {
       ? [
         {
           title: "Default Group",
-          folders: folders
-            .map((folder) => ({
-              ...(folder._id ? { _id: folder._id } : {}),
-              folderName: folder.name,
-              files: folder.files.map((file) => ({
-                ...(file._id ? { _id: file._id } : {}),
-                link: file.url,
-                name: file.name,
-                size: file.size,
-              })),
+          folders: folders.map((folder) => ({
+            ...(folder._id ? { _id: folder._id } : {}),
+            folderName: folder.name,
+            files: folder.files.map((file) => ({
+              ...(file._id ? { _id: file._id } : {}),
+              link: file.url,
+              name: file.name,
+              size: file.size,
             })),
+          })),
         },
       ]
       : [];
@@ -685,18 +815,19 @@ const SingleProd: FC<SingleProdProps> = () => {
     };
     const hasChanges =
       !!editSnapshot &&
-      (
-        title !== editSnapshot.title ||
+      (title !== editSnapshot.title ||
         description !== editSnapshot.description ||
-        JSON.stringify(productImages) !== JSON.stringify(editSnapshot.productImages) ||
-        JSON.stringify(accordionData) !== JSON.stringify(editSnapshot.accordionData) ||
-        JSON.stringify(folders) !== JSON.stringify(editSnapshot.folders)
-      );
+        JSON.stringify(productImages) !==
+        JSON.stringify(editSnapshot.productImages) ||
+        JSON.stringify(accordionData) !==
+        JSON.stringify(editSnapshot.accordionData) ||
+        JSON.stringify(folders) !== JSON.stringify(editSnapshot.folders));
 
     if (!hasChanges) {
       setIsEditing(false);
       setNewFolderName("");
       setShowNewFolderInput(false);
+      await ProductsService.setEditLock(productId!, false);
       return;
     }
 
@@ -704,9 +835,10 @@ const SingleProd: FC<SingleProdProps> = () => {
       setIsSaving(true);
       await ProductsService.updateProduct(productId!, payload);
       toast.success("שינויים נשמרו בהצלחה");
+      await ProductsService.setEditLock(productId!, false);
       setEditSnapshot(null);
       setIsEditing(false);
-      setProduct((prev) => prev ? { ...prev, productName: title } : prev);
+      setProduct((prev) => (prev ? { ...prev, productName: title } : prev));
     } catch (err: any) {
       const msg = err?.message || "";
       if (msg.includes("שם זה כבר קיים")) {
@@ -810,7 +942,10 @@ const SingleProd: FC<SingleProdProps> = () => {
     return user?.favorites?.some((fav) => fav.id === product?._id) ?? false;
   }, [user?.favorites, product?._id]);
 
-  const realImages = useMemo(() => normalizeImages(productImages), [productImages]);
+  const realImages = useMemo(
+    () => normalizeImages(productImages),
+    [productImages],
+  );
 
   const displayImages = useMemo(() => {
     if (isEditing) return realImages;
@@ -887,13 +1022,24 @@ const SingleProd: FC<SingleProdProps> = () => {
               <div className="relative">
                 <button
                   onClick={handleSaveClick}
-                  disabled={isSaving}
-                  aria-label={isEditing ? "שמירת שינויים" : "עריכת דף"}
-                  className={`peer flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300
-                    ${isSaving ? "opacity-70 cursor-not-allowed" : ""}`}
+                  disabled={isSaving || (isProductBlocked && !isEditing)}
+                  aria-label={
+                    isProductBlocked && !isEditing
+                      ? "נעול לעריכה"
+                      : isEditing
+                        ? "שמירת שינויים"
+                        : "עריכת דף"
+                  }
+                  className={`peer flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white shadow-lg ring-2 transition-all duration-300
+    ${isSaving || (isProductBlocked && !isEditing)
+                      ? "bg-gray-400 ring-gray-300 cursor-not-allowed opacity-70"
+                      : "bg-stockblue ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90"
+                    }`}
                 >
                   {isSaving ? (
                     <Spinner className="size-6 text-white" />
+                  ) : isProductBlocked && !isEditing ? (
+                    <Lock size={22} />
                   ) : isEditing ? (
                     <Save size={22} />
                   ) : (
@@ -905,7 +1051,9 @@ const SingleProd: FC<SingleProdProps> = () => {
                     ? "שומר..."
                     : isEditing
                       ? "שמור שינויים"
-                      : "עריכת דף"}
+                      : isProductBlocked && product?.blockedBy
+                        ? `נעול על ידי ${product.blockedBy.userName}`
+                        : "עריכת דף"}
                 </span>
               </div>
             </div>
@@ -977,7 +1125,6 @@ const SingleProd: FC<SingleProdProps> = () => {
                     setIsReplacingImage={setIsReplacingImage}
                   />
                 </div>
-
               ) : (
                 <div className="relative mb-4">
                   <div
@@ -1255,7 +1402,6 @@ const SingleProdSkeleton: FC = () => {
                     </div>
                   </div>
                 ))}
-
               </div>
             </div>
           </div>
