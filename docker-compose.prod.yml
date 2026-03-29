@@ -1,0 +1,19 @@
+version: "3.9"
+
+services:
+  frontend:
+    build: ./frontend
+    container_name: stockbox-frontend-prod
+    ports:
+      - "3000:3000"
+    
+
+  backend:
+    build: ./backend
+    container_name: stockbox-backend-prod
+    ports:
+      - "4000:4000"
+    env_file:
+      - ./backend/.env
+    environment:
+      - PORT=4000
