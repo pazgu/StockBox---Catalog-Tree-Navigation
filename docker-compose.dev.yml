@@ -2,17 +2,19 @@ version: "3.9"
 
 services:
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      target: base   
+    command: npm start
     container_name: stockbox-frontend-dev
+
     ports:
       - "3000:3000"
-    environment:
-      - HOST=0.0.0.0
     volumes:
       - ./frontend:/app
       - /app/node_modules
-    stdin_open: true
-    tty: true
+    environment:
+      - HOST=0.0.0.0
     
 
   backend:
