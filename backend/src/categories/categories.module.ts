@@ -9,8 +9,11 @@ import { PermissionsModule } from 'src/permissions/permissions.module';
 import { Group, GroupSchema } from 'src/schemas/Groups.schema';
 import { UsersModule } from 'src/users/users.module';
 import { NameLock, NameLockSchema } from 'src/schemas/NameLock.schema';
+import { SocketModule } from 'src/socket/socket.module';
+
 @Module({
   imports: [
+    SocketModule,
     MongooseModule.forFeature([
       {
         name: Category.name,
@@ -25,6 +28,7 @@ import { NameLock, NameLockSchema } from 'src/schemas/NameLock.schema';
     ]),
     PermissionsModule,
     UsersModule,
+    SocketModule,
   ],
   providers: [CategoriesService],
   controllers: [CategoriesController],

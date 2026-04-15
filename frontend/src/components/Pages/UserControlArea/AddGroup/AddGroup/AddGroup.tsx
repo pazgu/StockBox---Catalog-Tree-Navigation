@@ -20,6 +20,8 @@ const AddGroup: FC<AddGroupProps> = ({ onClose, onSave }) => {
   const [groupName, setGroupName] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const MAX_GROUP_NAME_LEN = 30;
+
   const options = ['יסמין', 'שרה', 'קרין'];
 
   const filteredOptions = options.filter(
@@ -86,14 +88,20 @@ const AddGroup: FC<AddGroupProps> = ({ onClose, onSave }) => {
             <h4 className="text-sm font-medium text-gray-700 min-w-[120px] text-right">
               שם קבוצה:
             </h4>
-            <div className="flex-1">
-              <input
-                value={groupName}
-                onChange={(e) => setGroupName(e.target.value)}
-                placeholder="הזן שם לקבוצה החדשה"
-                className="bg-white border-2 border-gray-200 rounded-lg w-full px-4 py-2.5 text-gray-700 text-sm text-right focus:outline-none focus:border-[#C4A77D] focus:ring-2 focus:ring-[#E8DFD2] transition-all duration-200 shadow-sm"
-              />
-            </div>
+            <div className="flex-1 max-w-[420px]">
+ <div className="relative">
+  <input
+    value={groupName}
+    onChange={(e) => setGroupName(e.target.value)}
+    maxLength={MAX_GROUP_NAME_LEN}
+    placeholder="הזן שם לקבוצה החדשה"
+    className="bg-white border-2 border-gray-200 rounded-lg w-full px-4 py-2.5 pl-10 text-gray-700 text-sm text-right focus:outline-none focus:border-[#C4A77D] focus:ring-2 focus:ring-[#E8DFD2] transition-all duration-200 shadow-sm"
+  />
+  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
+    {groupName.length}/{MAX_GROUP_NAME_LEN}
+  </span>
+</div>
+</div>
           </div>
 
           {/* Users dropdown */}
@@ -142,7 +150,7 @@ const AddGroup: FC<AddGroupProps> = ({ onClose, onSave }) => {
                       ))
                     ) : (
                       <div className="p-3 text-center text-gray-500 text-sm">
-                        {searchTerm ? 'לא נמצאו תוצאות' : 'בחר משתמש'}
+                        {searchTerm ? 'לא נמצאו תוצאות' : 'בחירת משתמש'}
                       </div>
                     )}
                   </div>

@@ -28,6 +28,9 @@ import { Group } from 'src/schemas/Groups.schema';
 import mongoose from 'mongoose';
 import { NameLock } from 'src/schemas/NameLock.schema';
 import { normalizeName } from 'src/utils/nameLock';
+import { SocketService } from 'src/socket/socket.service';
+import { UserRole } from 'src/schemas/Users.schema';
+import { MoveMultipleCategoriesDto } from './dtos/MoveMultipleCategories.dto';
 
 @Injectable()
 export class CategoriesService {
@@ -38,7 +41,8 @@ export class CategoriesService {
     @InjectModel(NameLock.name) private nameLockModel: Model<NameLock>,
     private readonly permissionsService: PermissionsService,
     private readonly usersService: UsersService,
-  ) {}
+    private readonly socketService: SocketService,
+  ) { }
   nameKey = normalizeName(CreateCategoryDto.prototype.categoryName);
 
   async createCategory(
@@ -91,12 +95,50 @@ export class CategoriesService {
         { nameKey },
         { $set: { refId: savedCategory._id.toString() } },
       );
-      if (createCategoryDto.allowAll) {
-         await this.permissionsService.assignPermissionsForNewEntity(
-        savedCategory,
-      );
-      }
+      let userIds: string[] | null | undefined = null;
+      const path = savedCategory.categoryPath;
+      const pathAsString = Array.isArray(path) ? path[0] : path;
+      const rawParts = pathAsString.split('/').filter(Boolean);
+      const normalizedParts =
+        rawParts[0] === 'categories' ? rawParts.slice(1) : rawParts;
 
+      const isRootCategory = normalizedParts.length === 1;
+      if (createCategoryDto.allowAll) {
+        userIds =
+          await this.permissionsService.assignPermissionsForNewEntity(
+            savedCategory,
+          );
+
+        if (userIds?.length) {
+          this.socketService.emitToUsers(
+            userIds,
+            'sub_category_added',
+            savedCategory,
+          );
+          this.socketService.emitToRole(
+            UserRole.EDITOR,
+            'sub_category_added',
+            savedCategory,
+          );
+        } else {
+          this.socketService.emitToAll('category_added', savedCategory);
+        }
+      } else {
+        if (isRootCategory) {
+          this.socketService.emitToRole(
+            UserRole.EDITOR,
+            'category_added',
+            savedCategory,
+          );
+        } else {
+          this.socketService.emitToRole(
+            UserRole.EDITOR,
+            'sub_category_added',
+            savedCategory,
+          );
+        }
+      }
+      this.socketService.emitToAll('category_created', savedCategory);
       return savedCategory;
     } catch (err: any) {
       await this.nameLockModel.deleteOne({ nameKey }).catch(() => undefined);
@@ -108,6 +150,43 @@ export class CategoriesService {
 
       throw err;
     }
+  }
+
+  async searchCategories(
+    user: { userId: string; role: string },
+    query: string,
+  ) {
+    if (!query || query.trim().length < 1) return [];
+
+    const trimmed = query.trim();
+    const isHebrew = /[\u0590-\u05FF]/.test(trimmed);
+
+    const categories = await this.categoryModel
+      .find(
+        { categoryName: { $regex: trimmed, $options: 'i' } },
+        { categoryName: 1, categoryPath: 1, categoryImage: 1 },
+      )
+      .collation({ locale: isHebrew ? 'he' : 'en', strength: 2 })
+      .lean();
+
+    if (user.role === 'editor') {
+      return categories;
+    }
+    if (user.role !== 'viewer') {
+      return [];
+    }
+
+    const { userGroupIds, allowedByEntityId } =
+      await this.buildAllowedMapForUser(user);
+
+    return categories.filter((cat) =>
+      this.hasCategoryPermission(
+        cat._id.toString(),
+        user,
+        userGroupIds,
+        allowedByEntityId,
+      ),
+    );
   }
 
   async getCategoryByPath(categoryPath: string, user: any): Promise<Category> {
@@ -241,6 +320,7 @@ export class CategoriesService {
   ) {
     const category = await this.categoryModel.findById(id);
     if (!category) throw new NotFoundException('Category not found');
+    const oldPath = category.categoryPath;
 
     const oldCategoryPath = category.categoryPath;
 
@@ -254,6 +334,7 @@ export class CategoriesService {
       oldKey = normalizeName(category.categoryName);
       newKey = normalizeName(updateCategoryDto.categoryName);
       if (!newKey) throw new BadRequestException('Invalid name');
+
       try {
         await this.nameLockModel.create({
           nameKey: newKey,
@@ -268,11 +349,10 @@ export class CategoriesService {
         }
         throw e;
       }
+
       (updateCategoryDto as any).nameKey = newKey;
       const parentPath = this.getParentPath(oldCategoryPath);
-
       const newSlug = this.slugify(updateCategoryDto.categoryName);
-
       const newCategoryPath = `${parentPath}/${newSlug}`;
 
       const dup = await this.categoryModel.findOne({
@@ -334,9 +414,13 @@ export class CategoriesService {
       updateCategoryDto.categoryPath !== oldCategoryPath
     ) {
       const newCategoryPath = updateCategoryDto.categoryPath;
+      const escapedOldPath = oldCategoryPath.replace(
+        /[.*+?^${}()|[\]\\]/g,
+        '\\$&',
+      );
 
       await this.categoryModel.updateMany(
-        { categoryPath: new RegExp(`^${oldCategoryPath}/`) },
+        { categoryPath: new RegExp(`^${escapedOldPath}/`) },
         [
           {
             $set: {
@@ -344,10 +428,15 @@ export class CategoriesService {
                 $concat: [
                   newCategoryPath,
                   {
-                    $substr: [
+                    $substrCP: [
                       '$categoryPath',
                       oldCategoryPath.length,
-                      { $strLenCP: '$categoryPath' },
+                      {
+                        $subtract: [
+                          { $strLenCP: '$categoryPath' },
+                          oldCategoryPath.length,
+                        ],
+                      },
                     ],
                   },
                 ],
@@ -358,31 +447,54 @@ export class CategoriesService {
         { updatePipeline: true },
       );
 
-      const escapedOldPath = oldCategoryPath.replace(
-        /[.*+?^${}()|[\]\\]/g,
-        '\\$&',
-      );
-      const productsToUpdate = await this.productModel.find({
-        productPath: {
-          $elemMatch: { $regex: new RegExp(`^${escapedOldPath}`) },
+      await this.productModel.updateMany(
+        {
+          productPath: {
+            $elemMatch: { $regex: new RegExp(`^${escapedOldPath}`) },
+          },
         },
-      });
-
-      for (const product of productsToUpdate) {
-        const updatedPaths = product.productPath.map((path) => {
-          if (path.startsWith(oldCategoryPath)) {
-            return newCategoryPath + path.substring(oldCategoryPath.length);
-          }
-          return path;
-        });
-
-        await this.productModel.updateOne(
-          { _id: product._id },
-          { $set: { productPath: updatedPaths } },
-        );
-      }
+        [
+          {
+            $set: {
+              productPath: {
+                $map: {
+                  input: '$productPath',
+                  as: 'p',
+                  in: {
+                    $cond: [
+                      {
+                        $regexMatch: {
+                          input: '$$p',
+                          regex: `^${escapedOldPath}`,
+                        },
+                      },
+                      {
+                        $concat: [
+                          newCategoryPath,
+                          {
+                            $substrCP: [
+                              '$$p',
+                              oldCategoryPath.length,
+                              { $strLenCP: '$$p' },
+                            ],
+                          },
+                        ],
+                      },
+                      '$$p',
+                    ],
+                  },
+                },
+              },
+            },
+          },
+        ],
+        { updatePipeline: true },
+      );
     }
-
+    this.socketService.emitToAll('category_updated', {
+      updatedCategory,
+      oldPath,
+    });
     return updatedCategory;
   }
 
@@ -394,13 +506,6 @@ export class CategoriesService {
 
     const oldPath = category.categoryPath;
     const { newParentPath } = moveCategoryDto;
-
-    const pathSegments = oldPath.split('/').filter(Boolean);
-    if (pathSegments.length <= 2) {
-      throw new BadRequestException(
-        'Cannot move main categories. Only subcategories can be moved.',
-      );
-    }
 
     const parentCategory = await this.categoryModel.findOne({
       categoryPath: newParentPath,
@@ -444,7 +549,7 @@ export class CategoriesService {
               $concat: [
                 newPath,
                 {
-                  $substr: [
+                  $substrCP: [
                     '$categoryPath',
                     oldPath.length,
                     { $strLenCP: '$categoryPath' },
@@ -457,7 +562,6 @@ export class CategoriesService {
       ],
       { updatePipeline: true },
     );
-
     const escapedOldPath = oldPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const productsToUpdate = await this.productModel.find({
       productPath: new RegExp(`^${escapedOldPath}`),
@@ -476,16 +580,35 @@ export class CategoriesService {
         { $set: { productPath: updatedPaths } },
       );
     }
-    await this.permissionsService.updatePermissionsOnMove(
+    const usersBefore = await this.permissionsService.getAllowedUsersForEntity(
+      id,
+      EntityType.CATEGORY,
+    );
+    const usersAfter = await this.permissionsService.updatePermissionsOnMove(
       id,
       EntityType.CATEGORY,
       newParentPath,
     );
+    const affectedUsersSet = new Set([...usersBefore, ...usersAfter]);
+    const affectedUsersArray = [...affectedUsersSet];
 
+    const payload = {
+      category,
+      oldPath,
+      newPath,
+    };
+
+    this.socketService.emitToUsers(
+      affectedUsersArray,
+      'category_moved',
+      payload,
+    );
+    this.socketService.emitToRole(UserRole.EDITOR, 'category_moved', payload);
+    const updatedCategory = await this.categoryModel.findById(id);
     return {
       success: true,
       message: `Subcategory moved successfully from ${oldPath} to ${newPath}`,
-      category: await this.categoryModel.findById(id),
+      category: updatedCategory,
     };
   }
 
@@ -600,5 +723,139 @@ export class CategoriesService {
     });
 
     return { hasDescendants: !!(hasSubCategories || hasProducts) };
+  }
+  async moveMultipleCategories(dto: MoveMultipleCategoriesDto) {
+    const { categoryIds, newParentPath } = dto;
+
+    const parentCategory = await this.categoryModel.findOne({
+      categoryPath: newParentPath,
+    });
+    if (!parentCategory) {
+      throw new BadRequestException('Target parent category does not exist');
+    }
+
+    const results: {
+      id: string;
+      success: boolean;
+      error?: string;
+      oldPath?: string;
+      newPath?: string;
+    }[] = [];
+    let affectedUsersArray: string[] = [];
+
+    for (const id of categoryIds) {
+      try {
+        const category = await this.categoryModel.findById(id);
+        if (!category) {
+          results.push({ id, success: false, error: 'Category not found' });
+          continue;
+        }
+
+        const oldPath = category.categoryPath;
+
+        if (newParentPath.startsWith(oldPath)) {
+          results.push({
+            id,
+            success: false,
+            error: 'Cannot move category into itself or its children',
+          });
+          continue;
+        }
+
+        const categoryName = oldPath.split('/').pop();
+        const newPath = `${newParentPath}/${categoryName}`;
+
+        const existing = await this.categoryModel.findOne({
+          categoryPath: newPath,
+        });
+        if (existing) {
+          results.push({
+            id,
+            success: false,
+            error: `Category with name "${categoryName}" already exists at destination`,
+          });
+          continue;
+        }
+
+        category.categoryPath = newPath;
+        await category.save();
+
+        await this.categoryModel.updateMany(
+          {
+            categoryPath: new RegExp(
+              `^${oldPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/`,
+            ),
+          },
+          [
+            {
+              $set: {
+                categoryPath: {
+                  $concat: [
+                    newPath,
+                    {
+                      $substrCP: [
+                        '$categoryPath',
+                        oldPath.length,
+                        { $strLenCP: '$categoryPath' },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          { updatePipeline: true },
+        );
+
+        const escapedOldPath = oldPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const productsToUpdate = await this.productModel.find({
+          productPath: new RegExp(`^${escapedOldPath}`),
+        });
+
+        for (const product of productsToUpdate) {
+          const updatedPaths = product.productPath.map((path) =>
+            path.startsWith(oldPath)
+              ? newPath + path.substring(oldPath.length)
+              : path,
+          );
+          await this.productModel.updateOne(
+            { _id: product._id },
+            { $set: { productPath: updatedPaths } },
+          );
+        }
+
+        affectedUsersArray = await this.permissionsService.updatePermissionsOnMove(
+          id,
+          EntityType.CATEGORY,
+          newParentPath,
+        );
+
+        results.push({ id, success: true, oldPath, newPath });
+      } catch (error: any) {
+        results.push({
+          id,
+          success: false,
+          error: error.message || 'Unknown error',
+        });
+      }
+    }
+
+    const successCount = results.filter((r) => r.success).length;
+    const failCount = results.filter((r) => !r.success).length;
+    const successResults = results.filter((r) => r.success);
+
+    if (successResults.length > 0) {
+      this.socketService.emitToRole(UserRole.EDITOR, 'categories_batch_moved', {
+        results: successResults,
+        newParentPath,
+      });
+      if (affectedUsersArray.length)
+        this.socketService.emitToUsers(affectedUsersArray, 'categories_batch_moved', {
+          results: successResults,
+          newParentPath,
+        });
+    }
+
+    return { successCount, failCount, results };
   }
 }

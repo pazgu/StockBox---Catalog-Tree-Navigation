@@ -1,7 +1,7 @@
 import { Search, Users, Plus, UserMinus } from "lucide-react";
 import { User } from "../../../models/user.models";
 import { Group } from "../../../models/group.models";
-
+import { stringToColor } from "./AllUsers";
 interface UsersListProps {
   users: User[];
   groups: Group[];
@@ -58,7 +58,7 @@ const UsersList: React.FC<UsersListProps> = ({
           {selectedUsers.size === filteredUsers.length &&
           filteredUsers.length > 0
             ? "בטל בחירה"
-            : "בחר הכל"}
+            : "בחירת הכל"}
         </button>
         <span className="text-sm text-gray-600">
           {selectedUsers.size > 0
@@ -114,8 +114,14 @@ const UsersList: React.FC<UsersListProps> = ({
                 className="w-5 h-5 text-slate-700 rounded focus:ring-slate-700"
               />
 
-              <div className="w-12 h-12 bg-gradient-to-br from-slate-600 to-slate-700 rounded-full flex items-center justify-center text-white font-bold text-sm"></div>
-
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center text-gray-800 text-sm font-bold flex-shrink-0"
+                style={{
+                  backgroundColor: stringToColor(user.userName),
+                }}
+              >
+                {user.userName?.[0]?.toUpperCase()}
+              </div>
               <div className="flex-1 text-right min-w-0">
                 <h4 className="font-semibold text-gray-800 truncate">
                   {user.firstName} {user.lastName}

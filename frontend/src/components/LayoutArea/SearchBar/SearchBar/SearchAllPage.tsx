@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { Package, FolderTree, Loader2, ArrowRight } from "lucide-react";
+import { Package, FolderTree, Loader2, ArrowRight, ArrowLeft } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { searchService } from "../../../../services/search.service";
@@ -97,9 +97,14 @@ const SearchResultsPage = () => {
         <div className="mb-8 border-b border-gray-100 pb-6">
           <button
             onClick={() => navigate(-1)}
-            className="fixed top-48 right-2 text-gray-400 hover:text-gray-600 mb-4 flex items-center gap-1 text-sm z-50 border-l border-gray-300 pl-4"
-          >
-            <ArrowRight size={14} /> חזור
+            className="fixed top-48 right-2 text-gray-400 hover:text-gray-600 flex items-center gap-1 text-sm z-40 border-l border-gray-300 pl-4 max-md:left-2 max-md:right-auto max-md:border-none max-md:pl-0 max-md:top-52 max-md:border-r max-md:pr-4">
+            <span className="md:hidden flex items-center gap-1">
+              חזור
+              <ArrowLeft size={14} />
+            </span>
+            <span className="hidden md:flex items-center gap-1">
+              <ArrowRight size={14} /> חזור
+            </span>
           </button>
           <h1 className="text-xl text-gray-900 font-medium">
             תוצאות עבור:{" "}

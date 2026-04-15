@@ -48,6 +48,7 @@ function clampOffsetToCircle(
   const maxX = Math.max(0, halfW - radius);
   const maxY = Math.max(0, halfH - radius);
 
+
   return {
     x: Math.min(maxX, Math.max(-maxX, offset.x)),
     y: Math.min(maxY, Math.max(-maxY, offset.y)),
@@ -177,18 +178,20 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   };
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+    const value = e.target.value.slice(0, MAX_GROUP_NAME_LEN);
     setNewCatName(value);
 
+    const ALLOWED_CHARS = /^[\u0590-\u05FFa-zA-Z0-9 ._]*$/;
     if (!value) {
       setErrorMessage("");
-    } else if (FORBIDDEN_CHARS.test(value)) {
-      setErrorMessage("שם מוצר לא יכול להכיל תווים ; | \" ' * < >");
+    } else if (!ALLOWED_CHARS.test(value)) {
+      setErrorMessage(
+        "שם קטגוריה יכול להכיל רק אותיות, מספרים ותווים . _"
+      );
     } else {
       setErrorMessage("");
     }
   };
-
   const handleClose = () => {
     setErrorMessage("");
     setNewCatName("");
@@ -202,8 +205,13 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
       return;
     }
 
+    if (errorMessage) {
+      toast.error(errorMessage);
+    return;
+  }
+
     if (FORBIDDEN_CHARS.test(newCatName)) {
-      toast.error("שם קטגוריה מכיל תווים אסורים ; | \" ' * < >");
+      toast.error('שם קטגוריה מכיל תווים אסורים ; | " \' * < >');
       return;
     }
 
@@ -228,6 +236,7 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     try {
       setIsSaving(true);
       await onSave({ name: newCatName.trim(), imageFile: file, allowAll });
+      setAllowAll(false);
       handleClose();
     } catch (error: any) {
       const serverMessage =
@@ -274,7 +283,7 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
 
           <div className="group mb-5">
             <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#0D305B]"></span>
+              <span className="text-red-600">*</span>
               שם קטגוריה
             </label>
             <div className="relative mb-3">
@@ -286,9 +295,11 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
                 maxLength={MAX_GROUP_NAME_LEN}
                 className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#0D305B] focus:border-transparent transition-all bg-white shadow-sm hover:shadow-md"
               />
-              <div className="absolute bottom-1.5 left-3 text-xs text-gray-400">
+
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 select-none">
                 {newCatName.length}/{MAX_GROUP_NAME_LEN}
-              </div>
+              </span>
+
               {errorMessage && (
                 <p className="mt-1 text-sm text-red-600">{errorMessage}</p>
               )}
@@ -297,7 +308,6 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
 
           <div className="group mb-4">
             <label className="block text-sm font-bold mb-2 text-gray-700 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#0D305B]"></span>
               תמונת קטגוריה
             </label>
 
@@ -519,11 +529,13 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
           )}
 
           <div className="flex justify-between items-center p-4 bg-white bg-opacity-50 border rounded-lg mb-2 shadow-sm border-blue-100">
-            <Label className="font-bold text-blue-900 text-sm">
+            <Label className="font-bold text-blue-900 text-sm" >
               לאפשר לכולם לראות את הקטגוריה החדשה?
             </Label>
             <Switch
-              checked={allowAll}
+              checked={
+                allowAll
+              }
               onCheckedChange={() => {
                 setAllowAll(!allowAll);
               }}
@@ -535,11 +547,10 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
               onClick={handleClose}
               disabled={isSaving}
               className={`px-6 py-3 rounded-xl border-2 border-gray-300 transition-colors font-bold
-      ${
-        isSaving
-          ? "bg-gray-100 text-gray-300 cursor-not-allowed"
-          : "bg-white text-gray-700 hover:bg-gray-50"
-      }`}
+      ${isSaving
+                  ? "bg-gray-100 text-gray-300 cursor-not-allowed"
+                  : "bg-white text-gray-700 hover:bg-gray-50"
+                }`}
             >
               ביטול
             </button>
@@ -548,11 +559,10 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
               onClick={handleSave}
               disabled={isSaving}
               className={`px-8 py-3 rounded-xl text-white transition-colors font-bold shadow-lg
-      ${
-        isSaving
-          ? "bg-slate-400 cursor-not-allowed"
-          : "bg-[#0D305B] hover:bg-[#15457a] hover:to-[#1e5a9e] hover:shadow-xl"
-      }`}
+      ${isSaving
+                  ? "bg-slate-400 cursor-not-allowed"
+                  : "bg-[#0D305B] hover:bg-[#15457a] hover:to-[#1e5a9e] hover:shadow-xl"
+                }`}
             >
               {isSaving ? (
                 <span className="flex items-center justify-center gap-2">
@@ -564,7 +574,8 @@ const AddCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
               )}
             </button>
           </div>
-          <div></div>
+          <div>
+          </div>
         </div>
       </div>
     </div>

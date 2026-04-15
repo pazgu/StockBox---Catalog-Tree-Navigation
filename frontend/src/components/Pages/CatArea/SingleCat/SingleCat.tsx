@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { FC, useState, ChangeEvent, useEffect } from "react";
+import React, { FC, useState, ChangeEvent, useEffect, useRef } from "react";
 import {
   Heart,
   Lock,
@@ -37,7 +37,17 @@ import { usePath } from "../../../../context/PathContext";
 import ImagePreviewHover from "../../ProductArea/ImageCarousel/ImageCarousel/ImagePreviewHover";
 import { useDebouncedFavorite } from "../../../../hooks/useDebouncedFavorite";
 import { truncateDisplay } from "../../../../lib/utils";
-import { environment } from "../../../../environments/environment";
+import {
+  getSafeCategoryImage,
+  getSafeProductImage,
+} from "../../../../lib/imageFallback";
+import { useSocket } from "../../../../hooks/useSocket";
+import { Category } from "../Categories/Categories";
+import {
+  CatalogItemsRemovedPayload,
+  ProductDeletedPayload,
+  ProductRestoredPayload,
+} from "../../../models/socket.models";
 
 const hasImage = (images: any): boolean => {
   if (!images) return false;
@@ -53,6 +63,20 @@ const NoImageCard: React.FC<{ label?: string }> = ({ label = "אין תמונה"
       <div className="text-gray-400 text-sm">{label}</div>
     </div>
   );
+};
+
+const isDirectChildOfPath = (parentPath: string, fullPath: string) => {
+  if (!parentPath || parentPath === "/categories") {
+    const parts = fullPath.replace("/categories/", "").split("/");
+    return parts.length === 1;
+  }
+
+  if (!fullPath.startsWith(parentPath + "/")) return false;
+
+  const remaining = fullPath.substring(parentPath.length);
+  const slashCount = (remaining.match(/\//g) || []).length;
+
+  return slashCount === 1;
 };
 
 const SingleCat: FC = () => {
@@ -82,12 +106,16 @@ const SingleCat: FC = () => {
   const [itemToEdit, setItemToEdit] = useState<DisplayItem | null>(null);
   const [isSavingProduct, setIsSavingProduct] = useState(false);
   const [isMovingToRecycleBin, setIsMovingToRecycleBin] = useState(false);
+  const token = localStorage.getItem("token") || "";
+  const { joinRoleRoom, onEvent, offEvent } = useSocket({ token });
+
   const [hasDescendantsForMove, setHasDescendantsForMove] = useState<
     boolean | null
   >(null);
   const [showFabButtons, setShowFabButtons] = useState(false);
 
   const location = useLocation();
+
   const params = useParams();
   const { role, user, id } = useUser();
   const navigate = useNavigate();
@@ -110,7 +138,6 @@ const SingleCat: FC = () => {
     return "";
   };
   const categoryPath = getCategoryPathFromUrl();
-
   const breadcrumbPathParts = categoryPath
     .replace("/categories/", "")
     .split("/")
@@ -127,9 +154,593 @@ const SingleCat: FC = () => {
     loadAllContent();
   }, [categoryPath, id]);
 
+  const categoryPathRef = useRef(categoryPath);
   useEffect(() => {
-    setPreviousPath(categoryPath);
-  }, [categoryPath, setPreviousPath]);
+    categoryPathRef.current = categoryPath;
+  }, [categoryPath]);
+
+  const categoryInfoRef = useRef<CategoryDTO | null>(null);
+  const isMoveMultipleInProgressRef = useRef(false);
+  useEffect(() => {
+    categoryInfoRef.current = categoryInfo;
+  }, [categoryInfo]);
+
+  const getRemovedEntityToastText = (
+    name: string,
+    type: "category" | "product",
+  ) => {
+    if (role === "editor") {
+      return type === "category"
+        ? `הקטגוריה "${name}" הועברה לסל המיחזור`
+        : `המוצר "${name}" הועבר לסל המיחזור`;
+    }
+
+    return type === "category"
+      ? `הקטגוריה "${name}" נמחקה`
+      : `המוצר "${name}" נמחק`;
+  };
+
+  useEffect(() => {
+    joinRoleRoom("editor");
+    if (id) joinRoleRoom(id);
+    const groupId = localStorage.getItem("groupControl:selectedGroupId");
+    if (groupId && role === "viewer") {
+      joinRoleRoom(groupId);
+    }
+    const socketPreviousPath = localStorage.getItem("previousPath");
+    const handleBannedPermissionsUpdated = async () => {
+      try {
+        const currentPath =
+          categoryPathRef.current ||
+          localStorage.getItem("previousPath") ||
+          location.pathname;
+
+        await loadAllContent(currentPath);
+        toast.info("הרשאות עודכנו, טוען...");
+      } catch (err: any) {
+        console.error("Reload failed", err);
+      }
+    };
+
+    const handleNewSubCategory = (newCategory: CategoryDTO) => {
+      const newParentPath = newCategory.categoryPath
+        .split("/")
+        .slice(0, -1)
+        .join("/");
+
+      if (socketPreviousPath === newParentPath) {
+        loadAllContent();
+        toast.success(`הקטגוריה "${newCategory.categoryName}" נוספה!`);
+      }
+    };
+
+    const handleMovedCategory = (data: {
+      category: Category;
+      oldPath: string;
+      newPath: string;
+    }) => {
+      if (!data.oldPath || !data.newPath) return;
+
+      const { oldPath, newPath } = data;
+
+      const newParentPath = newPath.split("/").slice(0, -1).join("/");
+      const oldParentPath = oldPath.split("/").slice(0, -1).join("/");
+
+      const socketPreviousPath = localStorage.getItem("previousPath");
+
+      if (!socketPreviousPath) return;
+
+      if (socketPreviousPath === oldPath) {
+        navigate(newPath);
+        return;
+      }
+
+      if (socketPreviousPath.startsWith(oldPath + "/")) {
+        const updatedPath = socketPreviousPath.replace(oldPath, newPath);
+        navigate(updatedPath);
+        return;
+      }
+
+      if (
+        socketPreviousPath === oldParentPath ||
+        socketPreviousPath === newParentPath
+      ) {
+        loadAllContent();
+      }
+    };
+    const handleBatchMoved = (data: {
+      results: { oldPath: string; newPath: string }[];
+      newParentPath: string;
+    }) => {
+      const socketPreviousPath = localStorage.getItem("previousPath");
+      if (!socketPreviousPath) return;
+
+      const { results } = data;
+
+      for (const { oldPath, newPath } of results) {
+        if (!oldPath || !newPath) continue;
+
+        if (socketPreviousPath === oldPath) {
+          navigate(newPath);
+          return;
+        }
+
+        if (socketPreviousPath.startsWith(oldPath + "/")) {
+          const updatedPath = socketPreviousPath.replace(oldPath, newPath);
+          navigate(updatedPath);
+          return;
+        }
+      }
+
+      const oldParentPath = results[0]?.oldPath
+        ?.split("/")
+        .slice(0, -1)
+        .join("/");
+
+      const newParentPath = data.newParentPath;
+
+      if (
+        socketPreviousPath === oldParentPath ||
+        socketPreviousPath === newParentPath
+      ) {
+        loadAllContent();
+      }
+    };
+
+    const handleCategoryUpdated = (data: {
+      updatedCategory: Category;
+      oldPath: string;
+    }) => {
+      setItems((prev) =>
+        prev.map((item) =>
+          item.id === data.updatedCategory._id
+            ? {
+              ...item,
+              name: data.updatedCategory.categoryName,
+              images: data.updatedCategory.categoryImage,
+              path: [data.updatedCategory.categoryPath],
+            }
+            : item,
+        ),
+      );
+
+      const isCurrentCategory = categoryPathRef.current === data.oldPath;
+      if (isCurrentCategory) {
+        navigate(data.updatedCategory.categoryPath);
+      }
+
+      setCategoryInfo((prev) => {
+        if (!prev) return prev;
+
+        if (prev._id === data.updatedCategory._id) {
+          return {
+            ...prev,
+            categoryName: data.updatedCategory.categoryName,
+            categoryImage: data.updatedCategory.categoryImage,
+            categoryPath: data.updatedCategory.categoryPath,
+          };
+        }
+        return prev;
+      });
+    };
+    const handleMovedProduct = (data: {
+      savedProduct: ProductDto;
+      sourceCategoryPath: string;
+      newCategoryPath: string[];
+    }) => {
+      const {
+        savedProduct: product,
+        sourceCategoryPath,
+        newCategoryPath,
+      } = data;
+      const socketPreviousPath = localStorage.getItem("previousPath") || "";
+
+      setItems((prev) => {
+        let updated = [...prev];
+
+        if (socketPreviousPath === sourceCategoryPath) {
+          updated = updated.filter((item) => item.id !== product._id);
+        }
+
+        if (newCategoryPath.includes(socketPreviousPath)) {
+          if (!updated.some((item) => item.id === product._id)) {
+            updated = [
+              {
+                id: product._id || "",
+                name: product.productName,
+                images: product.productImages || [],
+                type: "product",
+                path: product.productPath,
+                favorite: false,
+              },
+              ...updated,
+            ];
+          }
+        }
+
+        return updated;
+      });
+    };
+    const handleNewProduct = (newProduct: any) => {
+      const currentPath = categoryPathRef.current;
+
+      const belongsHere = Array.isArray(newProduct.productPath)
+        ? newProduct.productPath.some((p: string) =>
+          p.startsWith(currentPath + "/"),
+        )
+        : newProduct.productPath?.startsWith(currentPath + "/");
+
+      if (!belongsHere) return;
+
+      setItems((prev) => {
+        if (prev.some((item) => item.id === newProduct._id)) return prev;
+        return [
+          ...prev,
+          {
+            id: newProduct._id,
+            name: newProduct.productName,
+            images: newProduct.productImages || [],
+            type: "product",
+            path: Array.isArray(newProduct.productPath)
+              ? newProduct.productPath
+              : [newProduct.productPath],
+            description: newProduct.productDescription,
+            customFields: newProduct.customFields,
+            favorite: false,
+          },
+        ];
+      });
+    };
+    const handleProductRestored = (data: ProductRestoredPayload) => {
+      const restoredProduct = data.product;
+      const currentPath = categoryPathRef.current;
+
+      const productPaths = Array.isArray(restoredProduct.productPath)
+        ? restoredProduct.productPath
+        : [restoredProduct.productPath];
+
+      const belongsHere = productPaths.some((path) =>
+        isDirectChildOfPath(currentPath, path),
+      );
+
+      if (!belongsHere) return;
+
+      setItems((prev) => {
+        const existingItem = prev.find((item) => item.id === restoredProduct._id);
+
+        if (existingItem) {
+          return prev.map((item) =>
+            item.id === restoredProduct._id
+              ? {
+                ...item,
+                name: restoredProduct.productName,
+                images: restoredProduct.productImages || [],
+                path: productPaths,
+                description: restoredProduct.productDescription,
+                customFields: restoredProduct.customFields,
+              }
+              : item,
+          );
+        }
+
+        return [
+          {
+            id: restoredProduct._id!,
+            name: restoredProduct.productName,
+            images: restoredProduct.productImages || [],
+            type: "product",
+            path: productPaths,
+            description: restoredProduct.productDescription,
+            customFields: restoredProduct.customFields,
+            favorite: false,
+          },
+          ...prev,
+        ];
+      });
+    };
+    const handleProductUpdated = (updatedProduct: any) => {
+      setItems((prev) =>
+        prev.map((item) => {
+          if (item.type !== "product" || item.id !== updatedProduct._id)
+            return item;
+
+          const images = (updatedProduct.productImages || []).filter(
+            (url: string) => typeof url === "string" && url.trim(),
+          );
+
+          return {
+            ...item,
+            name: updatedProduct.productName,
+            images,
+          };
+        }),
+      );
+    };
+
+    const handleProductDeleted = (data: ProductDeletedPayload) => {
+      const currentPath = categoryPathRef.current;
+
+      setItems((prev) =>
+        prev.flatMap((item) => {
+          if (item.type !== "product" || item.id !== data.productId) {
+            return [item];
+          }
+
+          if (data.deletedCompletely) {
+            return [];
+          }
+
+          const nextPaths = item.path.filter(
+            (path) => !data.deletedPaths.includes(path),
+          );
+
+          const stillBelongsHere = nextPaths.some((path) =>
+            isDirectChildOfPath(currentPath, path),
+          );
+
+          if (!stillBelongsHere) {
+            return [];
+          }
+
+          return [
+            {
+              ...item,
+              path: nextPaths,
+            },
+          ];
+        }),
+      );
+    };
+    const handleRecycleBinUpdated = ({
+      action,
+      itemType,
+      itemPath,
+      strategy,
+      itemName,
+    }: {
+      action: string;
+      itemType: string;
+      itemPath: string;
+      strategy: string;
+      itemName: string;
+    }) => {
+      if (action !== "added" || itemType !== "category") {
+        const parentPath = itemPath?.substring(0, itemPath.lastIndexOf("/"));
+        if (categoryPathRef.current === parentPath) {
+          loadAllContent(categoryPathRef.current);
+        }
+        return;
+      }
+
+      const currentPath = categoryPathRef.current;
+      const parentPath = itemPath.substring(0, itemPath.lastIndexOf("/"));
+
+      if (currentPath === itemPath) {
+        navigate("/categories");
+        toast.info(
+          `הקטגוריה "${categoryInfoRef.current?.categoryName ?? itemName}" ${role === "editor" ? "הועברה לסל המיחזור" : "נמחקה"}`,
+        );
+        return;
+      }
+
+      if (currentPath?.startsWith(itemPath + "/")) {
+        if (strategy === "cascade") {
+          navigate("/categories");
+          toast.info(
+            `הקטגוריה "${categoryInfoRef.current?.categoryName ?? itemName}" ${role === "editor" ? "הועברה לסל המיחזור" : "נמחקה"}`,
+          );
+        } else {
+          const newPath = currentPath.replace(itemPath, parentPath);
+          navigate(newPath);
+        }
+        return;
+      }
+
+      if (categoryPathRef.current === parentPath) {
+        loadAllContent(categoryPathRef.current);
+      }
+    };
+
+    const handleCatalogItemsRemoved = (data: CatalogItemsRemovedPayload) => {
+      const currentPath = categoryPathRef.current;
+
+      if (!currentPath) return;
+
+      const movedCategory = data.movedCategories.find(
+        (category) => category.path === currentPath,
+      );
+
+      if (movedCategory) {
+        setPreviousPath("/categories");
+        toast.info(getRemovedEntityToastText(movedCategory.name, "category"));
+        navigate("/categories", { replace: true });
+        return;
+      }
+
+      const ancestorCategory = data.movedCategories.find((category) =>
+        currentPath.startsWith(category.path + "/"),
+      );
+
+      if (ancestorCategory) {
+        if (data.categoryStrategy === "cascade") {
+          setPreviousPath("/categories");
+          toast.info(
+            getRemovedEntityToastText(ancestorCategory.name, "category"),
+          );
+          navigate("/categories", { replace: true });
+          return;
+        }
+
+        const parentPath = ancestorCategory.path.split("/").slice(0, -1).join("/");
+        const updatedPath = currentPath.replace(ancestorCategory.path, parentPath);
+        const normalizedUpdatedPath =
+          updatedPath.startsWith("/categories") ? updatedPath : `/categories${updatedPath}`;
+
+        setPreviousPath(parentPath || "/categories");
+        navigate(normalizedUpdatedPath, { replace: true });
+        return;
+      }
+
+      const movedCategoryPaths = new Set(
+        data.movedCategories.map((category) => category.path),
+      );
+
+      const movedProductDeletedPaths = new Set(
+        data.movedProducts.flatMap((product) => product.deletedPaths),
+      );
+
+      setItems((prev) =>
+        prev.filter((item) => {
+          if (item.type === "category") {
+            const itemPath = item.path?.[0];
+            if (!itemPath) return true;
+
+            return !movedCategoryPaths.has(itemPath);
+          }
+
+          if (item.type === "product") {
+            const productPaths = Array.isArray(item.path) ? item.path : [];
+
+            const wasRemovedFromCurrentCategory = productPaths.some((path) =>
+              movedProductDeletedPaths.has(path),
+            );
+
+            return !wasRemovedFromCurrentCategory;
+          }
+
+          return true;
+        }),
+      );
+    };
+
+    const handleCategoryPermissionsChanged = (data: {
+      categoryPath: string; action: string;
+    }) => {
+      const previousPath = localStorage.getItem("previousPath") || "";
+      const categoryParentPath = data.categoryPath.split("/").slice(0, -1).join("/");
+      if (previousPath === categoryParentPath) {
+        loadAllContent();
+        return;
+      }
+      if (previousPath === data.categoryPath) {
+        if (data.action === 'deleted') {
+          toast.info("הרשאות עודכנו, טוען...")
+          navigate('/categories')
+          return;
+        }
+        return;
+      }
+      if (previousPath.startsWith(data.categoryPath)) {
+        if (data.action === 'deleted') {
+          toast.info("הרשאות עודכנו, טוען...")
+          navigate('/categories')
+          return;
+        }
+        return;
+      }
+    };
+    const handleProductPermissionDeleted = (data: {
+      product: ProductDto;
+    }) => {
+      const { product } = data;
+      const previousPath = localStorage.getItem("previousPath") || "";
+
+      const productPaths = Array.isArray(product.productPath)
+        ? product.productPath
+        : [product.productPath];
+
+      const parentPaths = productPaths.map((path) =>
+        path.split("/").slice(0, -1).join("/")
+      );
+
+      if (!parentPaths.includes(previousPath)) return;
+
+      setItems((prev) =>
+        prev.filter((item) => item.id !== product._id)
+      );
+    };
+
+    const handlePermissionsSync = ({ basePath }: { basePath: string }) => {
+      const isAffected =
+        categoryPathRef.current === basePath ||
+        categoryPathRef.current.startsWith(basePath + '/');
+      if (!isAffected) return;
+      loadAllContent(categoryPathRef.current);
+    };
+
+    const handleProductPermissionAdded = (data: {
+      product: ProductDto;
+    }) => {
+      const { product } = data;
+      const previousPath = localStorage.getItem("previousPath") || "";
+
+      const productPaths = Array.isArray(product.productPath)
+        ? product.productPath
+        : [product.productPath];
+
+      const parentPaths = productPaths.map((path) =>
+        path.split("/").slice(0, -1).join("/")
+      );
+
+      if (!parentPaths.includes(previousPath)) return;
+
+      setItems((prev) => {
+        if (prev.some((item) => item.id === product._id)) return prev;
+
+        return [
+          {
+            id: product._id!,
+            name: product.productName,
+            images: product.productImages || [],
+            type: "product",
+            path: productPaths,
+            description: product.productDescription,
+            customFields: product.customFields,
+            favorite: false,
+          },
+          ...prev,
+        ];
+      });
+    };
+    onEvent("categories_batch_moved", handleBatchMoved);
+    onEvent("product_permission_deleted", handleProductPermissionDeleted);
+    onEvent("product_permission_added", handleProductPermissionAdded);
+    onEvent("product_moved", handleMovedProduct);
+    onEvent("sub_category_added", handleNewSubCategory);
+    onEvent("category_moved", handleMovedCategory);
+    onEvent("category_updated", handleCategoryUpdated);
+    onEvent("product_added", handleNewProduct);
+    onEvent("product_restored", handleProductRestored);
+    onEvent("product_updated", handleProductUpdated);
+    onEvent("product_deleted", handleProductDeleted);
+    onEvent("recycle_bin_updated", handleRecycleBinUpdated);
+    onEvent("catalog_items_removed", handleCatalogItemsRemoved);
+    onEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
+    onEvent("category_permissions_changed", handleCategoryPermissionsChanged);
+    onEvent('permissions_sync', handlePermissionsSync);
+
+    return () => {
+      offEvent("categories_batch_moved", handleBatchMoved);
+      offEvent("sub_category_added", handleNewSubCategory);
+      offEvent("product_permission_added", handleProductPermissionAdded);
+      offEvent("category_moved", handleMovedCategory);
+      offEvent("product_permission_deleted", handleProductPermissionDeleted);
+      offEvent("category_updated", handleCategoryUpdated);
+      offEvent("product_moved", handleMovedProduct);
+      offEvent("product_added", handleNewProduct);
+      offEvent("product_restored", handleProductRestored);
+      offEvent("product_updated", handleProductUpdated);
+      offEvent("product_deleted", handleProductDeleted);
+      offEvent("recycle_bin_updated", handleRecycleBinUpdated);
+      offEvent("catalog_items_removed", handleCatalogItemsRemoved);
+      offEvent(
+        "banned_items_permissions_updated",
+        handleBannedPermissionsUpdated,
+      );
+      offEvent("category_permissions_changed", handleCategoryPermissionsChanged);
+      offEvent('permissions_sync', handlePermissionsSync);
+    };
+  }, [id, joinRoleRoom, onEvent, offEvent]);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -150,13 +761,14 @@ const SingleCat: FC = () => {
     setSelectedItems([]);
   }, [categoryPath]);
 
-  const loadAllContent = async () => {
+  const loadAllContent = async (pathOverride?: string) => {
+    const currentCategoryPath = pathOverride ?? categoryPath;
     try {
       setLoading(true);
 
       try {
         const currentCategory =
-          await categoriesService.getCategoryByPath(categoryPath);
+          await categoriesService.getCategoryByPath(currentCategoryPath);
         setCategoryInfo(currentCategory);
       } catch (err) {
         console.error("Error fetching category info:", err);
@@ -165,7 +777,8 @@ const SingleCat: FC = () => {
 
       let subCategories: CategoryDTO[] = [];
       try {
-        subCategories = await categoriesService.getDirectChildren(categoryPath);
+        subCategories =
+          await categoriesService.getDirectChildren(currentCategoryPath);
       } catch (err) {
         if (handleEntityRouteError(err, navigate)) return;
         console.error(err);
@@ -175,7 +788,7 @@ const SingleCat: FC = () => {
 
       let products: ProductDto[] = [];
       try {
-        products = await ProductsService.getProductsByPath(categoryPath);
+        products = await ProductsService.getProductsByPath(currentCategoryPath);
       } catch (err) {
         if (handleEntityRouteError(err, navigate)) {
           setLoading(false);
@@ -192,7 +805,7 @@ const SingleCat: FC = () => {
         try {
           const favorites = await userService.getFavorites();
           userFavorites = favorites.map((fav: any) => fav.id.toString());
-        } catch (err) {}
+        } catch (err) { }
       }
 
       const categoryItems: DisplayItem[] = subCategories.map(
@@ -249,19 +862,6 @@ const SingleCat: FC = () => {
       toast.success(`הקטגוריה "${result.categoryName}" עודכנה בהצלחה!`);
     } catch (error) {
       toast.error("שגיאה בעדכון הקטגוריה");
-    }
-  };
-
-  const handleItemClick = (item: DisplayItem) => {
-    if (isSelectionMode) return;
-
-    const path = item.path[0];
-    const cleanPath = path.startsWith("/") ? path : `/${path}`;
-
-    if (item.type === "category") {
-      navigate(cleanPath);
-    } else {
-      navigate(`/products/${item.id}`);
     }
   };
 
@@ -335,7 +935,7 @@ const SingleCat: FC = () => {
       );
 
       toast.success(`המוצר "${itemToDelete.name}" הוסר מקטגוריה זו!`);
-      setItems(items.filter((item) => item.id !== itemToDelete.id));
+      setItems((prev) => prev.filter((item) => item.id !== itemToDelete.id));
     } catch (error) {
       toast.error("שגיאה בהסרה מקטגוריה זו");
     } finally {
@@ -353,7 +953,7 @@ const SingleCat: FC = () => {
       await recycleBinService.moveProductToRecycleBin(itemToDelete.id);
 
       toast.success(`המוצר "${itemToDelete.name}" הועבר לסל המיחזור!`);
-      setItems(items.filter((item) => item.id !== itemToDelete.id));
+      setItems((prev) => prev.filter((item) => item.id !== itemToDelete.id));
     } catch (error) {
       toast.error("שגיאה בהעברה לסל המיחזור");
     } finally {
@@ -369,12 +969,12 @@ const SingleCat: FC = () => {
       setIsMovingToRecycleBin(true);
       await ProductsService.deleteFromSpecificPaths(itemToDelete.id, paths);
 
-      const stillInCurrentCategory = paths.every(
-        (path) => !path.startsWith(categoryPath),
+      const removedFromCurrent = paths.some((path) =>
+        isDirectChildOfPath(categoryPath, path),
       );
 
-      if (!stillInCurrentCategory) {
-        setItems(items.filter((item) => item.id !== itemToDelete.id));
+      if (removedFromCurrent) {
+        setItems((prev) => prev.filter((item) => item.id !== itemToDelete.id));
       }
 
       toast.success(
@@ -458,17 +1058,6 @@ const SingleCat: FC = () => {
         allowAll: data.allowAll,
       });
 
-      const newItem: DisplayItem = {
-        id: createdProduct._id!,
-        name: createdProduct.productName,
-        images: createdProduct.productImages || [],
-        type: "product",
-        path: createdProduct.productPath,
-        favorite: false,
-        description: createdProduct.productDescription,
-      };
-
-      setItems((prev) => [...prev, newItem]);
       toast.success(`המוצר "${data.name}" נוצר בהצלחה!`);
       setShowAddProductModal(false);
     } catch (error: any) {
@@ -512,7 +1101,6 @@ const SingleCat: FC = () => {
         favorite: false,
       };
       setItems([...items, newItem]);
-      toast.success(`הקטגוריה "${data.name}" נוצרה בהצלחה!`);
       setShowAddSubCategoryModal(false);
     } catch (error) {
       const serverMessage =
@@ -578,12 +1166,67 @@ const SingleCat: FC = () => {
     setShowDeleteAllModal(true);
   };
 
-  const confirmMoveSelectedToRecycleBin = () => {
-    setItems((prev) => prev.filter((item) => !selectedItems.includes(item.id)));
-    toast.success(`${selectedItems.length} פריטים הועברו לסל המיחזור בהצלחה!`);
-    setSelectedItems([]);
-    setIsSelectionMode(false);
-    setShowDeleteAllModal(false);
+  const confirmMoveSelectedToRecycleBin = async () => {
+    if (selectedItems.length === 0) return;
+
+    try {
+      setIsMovingToRecycleBin(true);
+
+      const selectedItemsData = items.filter((item) =>
+        selectedItems.includes(item.id),
+      );
+
+      const payload = {
+        categoryIds: selectedItemsData
+          .filter((item) => item.type === "category")
+          .map((item) => item.id),
+        categoryStrategy: "cascade" as const,
+        products: selectedItemsData
+          .filter((item) => item.type === "product")
+          .map((item) => ({
+            id: item.id,
+            categoryPath,
+          })),
+      };
+
+      const result =
+        await recycleBinService.moveMultipleItemsToRecycleBin(payload);
+
+      if (result.successCount > 0 && result.failCount === 0) {
+        setShowDeleteAllModal(false);
+        setSelectedItems([]);
+        setIsSelectionMode(false);
+
+        toast.success(
+          `${result.successCount} פריטים הועברו לסל המיחזור בהצלחה!`,
+        );
+
+        await loadAllContent();
+      } else if (result.successCount > 0 && result.failCount > 0) {
+        setShowDeleteAllModal(false);
+        setSelectedItems([]);
+        setIsSelectionMode(false);
+
+        toast.warning(
+          `${result.successCount} פריטים הועברו בהצלחה, ${result.failCount} נכשלו`,
+        );
+        console.error(
+          "Bulk recycle bin errors:",
+          result.results.filter((r) => !r.success),
+        );
+
+        await loadAllContent();
+      } else {
+        toast.error("כל הפריטים נכשלו בהעברה לסל המיחזור");
+        console.error("Bulk recycle bin errors:", result.results);
+        return;
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("שגיאה בהעברת הפריטים לסל המיחזור");
+    } finally {
+      setIsMovingToRecycleBin(false);
+    }
   };
 
   const handleMoveSelected = () => {
@@ -591,11 +1234,13 @@ const SingleCat: FC = () => {
       toast.error("נא לבחור לפחות פריט אחד להעברה");
       return;
     }
+    isMoveMultipleInProgressRef.current = true;
     setShowMoveMultipleModal(true);
   };
 
   const handleMoveMultipleSuccess = async () => {
     await loadAllContent();
+    isMoveMultipleInProgressRef.current = false;
     setSelectedItems([]);
     setIsSelectionMode(false);
     setShowMoveMultipleModal(false);
@@ -620,12 +1265,13 @@ const SingleCat: FC = () => {
         {/* Category Image */}
         {categoryInfo && (
           <img
-            src={categoryInfo.categoryImage || "/assets/images/placeholder.png"}
+            src={getSafeCategoryImage(categoryInfo.categoryImage)}
             alt={categoryInfo.categoryName}
             className="w-32 h-32 rounded-full object-cover mt-0 border-0 ring-0 outline-none bg-transparent focus:outline-none focus:ring-0 focus:ring-offset-0"
             onError={(e) => {
-              (e.currentTarget as HTMLImageElement).src =
-                "/assets/images/placeholder.png";
+              (e.currentTarget as HTMLImageElement).src = getSafeCategoryImage(
+                categoryInfo.categoryImage,
+              );
             }}
           />
         )}
@@ -637,7 +1283,7 @@ const SingleCat: FC = () => {
             {categoryInfo
               ? categoryInfo.categoryName
               : breadcrumbPathParts[breadcrumbPathParts.length - 1] ||
-                "קטגוריה"}
+              "קטגוריה"}
           </h1>
           <div className="flex items-center gap-4">
             <span className="text-base">סך הכל פריטים: {items.length}</span>
@@ -686,7 +1332,7 @@ const SingleCat: FC = () => {
               >
                 {selectedItems.length === items.length
                   ? "בטל בחירת הכל"
-                  : "בחר הכל"}
+                  : "בחירת הכל"}
               </button>
               {selectedItems.length > 0 && (
                 <>
@@ -711,225 +1357,236 @@ const SingleCat: FC = () => {
                 onClick={toggleSelectionMode}
                 className="text-base hover:underline text-gray-700 hover:text-[#0D305B] transition-colors"
               >
-                ביטול
+                ביטול בחירה מרובה
               </button>
             </div>
           )}
         </div>
       )}
 
-      <main className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-16">
-        {items.map((item) => (
-          <div
-            key={item.id}
-            className={`flex flex-col items-center p-4 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 w-80 ${
-              selectedItems.includes(item.id)
+      {items.length === 0 ? (
+        <div className="w-full h-40 flex justify-center items-center my-12 text-slate-500">
+          <p className="text-lg">אין פריטים להצגה</p>
+        </div>
+      ) : (
+        <main className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-16">
+          {items.map((item) => (
+            <div
+              key={item.id}
+              className={`flex flex-col items-center p-4 text-center border-b-2 relative transition-all duration-300 hover:-translate-y-1 w-80 ${selectedItems.includes(item.id)
                 ? "bg-[#0D305B]/10"
                 : "border-gray-200"
-            } ${!isSelectionMode ? "cursor-pointer" : ""}`}
-          >
-            <div
-              className={`absolute top-2 left-2 px-3 py-1 text-xs font-medium ${
-                item.type === "category" ? " text-blue-700" : " text-green-700"
-              }`}
+                } ${!isSelectionMode ? "cursor-pointer" : ""}`}
             >
-              {item.type === "category" ? (
-                <>
-                  <div className="flex flex-col items-center ">
-                    <Boxes />
-                    <span>קטגוריה</span>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <PackageCheck />
-                  <span>מוצר</span>
-                </>
+              <div
+                className={`absolute top-2 left-2 px-3 py-1 text-xs font-medium ${item.type === "category"
+                  ? " text-blue-700"
+                  : " text-green-700"
+                  }`}
+              >
+                {item.type === "category" ? (
+                  <>
+                    <div className="flex flex-col items-center ">
+                      <Boxes />
+                      <span>קטגוריה</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <PackageCheck />
+                    <span>מוצר</span>
+                  </>
+                )}
+              </div>
+
+              {isSelectionMode && role === "editor" && (
+                <div className="absolute top-3 right-3 z-10">
+                  <input
+                    type="checkbox"
+                    checked={selectedItems.includes(item.id)}
+                    onChange={() => toggleItemSelection(item.id)}
+                    className="w-6 h-6 cursor-pointer accent-[#0D305B]"
+                  />
+                </div>
               )}
-            </div>
-
-            {isSelectionMode && role === "editor" && (
-              <div className="absolute top-3 right-3 z-10">
-                <input
-                  type="checkbox"
-                  checked={selectedItems.includes(item.id)}
-                  onChange={() => toggleItemSelection(item.id)}
-                  className="w-6 h-6 cursor-pointer accent-[#0D305B]"
-                />
-              </div>
-            )}
-
-            {role === "editor" && !isSelectionMode && (
-              <>
-                {item.type === "product" && (
-                  <div className="absolute bottom-5 right-12">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDuplicate(item);
-                      }}
-                      className="peer group-hover:opacity-100 h-9 w-9 text-gray-700 flex items-center hover:text-purple-500"
-                    >
-                      <Copy size={18} />
-                    </button>
-                    <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                      שכפול לקטגוריות נוספות
-                    </span>
-                  </div>
-                )}
-                <div className="absolute bottom-5 right-3">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleMove(item);
-                    }}
-                    className="peer group-hover:opacity-100 h-9 w-9 text-gray-700 flex items-center hover:text-blue-500"
-                  >
-                    <FolderInput size={18} />
-                  </button>
-
-                  <span className="absolute -bottom-8 -left-1 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                    העברה לקטגוריה אחרת
-                  </span>
-                </div>
-                <div className="absolute bottom-5 left-3">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleMoveToRecycleBin(item);
-                    }}
-                    className="peer group-hover:opacity-100 h-9 w-9 text-gray-700 flex items-center hover:text-orange-500"
-                  >
-                    <Trash size={18} />
-                  </button>
-                  <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                    העברה לסל מיחזור
-                  </span>
-                </div>
-                {item.type === "category" && (
-                  <div className="absolute bottom-5 left-12">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEdit(item);
-                      }}
-                      className="peer group-hover:opacity-100 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-green-500"
-                    >
-                      <Pen size={18} />
-                    </button>
-                    <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                      עריכת קטגוריה
-                    </span>
-                  </div>
-                )}
-              </>
-            )}
-
-            {!isSelectionMode && (
-              <div className="absolute right-3 top-3 z-10">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    toggleFavorite(item.id, item.name, item.type);
-                  }}
-                  className="peer transition-all duration-200 h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110 cursor-pointer"
-                >
-                  <Heart
-                    size={22}
-                    strokeWidth={2}
-                    className={`pointer-events-none ${item.favorite ? "fill-red-500 text-red-500" : "text-gray-700"}`}
-                  />
-                </button>
-                <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
-                  {item.favorite ? "הסר ממועדפים" : "הוסף למועדפים"}
-                </span>
-              </div>
-            )}
-            <div
-              className="h-[140px] w-full flex justify-center items-center p-2 cursor-pointer"
-              onClick={() => {
-                if (item.type === "product") {
-                  setPreviousPath(location.pathname);
-                  navigate(`/products/${item.id}`);
-                } else {
-                  navigate(encodeURI(item.path[0]));
-                }
-              }}
-            >
-              {item.type === "category" ? (
-                <img
-                  src={
-                    typeof item.images === "string" && item.images.trim()
-                      ? item.images
-                      : "/assets/images/placeholder.png"
-                  }
-                  alt={item.name}
-                  className="max-h-full max-w-full object-contain"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).src =
-                      "/assets/images/placeholder.png";
-                  }}
-                />
-              ) : hasImage(item.images) ? (
-                <div className="h-full w-full flex justify-center items-center">
-                  <ImagePreviewHover
-                    images={item.images}
-                    alt={item.name}
-                    className="w-full h-full"
-                  />
-                </div>
-             ) : (
-  <img
-    src={environment.DEFAULT_PRODUCT_IMAGE_URL}
-    alt={item.name}
-    className="max-h-full max-w-full object-contain"
-    onError={(e) => {
-      (e.currentTarget as HTMLImageElement).src =
-        environment.DEFAULT_PRODUCT_IMAGE_URL;
-    }}
-  />
-)}
-            </div>
-
-            <div className="w-full text-center pt-4 border-t border-gray-200">
-              <div className="relative group/tooltip flex justify-center">
-                <h2
-                  className="text-[1.1rem] text-[#0D305B] mb-2 w-full line-clamp-2"
-                  style={{
-                    overflowWrap: "anywhere",
-                    direction: /[\u0590-\u05FF]/.test(item.name)
-                      ? "rtl"
-                      : "ltr",
-                  }}
-                >
-                  {truncateDisplay(item.name)}
-                </h2>
-                {item.name.length > 18 && (
-                  <span className="absolute -top-6 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-50">
-                    {item.name}
-                  </span>
-                )}
-              </div>
 
               {role === "editor" && !isSelectionMode && (
-                <div className="mt-2 flex justify-center">
+                <>
+                  {item.type === "product" && (
+                    <div className="absolute bottom-5 right-12">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDuplicate(item);
+                        }}
+                        className="peer group-hover:opacity-100 h-9 w-9 text-gray-700 flex items-center hover:text-purple-500"
+                      >
+                        <Copy size={18} />
+                      </button>
+                      <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                        שכפול לקטגוריות נוספות
+                      </span>
+                    </div>
+                  )}
+                  <div className="absolute bottom-5 right-3">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleMove(item);
+                      }}
+                      className="peer group-hover:opacity-100 h-9 w-9 text-gray-700 flex items-center hover:text-blue-500"
+                    >
+                      <FolderInput size={18} />
+                    </button>
+
+                    <span className="absolute -bottom-8 -left-1 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                      העברה לקטגוריה אחרת
+                    </span>
+                  </div>
+                  <div className="absolute bottom-5 left-3">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleMoveToRecycleBin(item);
+                      }}
+                      className="peer group-hover:opacity-100 h-9 w-9 text-gray-700 flex items-center hover:text-orange-500"
+                    >
+                      <Trash size={18} />
+                    </button>
+                    <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                      העברה לסל מיחזור
+                    </span>
+                  </div>
+                  {item.type === "category" && (
+                    <div className="absolute bottom-5 left-12">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEdit(item);
+                        }}
+                        className="peer group-hover:opacity-100 h-9 w-9 text-gray-700 flex items-center justify-center hover:text-green-500"
+                      >
+                        <Pen size={18} />
+                      </button>
+                      <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                        עריכת קטגוריה
+                      </span>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {!isSelectionMode && (
+                <div className="absolute right-3 top-3 z-10">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleManagePermissions(item.id, item.type);
+                      e.preventDefault();
+                      toggleFavorite(item.id, item.name, item.type);
                     }}
-                    className="flex items-center gap-2 text-sm font-medium text-white bg-[#0D305B] px-4 py-2 shadow-md transition-all duration-300 hover:bg-[#16447A] hover:shadow-lg focus:ring-2 focus:ring-[#0D305B]/40 border-none rounded"
+                    className="peer transition-all duration-200 h-9 w-9 rounded-full backdrop-blur-sm flex items-center justify-center hover:scale-110 cursor-pointer"
                   >
-                    <Lock size={16} className="text-white" />
-                    ניהול הרשאות
+                    <Heart
+                      size={22}
+                      strokeWidth={2}
+                      className={`pointer-events-none ${item.favorite ? "fill-red-500 text-red-500" : "text-gray-700"}`}
+                    />
                   </button>
+                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 peer-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20">
+                    {item.favorite ? "הסר ממועדפים" : "הוסף למועדפים"}
+                  </span>
                 </div>
               )}
+              <div
+                className="h-[140px] w-full flex justify-center items-center p-2 cursor-pointer"
+                onClick={() => {
+                  if (item.type === "product") {
+                    setPreviousPath(location.pathname);
+                    navigate(`/products/${item.id}`);
+                  } else {
+                    setPreviousPath(item.path[0]);
+                    navigate(encodeURI(item.path[0]));
+                  }
+                }}
+              >
+                {item.type === "category" ? (
+                  <img
+                    src={getSafeCategoryImage(
+                      typeof item.images === "string" ? item.images : null,
+                    )}
+                    alt={item.name}
+                    className="max-h-full max-w-full object-contain"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src =
+                        getSafeCategoryImage(
+                          typeof item.images === "string" ? item.images : null,
+                        );
+                    }}
+                  />
+                ) : hasImage(item.images) ? (
+                  <div className="h-full w-full flex justify-center items-center">
+                    <ImagePreviewHover
+                      images={item.images}
+                      alt={item.name}
+                      className="w-full h-full"
+                    />
+                  </div>
+                ) : (
+                  <img
+                    src={getSafeProductImage(
+                      Array.isArray(item.images) ? item.images : [],
+                    )}
+                    alt={item.name}
+                    className="max-h-full max-w-full object-contain"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src =
+                        getSafeProductImage(
+                          Array.isArray(item.images) ? item.images : [],
+                        );
+                    }}
+                  />
+                )}
+              </div>
+
+              <div className="w-full text-center pt-4 border-t border-gray-200">
+                <div className="relative group/tooltip flex justify-center">
+                  <h2
+                    className="text-[1.1rem] text-[#0D305B] mb-2 w-full line-clamp-2"
+                    style={{
+                      overflowWrap: "anywhere",
+                      direction: /[\u0590-\u05FF]/.test(item.name)
+                        ? "rtl"
+                        : "ltr",
+                    }}
+                  >
+                    {truncateDisplay(item.name)}
+                  </h2>
+                  {item.name.length > 18 && (
+                    <span className="absolute -top-6 right-0 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/tooltip:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-50">
+                      {item.name}
+                    </span>
+                  )}
+                </div>
+
+                {role === "editor" && !isSelectionMode && (
+                  <div className="mt-2 flex justify-center">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleManagePermissions(item.id, item.type);
+                      }}
+                      className="flex items-center gap-2 text-sm font-medium text-white bg-[#0D305B] px-4 py-2 shadow-md transition-all duration-300 hover:bg-[#16447A] hover:shadow-lg focus:ring-2 focus:ring-[#0D305B]/40 border-none rounded"
+                    >
+                      <Lock size={16} className="text-white" />
+                      ניהול הרשאות
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
-      </main>
+          ))}
+        </main>
+      )}
 
       {role === "editor" && !isSelectionMode && (
         <div className="fixed bottom-10 left-4 flex flex-col-reverse gap-3">
@@ -1075,7 +1732,7 @@ const SingleCat: FC = () => {
             ${isMovingToRecycleBin ? "opacity-70 cursor-not-allowed" : "hover:bg-orange-700"}`}
               >
                 {isMovingToRecycleBin &&
-                categoryMoveStrategyLoading === "cascade" ? (
+                  categoryMoveStrategyLoading === "cascade" ? (
                   <span className="flex items-center justify-center gap-2">
                     <Spinner className="size-4 text-white" />
                     מעביר לסל...
@@ -1092,7 +1749,7 @@ const SingleCat: FC = () => {
     ${isMovingToRecycleBin ? "opacity-70 cursor-not-allowed" : "hover:bg-blue-200"}`}
               >
                 {isMovingToRecycleBin &&
-                categoryMoveStrategyLoading === "move_up" ? (
+                  categoryMoveStrategyLoading === "move_up" ? (
                   <span className="flex items-center justify-center gap-2">
                     <Spinner className="size-4 text-blue-900" />
                     מעביר לסל...
@@ -1150,13 +1807,28 @@ const SingleCat: FC = () => {
             <div className="flex justify-end gap-3 mt-4">
               <button
                 onClick={confirmMoveSelectedToRecycleBin}
-                className="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 transition-colors"
+                disabled={isMovingToRecycleBin}
+                className={`bg-orange-600 text-white px-4 py-2 rounded transition-colors ${isMovingToRecycleBin
+                  ? "opacity-70 cursor-not-allowed"
+                  : "hover:bg-orange-700"
+                  }`}
               >
-                העברה לסל מיחזור
+                {isMovingToRecycleBin ? (
+                  <span className="flex items-center gap-2">
+                    <Spinner className="size-4 text-white" />
+                    מעביר לסל...
+                  </span>
+                ) : (
+                  "העברה לסל מיחזור"
+                )}
               </button>
               <button
                 onClick={closeAllModals}
-                className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400 transition-colors"
+                disabled={isMovingToRecycleBin}
+                className={`bg-gray-300 px-4 py-2 rounded transition-colors ${isMovingToRecycleBin
+                  ? "opacity-70 cursor-not-allowed"
+                  : "hover:bg-gray-400"
+                  }`}
               >
                 ביטול
               </button>
@@ -1177,7 +1849,7 @@ const SingleCat: FC = () => {
                   ? itemToMove.path
                   : [itemToMove.path || categoryPath]
               }
-              currentCategoryPath={categoryPath} 
+              currentCategoryPath={categoryPath}
               onClose={() => {
                 setShowMoveModal(false);
                 setItemToMove(null);
@@ -1191,8 +1863,13 @@ const SingleCat: FC = () => {
                 _id: itemToMove.id,
                 categoryName: itemToMove.name,
                 categoryPath: itemToMove.path[0],
-                categoryImage:
-                  itemToMove.images[0] || "/assets/images/placeholder.png",
+                categoryImage: getSafeCategoryImage(
+                  Array.isArray(itemToMove.images)
+                    ? itemToMove.images[0]
+                    : typeof itemToMove.images === "string"
+                      ? itemToMove.images
+                      : null,
+                ),
               }}
               onClose={() => {
                 setShowMoveModal(false);
@@ -1238,9 +1915,13 @@ const SingleCat: FC = () => {
             _id: itemToEdit.id,
             categoryName: itemToEdit.name,
             categoryPath: itemToEdit.path[0],
-            categoryImage: Array.isArray(itemToEdit.images)
-              ? itemToEdit.images[0]
-              : itemToEdit.images,
+            categoryImage: getSafeCategoryImage(
+              Array.isArray(itemToEdit.images)
+                ? itemToEdit.images[0]
+                : typeof itemToEdit.images === "string"
+                  ? itemToEdit.images
+                  : null,
+            ),
           }}
           onClose={() => {
             setShowEditModal(false);

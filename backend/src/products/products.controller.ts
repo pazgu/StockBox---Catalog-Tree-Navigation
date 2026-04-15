@@ -124,19 +124,22 @@ export class ProductsController {
         ? JSON.parse(body.customFields)
         : undefined,
       productImages: existingImages,
-      uploadFolders: body.uploadFolders
-        ? [].concat(body.uploadFolders).map((group: any) => ({
-            title: group.title,
-            folders: group.folders.map((folder: any) => ({
-              _id: folder._id,
-              folderName: folder.folderName,
-              files: folder.files.map((f: any) => ({
-                _id: f._id,
-                link: f.link,
-              })),
-            })),
-          }))
-        : undefined,
+      uploadFolders:
+        body.emptyUploadFolders === 'true'
+          ? []
+          : body.uploadFolders
+            ? [].concat(body.uploadFolders).map((group: any) => ({
+                title: group.title,
+                folders: group.folders.map((folder: any) => ({
+                  _id: folder._id,
+                  folderName: folder.folderName,
+                  files: folder.files.map((f: any) => ({
+                    _id: f._id,
+                    link: f.link,
+                  })),
+                })),
+              }))
+            : undefined,
     };
     return this.productsService.update(id, dto);
   }
@@ -159,5 +162,26 @@ export class ProductsController {
     @ProductBody() body: { paths: string[] },
   ) {
     return this.productsService.deleteFromSpecificPaths(id, body.paths);
+  }
+
+  @ProductPatch(':id/edit-lock')
+  @ProductUseGuards(JwtAuthGuard, EditorGuard)
+  @HttpCode(HttpStatus.OK)
+  async setEditLock(
+    @ProductParam('id', ParseObjectIdPipe) id: string,
+    @ProductBody('isBlocked') isBlocked: boolean,
+    @Req()
+    req: express.Request & { user?: { userId: string; userName: string } },
+  ) {
+    return this.productsService.setEditLock(
+      id,
+      isBlocked,
+      req.user
+        ? {
+            userId: req.user.userId,
+            userName: req.user.userName,
+          }
+        : undefined,
+    );
   }
 }

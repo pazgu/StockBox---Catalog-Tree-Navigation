@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import isEmail from "validator/lib/isEmail";
 
 import NestedCatalogSVG from "./login.svg";
-interface LoginProps {}
+interface LoginProps { }
 
 const Login: FC<LoginProps> = () => {
   const { setUser } = useUser();
@@ -159,9 +159,9 @@ const Login: FC<LoginProps> = () => {
       } else if (error?.response?.status === 409) {
         toast.error("שם משתמש או אימייל שגויים/כבר קיימים במערכת");
       } else if (error?.response?.status === 400) {
-        toast.info("המשתמש לא נמצא במערכת, לא להזין נתוני משתמש חדש");
+        toast.info("המשתמש לא נמצא במערכת, נא להזין נתוני משתמש חדש");
         setIsReturningUser(false);
-      } else {
+      } else if (error.response?.status !== 403) {
         toast.error("שגיאה לא צפויה, נא לנסות שוב");
       }
     }
@@ -181,14 +181,14 @@ const Login: FC<LoginProps> = () => {
 
   const navigate = useNavigate();
 
-  const isValidEmail = (email: string) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  };
+
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [userName, setuserName] = useState("");
   const [email, setEmail] = useState("");
+  const MAX_NAME_LENGTH = 20;
+
   const [errors, setErrors] = useState({
     firstName: false,
     lastName: false,
@@ -325,35 +325,46 @@ const Login: FC<LoginProps> = () => {
                         type="text"
                         value={firstName}
                         onChange={(e) => {
-                          const val = e.target.value;
+                          const raw = e.target.value;
+
+                          const isTooLong = raw.length > MAX_NAME_LENGTH;
+
+                          const val = raw.slice(0, MAX_NAME_LENGTH);
                           setFirstName(val);
+
                           const trimmed = val.trim();
                           const hebrewOnly = /^[א-ת\s]+$/;
                           const englishOnly = /^[a-zA-Z\s]+$/;
                           const arabicOnly = /^[\u0600-\u06FF\s]+$/;
                           const validChars = /^[א-תa-zA-Z\u0600-\u06FF\s]+$/;
+
                           let error = "";
-                          if (!trimmed) error = "שם פרטי הוא שדה חובה";
-                          else if (!validChars.test(trimmed))
-                            error = "רק אותיות";
-                          else if (
-                            !hebrewOnly.test(trimmed) &&
-                            !englishOnly.test(trimmed) &&
-                            !arabicOnly.test(trimmed)
-                          )
-                            error = "לא ניתן לערבב שפות";
-                          else if (
-                            (trimmed.match(/[א-תa-zA-Z\u0600-\u06FF]/g) || [])
-                              .length < 2
-                          )
-                            error = "שם פרטי חייב להכיל לפחות 2 אותיות";
-                          setErrors({ ...errors, firstName: !!error });
+
+                          if (isTooLong) {
+                            error = "מקסימום 20 תווים";
+                          } else {
+                            if (!trimmed) error = "שם פרטי הוא שדה חובה";
+                            else if (!validChars.test(trimmed)) error = "רק אותיות";
+                            else if (
+                              !hebrewOnly.test(trimmed) &&
+                              !englishOnly.test(trimmed) &&
+                              !arabicOnly.test(trimmed)
+                            )
+                              error = "לא ניתן לערבב שפות";
+                            else if (
+                              (trimmed.match(/[א-תa-zA-Z\u0600-\u06FF]/g) || []).length < 2
+                            )
+                              error = "שם פרטי חייב להכיל לפחות 2 אותיות";
+                          }
+
+                          setErrors((prev) => ({ ...prev, firstName: !!error }));
                           setFieldErrors((prev) => ({
                             ...prev,
                             firstName: error,
                           }));
                         }}
-                        className={`w-full py-3 px-4 pl-11 border-2 ${errors.firstName ? "border-red-300" : "border-gray-300"} rounded-lg text-right text-sm`}
+                        className={`w-full py-3 px-4 pl-11 border-2 ${errors.firstName ? "border-red-300" : "border-gray-300"
+                          } rounded-lg text-right text-sm`}
                         placeholder="הכנס שם פרטי..."
                         dir="rtl"
                       />
@@ -377,32 +388,44 @@ const Login: FC<LoginProps> = () => {
                         type="text"
                         value={lastName}
                         onChange={(e) => {
-                          const val = e.target.value;
+                          const raw = e.target.value;
+
+                          const isTooLong = raw.length > MAX_NAME_LENGTH;
+
+                          const val = raw.slice(0, MAX_NAME_LENGTH);
                           setLastName(val);
+
                           const trimmed = val.trim();
                           const hebrewOnly = /^[א-ת\s]+$/;
                           const englishOnly = /^[a-zA-Z\s]+$/;
                           const arabicOnly = /^[\u0600-\u06FF\s]+$/;
                           const validChars = /^[א-תa-zA-Z\u0600-\u06FF\s]+$/;
+
                           let error = "";
-                          if (!trimmed) error = "שם משפחה הוא שדה חובה";
-                          else if (!validChars.test(trimmed))
-                            error = "רק אותיות";
-                          else if (
-                            !hebrewOnly.test(trimmed) &&
-                            !englishOnly.test(trimmed) &&
-                            !arabicOnly.test(trimmed)
-                          )
-                            error = "לא ניתן לערבב שפות";
-                          else if (trimmed.length < 2)
-                            error = "שם משפחה חייב להכיל לפחות 2 תווים";
-                          setErrors({ ...errors, lastName: !!error });
+
+                          if (isTooLong) {
+                            error = "מקסימום 20 תווים";
+                          } else {
+                            if (!trimmed) error = "שם משפחה הוא שדה חובה";
+                            else if (!validChars.test(trimmed)) error = "רק אותיות";
+                            else if (
+                              !hebrewOnly.test(trimmed) &&
+                              !englishOnly.test(trimmed) &&
+                              !arabicOnly.test(trimmed)
+                            )
+                              error = "לא ניתן לערבב שפות";
+                            else if (trimmed.length < 2)
+                              error = "שם משפחה חייב להכיל לפחות 2 תווים";
+                          }
+
+                          setErrors((prev) => ({ ...prev, lastName: !!error }));
                           setFieldErrors((prev) => ({
                             ...prev,
                             lastName: error,
                           }));
                         }}
-                        className={`w-full py-3 px-4 pl-11 border-2 ${errors.lastName ? "border-red-300" : "border-gray-300"} rounded-lg text-right text-sm`}
+                        className={`w-full py-3 px-4 pl-11 border-2 ${errors.lastName ? "border-red-300" : "border-gray-300"
+                          } rounded-lg text-right text-sm`}
                         placeholder="הכנס שם משפחה..."
                         dir="rtl"
                       />
@@ -429,34 +452,46 @@ const Login: FC<LoginProps> = () => {
                       type="text"
                       value={userName}
                       onChange={(e) => {
-                        const val = e.target.value;
+                        const raw = e.target.value;
+
+                        const isTooLong = raw.length > MAX_NAME_LENGTH;
+
+                        const val = raw.slice(0, MAX_NAME_LENGTH);
                         setuserName(val);
+
                         const trimmed = val.trim();
                         const validUserNameChars =
                           /^[א-תa-zA-Z\u0600-\u06FF0-9]+$/;
                         const validUserNameLang =
                           /^[א-ת0-9]+$|^[a-zA-Z0-9]+$|^[\u0600-\u06FF0-9]+$/;
+
                         let error = "";
-                        if (!trimmed) {
-                          error = "שם משתמש הוא שדה חובה";
-                        } else if (!isReturningUser) {
-                          if (!validUserNameChars.test(trimmed))
-                            error = "רק אותיות ומספרים";
-                          else if (!validUserNameLang.test(trimmed))
-                            error = "לא ניתן לערבב שפות";
-                          else if (
-                            (trimmed.match(/[א-תa-zA-Z\u0600-\u06FF]/g) || [])
-                              .length < 2
-                          )
-                            error = "חייב להכיל לפחות 2 אותיות";
+
+                        if (isTooLong) {
+                          error = "מקסימום 20 תווים";
+                        } else {
+                          if (!trimmed) {
+                            error = "שם משתמש הוא שדה חובה";
+                          } else if (!isReturningUser) {
+                            if (!validUserNameChars.test(trimmed))
+                              error = "רק אותיות ומספרים";
+                            else if (!validUserNameLang.test(trimmed))
+                              error = "לא ניתן לערבב שפות";
+                            else if (
+                              (trimmed.match(/[א-תa-zA-Z\u0600-\u06FF]/g) || []).length < 2
+                            )
+                              error = "חייב להכיל לפחות 2 אותיות";
+                          }
                         }
-                        setErrors({ ...errors, userName: !!error });
+
+                        setErrors((prev) => ({ ...prev, userName: !!error }));
                         setFieldErrors((prev) => ({
                           ...prev,
                           userName: error,
                         }));
                       }}
-                      className={`w-full py-3 px-4 pl-11 border-2 ${errors.userName ? "border-red-300" : "border-gray-300"} rounded-lg text-right text-sm`}
+                      className={`w-full py-3 px-4 pl-11 border-2 ${errors.userName ? "border-red-300" : "border-gray-300"
+                        } rounded-lg text-right text-sm`}
                       placeholder="הכנס שם משתמש..."
                       dir="rtl"
                     />
@@ -472,7 +507,6 @@ const Login: FC<LoginProps> = () => {
                   )}
                 </div>
 
-                {/* אימייל */}
                 <div className="flex-1">
                   <label className="block text-right text-gray-700 font-semibold mb-4 text-base">
                     אימייל
@@ -483,18 +517,28 @@ const Login: FC<LoginProps> = () => {
                       value={email}
                       onChange={(e) => {
                         const val = e.target.value;
-                        setEmail(val);
-                        const trimmed = val.trim();
+
+                        const sanitizedValue = val.replace(/[\u0590-\u05FF\u0600-\u06FF]/g, "");
+                        setEmail(sanitizedValue);
+
+                        const trimmed = sanitizedValue.trim();
                         let error = "";
+
                         if (!trimmed) error = "כתובת מייל היא שדה חובה";
-                        else if (!isEmail(trimmed))
-                          error = "כתובת מייל לא תקינה";
+                        else if (!isEmail(trimmed)) error = "כתובת מייל לא תקינה";
+
                         setErrors({ ...errors, email: !!error });
                         setFieldErrors((prev) => ({ ...prev, email: error }));
                       }}
-                      className={`w-full py-3 px-4 pl-11 border-2 ${errors.email ? "border-red-300" : "border-gray-300"} rounded-lg text-right text-sm`}
+                      onKeyDown={(e) => {
+                        if (/[\u0590-\u05FF\u0600-\u06FF]/.test(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                      className={`w-full py-3 px-4 pl-11 border-2 ${errors.email ? "border-red-300" : "border-gray-300"
+                        } rounded-lg text-left text-sm`}
                       placeholder="הכנס אימייל..."
-                      dir="rtl"
+                      dir="ltr"
                     />
                     <MailQuestionIcon
                       size={20}
@@ -536,7 +580,7 @@ const Login: FC<LoginProps> = () => {
                   focus:ring-offset-2
                 "
               >
-                התחבר
+                התחברות
               </button>
             </>
           )}

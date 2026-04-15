@@ -19,6 +19,10 @@ import { permissionsService } from "../../../../services/permissions.service";
 import { usePath } from "../../../../context/PathContext";
 import { Spinner } from '../../../ui/spinner';
 import { PathDisplay } from "../../SharedComponents/PathDisplay/PathDisplay";
+import {
+  getSafeCategoryImage,
+  getSafeProductImage,
+} from "../../../../lib/imageFallback";
 
 interface Group {
   _id: string;
@@ -347,35 +351,26 @@ const ProductPermissions: React.FC = () => {
         );
         return;
       }
-      const blockedByProduct = allIds.filter((id) => isBlockedInProduct(id));
-      if (blockedByProduct.length > 0) {
-        toast.error(
-          "לא ניתן לשחרר לכולם - חלק מהמשתמשים/קבוצות חסומים במוצר",
-        );
-        return;
-      }
     }
     setPathStates((prev) => {
-        const pathState = prev[path];
-        if (!pathState) return prev;
+      const pathState = prev[path];
+      if (!pathState) return prev;
 
-        return {
-          ...prev,
-          [path]: {
-            ...pathState,
-
-            users: pathState.users.map((u) => ({
-              ...u,
-              enabled: u.groupIds.length === 0 ? enabled : false,
-            })),
-
-            groups: pathState.groups.map((g) => ({
-              ...g,
-              members: enabled,
-            })),
-          },
-        };
-      });
+      return {
+        ...prev,
+        [path]: {
+          ...pathState,
+          users: pathState.users.map((u) => ({
+            ...u,
+            enabled: u.groupIds.length === 0 ? enabled : false,
+          })),
+          groups: pathState.groups.map((g) => ({
+            ...g,
+            members: enabled,
+          })),
+        },
+      };
+    });
   };
 
   const savePermissionsForPath = async (pathData: PathData) => {
@@ -544,7 +539,7 @@ const ProductPermissions: React.FC = () => {
           <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
             <div className="relative">
               <img
-                src={productData.image || "/placeholder-image.png"}
+               src={getSafeProductImage(undefined, productData.image)}
                 className="w-24 h-24 rounded-xl border-2 border-white shadow-lg object-cover bg-white"
                 alt={productData.name}
               />
@@ -602,7 +597,7 @@ const ProductPermissions: React.FC = () => {
                     <div className="flex items-center gap-3 flex-1 text-right min-w-0">
                       {!pathData.isRootLevel && (
                         <img
-                          src={pathData.categoryImage || "/placeholder-image.png"}
+                         src={getSafeCategoryImage(pathData.categoryImage)}
                           className="w-14 h-14 rounded-lg object-cover border border-gray-200 flex-shrink-0"
                           alt={pathData.categoryName}
                         />
@@ -723,12 +718,12 @@ const ProductPermissions: React.FC = () => {
                                               {user.blockedByProduct && !user.effectiveEnabled && (
                                                 <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full whitespace-nowrap flex items-center gap-1 flex-shrink-0">
                                                   <Lock className="w-3 h-3" />
-                                                  חסום במוצר
+                                                 המוצר חסום למשתמש
                                                 </span>
                                               )}
                                               {user.blockedByCategory && !user.effectiveEnabled && (
                                                 <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">
-                                                  חסום בקטגוריה
+                                                 קטגורית האב חסומה למשתמש
                                                 </span>
                                               )}
                                               {!user.blockedByProduct &&
@@ -799,10 +794,8 @@ const ProductPermissions: React.FC = () => {
                                 >
                                   <div className="bg-white border rounded-lg max-h-48 overflow-y-auto">
                                     {pathState.groups.map((group) => {
-                                      const blockedByProduct =
-                                        isBlockedInProduct(group._id);
-                                      const blockedByCategory =
-                                        isBlockedInCategory(pathData, group._id);
+                                      const blockedByProduct = !group.members && !productPermissions.some(p => p.allowed === group._id);                    
+                                      const blockedByCategory = !group.members && isBlockedInCategory(pathData, group._id);
                                       return (
                                         <div
                                           key={group._id}
@@ -815,12 +808,12 @@ const ProductPermissions: React.FC = () => {
                                             {blockedByProduct && (
                                               <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full whitespace-nowrap flex items-center gap-1">
                                                 <Lock className="w-3 h-3" />
-                                                חסום במוצר
+                                                המוצר חסום לקבוצה
                                               </span>
                                             )}
                                             {blockedByCategory && (
                                               <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">
-                                                חסום בקטגוריה
+                                               קטגורית האב חסומה לקבוצה
                                               </span>
                                             )}
                                           </div>

@@ -29,8 +29,11 @@ export class UsersController {
   }
 
   @Get()
-  GetAllUsers(@Query('role') role?: string) {
-    return this.usersService.getAllUsers(role);
+  GetAllUsers(
+    @Query('role') role?: string,
+    @Query('approved') approved?: string,
+  ) {
+    return this.usersService.getAllUsers(role, approved);
   }
 
   @Delete(':id')
@@ -51,11 +54,11 @@ export class UsersController {
   }
 
   @Patch(':id/block')
-  toggleBlockUser(
+  async toggleBlockUser(
     @Param('id') id: string,
     @Body('isBlocked') isBlocked: boolean,
   ) {
-    return this.usersService.toggleBlockUser(id, isBlocked);
+    return await this.usersService.toggleBlockUser(id, isBlocked);
   }
 
   @Get('me/favorites')

@@ -12,6 +12,7 @@ import { LoginDto } from './dtos/Login.dto';
 import { User, UserRole } from 'src/schemas/Users.schema';
 import { UsersService } from 'src/users/users.service';
 import { BadRequestException } from '@nestjs/common';
+import { SocketService } from 'src/socket/socket.service';
 
 @Injectable()
 export class AuthService {
@@ -19,7 +20,8 @@ export class AuthService {
     @InjectModel(User.name) private readonly userModel: Model<User>,
     private readonly jwtService: JwtService,
     private readonly usersService: UsersService,
-  ) {}
+    private readonly socketService: SocketService
+  ) { }
 
   async login(dto: LoginDto) {
     const user = await this.userModel
@@ -27,8 +29,7 @@ export class AuthService {
         email: dto.email,
         userName: dto.userName,
       })
-      .select('_id role approved requestSent');
-
+      .select('_id role approved requestSent userName isBlocked');
     if (!user) {
       const emailExists = await this.userModel.findOne({ email: dto.email });
       const userNameExists = await this.userModel.findOne({
@@ -58,6 +59,15 @@ export class AuthService {
         isBlocked: false,
       });
 
+      this.socketService.emitToRole(UserRole.EDITOR, 'new_user_created', {
+        _id: newUser._id,
+        email: newUser.email,
+        userName: newUser.userName,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        role: newUser.role,
+      });
+
       throw new ForbiddenException({
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         code: 'USER_CREATED_NOT_APPROVED',
@@ -83,6 +93,11 @@ export class AuthService {
       sub: user._id,
       role: user.role,
     };
+    if (user.isBlocked) {
+      throw new ForbiddenException({
+        code: 'USER_IS_BLOCKED',
+      });
+    }
 
     const accessToken = this.jwtService.sign(payload, {
       expiresIn: '30d',
@@ -92,6 +107,7 @@ export class AuthService {
       user: {
         id: user._id,
         role: user.role,
+        userName: user.userName,
       },
     };
   }

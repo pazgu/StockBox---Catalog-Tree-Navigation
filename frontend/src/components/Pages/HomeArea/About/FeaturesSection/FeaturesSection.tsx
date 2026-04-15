@@ -157,14 +157,19 @@ const FeaturesSection: FC<FeaturesSectionProps> = ({
               />
 
               {isDirty(key) && (
-                <button
-                  type="button"
-                  onClick={() => confirmField(key, title)}
-                  className="h-10 w-10 rounded-full border border-green-600 text-green-700 hover:bg-green-50 grid place-items-center flex-shrink-0"
-                  title="אשר שינוי"
-                >
-                  <Check size={18} />
-                </button>
+                <div className="group relative flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => confirmField(key, title)}
+                    className="h-10 w-10 rounded-full border border-green-600 text-green-700 hover:bg-green-50 grid place-items-center"
+                  >
+                    <Check size={18} />
+                  </button>
+
+                  <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-50">
+                    אישור שינוי
+                  </span>
+                </div>
               )}
             </div>
           ) : (
@@ -178,11 +183,10 @@ const FeaturesSection: FC<FeaturesSectionProps> = ({
           <button
             onClick={handleAddClick}
             disabled={hasUnconfirmedChanges}
-            className={`ml-3 mt-4 inline-flex items-center gap-1 font-semibold text-sm ${
-              hasUnconfirmedChanges
+            className={`ml-3 mt-4 inline-flex items-center gap-1 font-semibold text-sm ${hasUnconfirmedChanges
                 ? "text-gray-400 cursor-not-allowed"
                 : "text-stockblue hover:text-blue-700"
-            }`}
+              }`}
             title={hasUnconfirmedChanges ? "יש לאשר שינויים (✓) לפני הוספת פיצ'ר" : "הוסף פיצ'ר"}
           >
             הוסף פיצ'ר
@@ -202,9 +206,8 @@ const FeaturesSection: FC<FeaturesSectionProps> = ({
               ref={(el) => {
                 if (el) itemRefs.current[index] = el;
               }}
-              className={`relative bg-white/90 backdrop-blur-[8px] rounded-[14px] p-5 flex items-start gap-3.5 shadow-[0_4px_20px_rgba(0,0,0,0.06)] border border-stockblue/8 transition-all duration-[250ms] ease-out hover:transform hover:-translate-y-[3px] hover:shadow-[0_8px_30px_rgba(0,0,0,0.1)] hover:bg-white/96 ${
-                isEditing ? "cursor-move" : ""
-              } ${draggedIndex === index ? "opacity-50" : ""}`}
+              className={`relative bg-white/90 backdrop-blur-[8px] rounded-[14px] p-5 flex items-start gap-3.5 shadow-[0_4px_20px_rgba(0,0,0,0.06)] border border-stockblue/8 transition-all duration-[250ms] ease-out hover:transform hover:-translate-y-[3px] hover:shadow-[0_8px_30px_rgba(0,0,0,0.1)] hover:bg-white/96 ${isEditing ? "cursor-move" : ""
+                } ${draggedIndex === index ? "opacity-50" : ""}`}
               draggable={isEditing && !hasUnconfirmedChanges}
               onDragStart={() => handleDragStart(index)}
               onDragOver={(e) => handleDragOver(e, index)}
@@ -295,16 +298,20 @@ const FeaturesSection: FC<FeaturesSectionProps> = ({
                         className="text-[0.97rem] text-gray-600 leading-[1.6] w-full border-2 border-stockblue/30 rounded px-3 py-2 focus:outline-none focus:border-stockblue min-h-[80px]"
                       />
                     </div>
-
                     {isDirty(cardKey) && (
-                      <button
-                        type="button"
-                        onClick={() => confirmField(cardKey, getCardValue(feature))}
-                        className="mt-1 h-9 w-9 rounded-full border border-green-600 text-green-700 hover:bg-green-50 grid place-items-center flex-shrink-0"
-                        title="אשר שינוי"
-                      >
-                        <Check size={16} />
-                      </button>
+                      <div className="group relative mt-1 flex-shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => confirmField(cardKey, getCardValue(feature))}
+                          className="h-9 w-9 rounded-full border border-green-600 text-green-700 hover:bg-green-50 grid place-items-center"
+                        >
+                          <Check size={16} />
+                        </button>
+
+                        <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-50">
+                          אישור שינוי
+                        </span>
+                      </div>
                     )}
                   </div>
                 ) : (

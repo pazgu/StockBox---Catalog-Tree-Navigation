@@ -7,7 +7,7 @@ import { usePath } from "../../../context/PathContext";
 import SearchBar from "../SearchBar/SearchBar/SearchBar";
 import bin_open from "../../../assets/bin-open.png";
 import bin_closed from "../../../assets/bin_closed.png";
-
+import { stringToColor } from "../../../components/Pages/UserControlArea/AllUsers/AllUsers"
 interface HeaderProps {
   logoSrc?: string;
   cartItemCount?: number;
@@ -25,12 +25,13 @@ const Header: React.FC<HeaderProps> = ({
   const location = useLocation();
   const navigate = useNavigate();
   const { setPreviousPath } = usePath();
-  const { role, setUser } = useUser();
+  const { role, user, setUser } = useUser();
 
   const handleSearchSelect = (item: any) => {
     setIsMobileMenuOpen(false);
     if (item.type === "product") {
-      setPreviousPath(location.pathname);
+      setPreviousPath(item.paths[0].slice(0, item.paths[0].lastIndexOf("/")));
+
       navigate(`/products/${item.id}`);
     } else if (item.type === "category") {
       navigate(`${item.paths[0]}`);
@@ -39,6 +40,10 @@ const Header: React.FC<HeaderProps> = ({
 
   const handleLogout = () => {
     setUser(null);
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("previousPath");
+    localStorage.removeItem("groupControl:selectedGroupId");
     navigate("/login");
   };
 
@@ -90,7 +95,7 @@ const Header: React.FC<HeaderProps> = ({
         {role && (
           <button
             aria-label="Logout"
-            className="relative p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 group"
+            className="relative p-2 rounded-full text-white transition-all duration-300 group"
             onClick={handleLogout}
           >
             <LogOut
@@ -102,9 +107,27 @@ const Header: React.FC<HeaderProps> = ({
             </span>
           </button>
         )}
+
+        <div className="flex items-center gap-2">
+          {role && user && (
+            <div className="hidden lg:flex items-center gap-2 mr-4">
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center text-gray-800 text-sm font-bold flex-shrink-0"
+                style={{
+                  backgroundColor: stringToColor(user.userName),
+                }}
+              >
+                {user.userName?.[0]?.toUpperCase()}
+              </div>
+              <span className="text-white text-sm font-medium">
+                {user.userName}
+              </span>
+            </div>
+          )}
+        </div>
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-20">
-            <div className="hidden sm:block flex-shrink-0 transform transition-transform duration-300 hover:scale-105 cursor-pointer">
+          <div className="flex items-center justify-between h-20 overflow-visible">
+            <div className="hidden sm:block flex-shrink-0 transform transition-transform duration-300 hover:scale-105 cursor-pointer mr-18">
               <img
                 src={logoSrc}
                 alt="StockBox Logo"
@@ -134,9 +157,7 @@ const Header: React.FC<HeaderProps> = ({
               </nav>
             </div>
 
-            <div
-              className={`relative flex-1 max-w-md mx-4 ${isMobileMenuOpen ? "hidden" : ""}`}
-            >
+            <div className="hidden md:block relative flex-1 max-w-md mx-4">
               <SearchBar onSelectResult={handleSearchSelect} />
             </div>
 
@@ -212,7 +233,7 @@ const Header: React.FC<HeaderProps> = ({
 
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 active:scale-95 ml-auto"
+              className="lg:hidden flex-shrink-0 ml-2 p-2 rounded-full text-white hover:bg-white/10 transition-all duration-300 active:scale-95 ml-auto"
             >
               <Menu
                 size={24}
@@ -238,6 +259,19 @@ const Header: React.FC<HeaderProps> = ({
                 onClick={() => setIsMobileMenuOpen(false)}
               />
             </div>
+            {role && user && (
+              <div className="flex items-center gap-3 mb-4 pb-4 border-b border-white/20">
+                <div className="w-10 h-10 rounded-full bg-[#BA9F71] flex items-center justify-center text-white text-base font-bold">
+                  {user.userName?.[0]?.toUpperCase()}
+                </div>
+                <div className="flex flex-col text-right">
+                  <span className="text-white font-medium">
+                    {user.userName}
+                  </span>
+                  <span className="text-white/60 text-xs">{role}</span>
+                </div>
+              </div>
+            )}
 
             <nav className="flex flex-col gap-4" dir="rtl">
               <div className="relative z-[999]">

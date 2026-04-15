@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
@@ -15,6 +17,9 @@ import { CreateGroupDto } from './dto/createGroup.dto';
 import { UpdateGroupDto } from './dto/updateGroup.dto';
 import { PermissionsService } from 'src/permissions/permissions.service';
 import { forwardRef } from '@nestjs/common';
+import { SocketService } from 'src/socket/socket.service';
+import { User, UserRole } from 'src/schemas/Users.schema';
+
 @Injectable()
 export class GroupsService {
   constructor(
@@ -22,6 +27,7 @@ export class GroupsService {
     private readonly groupModel: Model<GroupDocument>,
     @Inject(forwardRef(() => PermissionsService))
     private permissionsService: PermissionsService,
+    private readonly socketService: SocketService,
   ) {}
 
   async findAll(): Promise<GroupDocument[]> {
@@ -61,6 +67,15 @@ export class GroupsService {
 
     await newGroup.populate('members', 'username firstName lastName');
 
+    this.socketService.emitToRole(UserRole.EDITOR, 'new_group_created', {
+      id: newGroup._id.toString(),
+      name: newGroup.groupName,
+      members:
+        newGroup.members?.map((m: any) =>
+          typeof m === 'string' ? m : m._id.toString(),
+        ) ?? [],
+    });
+
     return newGroup;
   }
 
@@ -77,6 +92,16 @@ export class GroupsService {
       if (existingGroup) {
         throw new ConflictException(`שם זה כבר קיים. נא לבחור שם ייחודי אחר.`);
       }
+    }
+
+    const oldMemberIds: Set<string> = new Set();
+    if (Array.isArray(updateGroupDto.members)) {
+      const groupBefore = await this.groupModel.findById(id).lean().exec();
+      if (!groupBefore)
+        throw new NotFoundException(`Group with ID ${id} not found`);
+      (groupBefore.members ?? []).forEach((m: any) =>
+        oldMemberIds.add(m.toString()),
+      );
     }
 
     const updatedGroup = await this.groupModel
@@ -115,15 +140,49 @@ export class GroupsService {
       }
     }
 
+    if (Array.isArray(updateGroupDto.members)) {
+      const newMemberIds = new Set(
+        (updatedGroup.members ?? []).map((m: any) =>
+          typeof m === 'object' ? m._id.toString() : m.toString(),
+        ),
+      );
+
+      const affectedUserIds = [
+        ...[...oldMemberIds].filter((uid) => !newMemberIds.has(uid)),
+        ...[...newMemberIds].filter((uid) => !oldMemberIds.has(uid)),
+      ];
+
+      this.socketService.emitToUsers(affectedUserIds, 'permissions_updated');
+    }
+
+    this.socketService.emitToRole(UserRole.EDITOR, 'group_edited', {
+      id: updatedGroup._id.toString(),
+      name: updatedGroup.groupName,
+      members:
+        updatedGroup.members?.map((m: any) =>
+          typeof m === 'string' ? m : m._id.toString(),
+        ) ?? [],
+    });
     return updatedGroup;
   }
 
   async delete(id: string): Promise<void> {
     const result = await this.groupModel.findByIdAndDelete(id).exec();
-    await this.permissionsService.deletePermissionsForAllowed(id);
+
     if (!result) {
       throw new NotFoundException(`Group with ID ${id} not found`);
     }
+
+    await this.permissionsService.deletePermissionsForAllowed(id);
+
+    this.socketService.emitToRole(UserRole.EDITOR, 'group_deleted', {
+      id: result._id.toString(),
+      name: result.groupName,
+      members:
+        result.members?.map((m: any) =>
+          typeof m === 'string' ? m : m._id.toString(),
+        ) ?? [],
+    });
   }
 
   async getOrCreateDefaultGroup(): Promise<GroupDocument> {
@@ -158,5 +217,10 @@ export class GroupsService {
     );
 
     return Array.from(new Set(allUserIds));
+  }
+  async getGroupByUserId(userId: string) {
+    return this.groupModel.findOne({
+      members: userId,
+    });
   }
 }

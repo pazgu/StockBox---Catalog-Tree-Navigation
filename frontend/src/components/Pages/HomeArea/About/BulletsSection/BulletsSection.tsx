@@ -133,14 +133,19 @@ const BulletsSection: React.FC<BulletsSectionProps> = ({
               />
 
               {isDirty(key) && (
-                <button
-                  type="button"
-                  onClick={() => confirmField(key, title)}
-                  className="mt-8 mb-4 h-10 w-10 rounded-full border border-green-600 text-green-700 hover:bg-green-50 grid place-items-center flex-shrink-0"
-                  title="אשר שינוי"
-                >
-                  <Check size={18} />
-                </button>
+                <div className="group relative mt-8 mb-4 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => confirmField(key, title)}
+                    className="h-10 w-10 rounded-full border border-green-600 text-green-700 hover:bg-green-50 grid place-items-center"
+                  >
+                    <Check size={18} />
+                  </button>
+
+                  <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-50">
+                    אישור שינוי
+                  </span>
+                </div>
               )}
             </div>
           ) : (
@@ -154,11 +159,10 @@ const BulletsSection: React.FC<BulletsSectionProps> = ({
           <button
             onClick={handleAddClick}
             disabled={hasUnconfirmedChanges}
-            className={`mt-4 ml-3 inline-flex items-center gap-1 font-semibold text-sm ${
-              hasUnconfirmedChanges
+            className={`mt-4 ml-3 inline-flex items-center gap-1 font-semibold text-sm ${hasUnconfirmedChanges
                 ? "text-gray-400 cursor-not-allowed"
                 : "text-stockblue hover:text-blue-700"
-            }`}
+              }`}
             title={
               hasUnconfirmedChanges
                 ? "יש לאשר שינויים (✓) לפני הוספת נקודה"
@@ -207,7 +211,7 @@ const BulletsSection: React.FC<BulletsSectionProps> = ({
                       if (el) inputRefs.current[i] = el;
                     }}
                     type="text"
-                      placeholder="נקודה חדשה"
+                    placeholder="נקודה חדשה"
                     value={b.text}
                     onChange={(e) => {
                       const val = e.target.value;
@@ -218,14 +222,19 @@ const BulletsSection: React.FC<BulletsSectionProps> = ({
                   />
 
                   {isDirty(key) && (
-                    <button
-                      type="button"
-                      onClick={() => confirmField(key, b.text)}
-                      className="h-9 w-9 rounded-full border border-green-600 text-green-700 hover:bg-green-50 grid place-items-center flex-shrink-0"
-                      title="אשר שינוי"
-                    >
-                      <Check size={16} />
-                    </button>
+                    <div className="group relative flex-shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => confirmField(key, b.text)}
+                        className="h-9 w-9 rounded-full border border-green-600 text-green-700 hover:bg-green-50 grid place-items-center"
+                      >
+                        <Check size={16} />
+                      </button>
+
+                      <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-md z-50">
+                        אישור שינוי
+                      </span>
+                    </div>
                   )}
 
                   {bullets.length > 1 && (

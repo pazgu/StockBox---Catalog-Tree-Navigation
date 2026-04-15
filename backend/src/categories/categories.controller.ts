@@ -18,6 +18,7 @@ import {
   UploadedFile,
   UseGuards,
   NotFoundException,
+  Query,
 } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dtos/CreateCategory.dto';
@@ -27,6 +28,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { categoryUploadsOptions } from './categoryUploads';
 import { PermissionGuard } from 'src/gaurds/permission.guard';
 import { AuthGuard } from '@nestjs/passport';
+import { MoveMultipleCategoriesDto } from './dtos/MoveMultipleCategories.dto';
 
 @Controller('categories')
 @UseGuards(AuthGuard('jwt'), PermissionGuard)
@@ -36,6 +38,10 @@ export class CategoriesController {
   @Get()
   async findAll(@Req() req) {
     return await this.categoriesService.getCategories(req.user);
+  }
+  @Get('search')
+  async searchCategories(@Req() req, @Query('q') query: string) {
+    return await this.categoriesService.searchCategories(req.user, query);
   }
 
   @Post()
@@ -64,7 +70,11 @@ export class CategoriesController {
       request.user,
     );
   }
-
+  @Patch('move-multiple')
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async moveMultipleCategories(@Body() dto: MoveMultipleCategoriesDto) {
+    return await this.categoriesService.moveMultipleCategories(dto);
+  }
   @Patch(':id/move')
   @UsePipes(new ValidationPipe({ transform: true }))
   async moveCategory(

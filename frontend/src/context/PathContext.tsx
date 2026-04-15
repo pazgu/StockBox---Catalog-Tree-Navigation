@@ -8,18 +8,29 @@ interface PathContextType {
 const PathContext = createContext<PathContextType | undefined>(undefined);
 
 export const PathProvider = ({ children }: { children: ReactNode }) => {
-  const [previousPath, setPreviousPathState] = useState<string | null>(null);
+  const [previousPath, setPreviousPathState] = useState<string | null>(() => {
+    return localStorage.getItem("previousPath");
+  });
+ 
 
-  useEffect(() => {
-    const saved = localStorage.getItem("previousPath");
-    if (saved) setPreviousPathState(saved);
-  }, []);
+  const dynamicPages = [
+    /^\/products\/[^/]+$/,
+    /^\/permissions\/[^/]+\/[^/]+$/,
+    /^\/permissions\/product\/[^/]+$/,
+    /^\/permissions\/category\/[^/]+$/
+  ];
 
   const setPreviousPath = (path: string | null) => {
-    setPreviousPathState(path);
+    if (path) {
+      const isDynamic = dynamicPages.some((pattern) => pattern.test(path));
+      if (isDynamic) return;
 
-    if (path) localStorage.setItem("previousPath", path);
-    else localStorage.removeItem("previousPath");
+      setPreviousPathState(path);
+      localStorage.setItem("previousPath", path);
+    } else {
+      setPreviousPathState(null);
+      localStorage.removeItem("previousPath");
+    }
   };
 
   return (

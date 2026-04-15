@@ -150,12 +150,40 @@ class CategoriesService {
       return null;
     }
   }
+  async searchCategories(query: string): Promise<CategoryDTO[]> {
+    try {
+      const response = await api.get<CategoryDTO[]>(`${this.baseUrl}/search`, {
+        params: { q: query },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error searching categories:", error);
+      throw error;
+    }
+  }
 
   async hasDescendants(id: string): Promise<boolean> {
-  const res = await api.get<{ hasDescendants: boolean }>(
-    `${this.baseUrl}/${id}/has-descendants`,
-  );
-  return res.data.hasDescendants;
+    const res = await api.get<{ hasDescendants: boolean }>(
+      `${this.baseUrl}/${id}/has-descendants`,
+    );
+    return res.data.hasDescendants;
+  }
+
+  async moveMultipleCategories(dto: {
+  categoryIds: string[];
+  newParentPath: string;
+}): Promise<{
+  successCount: number;
+  failCount: number;
+  results: { id: string; success: boolean; error?: string }[];
+}> {
+  try {
+    const response = await api.patch(`${this.baseUrl}/move-multiple`, dto);
+    return response.data;
+  } catch (error) {
+    console.error("Error moving multiple categories:", error);
+    throw error;
+  }
 }
 
 }

@@ -10,6 +10,7 @@ import {
   Video,
   Music,
   FileText,
+  Lock,
 } from "lucide-react";
 
 import { useUser } from "../../../../context/UserContext";
@@ -38,25 +39,45 @@ import { usePath } from "../../../../context/PathContext";
 import { useDebouncedFavoriteSingle } from "../../../../hooks/useDebouncedFavoriteSingle";
 import { isLength } from "validator";
 import { environment } from "../../../../environments/environment.development";
+import UnsavedChangesDialog from "../../SharedComponents/UnsavedChangesDialog/UnsavedChangesDialog";
+import { useSocket } from "../../../../hooks/useSocket";
+import {
+  CatalogItemsRemovedPayload,
+  ProductRestoredPayload,
+  ProductDeletedPayload,
+} from "../../../models/socket.models";
+
+type EditLockChangedPayload = {
+  productId: string;
+  isBlocked: boolean;
+  blockedBy: { userId: string; userName: string } | null;
+};
+
 interface SingleProdProps { }
 
 function normalizeImages(images: string[]) {
-  return (images || [])
-    .filter((u) => typeof u === "string" && u.trim().length > 0);
+  return (images || []).filter(
+    (u) => typeof u === "string" && u.trim().length > 0,
+  );
 }
 
 const SingleProd: FC<SingleProdProps> = () => {
   const { role, id } = useUser();
+  const token = localStorage.getItem("token") || "";
+  const { onEvent, offEvent, joinRoleRoom } = useSocket({ token });
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
   const [product, setProduct] = useState<ProductDto | null>(null);
   const [originalProduct, setOriginalProduct] = useState<ProductDto | null>(
     null,
   );
+  const ALLOWED_CHARS = /^[\u0590-\u05FFa-zA-Z0-9 ._]*$/;
   const [newAccordionType, setNewAccordionType] = useState<
     "bullets" | "content" | null
   >(null);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showAccordionTypeSelector, setShowAccordionTypeSelector] =
     useState(false);
   const [accordionData, setAccordionData] = useState<AccordionData[]>([]);
@@ -74,25 +95,37 @@ const SingleProd: FC<SingleProdProps> = () => {
   const [isUploadingImages, setIsUploadingImages] = useState(false);
   const { productId } = useParams<{ productId: string }>();
   const [user, setUser] = useState<User | null>(null);
-  const { previousPath } = usePath();
+  const { previousPath, setPreviousPath } = usePath();
   const [isLoading, setIsLoading] = useState(true);
   const [isReplacingImage, setIsReplacingImage] = useState(false);
+  const [isProductBlocked, setIsProductBlocked] = useState(false);
+  const MAX_EDIT_NAME_LEN = 30;
+  const getRemovedProductToastText = (name: string) => {
+    return role === "editor"
+      ? `המוצר "${name}" הועבר לסל המיחזור`
+      : `המוצר "${name}" נמחק`;
+  };
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.slice(0, MAX_EDIT_NAME_LEN);
 
-  useEffect(() => {
-    if (!productId) {
-      setIsLoading(false);
-      return;
-    }
-    const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(productId);
-    if (!isValidObjectId) {
-      navigate("/404", { replace: true });
-      return;
-    }
+    setTitle(value);
 
-    const loadProduct = async () => {
-      setIsLoading(true);
+    if (!ALLOWED_CHARS.test(value)) {
+      setErrorMessage("ניתן להשתמש רק באותיות, מספרים, רווחים והתווים . _");
+    } else {
+      setErrorMessage("");
+    }
+  };
+  const loadProduct = async () => {
+    setIsLoading(true);
+    if (productId)
       try {
         const product = await ProductsService.getById(productId);
+        if (product.isBlocked && product.blockedBy?.userId === id) {
+          await ProductsService.setEditLock(productId, false);
+          product.isBlocked = false;
+          product.blockedBy = null;
+        }
 
         setTitle(product.productName);
         setDescription(product.productDescription || "");
@@ -106,6 +139,7 @@ const SingleProd: FC<SingleProdProps> = () => {
         setCurrentImageIndex(0);
         setProduct(product);
         setOriginalProduct(product);
+        setIsProductBlocked(product.isBlocked ?? false);
 
         if (Array.isArray(product.customFields)) {
           const accordion = product.customFields.map((field: any) => ({
@@ -155,11 +189,287 @@ const SingleProd: FC<SingleProdProps> = () => {
       } finally {
         setIsLoading(false);
       }
+  };
+  useEffect(() => {
+    return () => {
+      if (isEditing && productId) {
+        ProductsService.setEditLock(productId, false);
+      }
     };
+  }, [isEditing, productId]);
+
+  useEffect(() => {
+    if (!productId) return;
+    const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(productId);
+    if (!isValidObjectId) {
+      navigate("/404", { replace: true });
+      return;
+    }
 
     loadProduct();
   }, [productId, navigate, id]);
 
+  useEffect(() => {
+    if (!productId) return;
+    joinRoleRoom("editor");
+    if (id) {
+      joinRoleRoom(id);
+    }
+    const groupId = localStorage.getItem("groupControl:selectedGroupId");
+    if (groupId && role === "viewer") {
+      joinRoleRoom(groupId);
+    }
+    const handleCategoryPermissionsChanged = (data: {
+      categoryPath: string;
+    }) => {
+      const previousPath = localStorage.getItem("previousPath") || "";
+
+      if (!previousPath.startsWith(data.categoryPath)) return;
+
+      loadProduct();
+    };
+
+    const handleProductUpdated = (updatedProduct: ProductDto) => {
+      if (updatedProduct._id !== productId) return;
+      setIsProductBlocked(updatedProduct.isBlocked ?? false);
+      if (isEditing) return;
+
+      setTitle(updatedProduct.productName);
+      setDescription(updatedProduct.productDescription || "");
+      setProduct(updatedProduct);
+      setIsProductBlocked(updatedProduct.isBlocked ?? false);
+      const defaultUrl = environment.DEFAULT_PRODUCT_IMAGE_URL;
+      const cleaned = normalizeImages(
+        updatedProduct.productImages || [],
+      ).filter((url) => url !== defaultUrl);
+      setProductImages(cleaned);
+      setCurrentImageIndex(0);
+
+      if (Array.isArray(updatedProduct.customFields)) {
+        const accordion = updatedProduct.customFields.map((field: any) => ({
+          id: field._id,
+          uiId: field._id,
+          title: field.title,
+          type: field.type,
+          content:
+            field.type === "bullets"
+              ? JSON.stringify(field.bullets)
+              : field.content,
+        }));
+        setAccordionData(accordion);
+      }
+
+      const folders =
+        updatedProduct.uploadFolders?.[0]?.folders.map((folder: any) => ({
+          uiId: folder._id,
+          name: folder.folderName,
+          files: folder.files.map((file: any) => ({
+            uiId: file._id,
+            name: file.link.split("/").pop(),
+            type: "",
+            url: file.link,
+            size: 0,
+          })),
+        })) || [];
+
+      setFolders(folders);
+    };
+
+    const handleEditLockChanged = (
+      data: EditLockChangedPayload | EditLockChangedPayload[],
+    ) => {
+      const items = Array.isArray(data) ? data : [data];
+      const match = items.find((item) => item.productId === productId);
+      if (!match) return;
+      setIsProductBlocked(match.isBlocked);
+      setProduct((prev) =>
+        prev ? { ...prev, blockedBy: match.blockedBy } : prev,
+      );
+    };
+    const handleMovedProduct = (data: {
+      savedProduct: ProductDto;
+      sourceCategoryPath: string;
+      newCategoryPath: string[];
+    }) => {
+      const { savedProduct: product, newCategoryPath } = data;
+
+      if (product._id !== productId) return;
+
+      if (isEditing) return;
+      console.log("nav");
+      setPreviousPath(newCategoryPath[0]);
+      navigate(`/products/${product._id}`, { replace: true });
+    };
+    const handleBannedPermissionsUpdated = async () => {
+      try {
+        await loadProduct();
+        toast.info("הרשאות עודכנו, טוען...");
+      } catch (err: any) {
+        console.error("Reload failed", err);
+      }
+    };
+    const handleEditLockExpired = (
+      data: { productId: string }[] | { productId: string },
+    ) => {
+      const items = Array.isArray(data) ? data : [data];
+      const match = items.find((item) => item.productId === productId);
+      if (!match) return;
+      if (editSnapshot) {
+        setTitle(editSnapshot.title);
+        setDescription(editSnapshot.description);
+        setProductImages(editSnapshot.productImages);
+        setAccordionData(editSnapshot.accordionData);
+        setFolders(editSnapshot.folders);
+        setCurrentImageIndex(0);
+      }
+
+      setIsEditing(false);
+      setEditSnapshot(null);
+      setNewFolderName("");
+      setShowNewFolderInput(false);
+
+      toast.warning("פג תוקף נעילת העריכה – השינויים לא נשמרו", {
+        duration: 6000,
+      });
+    };
+
+    const handleProductDeleted = (data: ProductDeletedPayload) => {
+      if (data.productId !== productId) return;
+
+      setPreviousPath("/categories");
+      toast.info(
+        data.movedToRecycleBin
+          ? `המוצר "${title || data.productName || ""}" הועבר לסל המיחזור`
+          : `המוצר "${title || data.productName || ""}" נמחק`,
+      );
+      navigate("/categories", { replace: true });
+    };
+
+    const handleProductRestored = (data: ProductRestoredPayload) => {
+      if (data.product._id !== productId) return;
+
+      if (isEditing) return;
+
+      toast.success(`המוצר "${data.product.productName}" שוחזר`);
+      loadProduct();
+    };
+
+    const handleCatalogItemsRemoved = (data: CatalogItemsRemovedPayload) => {
+      const movedCurrentProduct = data.movedProducts.find(
+        (product) => product.id === productId,
+      );
+
+      if (!movedCurrentProduct) return;
+
+      setPreviousPath("/categories");
+      toast.info(
+        getRemovedProductToastText(title || movedCurrentProduct.name || ""),
+      );
+      navigate("/categories", { replace: true });
+    };
+
+    const handleProductPermissionDeleted = (data: { product: ProductDto }) => {
+      const { product } = data;
+
+      if (product._id !== productId) return;
+
+      if (isEditing) return;
+      toast.info("הרשאות עודכנו, טוען...");
+      loadProduct();
+    };
+    const handleCategoryMoved = (data: {
+      oldPath: string;
+      newPath: string;
+    }) => {
+      const { oldPath, newPath } = data;
+
+      if (!product) return;
+
+      const affectedPath = product.productPath.find(p =>
+        p.startsWith(oldPath)
+      );
+
+      if (!affectedPath) return;
+
+      const updatedPath = affectedPath.replace(oldPath, newPath);
+
+      if (isEditing) {
+        setPreviousPath(updatedPath.split("/").slice(0, -1).join("/"));
+        return;
+      }
+
+      setPreviousPath(updatedPath.split("/").slice(0, -1).join("/"));
+      navigate(`/products/${product._id}`, { replace: true });
+    };
+    const handleCategoriesBatchMoved = (data: {
+      results: { oldPath: string; newPath: string }[];
+    }) => {
+      if (!product) return;
+
+      for (const { oldPath, newPath } of data.results) {
+        const affectedPath = product.productPath.find(p =>
+          p.startsWith(oldPath)
+        );
+
+        if (!affectedPath) continue;
+
+        const updatedPath = affectedPath.replace(oldPath, newPath);
+
+        const newParent = updatedPath.split("/").slice(0, -1).join("/");
+
+        if (isEditing) {
+          setPreviousPath(newParent);
+          return;
+        }
+
+        setPreviousPath(newParent);
+        navigate(`/products/${product._id}`, { replace: true });
+        return;
+      }
+    };
+    onEvent("categories_batch_moved", handleCategoriesBatchMoved);
+    onEvent("category_moved", handleCategoryMoved);
+    onEvent("product_updated", handleProductUpdated);
+    onEvent("product_moved", handleMovedProduct);
+    onEvent("banned_items_permissions_updated", handleBannedPermissionsUpdated);
+    onEvent("category_permissions_changed", handleCategoryPermissionsChanged);
+    onEvent("product_deleted", handleProductDeleted);
+    onEvent("catalog_items_removed", handleCatalogItemsRemoved);
+    onEvent("product_restored", handleProductRestored);
+    onEvent("product_permission_deleted", handleProductPermissionDeleted);
+    onEvent("product_edit_lock_changed", handleEditLockChanged);
+    onEvent("product_edit_lock_expired", handleEditLockExpired);
+    return () => {
+      offEvent("categories_batch_moved", handleCategoriesBatchMoved);
+      offEvent("product_updated", handleProductUpdated);
+      offEvent("product_moved", handleMovedProduct);
+      offEvent(
+        "banned_items_permissions_updated",
+        handleBannedPermissionsUpdated,
+      );
+      offEvent(
+        "category_permissions_changed",
+        handleCategoryPermissionsChanged,
+      );
+      offEvent("category_moved", handleCategoryMoved);
+      offEvent("product_deleted", handleProductDeleted);
+      offEvent("catalog_items_removed", handleCatalogItemsRemoved);
+      offEvent("product_restored", handleProductRestored);
+      offEvent("product_permission_deleted", handleProductPermissionDeleted);
+      offEvent("product_edit_lock_changed", handleEditLockChanged);
+      offEvent("product_edit_lock_expired", handleEditLockExpired);
+    };
+  }, [
+    productId,
+    isEditing,
+    onEvent,
+    offEvent,
+    title,
+    role,
+    setPreviousPath,
+    navigate,
+    loadProduct,
+  ]);
   const location = useLocation();
   const breadcrumbPath = useMemo<string[]>(
     () => [
@@ -181,7 +491,7 @@ const SingleProd: FC<SingleProdProps> = () => {
   };
 
   const [editSnapshot, setEditSnapshot] = useState<EditSnapshot | null>(null);
-  const enterEditMode = () => {
+  const enterEditMode = async () => {
     setEditSnapshot({
       title,
       description,
@@ -190,9 +500,9 @@ const SingleProd: FC<SingleProdProps> = () => {
       folders: JSON.parse(JSON.stringify(folders)),
     });
     setIsEditing(true);
+    await ProductsService.setEditLock(productId!, true);
   };
-
-  const cancelEdit = () => {
+  const cancelEdit = async () => {
     if (!editSnapshot) {
       setIsEditing(false);
       return;
@@ -207,6 +517,42 @@ const SingleProd: FC<SingleProdProps> = () => {
     setCurrentImageIndex(0);
     setIsEditing(false);
     setEditSnapshot(null);
+    setNewFolderName("");
+    setShowNewFolderInput(false);
+    await ProductsService.setEditLock(productId!, false);
+  };
+
+  const hasUnsavedChanges = useMemo(() => {
+    if (!isEditing || !editSnapshot) return false;
+
+    return (
+      title !== editSnapshot.title ||
+      description !== editSnapshot.description ||
+      JSON.stringify(productImages) !==
+      JSON.stringify(editSnapshot.productImages) ||
+      JSON.stringify(accordionData) !==
+      JSON.stringify(editSnapshot.accordionData) ||
+      JSON.stringify(folders) !== JSON.stringify(editSnapshot.folders)
+    );
+  }, [
+    isEditing,
+    editSnapshot,
+    title,
+    description,
+    productImages,
+    accordionData,
+    folders,
+  ]);
+
+  const handleCancelClick = () => {
+    if (isSaving) return;
+
+    if (hasUnsavedChanges) {
+      setShowCancelConfirm(true);
+      return;
+    }
+
+    cancelEdit();
   };
 
   const handleAddImages = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -271,8 +617,6 @@ const SingleProd: FC<SingleProdProps> = () => {
     setIsReplacingImage(false);
   };
 
-  
-
   const handleDeleteImage = () => {
     const currentUrl = realImages[currentImageIndex];
     if (!currentUrl) return;
@@ -294,12 +638,12 @@ const SingleProd: FC<SingleProdProps> = () => {
     );
   };
 
-
-
   const handleAccordionTitleChange = (uiId: string, newTitle: string) => {
+    const value = newTitle.slice(0, MAX_EDIT_NAME_LEN);
+
     setAccordionData((prevData) =>
       prevData.map((item) =>
-        item.uiId === uiId ? { ...item, title: newTitle } : item,
+        item.uiId === uiId ? { ...item, title: value } : item,
       ),
     );
   };
@@ -390,10 +734,14 @@ const SingleProd: FC<SingleProdProps> = () => {
 
   const handleSaveClick = async () => {
     if (!isEditing) {
-      enterEditMode();
-      setIsEditing(true);
+      if (isProductBlocked) {
+        toast.error("מוצר זה נעול לעריכה על ידי עורך אחר");
+        return;
+      }
+      await enterEditMode();
       return;
     }
+
     const hasEmptyFields = accordionData.some((item) =>
       item.type === "content"
         ? !item.content?.trim()
@@ -404,6 +752,24 @@ const SingleProd: FC<SingleProdProps> = () => {
 
     if (hasEmptyFields) {
       toast.error("לא ניתן לשמור שדות ריקים");
+      return;
+    }
+    if (newFolderName.trim()) {
+      toast.error("חובה ליצור או למחוק את התיקייה לפני השמירה");
+      return;
+    }
+
+    const hasEmptyFolder = folders.some((folder) => folder.files.length === 0);
+    if (hasEmptyFolder) {
+      toast.error("לא ניתן לשמור תיקייה ריקה ללא קבצים");
+      return;
+    }
+    if (!title.trim()) {
+      toast.error("שם מוצר הוא שדה חובה");
+      return;
+    }
+    if (!ALLOWED_CHARS.test(title.trim())) {
+      toast.error("ניתן להשתמש רק באותיות, מספרים, רווחים והתווים . - _");
       return;
     }
 
@@ -424,18 +790,16 @@ const SingleProd: FC<SingleProdProps> = () => {
       ? [
         {
           title: "Default Group",
-          folders: folders
-            .filter((folder) => folder.files.length > 0)
-            .map((folder) => ({
-              ...(folder._id ? { _id: folder._id } : {}),
-              folderName: folder.name,
-              files: folder.files.map((file) => ({
-                ...(file._id ? { _id: file._id } : {}),
-                link: file.url,
-                name: file.name,
-                size: file.size,
-              })),
+          folders: folders.map((folder) => ({
+            ...(folder._id ? { _id: folder._id } : {}),
+            folderName: folder.name,
+            files: folder.files.map((file) => ({
+              ...(file._id ? { _id: file._id } : {}),
+              link: file.url,
+              name: file.name,
+              size: file.size,
             })),
+          })),
         },
       ]
       : [];
@@ -450,39 +814,20 @@ const SingleProd: FC<SingleProdProps> = () => {
       uploadFolders,
     };
     const hasChanges =
-      title !== originalProduct?.productName ||
-      description !== originalProduct?.productDescription ||
-      JSON.stringify(accordionData) !==
-      JSON.stringify(
-        originalProduct?.customFields?.map((field) => ({
-          uiId: field._id,
-          title: field.title,
-          type: field.type,
-          content:
-            field.type === "bullets"
-              ? JSON.stringify(field.bullets)
-              : field.content,
-        })),
-      ) ||
-      JSON.stringify(productImages) !==
-      JSON.stringify(originalProduct?.productImages) ||
-      JSON.stringify(folders) !==
-      JSON.stringify(
-        originalProduct?.uploadFolders?.[0]?.folders.map((folder) => ({
-          uiId: folder._id,
-          name: folder.folderName,
-          files: folder.files.map((f) => ({
-            uiId: f._id,
-            name: f.link.split("/").pop(),
-            url: f.link,
-            size: 0,
-          })),
-        })) || [],
-      );
+      !!editSnapshot &&
+      (title !== editSnapshot.title ||
+        description !== editSnapshot.description ||
+        JSON.stringify(productImages) !==
+        JSON.stringify(editSnapshot.productImages) ||
+        JSON.stringify(accordionData) !==
+        JSON.stringify(editSnapshot.accordionData) ||
+        JSON.stringify(folders) !== JSON.stringify(editSnapshot.folders));
 
     if (!hasChanges) {
       setIsEditing(false);
-      toast.info("לא נעשו שינויים");
+      setNewFolderName("");
+      setShowNewFolderInput(false);
+      await ProductsService.setEditLock(productId!, false);
       return;
     }
 
@@ -490,11 +835,17 @@ const SingleProd: FC<SingleProdProps> = () => {
       setIsSaving(true);
       await ProductsService.updateProduct(productId!, payload);
       toast.success("שינויים נשמרו בהצלחה");
+      await ProductsService.setEditLock(productId!, false);
       setEditSnapshot(null);
       setIsEditing(false);
-    } catch (err) {
-      console.error(err);
-      toast.error("לא הצלחנו לשמור את המוצר. נסה שוב בבקשה.");
+      setProduct((prev) => (prev ? { ...prev, productName: title } : prev));
+    } catch (err: any) {
+      const msg = err?.message || "";
+      if (msg.includes("שם זה כבר קיים")) {
+        toast.error("שם זה כבר קיים. נא לבחור שם ייחודי אחר.");
+      } else {
+        toast.error("לא הצלחנו לשמור את המוצר. נסה שוב בבקשה.");
+      }
     } finally {
       setIsSaving(false);
     }
@@ -591,14 +942,17 @@ const SingleProd: FC<SingleProdProps> = () => {
     return user?.favorites?.some((fav) => fav.id === product?._id) ?? false;
   }, [user?.favorites, product?._id]);
 
-  const realImages = useMemo(() => normalizeImages(productImages), [productImages]);
+  const realImages = useMemo(
+    () => normalizeImages(productImages),
+    [productImages],
+  );
 
-const displayImages = useMemo(() => {
-  if (isEditing) return realImages;
-  return realImages.length > 0
-    ? realImages
-    : [environment.DEFAULT_PRODUCT_IMAGE_URL]; 
-}, [isEditing, realImages]);
+  const displayImages = useMemo(() => {
+    if (isEditing) return realImages;
+    return realImages.length > 0
+      ? realImages
+      : [environment.DEFAULT_PRODUCT_IMAGE_URL];
+  }, [isEditing, realImages]);
 
   if (isLoading) {
     return <SingleProdSkeleton />;
@@ -611,13 +965,31 @@ const displayImages = useMemo(() => {
         <div className="flex justify-between items-start mb-4 text-right">
           <div className="flex-1">
             {isEditing ? (
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="bg-transparent text-4xl font-bold text-stockblue w-full text-right outline-none border-none"
-                style={{ boxShadow: "0 2px 0 0 #1e3a5f", lineHeight: "1.4", paddingBottom: "4px" }}
-              />
+              <div className="relative w-full">
+                <input
+                  type="text"
+                  value={title}
+                  maxLength={MAX_EDIT_NAME_LEN}
+                  onChange={handleTitleChange}
+                  className={`bg-transparent text-4xl font-bold w-full text-right outline-none border-none pl-20 text-stockblue
+                    }`}
+                  style={{
+                    boxShadow: "0 2px 0 0 #1e3a5f",
+                    lineHeight: "1.4",
+                    paddingBottom: "4px",
+                  }}
+                />
+
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 text-sm text-gray-400">
+                  {title.length}/{MAX_EDIT_NAME_LEN}
+                </span>
+
+                {errorMessage && (
+                  <p className="text-red-500 text-sm mt-2 text-right">
+                    {errorMessage}
+                  </p>
+                )}
+              </div>
             ) : (
               <h1
                 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-stockblue to-stockblue break-words pb-2 overflow-visible"
@@ -633,7 +1005,7 @@ const displayImages = useMemo(() => {
               {isEditing && (
                 <div className="relative">
                   <button
-                    onClick={cancelEdit}
+                    onClick={handleCancelClick}
                     disabled={isSaving}
                     aria-label="ביטול עריכה"
                     className={`peer flex items-center justify-center w-14 h-14 rounded-full font-semibold bg-white text-red-600 shadow-lg ring-2 ring-red-500/20 hover:ring-red-500/30 hover:bg-red-50 transition-all duration-300
@@ -650,13 +1022,24 @@ const displayImages = useMemo(() => {
               <div className="relative">
                 <button
                   onClick={handleSaveClick}
-                  disabled={isSaving}
-                  aria-label={isEditing ? "שמירת שינויים" : "עריכת דף"}
-                  className={`peer flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white bg-stockblue shadow-lg ring-2 ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90 transition-all duration-300
-                    ${isSaving ? "opacity-70 cursor-not-allowed" : ""}`}
+                  disabled={isSaving || (isProductBlocked && !isEditing)}
+                  aria-label={
+                    isProductBlocked && !isEditing
+                      ? "נעול לעריכה"
+                      : isEditing
+                        ? "שמירת שינויים"
+                        : "עריכת דף"
+                  }
+                  className={`peer flex items-center justify-center w-14 h-14 rounded-full font-semibold text-white shadow-lg ring-2 transition-all duration-300
+    ${isSaving || (isProductBlocked && !isEditing)
+                      ? "bg-gray-400 ring-gray-300 cursor-not-allowed opacity-70"
+                      : "bg-stockblue ring-stockblue/30 hover:ring-stockblue/40 hover:bg-stockblue/90"
+                    }`}
                 >
                   {isSaving ? (
                     <Spinner className="size-6 text-white" />
+                  ) : isProductBlocked && !isEditing ? (
+                    <Lock size={22} />
                   ) : isEditing ? (
                     <Save size={22} />
                   ) : (
@@ -668,7 +1051,9 @@ const displayImages = useMemo(() => {
                     ? "שומר..."
                     : isEditing
                       ? "שמור שינויים"
-                      : "עריכת דף"}
+                      : isProductBlocked && product?.blockedBy
+                        ? `נעול על ידי ${product.blockedBy.userName}`
+                        : "עריכת דף"}
                 </span>
               </div>
             </div>
@@ -701,46 +1086,45 @@ const displayImages = useMemo(() => {
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-stockblue to-stockblue"></div>
 
               {!isEditing || realImages.length > 0 ? (
-  <div className="relative mb-4">
-    {isUploadingImages && (
-      <div className="absolute inset-0 z-50 grid place-items-center bg-white/60 backdrop-blur-sm rounded-2xl">
-        <div className="flex items-center gap-2 rounded-2xl bg-white/80 px-4 py-2 shadow">
-          <Spinner className="size-6 text-stockblue" />
-          <span className="text-sm font-semibold text-stockblue">
-            מעלה תמונות…
-          </span>
-        </div>
-      </div>
-    )}
+                <div className="relative mb-4">
+                  {isUploadingImages && (
+                    <div className="absolute inset-0 z-50 grid place-items-center bg-white/60 backdrop-blur-sm rounded-2xl">
+                      <div className="flex items-center gap-2 rounded-2xl bg-white/80 px-4 py-2 shadow">
+                        <Spinner className="size-6 text-stockblue" />
+                        <span className="text-sm font-semibold text-stockblue">
+                          מעלה תמונות…
+                        </span>
+                      </div>
+                    </div>
+                  )}
 
-    <ImageCarousel
-      productImages={displayImages}
-      currentImageIndex={currentImageIndex}
-      setCurrentImageIndex={setCurrentImageIndex}
-      prevImage={() => {
-        if (displayImages.length === 0) return;
-        setCurrentImageIndex((prev) =>
-          prev === 0 ? displayImages.length - 1 : prev - 1,
-        );
-      }}
-      nextImage={() => {
-        if (displayImages.length === 0) return;
-        setCurrentImageIndex((prev) =>
-          prev === displayImages.length - 1 ? 0 : prev + 1,
-        );
-      }}
-      isEditing={isEditing}
-      handleReplaceImage={handleReplaceImage}
-      handleAddImages={handleAddImages}
-      handleDeleteImage={handleDeleteImage}
-      handleDeleteAllImages={handleDeleteAllImages}
-      isUploading={isUploadingImages}
-      title={title}
-      isReplacingImage={isReplacingImage}
-      setIsReplacingImage={setIsReplacingImage}
-    />
-  </div>
-
+                  <ImageCarousel
+                    productImages={displayImages}
+                    currentImageIndex={currentImageIndex}
+                    setCurrentImageIndex={setCurrentImageIndex}
+                    prevImage={() => {
+                      if (displayImages.length === 0) return;
+                      setCurrentImageIndex((prev) =>
+                        prev === 0 ? displayImages.length - 1 : prev - 1,
+                      );
+                    }}
+                    nextImage={() => {
+                      if (displayImages.length === 0) return;
+                      setCurrentImageIndex((prev) =>
+                        prev === displayImages.length - 1 ? 0 : prev + 1,
+                      );
+                    }}
+                    isEditing={isEditing}
+                    handleReplaceImage={handleReplaceImage}
+                    handleAddImages={handleAddImages}
+                    handleDeleteImage={handleDeleteImage}
+                    handleDeleteAllImages={handleDeleteAllImages}
+                    isUploading={isUploadingImages}
+                    title={title}
+                    isReplacingImage={isReplacingImage}
+                    setIsReplacingImage={setIsReplacingImage}
+                  />
+                </div>
               ) : (
                 <div className="relative mb-4">
                   <div
@@ -884,6 +1268,7 @@ ${isEditing ? "cursor-pointer" : "cursor-not-allowed opacity-80"}`}
             handleDrop={handleDrop}
             setDraggedItem={setDraggedItem}
             handleAccordionTitleChange={handleAccordionTitleChange}
+            MAX_EDIT_NAME_LEN={MAX_EDIT_NAME_LEN}
             handleAccordionContentChange={handleAccordionContentChange}
             removeAccordion={removeAccordion}
             addCustomAccordion={addCustomAccordion}
@@ -904,6 +1289,14 @@ ${isEditing ? "cursor-pointer" : "cursor-not-allowed opacity-80"}`}
           />
         </div>
       </div>
+      <UnsavedChangesDialog
+        open={showCancelConfirm}
+        onClose={() => setShowCancelConfirm(false)}
+        onConfirm={() => {
+          setShowCancelConfirm(false);
+          cancelEdit();
+        }}
+      />
     </div>
   );
 };

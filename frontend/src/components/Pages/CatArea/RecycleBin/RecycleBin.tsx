@@ -8,10 +8,15 @@ import { Spinner } from "../../../ui/spinner";
 import ImagePreviewHover from "../../ProductArea/ImageCarousel/ImageCarousel/ImagePreviewHover";
 import { PathDisplay } from "../../SharedComponents/PathDisplay/PathDisplay";
 import Page404 from "../../Page404/Page404";
+import {
+  getSafeCategoryImage,
+  getSafeProductImage,
+} from "../../../../lib/imageFallback";
+import { useSocket } from "../../../../hooks/useSocket";
 
 type FilterType = "all" | "categories" | "products";
 
-interface RecycleBinProps {}
+interface RecycleBinProps { }
 
 export const RecycleBin: FC<RecycleBinProps> = () => {
   const [items, setItems] = useState<RecycleBinItemDTO[]>([]);
@@ -28,6 +33,8 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
   const [isRestoring, setIsRestoring] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEmptying, setIsEmptying] = useState(false);
+  const token = localStorage.getItem("token") || "";
+  const { joinRoleRoom, onEvent, offEvent } = useSocket({ token });
 
   useEffect(() => {
     if (role !== undefined) {
@@ -38,6 +45,45 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
       }
     }
   }, [role]);
+
+  useEffect(() => {
+    joinRoleRoom("editor");
+    const handleUpdate = ({
+      action,
+      itemName,
+    }: {
+      action: string;
+      itemName: string;
+    }) => {
+      loadRecycleBinItems();
+      toast.info(
+        action === "added"
+          ? `${itemName} הועבר לסל המיחזור`
+          : `${itemName} שוחזר מסל המיחזור`,
+      );
+    };
+    const handleMultipleItemsMovedToRecycleBin = ({
+      successCount,
+    }: {
+      successCount: number;
+    }) => {
+      if (successCount <= 0) return;
+
+      loadRecycleBinItems();
+    };
+    onEvent("recycle_bin_updated", handleUpdate);
+    onEvent(
+      "multiple_items_moved_to_recycle_bin",
+      handleMultipleItemsMovedToRecycleBin,
+    );
+    return () => {
+      offEvent("recycle_bin_updated", handleUpdate);
+      offEvent(
+        "multiple_items_moved_to_recycle_bin",
+        handleMultipleItemsMovedToRecycleBin,
+      );
+    };
+  }, [joinRoleRoom, onEvent, offEvent]);
 
   const loadRecycleBinItems = async () => {
     try {
@@ -73,11 +119,6 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
       });
 
       await loadRecycleBinItems();
-      toast.success(
-        <span className="inline-block max-w-full break-words">
-          "{selectedItem.itemName}" שוחזר בהצלחה
-        </span>,
-      );
       setShowRestoreModal(false);
       setSelectedItem(null);
     } catch (error) {
@@ -179,33 +220,30 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
         <div className="flex justify-center gap-3 mb-8 flex-wrap mt-8">
           <button
             onClick={() => setActiveFilter("all")}
-            className={`px-6 py-2 rounded-full font-medium transition-all ${
-              activeFilter === "all"
-                ? "bg-blue-950 text-white shadow-md"
-                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-            }`}
+            className={`px-6 py-2 rounded-full font-medium transition-all ${activeFilter === "all"
+              ? "bg-blue-950 text-white shadow-md"
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              }`}
           >
             הכל ({items.length})
           </button>
 
           <button
             onClick={() => setActiveFilter("categories")}
-            className={`px-6 py-2 rounded-full font-medium transition-all ${
-              activeFilter === "categories"
-                ? "bg-blue-950 text-white shadow-md"
-                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-            }`}
+            className={`px-6 py-2 rounded-full font-medium transition-all ${activeFilter === "categories"
+              ? "bg-blue-950 text-white shadow-md"
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              }`}
           >
             קטגוריות ({categoryItems.length})
           </button>
 
           <button
             onClick={() => setActiveFilter("products")}
-            className={`px-6 py-2 rounded-full font-medium transition-all ${
-              activeFilter === "products"
-                ? "bg-blue-950 text-white shadow-md"
-                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-            }`}
+            className={`px-6 py-2 rounded-full font-medium transition-all ${activeFilter === "products"
+              ? "bg-blue-950 text-white shadow-md"
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              }`}
           >
             מוצרים ({productItems.length})
           </button>
@@ -239,7 +277,7 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
                   <div className="flex items-center justify-center relative">
                     <div className="relative opacity-60 hover:opacity-80 transition-opacity">
                       <img
-                        src={item.itemImage}
+                        src={getSafeCategoryImage(item.itemImage)}
                         alt={item.itemName}
                         className="w-44 h-44 object-cover rounded-full shadow-md mt-2 grayscale"
                       />
@@ -317,21 +355,21 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
                       </div>
                     </div>
 
-                    <div className="absolute right-3 top-3 flex gap-2">
+                    <div className="absolute right-3 top-3 flex gap-2 z-10">
                       <div className="relative group">
                         <button
                           onClick={() => handleRestoreClick(item)}
-                          className="h-8 w-8 rounded-full bg-green-600 hover:bg-green-700 text-white flex items-center justify-center hover:scale-110 transition-all duration-200"
+                          className="h-8 w-8 rounded-full bg-green-600 hover:bg-green-700 text-white flex items-center justify-center  transition-all duration-200"
                         >
                           <RotateCcw size={18} />
                         </button>
 
                         <span
                           className="absolute -bottom-9 left-1 -translate-x-1/2
-      bg-gray-800 text-white text-xs px-2 py-1 rounded
-      opacity-0 group-hover:opacity-100
-      transition-all duration-200 whitespace-nowrap
-      pointer-events-none shadow-lg z-50"
+                            bg-gray-800 text-white text-xs px-2 py-1 rounded
+                            opacity-0 group-hover:opacity-100
+                            transition-all duration-200 whitespace-nowrap
+                            pointer-events-none shadow-lg z-50"
                         >
                           שחזור מוצר
                         </span>
@@ -340,17 +378,17 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
                       <div className="relative group">
                         <button
                           onClick={() => handlePermanentDeleteClick(item)}
-                          className="h-8 w-8 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center hover:scale-110 transition-all duration-200"
+                          className="h-8 w-8 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center  transition-all duration-200"
                         >
                           <Trash2 size={18} />
                         </button>
 
                         <span
                           className="absolute -bottom-9 left-1/2 -translate-x-1/2
-      bg-gray-800 text-white text-xs px-2 py-1 rounded
-      opacity-0 group-hover:opacity-100
-      transition-all duration-200 whitespace-nowrap
-      pointer-events-none shadow-lg z-50"
+                            bg-gray-800 text-white text-xs px-2 py-1 rounded
+                            opacity-0 group-hover:opacity-100
+                            transition-all duration-200 whitespace-nowrap
+                            pointer-events-none shadow-lg z-50"
                         >
                           מחיקה לצמיתות
                         </span>
@@ -359,16 +397,18 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
 
                     <div className="h-36 w-full flex justify-center items-center p-5 grayscale">
                       <img
-                        src={
-                          item.productImages && item.productImages.length > 0
-                            ? item.productImages[0]
-                            : item.itemImage || "/assets/images/placeholder.png"
-                        }
+                        src={getSafeProductImage(
+                          item.productImages,
+                          item.itemImage,
+                        )}
                         alt={item.itemName}
                         className="h-32 w-32 object-contain"
                         onError={(e) => {
                           (e.currentTarget as HTMLImageElement).src =
-                            "/assets/images/placeholder.png";
+                            getSafeProductImage(
+                              item.productImages,
+                              item.itemImage,
+                            );
                         }}
                       />
                     </div>
@@ -458,11 +498,10 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
               <button
                 onClick={confirmRestore}
                 disabled={isRestoring}
-                className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 shadow-md ${
-                  isRestoring
-                    ? "bg-green-400 cursor-not-allowed text-white"
-                    : "bg-green-600 text-white hover:bg-green-700 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"
-                }`}
+                className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 shadow-md ${isRestoring
+                  ? "bg-green-400 cursor-not-allowed text-white"
+                  : "bg-green-600 text-white hover:bg-green-700 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"
+                  }`}
               >
                 {isRestoring ? (
                   <span className="flex items-center justify-center gap-2">
@@ -477,11 +516,10 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
               <button
                 onClick={closeAllModals}
                 disabled={isRestoring}
-                className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 ${
-                  isRestoring
-                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                    : "bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"
-                }`}
+                className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 ${isRestoring
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"
+                  }`}
               >
                 ביטול
               </button>
@@ -538,11 +576,10 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
               <button
                 onClick={confirmPermanentDelete}
                 disabled={isDeleting}
-                className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 shadow-md ${
-                  isDeleting
-                    ? "bg-red-400 cursor-not-allowed text-white"
-                    : "bg-red-600 text-white hover:bg-red-700 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"
-                }`}
+                className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 shadow-md ${isDeleting
+                  ? "bg-red-400 cursor-not-allowed text-white"
+                  : "bg-red-600 text-white hover:bg-red-700 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"
+                  }`}
               >
                 {isDeleting ? (
                   <span className="flex items-center justify-center gap-2">
@@ -557,11 +594,10 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
               <button
                 onClick={closeAllModals}
                 disabled={isDeleting}
-                className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 ${
-                  isDeleting
-                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                    : "bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"
-                }`}
+                className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 ${isDeleting
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"
+                  }`}
               >
                 ביטול
               </button>
@@ -602,11 +638,10 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
               <button
                 onClick={confirmEmptyBin}
                 disabled={isEmptying}
-                className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 shadow-md ${
-                  isEmptying
-                    ? "bg-red-400 cursor-not-allowed text-white"
-                    : "bg-red-600 text-white hover:bg-red-700 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"
-                }`}
+                className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 shadow-md ${isEmptying
+                  ? "bg-red-400 cursor-not-allowed text-white"
+                  : "bg-red-600 text-white hover:bg-red-700 hover:translate-y-[-1px] hover:shadow-lg active:translate-y-0"
+                  }`}
               >
                 {isEmptying ? (
                   <span className="flex items-center justify-center gap-2">
@@ -621,11 +656,10 @@ export const RecycleBin: FC<RecycleBinProps> = () => {
               <button
                 onClick={closeAllModals}
                 disabled={isEmptying}
-                className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 ${
-                  isEmptying
-                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                    : "bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"
-                }`}
+                className={`w-full p-3 border-none rounded-lg text-base font-medium transition-all duration-200 ${isEmptying
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200 hover:text-gray-700 hover:translate-y-[-1px] hover:shadow-md active:translate-y-0"
+                  }`}
               >
                 ביטול
               </button>

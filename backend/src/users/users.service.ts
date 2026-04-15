@@ -17,17 +17,30 @@ import { CreateUserDto } from './dto/createUser.dto';
 import { GroupsService } from 'src/groups/groups.service';
 import { PermissionsService } from 'src/permissions/permissions.service';
 import { forwardRef } from '@nestjs/common';
+import { SocketService } from 'src/socket/socket.service';
 @Injectable()
 export class UsersService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     private groupsService: GroupsService,
+    private socketService: SocketService,
     @Inject(forwardRef(() => PermissionsService))
     private permissionsService: PermissionsService,
   ) {}
 
-  async getAllUsers(role?: string) {
-    const filter = role ? { role } : {};
+  async getAllUsers(role?: string, approved?: string) {
+    const filter: any = {};
+
+    if (role) {
+      filter.role = role;
+    }
+
+    if (approved === 'true') {
+      filter.approved = true;
+    } else if (approved === 'false') {
+      filter.approved = false;
+    }
+
     return this.userModel.find(filter).exec();
   }
   async createUser(createUserDto: CreateUserDto) {
@@ -67,7 +80,15 @@ export class UsersService {
 
   async deleteUser(id: string) {
     await this.permissionsService.deletePermissionsForAllowed(id);
-    return this.userModel.findByIdAndDelete(id).exec();
+    const deleted = await this.userModel.findByIdAndDelete(id).exec();
+    if (deleted) {
+      this.socketService.emitToUser(id, 'user_deleted_self', {});
+      this.socketService.emitToRole('editor', 'user_deleted', {
+        id,
+        name: `${deleted.firstName} ${deleted.lastName}`,
+      });
+    }
+    return deleted;
   }
 
   async updateUser(id: string, updateUserDto: Partial<CreateUserDto>) {
@@ -87,15 +108,53 @@ export class UsersService {
       }
     }
 
-    return this.userModel
+    const oldUser = await this.userModel
+      .findById(id)
+      .select('role approved')
+      .lean();
+
+    const updatedUser = await this.userModel
       .findByIdAndUpdate(id, updateUserDto, { new: true })
       .exec();
+
+    if (!updatedUser) return updatedUser;
+
+    const roleChanged =
+      oldUser && updateUserDto.role && oldUser.role !== updateUserDto.role;
+
+    if (roleChanged) {
+      this.socketService.emitToUser(id, 'user_role_changed', {
+        newRole: updatedUser.role,
+      });
+    }
+
+    const justApproved =
+      oldUser && !oldUser.approved && updateUserDto.approved === true;
+
+    if (justApproved) {
+      this.socketService.emitToRole(
+        UserRole.EDITOR,
+        'user_approved',
+        updatedUser,
+      );
+    }
+
+    this.socketService.emitToRole(UserRole.EDITOR, 'user_updated', updatedUser);
+
+    return updatedUser;
   }
 
-  toggleBlockUser(id: string, isBlocked: boolean) {
-    return this.userModel
+  async toggleBlockUser(id: string, isBlocked: boolean) {
+    const blockedUser = await this.userModel
       .findByIdAndUpdate(id, { isBlocked }, { new: true })
       .exec();
+    this.socketService.emitToUser(id, 'user_blocked_self', isBlocked);
+    this.socketService.emitToRole(UserRole.EDITOR, 'user_blocked', {
+      userId: id,
+      isBlocked: isBlocked,
+      userName: blockedUser?.userName,
+    });
+    return blockedUser;
   }
   async addFavorite(userId: string, itemId: string, type: FavoriteType) {
     try {
@@ -229,5 +288,16 @@ export class UsersService {
   async getAllUserIds(): Promise<string[]> {
     const users = await this.userModel.find().select('_id').lean();
     return users.map((u) => u._id.toString());
+  }
+  async getAllViewerIds(): Promise<string[]> {
+    const users = await this.userModel
+      .find({ role: UserRole.VIEWER })
+      .select('_id')
+      .lean();
+
+    return users.map((u) => u._id.toString());
+  }
+  async findById(id: string): Promise<User | null> {
+    return this.userModel.findById(id).lean();
   }
 }
